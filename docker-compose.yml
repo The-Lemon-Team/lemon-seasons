@@ -3,18 +3,18 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: lemon-seasons-db
+    container_name: lemon-calendarium-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-lemon}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemon_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-lemon_seasons}
+      POSTGRES_DB: ${POSTGRES_DB:-lemon_calendarium}
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lemon} -d ${POSTGRES_DB:-lemon_seasons}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lemon} -d ${POSTGRES_DB:-lemon_calendarium}"]
       interval: 5s
       timeout: 5s
       retries: 5
