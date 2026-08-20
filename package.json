@@ -1,0 +1,16 @@
+{
+  "name": "lemon-lenta",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project Lenta - Headless CMS and chronological data hub",
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "backend:dev": "npm --prefix backend run start:dev",
+    "backend:build": "npm --prefix backend run build",
+    "backend:prisma:migrate": "npm --prefix backend run prisma:migrate",
+    "backend:prisma:seed": "npm --prefix backend run prisma:seed",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build"
+  }
+}

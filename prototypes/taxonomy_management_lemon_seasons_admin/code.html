@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Taxonomy Management - Lemon Seasons admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Jetbrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"surface-container-lowest": "#0e0e0e", "primary-container": "#484a00", "surface-container-highest": "#353535", "tertiary-container": "#254e40", "on-error": "#690005", tertiary: "#a4d0be", "on-secondary-fixed": "#1c1d06", "on-error-container": "#ffdad6", secondary: "#c9c8a5", "on-secondary-container": "#e6e4c0", "surface-bright": "#393939", "on-background": "#e2e2e2", "on-surface": "#e2e2e2", "inverse-surface": "#e2e2e2", "inverse-on-surface": "#303030", "on-primary-fixed": "#1c1d00", "secondary-container": "#48482d", "surface-container-low": "#1b1b1b", "on-secondary-fixed-variant": "#48482d", "surface-container-high": "#2a2a2a", primary: "#cacd58", "inverse-primary": "#606200", "primary-fixed-dim": "#cacd58", "on-secondary": "#313219", "surface-variant": "#353535", "error-container": "#93000a", "on-primary": "#313300", "primary-fixed": "#e6e971", "tertiary-fixed-dim": "#a4d0be", "surface-tint": "#cacd58", "on-primary-fixed-variant": "#484a00", "surface-container": "#1f1f1f", "surface-dim": "#131313", surface: "#131313", "tertiary-fixed": "#bfecd9", "on-tertiary-container": "#bfecd9", "on-tertiary": "#0a372b", "secondary-fixed": "#e6e4c0", background: "#131313", "secondary-fixed-dim": "#c9c8a5", "on-primary-container": "#e6e971", error: "#ffb4ab", "on-tertiary-fixed": "#002117", "outline-variant": "#474747", outline: "#919191", "on-tertiary-fixed-variant": "#254e40", "on-surface-variant": "#c6c6c6"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}, spacing: {"stack-sm": "8px", "stack-lg": "32px", "stack-md": "16px", gutter: "16px", "container-padding": "24px", unit: "4px"}, fontFamily: {metadata: ["JetBrains Mono"], "body-md": ["Inter"], "label-caps": ["JetBrains Mono"], display: ["Inter"], "headline-sm": ["Inter"], "body-lg": ["Inter"], "code-md": ["JetBrains Mono"], "headline-md": ["Inter"], headline: ["Inter"], body: ["Inter"], label: ["Jetbrains Mono"]}, fontSize: {metadata: ["12px", {lineHeight: "1.4", fontWeight: "400"}], "body-md": ["14px", {lineHeight: "1.5", fontWeight: "400"}], "label-caps": ["11px", {lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600"}], display: ["32px", {lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600"}], "headline-sm": ["18px", {lineHeight: "1.4", fontWeight: "600"}], "body-lg": ["16px", {lineHeight: "1.6", fontWeight: "400"}], "code-md": ["13px", {lineHeight: "1.5", fontWeight: "400"}], "headline-md": ["24px", {lineHeight: "1.3", fontWeight: "600"}]}}}};</script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        .tree-line::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: -12px;
+            bottom: 0;
+            width: 1px;
+            background-color: theme('colors.outline-variant');
+            opacity: 0.3;
+        }
+        .tree-line-horizontal::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            width: 12px;
+            height: 1px;
+            background-color: theme('colors.outline-variant');
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex selection:bg-primary-container/30 selection:text-primary">
+<!-- SideNavBar -->
+<nav class="fixed h-full w-[240px] left-0 top-0 bg-surface-container dark:bg-surface-container border-r border-white/5 flex flex-col py-6 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center shrink-0"><img alt="Lemon Seasons Logo" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNX5nDL0p4l-WluydDzxL2yTb2MO3t5xS9oY6VapP77xNVzVNfzlHBVCCy0BeRd4qCHs2F61wJ_usFi_-oCAQlKXHtC_qVqbgECvMUBjC02vEwKEhFNdCkv4CciqVHinl23lMyLsw5t8Nsanr2GJz7Scr1w-JUwSLbVdXV9gB_78S-K8e_2exgIJpAaMfME1ReCQI2IKghefqoPCEZn-DVSu5YmPTyodBNvWR2spg0LEdHamvgcFQT"/></div>
+<div>
+<div class="font-headline-sm text-headline-sm font-bold text-primary truncate">Lemon Seasons admin</div>
+<div class="font-metadata text-metadata text-on-surface-variant">Technical Admin</div>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-primary-container/10 hover:bg-primary-container/20 text-primary font-body-md text-body-md py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 hover:-translate-y-[1px] active:scale-[0.98]">
+<span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                Quick Add
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant font-normal font-body-md text-body-md hover:bg-white/5 transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">dynamic_feed</span>
+                Feeds
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant font-normal font-body-md text-body-md hover:bg-white/5 transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">description</span>
+                All Notes
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-primary font-bold bg-white/5 font-body-md text-body-md hover:bg-white/5 transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">account_tree</span>
+                Taxonomy
+            </a>
+</div>
+<div class="mt-auto px-4 pt-4 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant font-normal font-body-md text-body-md hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant font-normal font-body-md text-body-md hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">menu_book</span>
+                Docs
+            </a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-240px)] z-40 bg-background/80 backdrop-blur-md flex justify-between items-center h-16 px-8 ml-[240px]">
+<div class="flex-1 flex items-center">
+<!-- Search on left -->
+<div class="relative w-64 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" style="font-size: 20px;">search</span>
+<input class="w-full bg-surface-container-high border border-outline-variant/30 rounded-lg pl-10 pr-4 py-1.5 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/50" placeholder="Search taxonomies..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors active:opacity-80 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-tertiary-container rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors active:opacity-80">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30 ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A macro shot of a sleek, dark-themed glowing circuit board with subtle purple and cyan light tracing the copper paths, moody lighting, modern tech aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNtQQwiY3vvHYkxKNansbOX2XCO54F2yIuZ4_K3eKAV2mSEb4b8KQ6d8x3OqgNr1gZbXSUlPpL7cmDjd2pvKKaiXjxhT70Ll5gzZjTkLqt-fPeOqRuNPGHhLLeYplEBa-VadREIB1croQ_r-KqgwgzSFrmC4Hnka5Bw86OqotNfTnAo6PPwtG1CbrpaaiSrFcJ09ly0AwRjf5Bo8G7yp5ba8qItx18Apprg0tvD63yYUj7UbTIzJnv"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-[240px] mt-16 p-container-padding w-full max-w-[1440px] mx-auto">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-stack-lg">
+<div>
+<h1 class="font-display text-display text-on-surface mb-stack-sm">Taxonomy Tree</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Manage your hierarchical classification system. Paths are represented in Ltree format.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-surface-container-high border border-outline-variant/30 hover:border-outline-variant/60 rounded-lg font-body-md text-body-md text-on-surface transition-all flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 18px;">filter_list</span>
+                    Filter
+                </button>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg font-body-md text-body-md transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(198,120,221,0.1)]">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>
+                    New Root Node
+                </button>
+</div>
+</div>
+<!-- Taxonomy Tree Container -->
+<div class="bg-surface-container-high/50 border border-white/5 rounded-xl p-6 backdrop-blur-sm">
+<!-- Tree View -->
+<div class="space-y-1 font-code-md text-code-md">
+<!-- Root Level 1 -->
+<div class="group relative flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+<div class="flex items-center gap-3">
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-5 h-5">
+<span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+</button>
+<span class="text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 text-primary-container/90">movies</span>
+<span class="font-metadata text-metadata text-on-surface-variant/50 bg-white/5 px-2 py-0.5 rounded-full">42 notes</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5" title="Add Child"><span class="material-symbols-outlined" style="font-size: 16px;">add</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded hover:bg-white/5" title="Edit"><span class="material-symbols-outlined" style="font-size: 16px;">edit</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-tertiary-container rounded hover:bg-white/5" title="Delete"><span class="material-symbols-outlined" style="font-size: 16px;">delete</span></button>
+</div>
+</div>
+<!-- Child Level 1.1 -->
+<div class="pl-8 relative tree-line">
+<div class="group relative flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 tree-line-horizontal">
+<div class="flex items-center gap-3">
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-5 h-5">
+<span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+</button>
+<span class="text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30">movies.marvel</span>
+<span class="font-metadata text-metadata text-on-surface-variant/50 bg-white/5 px-2 py-0.5 rounded-full">15 notes</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">add</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">edit</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-tertiary-container rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">delete</span></button>
+</div>
+</div>
+<!-- Grandchild Level 1.1.1 -->
+<div class="pl-8 relative tree-line">
+<div class="group relative flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 tree-line-horizontal">
+<div class="flex items-center gap-3">
+<span class="w-5 h-5 flex items-center justify-center"><span class="w-1.5 h-1.5 rounded-full bg-outline-variant/50"></span></span>
+<span class="text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 text-secondary-container/90">movies.marvel.avengers</span>
+<span class="font-metadata text-metadata text-on-surface-variant/50 bg-white/5 px-2 py-0.5 rounded-full">8 notes</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">add</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">edit</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-tertiary-container rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Root Level 2 -->
+<div class="group relative flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 mt-2">
+<div class="flex items-center gap-3">
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-5 h-5">
+<span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
+</button>
+<span class="text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 text-primary-container/90">technology</span>
+<span class="font-metadata text-metadata text-on-surface-variant/50 bg-white/5 px-2 py-0.5 rounded-full">128 notes</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">add</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">edit</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-tertiary-container rounded hover:bg-white/5"><span class="material-symbols-outlined" style="font-size: 16px;">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

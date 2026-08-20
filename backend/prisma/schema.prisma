@@ -1,0 +1,57 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Feed {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  slug        String    @unique
+  notes       Note[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  feedId      String
+  feed        Feed      @relation(fields: [feedId], references: [id])
+  title       String
+  description String?   // Markdown
+  type        NoteType
+  startDate   DateTime
+  endDate     DateTime?
+  sourceLink  String?
+  icon        String?
+  tags        TaxonomyNode[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([startDate, endDate])
+  @@index([updatedAt])
+}
+
+model TaxonomyNode {
+  id          String    @id @default(uuid())
+  name        String
+  path        String    @unique // To be converted to ltree in migration
+  notes       Note[]
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+}
+
+enum NoteType {
+  SINGLE
+  PERIOD
+  EVENT
+  FILM_RELEASE
+  MENTION
+  DONE
+}
