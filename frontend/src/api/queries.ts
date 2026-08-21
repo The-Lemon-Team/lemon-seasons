@@ -133,6 +133,84 @@ export function useRestoreNote() {
   });
 }
 
+export function useUploadNoteImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, files }: { id: string; files: File[] }) =>
+      notesApi.uploadImages(id, files),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useSetMainNoteImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, imageId }: { noteId: string; imageId: string }) =>
+      notesApi.setMainImage(noteId, imageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useReorderNoteImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      items,
+    }: {
+      noteId: string;
+      items: { id: string; order: number }[];
+    }) => notesApi.reorderImages(noteId, items),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useUpdateNoteImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      imageId,
+      data,
+    }: {
+      noteId: string;
+      imageId: string;
+      data: { caption?: string; alt?: string };
+    }) => notesApi.updateImage(noteId, imageId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useDeleteNoteImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, imageId }: { noteId: string; imageId: string }) =>
+      notesApi.deleteImage(noteId, imageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useUploadMedia() {
+  return useMutation({
+    mutationFn: (file: File) => notesApi.uploadMedia(file),
+  });
+}
+
 // Taxonomy Queries & Mutations
 export function useTaxonomyTree(includeDeleted = false) {
   return useQuery({

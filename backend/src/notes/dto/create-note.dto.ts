@@ -72,4 +72,12 @@ export class CreateNoteDto {
   @IsString({ each: true })
   @IsOptional()
   tagIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Initial links to create with the note',
+    type: 'array',
+  })
+  @IsArray()
+  @IsOptional()
+  links?: { url: string; title?: string; isSource?: boolean; order?: number }[];
 }

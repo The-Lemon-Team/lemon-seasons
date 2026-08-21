@@ -21,6 +21,9 @@ export class SyncService {
         },
         include: {
           tags: true,
+          images: {
+            orderBy: { order: 'asc' },
+          },
         },
       }),
       this.prisma.taxonomyNode.findMany({

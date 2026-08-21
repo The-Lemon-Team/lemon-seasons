@@ -2,6 +2,7 @@ import axios from 'axios';
 import {
   Feed,
   Note,
+  NoteImage,
   TaxonomyNode,
   TaxonomyTreeNode,
   QueryNotesParams,
@@ -75,6 +76,51 @@ export const notesApi = {
   },
   restore: async (id: string): Promise<Note> => {
     const res = await apiClient.post<Note>(`/notes/${id}/restore`);
+    return res.data;
+  },
+  uploadImages: async (id: string, files: File[]): Promise<NoteImage[]> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const res = await apiClient.post<NoteImage[]>(`/notes/${id}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  setMainImage: async (noteId: string, imageId: string): Promise<NoteImage> => {
+    const res = await apiClient.patch<NoteImage>(`/notes/${noteId}/images/${imageId}/main`);
+    return res.data;
+  },
+  reorderImages: async (
+    noteId: string,
+    items: { id: string; order: number }[],
+  ): Promise<NoteImage[]> => {
+    const res = await apiClient.put<NoteImage[]>(`/notes/${noteId}/images/reorder`, { items });
+    return res.data;
+  },
+  updateImage: async (
+    noteId: string,
+    imageId: string,
+    data: { caption?: string; alt?: string },
+  ): Promise<NoteImage> => {
+    const res = await apiClient.patch<NoteImage>(`/notes/${noteId}/images/${imageId}`, data);
+    return res.data;
+  },
+  deleteImage: async (noteId: string, imageId: string): Promise<{ success: boolean; newMainId?: string }> => {
+    const res = await apiClient.delete<{ success: boolean; newMainId?: string }>(
+      `/notes/${noteId}/images/${imageId}`,
+    );
+    return res.data;
+  },
+  uploadMedia: async (file: File): Promise<{ url: string; thumbnailUrl?: string; filename: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<{ url: string; thumbnailUrl?: string; filename: string }>(
+      '/notes/upload-media',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    );
     return res.data;
   },
 };

@@ -41,6 +41,24 @@ export interface TaxonomyTreeNode {
   children: TaxonomyTreeNode[];
 }
 
+export interface NoteImage {
+  id: string;
+  noteId: string;
+  url: string;
+  thumbnailUrl?: string | null;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  width?: number | null;
+  height?: number | null;
+  caption?: string | null;
+  alt?: string | null;
+  isMain: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Note {
   id: string;
   feedId: string;
@@ -53,6 +71,7 @@ export interface Note {
   sourceLink: string | null;
   icon: string | null;
   tags: TaxonomyNode[];
+  images?: NoteImage[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

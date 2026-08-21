@@ -9,9 +9,11 @@ import {
   useUpdateNote,
   useDeleteNote,
 } from '../../api/queries';
+import { notesApi } from '../../api/client';
 import { NoteType } from '../../types';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
+import { ImageManager } from '../../components/ImageManager';
 
 export const NoteEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +39,12 @@ export const NoteEditorPage: React.FC = () => {
   const [sourceLink, setSourceLink] = useState('');
   const [icon, setIcon] = useState('');
   const [selectedTagPaths, setSelectedTagPaths] = useState<string[]>([]);
+  const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [description, setDescription] = useState('');
+
+  // Pending images for new note
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingMainIndex, setPendingMainIndex] = useState(0);
 
   // Populate data when editing
   useEffect(() => {
@@ -55,6 +62,14 @@ export const NoteEditorPage: React.FC = () => {
       setFeedId(feeds[0].id);
     }
   }, [note, isNew, feeds, feedId]);
+
+  const filteredTaxonomyNodes = taxonomyNodes.filter((node) => {
+    const query = tagSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+    const matchPath = node.path.toLowerCase().includes(query);
+    const matchName = node.name && node.name.toLowerCase().includes(query);
+    return matchPath || matchName;
+  });
 
   const handleTagToggle = (path: string) => {
     setSelectedTagPaths((prev) =>
@@ -86,6 +101,22 @@ export const NoteEditorPage: React.FC = () => {
           description: description.trim() || undefined,
           tagIds: selectedTagPaths,
         });
+
+        // Upload any pending photos that were selected before creating the note
+        if (pendingFiles.length > 0) {
+          try {
+            const uploadedImages = await notesApi.uploadImages(created.id, pendingFiles);
+            if (
+              pendingMainIndex > 0 &&
+              pendingMainIndex < uploadedImages.length
+            ) {
+              await notesApi.setMainImage(created.id, uploadedImages[pendingMainIndex].id);
+            }
+          } catch (uploadErr) {
+            console.error('Failed to upload pending photos', uploadErr);
+          }
+        }
+
         message.success('Note created successfully!');
         navigate(`/notes/${created.id}`);
       } else {
@@ -119,6 +150,10 @@ export const NoteEditorPage: React.FC = () => {
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Failed to delete note');
     }
+  };
+
+  const handleInsertMarkdownSnippet = (snippet: string) => {
+    setDescription((prev) => (prev ? `${prev}\n\n${snippet}` : snippet));
   };
 
   return (
@@ -177,33 +212,56 @@ export const NoteEditorPage: React.FC = () => {
 
       {/* Main Editor Grid */}
       <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Markdown & Content (Span 2) */}
-        <div className="lg:col-span-2 space-y-5 bg-surface-container rounded-lg border border-white/5 p-5">
-          {/* Note Title */}
-          <div className="space-y-1.5">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-              Note Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Marvel Cinematic Universe Phase 5 Overview"
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-base focus:border-primary outline-none"
-            />
+        {/* Left Column: Title, Markdown Content & Image Gallery (Span 2) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Main Content Box */}
+          <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5">
+            {/* Note Title */}
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                Note Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Marvel Cinematic Universe Phase 5 Overview"
+                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-base focus:border-primary outline-none"
+              />
+            </div>
+
+            {/* Description (Raw Markdown Editor + Live Preview) */}
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                Note Content (Markdown)
+              </label>
+              <MarkdownEditor
+                value={description}
+                onChange={setDescription}
+                placeholder="# Write note description in Markdown..."
+                minHeight={280}
+              />
+            </div>
           </div>
 
-          {/* Description (Raw Markdown Editor + Live Preview) */}
-          <MarkdownEditor
-            value={description}
-            onChange={setDescription}
-            placeholder="# Write note description in Markdown..."
-            minHeight={320}
-          />
+          {/* Image Manager Section */}
+          <div className="bg-surface-container rounded-lg border border-white/5 p-5">
+            <ImageManager
+              noteId={id}
+              images={note?.images || []}
+              pendingFiles={pendingFiles}
+              pendingMainIndex={pendingMainIndex}
+              onPendingFilesChange={(files, mainIdx) => {
+                setPendingFiles(files);
+                setPendingMainIndex(mainIdx);
+              }}
+              onInsertMarkdown={handleInsertMarkdownSnippet}
+            />
+          </div>
         </div>
 
         {/* Right Column: Metadata & Chronological Details (Span 1) */}
-        <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5">
+        <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5 h-fit">
           <h3 className="font-sans font-bold text-sm text-on-surface border-b border-white/5 pb-2">
             Metadata & Chronology
           </h3>
@@ -286,28 +344,141 @@ export const NoteEditorPage: React.FC = () => {
           </div>
 
           {/* Taxonomy Tags Selection */}
-          <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Taxonomy Tags (Ltree)
-            </label>
-            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1 bg-surface-container-lowest rounded border border-white/5">
-              {taxonomyNodes.map((node) => {
-                const isSelected = selectedTagPaths.includes(node.path);
-                return (
+          <div className="space-y-2 pt-2 border-t border-white/5">
+            <div className="flex items-center justify-between">
+              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+                Taxonomy Tags (Ltree)
+              </label>
+              {selectedTagPaths.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                    {selectedTagPaths.length} selected
+                  </span>
                   <button
-                    key={node.id}
                     type="button"
-                    onClick={() => handleTagToggle(node.path)}
-                    className={`px-2 py-0.5 rounded-full font-mono text-[11px] border transition-all ${
-                      isSelected
-                        ? 'bg-primary/20 text-primary border-primary/40 font-semibold'
-                        : 'bg-surface-container text-on-surface-variant border-white/5 hover:border-white/20'
-                    }`}
+                    onClick={() => setSelectedTagPaths([])}
+                    className="text-[10px] font-mono text-error/80 hover:text-error transition-colors underline cursor-pointer"
                   >
-                    {node.path}
+                    Clear
                   </button>
-                );
-              })}
+                </div>
+              )}
+            </div>
+
+            {/* Tag Search Input */}
+            <div className="relative flex items-center">
+              <span className="material-symbols-outlined absolute left-2.5 text-on-surface-variant/60 text-[16px] pointer-events-none select-none">
+                search
+              </span>
+              <input
+                type="text"
+                value={tagSearchQuery}
+                onChange={(e) => setTagSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (filteredTaxonomyNodes.length === 1) {
+                      handleTagToggle(filteredTaxonomyNodes[0].path);
+                    }
+                  }
+                }}
+                placeholder="Search tags by name or path..."
+                className="w-full bg-surface-container-lowest border border-white/10 rounded pl-8 pr-7 py-1.5 text-on-surface font-mono text-xs placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+              />
+              {tagSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setTagSearchQuery('')}
+                  className="absolute right-2 text-on-surface-variant/60 hover:text-on-surface transition-colors p-0.5 flex items-center justify-center rounded cursor-pointer"
+                  title="Clear search"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Selected Tags Tray (Visible when tags are selected) */}
+            {selectedTagPaths.length > 0 && (
+              <div className="space-y-1 p-2 bg-surface-container-lowest/70 border border-primary/20 rounded">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-primary/80">
+                  Active Selected ({selectedTagPaths.length})
+                </div>
+                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                  {selectedTagPaths.map((path) => (
+                    <span
+                      key={path}
+                      className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full font-mono text-[11px] bg-primary/20 text-primary border border-primary/40 font-semibold"
+                    >
+                      <span className="truncate max-w-[180px]" title={path}>
+                        {path}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleTagToggle(path)}
+                        className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors flex items-center justify-center cursor-pointer"
+                        title={`Remove tag ${path}`}
+                      >
+                        <span className="material-symbols-outlined text-[12px] leading-none">
+                          close
+                        </span>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filtered Available Tags List */}
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1.5 bg-surface-container-lowest rounded border border-white/5">
+              {filteredTaxonomyNodes.length > 0 ? (
+                filteredTaxonomyNodes.map((node) => {
+                  const isSelected = selectedTagPaths.includes(node.path);
+                  const hasDifferentName =
+                    node.name && node.name.toLowerCase() !== node.path.toLowerCase();
+                  return (
+                    <button
+                      key={node.id}
+                      type="button"
+                      onClick={() => handleTagToggle(node.path)}
+                      title={hasDifferentName ? `${node.name} (${node.path})` : node.path}
+                      className={`group px-2 py-0.5 rounded-full font-mono text-[11px] border transition-all flex items-center gap-1 text-left cursor-pointer ${
+                        isSelected
+                          ? 'bg-primary/20 text-primary border-primary/40 font-semibold shadow-sm'
+                          : 'bg-surface-container text-on-surface-variant border-white/5 hover:border-white/20 hover:text-on-surface hover:bg-surface-container-high'
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="material-symbols-outlined text-[12px] leading-none text-primary">
+                          check
+                        </span>
+                      )}
+                      <span>{node.path}</span>
+                      {hasDifferentName && (
+                        <span className="text-[10px] text-on-surface-variant/60 group-hover:text-on-surface-variant font-sans">
+                          ({node.name})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="w-full py-4 text-center text-xs text-on-surface-variant font-mono">
+                  {taxonomyNodes.length === 0 ? (
+                    <p>No taxonomy tags configured.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <p>No tags matching &ldquo;{tagSearchQuery}&rdquo;</p>
+                      <button
+                        type="button"
+                        onClick={() => setTagSearchQuery('')}
+                        className="text-primary hover:underline text-[11px] font-mono cursor-pointer"
+                      >
+                        Clear search filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

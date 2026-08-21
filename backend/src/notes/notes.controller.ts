@@ -7,12 +7,19 @@ import {
   Param,
   Delete,
   Query,
+  Put,
+  UseInterceptors,
+  UploadedFiles,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
+import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
 
 @ApiTags('Notes')
 @Controller('notes')
@@ -54,5 +61,90 @@ export class NotesController {
   @ApiOperation({ summary: 'Restore a soft-deleted note' })
   restore(@Param('id') id: string) {
     return this.notesService.restore(id);
+  }
+
+  // ==========================================
+  // Image Endpoints
+  // ==========================================
+
+  @Post(':id/images')
+  @ApiOperation({ summary: 'Upload one or multiple images for a note' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @UseInterceptors(FilesInterceptor('files', 20))
+  uploadImages(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one file must be provided');
+    }
+    return this.notesService.uploadImages(id, files);
+  }
+
+  @Patch(':id/images/:imageId/main')
+  @ApiOperation({ summary: 'Set an image as the main cover photo for a note' })
+  setMainImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ) {
+    return this.notesService.setMainImage(id, imageId);
+  }
+
+  @Put(':id/images/reorder')
+  @ApiOperation({ summary: 'Reorder images for a note' })
+  reorderImages(
+    @Param('id') id: string,
+    @Body() dto: ReorderNoteImagesDto,
+  ) {
+    return this.notesService.reorderImages(id, dto.items);
+  }
+
+  @Patch(':id/images/:imageId')
+  @ApiOperation({ summary: 'Update image caption or alt text' })
+  updateImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+    @Body() dto: UpdateNoteImageDto,
+  ) {
+    return this.notesService.updateImage(id, imageId, dto);
+  }
+
+  @Delete(':id/images/:imageId')
+  @ApiOperation({ summary: 'Delete an image from a note' })
+  deleteImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ) {
+    return this.notesService.deleteImage(id, imageId);
+  }
+
+  @Post('upload-media')
+  @ApiOperation({ summary: 'Upload standalone media file for Markdown insertion' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadMedia(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('A file must be provided');
+    }
+    return this.notesService.uploadStandaloneMedia(file);
   }
 }

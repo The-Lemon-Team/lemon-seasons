@@ -116,30 +116,64 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="divide-y divide-white/5">
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                onClick={() => navigate(`/notes/${note.id}`)}
-                className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded transition-colors cursor-pointer"
-              >
-                <div className="space-y-0.5 min-w-0 pr-4">
-                  <div className="flex items-center gap-2">
-                    <NoteTypeBadge type={note.type} size="sm" />
-                    <span className="font-sans font-semibold text-sm text-on-surface truncate">
-                      {note.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
-                    <span>{new Date(note.startDate).toLocaleDateString()}</span>
-                    {note.feed && <span>• feed: {note.feed.title}</span>}
-                  </div>
-                </div>
+            {notes.map((note) => {
+              const hasImages = Boolean(note.images && note.images.length > 0);
+              const mainImage = hasImages
+                ? note.images?.find((img) => img.isMain) || note.images?.[0]
+                : null;
+              const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+              const thumbUrl = mainImage
+                ? mainImage.thumbnailUrl
+                  ? mainImage.thumbnailUrl.startsWith('http')
+                    ? mainImage.thumbnailUrl
+                    : `${apiBase}${mainImage.thumbnailUrl}`
+                  : mainImage.url.startsWith('http')
+                  ? mainImage.url
+                  : `${apiBase}${mainImage.url}`
+                : null;
 
-                <span className="material-symbols-outlined text-outline text-[18px]">
-                  chevron_right
-                </span>
-              </div>
-            ))}
+              return (
+                <div
+                  key={note.id}
+                  onClick={() => navigate(`/notes/${note.id}`)}
+                  className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-4">
+                    {thumbUrl && (
+                      <div className="relative w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-black/40 border border-white/10 shadow-xs">
+                        <img
+                          src={thumbUrl}
+                          alt={mainImage?.alt || note.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        {note.images && note.images.length > 1 && (
+                          <span className="absolute bottom-0 right-0 bg-black/80 text-[8px] font-mono text-white/90 px-0.5 rounded-tl">
+                            +{note.images.length - 1}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <NoteTypeBadge type={note.type} size="sm" />
+                        <span className="font-sans font-semibold text-sm text-on-surface truncate">
+                          {note.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
+                        <span>{new Date(note.startDate).toLocaleDateString()}</span>
+                        {note.feed && <span>• feed: {note.feed.title}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="material-symbols-outlined text-outline text-[18px]">
+                    chevron_right
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

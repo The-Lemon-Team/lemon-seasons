@@ -201,6 +201,21 @@ export const NotesListPage: React.FC = () => {
             const dateStr = new Date(note.startDate).toLocaleDateString();
             const endDateStr = note.endDate ? new Date(note.endDate).toLocaleDateString() : null;
 
+            const hasImages = Boolean(note.images && note.images.length > 0);
+            const mainImage = hasImages
+              ? note.images?.find((img) => img.isMain) || note.images?.[0]
+              : null;
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const thumbUrl = mainImage
+              ? mainImage.thumbnailUrl
+                ? mainImage.thumbnailUrl.startsWith('http')
+                  ? mainImage.thumbnailUrl
+                  : `${apiBase}${mainImage.thumbnailUrl}`
+                : mainImage.url.startsWith('http')
+                ? mainImage.url
+                : `${apiBase}${mainImage.url}`
+              : null;
+
             return (
               <div
                 key={note.id}
@@ -209,18 +224,38 @@ export const NotesListPage: React.FC = () => {
                 }`}
               >
                 {/* Title & Feed */}
-                <div className="min-w-0">
-                  <div
-                    onClick={() => navigate(`/notes/${note.id}`)}
-                    className="font-sans font-semibold text-sm text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
-                  >
-                    {note.title}
-                  </div>
-                  {note.feed && (
-                    <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
-                      feed: {note.feed.title}
-                    </span>
+                <div className="flex items-center gap-3 min-w-0">
+                  {thumbUrl && (
+                    <div
+                      onClick={() => navigate(`/notes/${note.id}`)}
+                      className="relative w-11 h-11 flex-shrink-0 rounded-md overflow-hidden bg-black/40 border border-white/10 cursor-pointer group-hover:border-primary/50 transition-all shadow-sm"
+                    >
+                      <img
+                        src={thumbUrl}
+                        alt={mainImage?.alt || note.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {note.images && note.images.length > 1 && (
+                        <span className="absolute bottom-0 right-0 bg-black/80 text-[9px] font-mono text-white/90 px-1 rounded-tl">
+                          +{note.images.length - 1}
+                        </span>
+                      )}
+                    </div>
                   )}
+                  <div className="min-w-0">
+                    <div
+                      onClick={() => navigate(`/notes/${note.id}`)}
+                      className="font-sans font-semibold text-sm text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
+                    >
+                      {note.title}
+                    </div>
+                    {note.feed && (
+                      <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
+                        feed: {note.feed.title}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Type */}

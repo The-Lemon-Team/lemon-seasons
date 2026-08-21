@@ -30,12 +30,53 @@ model Note {
   sourceLink  String?
   icon        String?
   tags        TaxonomyNode[]
+  images      NoteImage[]
+  links       NoteLink[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   @@index([startDate, endDate])
   @@index([updatedAt])
+}
+
+model NoteImage {
+  id           String    @id @default(uuid())
+  noteId       String
+  note         Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String?
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  caption      String?
+  alt          String?
+  isMain       Boolean   @default(false)
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([noteId])
+  @@index([noteId, isMain])
+  @@index([noteId, order])
+}
+
+model NoteLink {
+  id        String    @id @default(uuid())
+  noteId    String
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  url       String
+  title     String?
+  isSource  Boolean   @default(false)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([noteId])
+  @@index([noteId, isSource])
+  @@index([noteId, order])
 }
 
 model TaxonomyNode {
