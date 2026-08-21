@@ -134,6 +134,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <GanttChartSquare className="w-3.5 h-3.5" />
             <span>Gantt</span>
           </button>
+
+          <button
+            onClick={() => onSetView('feeds')}
+            className={`px-2.5 py-1 rounded text-xs font-mono transition-colors flex items-center gap-1.5 ${
+              view === 'feeds'
+                ? 'bg-[#c9cd58] text-[#121414] font-semibold shadow-glow-lemon'
+                : 'text-[#c9c7b2] hover:text-white hover:bg-[#333535]'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Feeds & Tags</span>
+          </button>
         </div>
 
         {/* Filter Sidebar Toggle Button */}

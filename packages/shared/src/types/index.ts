@@ -342,7 +342,7 @@ export interface FileDiffItemDto {
 }
 
 // Calendar View Types & URL Filter State
-export type CalendarViewMode = 'timeline' | 'gantt' | 'month';
+export type CalendarViewMode = 'timeline' | 'gantt' | 'month' | 'feeds';
 
 export interface CalendarFilterState {
   start: string;

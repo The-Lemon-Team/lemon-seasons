@@ -9,6 +9,7 @@ import { FilterSidebar } from './components/FilterSidebar';
 import { TimelineView } from './components/TimelineView';
 import { MonthGridView } from './components/MonthGridView';
 import { GanttView } from './components/GanttView';
+import { FeedsTagsView } from './components/FeedsTagsView';
 import { NoteDetailModal } from './components/NoteDetailModal';
 
 export const App: React.FC = () => {
@@ -18,9 +19,21 @@ export const App: React.FC = () => {
     setView,
     setSearch,
     toggleFeed,
+    selectOnlyFeed,
+    setAllFeeds,
+    clearFeeds,
     toggleTag,
+    selectOnlyTag,
+    setAllTags,
+    clearTags,
     toggleHashtag,
+    selectOnlyHashtag,
+    setAllHashtags,
+    clearHashtags,
     toggleType,
+    selectOnlyType,
+    setAllTypes,
+    clearTypes,
     resetFilters,
     prevMonth,
     nextMonth,
@@ -73,11 +86,13 @@ export const App: React.FC = () => {
         />
 
         {/* Dynamic Stats Overview Bar */}
-        <StatsBar
-          notes={notes}
-          isLoading={isNotesLoading}
-          total={totalNotes}
-        />
+        {filters.view !== 'feeds' && (
+          <StatsBar
+            notes={notes}
+            isLoading={isNotesLoading}
+            total={totalNotes}
+          />
+        )}
 
         {/* View Content Canvas */}
         <main className="flex-1 flex overflow-hidden relative">
@@ -107,6 +122,33 @@ export const App: React.FC = () => {
               startDate={filters.start}
               endDate={filters.end}
               isLoading={isNotesLoading}
+              onSelectNote={setSelectedNote}
+            />
+          )}
+
+          {filters.view === 'feeds' && (
+            <FeedsTagsView
+              notes={notes}
+              isLoading={isNotesLoading}
+              filterState={filters}
+              onSetView={setView}
+              onToggleFeed={toggleFeed}
+              onSelectOnlyFeed={selectOnlyFeed}
+              onSetAllFeeds={setAllFeeds}
+              onClearFeeds={clearFeeds}
+              onToggleTag={toggleTag}
+              onSelectOnlyTag={selectOnlyTag}
+              onSetAllTags={setAllTags}
+              onClearTags={clearTags}
+              onToggleHashtag={toggleHashtag}
+              onSelectOnlyHashtag={selectOnlyHashtag}
+              onSetAllHashtags={setAllHashtags}
+              onClearHashtags={clearHashtags}
+              onToggleType={toggleType}
+              onSelectOnlyType={selectOnlyType}
+              onSetAllTypes={setAllTypes}
+              onClearTypes={clearTypes}
+              onResetFilters={resetFilters}
               onSelectNote={setSelectedNote}
             />
           )}

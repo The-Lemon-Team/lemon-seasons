@@ -100,17 +100,17 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           <span>Gantt Swimlane</span>
         </button>
 
-        {/* Feeds & Filter Toggle */}
+        {/* Feeds & Tags View */}
         <button
-          onClick={onToggleFilters}
+          onClick={() => onSetView('feeds')}
           className={`px-3 py-2.5 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            isFilterOpen || activeFilterCount > 0
-              ? 'bg-[#444747]/40 text-[#e5e971]'
+            currentView === 'feeds'
+              ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
           }`}
         >
           <div className="flex items-center gap-3">
-            <SlidersHorizontal className="w-4 h-4 text-[#c9cd58]" />
+            <SlidersHorizontal className="w-4 h-4" />
             <span>Feeds & Tags</span>
           </div>
           {activeFilterCount > 0 && (

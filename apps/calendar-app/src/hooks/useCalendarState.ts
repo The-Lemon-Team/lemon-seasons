@@ -25,7 +25,9 @@ export function parseUrlSearch(searchString: string): CalendarFilterState {
   const end = params.get('end') || defaults.end;
   const viewRaw = params.get('view');
   const view: CalendarViewMode =
-    viewRaw === 'gantt' || viewRaw === 'month' || viewRaw === 'timeline' ? viewRaw : 'timeline';
+    viewRaw === 'gantt' || viewRaw === 'month' || viewRaw === 'timeline' || viewRaw === 'feeds'
+      ? viewRaw
+      : 'timeline';
 
   const feeds = params.get('feeds')
     ? params.get('feeds')!.split(',').map((s) => s.trim()).filter(Boolean)
@@ -125,12 +127,36 @@ export function useCalendarState() {
     });
   }, [updateFilter]);
 
+  const selectOnlyFeed = useCallback((feedSlug: string) => {
+    updateFilter({ feeds: [feedSlug] });
+  }, [updateFilter]);
+
+  const setAllFeeds = useCallback((feeds: string[]) => {
+    updateFilter({ feeds });
+  }, [updateFilter]);
+
+  const clearFeeds = useCallback(() => {
+    updateFilter({ feeds: [] });
+  }, [updateFilter]);
+
   const toggleTag = useCallback((tagPath: string) => {
     updateFilter((prev) => {
       const exists = prev.tags.includes(tagPath);
       const tags = exists ? prev.tags.filter((t) => t !== tagPath) : [...prev.tags, tagPath];
       return { ...prev, tags };
     });
+  }, [updateFilter]);
+
+  const selectOnlyTag = useCallback((tagPath: string) => {
+    updateFilter({ tags: [tagPath] });
+  }, [updateFilter]);
+
+  const setAllTags = useCallback((tags: string[]) => {
+    updateFilter({ tags });
+  }, [updateFilter]);
+
+  const clearTags = useCallback(() => {
+    updateFilter({ tags: [] });
   }, [updateFilter]);
 
   const toggleHashtag = useCallback((hashtag: string) => {
@@ -142,12 +168,37 @@ export function useCalendarState() {
     });
   }, [updateFilter]);
 
+  const selectOnlyHashtag = useCallback((hashtag: string) => {
+    const clean = hashtag.replace(/^#/, '');
+    updateFilter({ hashtags: [clean] });
+  }, [updateFilter]);
+
+  const setAllHashtags = useCallback((hashtags: string[]) => {
+    updateFilter({ hashtags: hashtags.map((h) => h.replace(/^#/, '')) });
+  }, [updateFilter]);
+
+  const clearHashtags = useCallback(() => {
+    updateFilter({ hashtags: [] });
+  }, [updateFilter]);
+
   const toggleType = useCallback((type: NoteType) => {
     updateFilter((prev) => {
       const exists = prev.types.includes(type);
       const types = exists ? prev.types.filter((t) => t !== type) : [...prev.types, type];
       return { ...prev, types };
     });
+  }, [updateFilter]);
+
+  const selectOnlyType = useCallback((type: NoteType) => {
+    updateFilter({ types: [type] });
+  }, [updateFilter]);
+
+  const setAllTypes = useCallback((types: NoteType[]) => {
+    updateFilter({ types });
+  }, [updateFilter]);
+
+  const clearTypes = useCallback(() => {
+    updateFilter({ types: [] });
   }, [updateFilter]);
 
   const setSearch = useCallback((search: string) => {
@@ -203,9 +254,21 @@ export function useCalendarState() {
     setEndDate,
     setView,
     toggleFeed,
+    selectOnlyFeed,
+    setAllFeeds,
+    clearFeeds,
     toggleTag,
+    selectOnlyTag,
+    setAllTags,
+    clearTags,
     toggleHashtag,
+    selectOnlyHashtag,
+    setAllHashtags,
+    clearHashtags,
     toggleType,
+    selectOnlyType,
+    setAllTypes,
+    clearTypes,
     setSearch,
     prevMonth,
     nextMonth,

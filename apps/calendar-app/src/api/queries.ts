@@ -113,6 +113,14 @@ export function useTaxonomyTree() {
   });
 }
 
+export function useTaxonomyNodes() {
+  return useQuery({
+    queryKey: queryKeys.taxonomyFlat,
+    queryFn: () => calendarApi.getTaxonomyNodes(),
+    staleTime: 60_000,
+  });
+}
+
 export function useHashtags() {
   return useQuery({
     queryKey: queryKeys.hashtags,
