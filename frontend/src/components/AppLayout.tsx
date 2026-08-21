@@ -27,9 +27,9 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="bg-background text-on-surface font-sans antialiased min-h-screen flex">
-      {/* SideNavBar (Fixed 240px) */}
-      <aside className="bg-surface-container border-r border-white/5 fixed h-full w-[240px] left-0 top-0 flex flex-col py-6 z-50 select-none">
+    <div className="bg-background text-on-surface font-sans antialiased h-screen w-screen overflow-hidden flex">
+      {/* SideNavBar (Fixed 240px, non-shrinking, internal scroll if needed) */}
+      <aside className="bg-surface-container border-r border-white/5 h-full w-[240px] flex-shrink-0 flex flex-col py-6 z-50 select-none overflow-y-auto">
         {/* Brand Header */}
         <div className="px-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
@@ -152,9 +152,9 @@ export const AppLayout: React.FC = () => {
       </aside>
 
       {/* Main Container */}
-      <div className="flex-1 ml-[240px] flex flex-col min-h-screen">
+      <div className="flex-1 h-full flex flex-col min-w-0 overflow-hidden">
         {/* TopAppBar */}
-        <header className="fixed top-0 right-0 w-[calc(100%-240px)] z-40 bg-background/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center h-16 px-8">
+        <header className="flex-shrink-0 z-40 bg-background/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center h-16 px-8">
           <div className="flex items-center gap-4">
             <h1 className="font-sans font-bold text-lg text-primary tracking-tight">
               {getPageTitle()}
@@ -178,7 +178,7 @@ export const AppLayout: React.FC = () => {
 
             <button
               onClick={() => navigate('/sync')}
-              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-white/5 relative"
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-white/5 relative cursor-pointer"
               title="Sync Status"
             >
               <span className="material-symbols-outlined text-[20px]">cloud_sync</span>
@@ -199,9 +199,11 @@ export const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Page Content Canvas */}
-        <main className="mt-16 p-6 flex-1 w-full max-w-[1440px] mx-auto overflow-y-auto">
-          <Outlet />
+        {/* Page Content Canvas (Scrollable) */}
+        <main className="flex-1 w-full overflow-y-auto p-6 md:p-8">
+          <div className="max-w-[1440px] mx-auto pb-16">
+            <Outlet />
+          </div>
         </main>
       </div>
 
