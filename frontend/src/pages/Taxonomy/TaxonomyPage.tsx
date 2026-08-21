@@ -8,6 +8,7 @@ import {
   useRestoreTaxonomy,
 } from '../../api/queries';
 import { TaxonomyTreeNode } from '../../types';
+import { IconPicker } from '../../components/IconPicker';
 import { useNavigate } from 'react-router-dom';
 
 export const TaxonomyPage: React.FC = () => {
@@ -24,6 +25,7 @@ export const TaxonomyPage: React.FC = () => {
 
   // Form State
   const [nodeName, setNodeName] = useState('');
+  const [nodeIcon, setNodeIcon] = useState('');
   const [childSegment, setChildSegment] = useState('');
   const [fullPath, setFullPath] = useState('');
 
@@ -43,6 +45,7 @@ export const TaxonomyPage: React.FC = () => {
     setModalMode('root');
     setTargetNode(null);
     setNodeName('');
+    setNodeIcon('');
     setFullPath('');
     setIsModalOpen(true);
   };
@@ -51,6 +54,7 @@ export const TaxonomyPage: React.FC = () => {
     setModalMode('child');
     setTargetNode(parent);
     setNodeName('');
+    setNodeIcon('');
     setChildSegment('');
     setFullPath(`${parent.path}.`);
     setIsModalOpen(true);
@@ -60,6 +64,7 @@ export const TaxonomyPage: React.FC = () => {
     setModalMode('edit');
     setTargetNode(node);
     setNodeName(node.name);
+    setNodeIcon(node.icon || '');
     setFullPath(node.path);
     setIsModalOpen(true);
   };
@@ -72,20 +77,33 @@ export const TaxonomyPage: React.FC = () => {
     }
 
     try {
+      const iconValue = nodeIcon.trim() || undefined;
       if (modalMode === 'root') {
         const path = fullPath.trim()
           ? fullPath.trim().toLowerCase()
           : nodeName.trim().toLowerCase().replace(/\s+/g, '_');
-        await createMutation.mutateAsync({ name: nodeName.trim(), path });
+        await createMutation.mutateAsync({
+          name: nodeName.trim(),
+          path,
+          icon: iconValue,
+        });
         message.success('Root node created');
       } else if (modalMode === 'child') {
         const path = `${targetNode!.path}.${childSegment.trim().toLowerCase().replace(/\s+/g, '_')}`;
-        await createMutation.mutateAsync({ name: nodeName.trim(), path });
+        await createMutation.mutateAsync({
+          name: nodeName.trim(),
+          path,
+          icon: iconValue,
+        });
         message.success('Child taxonomy node created');
       } else if (modalMode === 'edit') {
         await updateMutation.mutateAsync({
           id: targetNode!.id,
-          data: { name: nodeName.trim(), path: fullPath.trim().toLowerCase() },
+          data: {
+            name: nodeName.trim(),
+            path: fullPath.trim().toLowerCase(),
+            icon: iconValue || '',
+          },
         });
         message.success('Taxonomy node updated');
       }
@@ -126,45 +144,55 @@ export const TaxonomyPage: React.FC = () => {
             depth > 0 ? 'tree-line-horizontal' : ''
           } ${isDeleted ? 'opacity-50' : ''}`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             {hasChildren ? (
               <button
                 onClick={() => toggleExpand(node.path)}
-                className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-5 h-5 cursor-pointer"
+                className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-5 h-5 cursor-pointer flex-shrink-0"
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {isExpanded ? 'expand_more' : 'chevron_right'}
                 </span>
               </button>
             ) : (
-              <span className="w-5 h-5 flex items-center justify-center">
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-outline-variant/60" />
               </span>
             )}
 
+            {/* Node Icon Badge */}
+            <span
+              title={node.icon ? `Icon: ${node.icon}` : 'Default tag icon'}
+              className="w-6 h-6 rounded flex items-center justify-center bg-surface-container border border-white/10 text-primary flex-shrink-0 shadow-xs"
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {node.icon || 'label'}
+              </span>
+            </span>
+
             {/* Path Chip */}
             <span
               onClick={() => navigate(`/notes?tagPath=${encodeURIComponent(node.path)}`)}
-              className="font-mono text-xs text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 hover:border-primary/50 hover:text-primary transition-colors cursor-pointer"
+              className="font-mono text-xs text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 hover:border-primary/50 hover:text-primary transition-colors cursor-pointer truncate"
             >
               {node.path}
             </span>
 
             {/* Node Display Name */}
-            <span className="font-sans text-xs text-on-surface-variant font-medium">
+            <span className="font-sans text-xs text-on-surface-variant font-medium truncate">
               ({node.name})
             </span>
 
             {/* Note Count Pill */}
             <span
               onClick={() => navigate(`/notes?tagPath=${encodeURIComponent(node.path)}`)}
-              className="font-mono text-[11px] text-on-surface-variant/80 bg-white/5 px-2 py-0.5 rounded-full hover:bg-white/10 hover:text-secondary transition-colors cursor-pointer"
+              className="font-mono text-[11px] text-on-surface-variant/80 bg-white/5 px-2 py-0.5 rounded-full hover:bg-white/10 hover:text-secondary transition-colors cursor-pointer flex-shrink-0"
             >
               {node.notesCount} {node.notesCount === 1 ? 'note' : 'notes'}
             </span>
 
             {isDeleted && (
-              <span className="font-mono text-[10px] text-error bg-error/15 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[10px] text-error bg-error/15 px-1.5 py-0.5 rounded flex-shrink-0">
                 DELETED
               </span>
             )}
@@ -289,7 +317,7 @@ export const TaxonomyPage: React.FC = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
-        width={480}
+        width={520}
         centered
         destroyOnClose
         styles={{
@@ -354,6 +382,13 @@ export const TaxonomyPage: React.FC = () => {
                 />
               </div>
             )}
+
+            {/* Icon Picker Component */}
+            <IconPicker
+              value={nodeIcon}
+              onChange={setNodeIcon}
+              label="Node Icon (Material Symbol)"
+            />
 
             <div className="pt-3 border-t border-white/5 flex justify-end gap-2">
               <button

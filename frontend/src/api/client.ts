@@ -3,6 +3,9 @@ import {
   Feed,
   Note,
   NoteImage,
+  NoteLink,
+  CreateNoteLinkInput,
+  UpdateNoteLinkInput,
   TaxonomyNode,
   TaxonomyTreeNode,
   QueryNotesParams,
@@ -120,6 +123,35 @@ export const notesApi = {
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       },
+    );
+    return res.data;
+  },
+  addLinks: async (id: string, links: CreateNoteLinkInput[]): Promise<NoteLink[]> => {
+    const res = await apiClient.post<NoteLink[]>(`/notes/${id}/links`, { links });
+    return res.data;
+  },
+  setSourceLink: async (noteId: string, linkId: string): Promise<NoteLink[]> => {
+    const res = await apiClient.patch<NoteLink[]>(`/notes/${noteId}/links/${linkId}/source`);
+    return res.data;
+  },
+  reorderLinks: async (
+    noteId: string,
+    items: { id: string; order: number }[],
+  ): Promise<NoteLink[]> => {
+    const res = await apiClient.put<NoteLink[]>(`/notes/${noteId}/links/reorder`, { items });
+    return res.data;
+  },
+  updateLink: async (
+    noteId: string,
+    linkId: string,
+    data: UpdateNoteLinkInput,
+  ): Promise<NoteLink> => {
+    const res = await apiClient.patch<NoteLink>(`/notes/${noteId}/links/${linkId}`, data);
+    return res.data;
+  },
+  deleteLink: async (noteId: string, linkId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await apiClient.delete<{ success: boolean; message: string }>(
+      `/notes/${noteId}/links/${linkId}`,
     );
     return res.data;
   },

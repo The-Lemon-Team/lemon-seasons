@@ -83,6 +83,7 @@ model TaxonomyNode {
   id          String    @id @default(uuid())
   name        String
   path        String    @unique // To be converted to ltree in migration
+  icon        String?
   notes       Note[]
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?

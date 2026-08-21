@@ -24,6 +24,7 @@ export interface TaxonomyNode {
   id: string;
   name: string;
   path: string;
+  icon: string | null;
   updatedAt: string;
   deletedAt: string | null;
   _count?: {
@@ -35,6 +36,7 @@ export interface TaxonomyTreeNode {
   id: string;
   name: string;
   path: string;
+  icon: string | null;
   notesCount: number;
   updatedAt: string;
   deletedAt: string | null;
@@ -59,6 +61,31 @@ export interface NoteImage {
   updatedAt: string;
 }
 
+export interface NoteLink {
+  id: string;
+  noteId: string;
+  url: string;
+  title?: string | null;
+  isSource: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateNoteLinkInput {
+  url: string;
+  title?: string;
+  isSource?: boolean;
+  order?: number;
+}
+
+export interface UpdateNoteLinkInput {
+  url?: string;
+  title?: string;
+  isSource?: boolean;
+  order?: number;
+}
+
 export interface Note {
   id: string;
   feedId: string;
@@ -72,6 +99,7 @@ export interface Note {
   icon: string | null;
   tags: TaxonomyNode[];
   images?: NoteImage[];
+  links?: NoteLink[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -110,6 +138,7 @@ export interface CreateNoteInput {
   sourceLink?: string;
   icon?: string;
   tagIds?: string[];
+  links?: CreateNoteLinkInput[];
 }
 
 export interface CreateFeedInput {
@@ -121,6 +150,7 @@ export interface CreateFeedInput {
 export interface CreateTaxonomyInput {
   name: string;
   path: string;
+  icon?: string;
 }
 
 export interface SyncChangesResponse {

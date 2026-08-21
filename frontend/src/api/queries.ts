@@ -205,6 +205,84 @@ export function useDeleteNoteImage() {
   });
 }
 
+// Note Links Hooks
+export function useAddNoteLinks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      links,
+    }: {
+      id: string;
+      links: { url: string; title?: string; isSource?: boolean; order?: number }[];
+    }) => notesApi.addLinks(id, links),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useSetSourceNoteLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, linkId }: { noteId: string; linkId: string }) =>
+      notesApi.setSourceLink(noteId, linkId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useReorderNoteLinks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      items,
+    }: {
+      noteId: string;
+      items: { id: string; order: number }[];
+    }) => notesApi.reorderLinks(noteId, items),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useUpdateNoteLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      linkId,
+      data,
+    }: {
+      noteId: string;
+      linkId: string;
+      data: { url?: string; title?: string; isSource?: boolean; order?: number };
+    }) => notesApi.updateLink(noteId, linkId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useDeleteNoteLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, linkId }: { noteId: string; linkId: string }) =>
+      notesApi.deleteLink(noteId, linkId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
 export function useUploadMedia() {
   return useMutation({
     mutationFn: (file: File) => notesApi.uploadMedia(file),

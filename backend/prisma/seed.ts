@@ -55,20 +55,20 @@ async function main() {
 
   // 2. Create Taxonomy Hierarchy (Ltree format)
   const taxonomyData = [
-    { name: 'Movies', path: 'movies' },
-    { name: 'Marvel', path: 'movies.marvel' },
-    { name: 'Avengers', path: 'movies.marvel.avengers' },
-    { name: 'Technology', path: 'technology' },
-    { name: 'Frontend', path: 'technology.frontend' },
-    { name: 'React', path: 'technology.frontend.react' },
-    { name: 'Backend', path: 'technology.backend' },
-    { name: 'NestJS', path: 'technology.backend.nestjs' },
-    { name: 'Architecture', path: 'engineering.architecture' },
-    { name: 'Backend Eng', path: 'engineering.backend' },
-    { name: 'UX & Product', path: 'product.ux' },
-    { name: 'Planning', path: 'strategy.planning' },
-    { name: 'Infrastructure', path: 'devops.infrastructure' },
-    { name: 'Design Tokens', path: 'design.tokens' },
+    { name: 'Movies', path: 'movies', icon: 'movie' },
+    { name: 'Marvel', path: 'movies.marvel', icon: 'auto_awesome' },
+    { name: 'Avengers', path: 'movies.marvel.avengers', icon: 'shield' },
+    { name: 'Technology', path: 'technology', icon: 'memory' },
+    { name: 'Frontend', path: 'technology.frontend', icon: 'web' },
+    { name: 'React', path: 'technology.frontend.react', icon: 'code_blocks' },
+    { name: 'Backend', path: 'technology.backend', icon: 'terminal' },
+    { name: 'NestJS', path: 'technology.backend.nestjs', icon: 'dns' },
+    { name: 'Architecture', path: 'engineering.architecture', icon: 'architecture' },
+    { name: 'Backend Eng', path: 'engineering.backend', icon: 'settings_system_daydream' },
+    { name: 'UX & Product', path: 'product.ux', icon: 'brush' },
+    { name: 'Planning', path: 'strategy.planning', icon: 'timeline' },
+    { name: 'Infrastructure', path: 'devops.infrastructure', icon: 'cloud' },
+    { name: 'Design Tokens', path: 'design.tokens', icon: 'palette' },
   ];
 
   const taxonomyMap = new Map<string, string>();
@@ -230,6 +230,18 @@ Successfully implemented:
         tags: {
           connect: tagIds.map((id) => ({ id })),
         },
+        links: note.sourceLink
+          ? {
+              create: [
+                {
+                  url: note.sourceLink,
+                  title: 'Primary Source',
+                  isSource: true,
+                  order: 0,
+                },
+              ],
+            }
+          : undefined,
       },
     });
   }

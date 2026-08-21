@@ -17,4 +17,12 @@ export class CreateTaxonomyDto {
     message: 'Path must be a valid ltree format (dot-separated alphanumeric words with underscores, e.g. tech.frontend.react)',
   })
   path: string;
+
+  @ApiPropertyOptional({
+    description: 'Material Symbol or icon identifier',
+    example: 'code',
+  })
+  @IsOptional()
+  @IsString()
+  icon?: string;
 }

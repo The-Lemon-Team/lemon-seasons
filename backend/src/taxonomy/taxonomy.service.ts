@@ -7,6 +7,7 @@ export interface TaxonomyTreeNode {
   id: string;
   name: string;
   path: string;
+  icon: string | null;
   notesCount: number;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -32,6 +33,7 @@ export class TaxonomyService {
       data: {
         name: createTaxonomyDto.name,
         path,
+        icon: createTaxonomyDto.icon?.trim() || null,
       },
       include: {
         _count: {
@@ -79,6 +81,7 @@ export class TaxonomyService {
         id: node.id,
         name: node.name,
         path: node.path,
+        icon: node.icon,
         notesCount: (node as any)._count?.notes || 0,
         updatedAt: node.updatedAt,
         deletedAt: node.deletedAt,
@@ -148,6 +151,9 @@ export class TaxonomyService {
       data: {
         ...(updateTaxonomyDto.name ? { name: updateTaxonomyDto.name } : {}),
         ...(newPath ? { path: newPath } : {}),
+        ...(updateTaxonomyDto.icon !== undefined
+          ? { icon: updateTaxonomyDto.icon?.trim() || null }
+          : {}),
       },
       include: {
         _count: {

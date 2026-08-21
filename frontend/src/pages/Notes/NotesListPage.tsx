@@ -9,6 +9,7 @@ import {
   useRestoreNote,
 } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
+import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { NoteType } from '../../types';
 
 export const NotesListPage: React.FC = () => {
@@ -141,19 +142,15 @@ export const NotesListPage: React.FC = () => {
           </select>
 
           {/* Type Filter */}
-          <select
-            value={typeParam || ''}
-            onChange={(e) => handleFilterChange('type', e.target.value || undefined)}
-            className="bg-surface-container border border-outline-variant/40 rounded px-2.5 py-1 text-xs text-on-surface font-mono focus:border-primary outline-none"
-          >
-            <option value="">All Types</option>
-            <option value="SINGLE">SINGLE</option>
-            <option value="PERIOD">PERIOD</option>
-            <option value="EVENT">EVENT</option>
-            <option value="FILM_RELEASE">FILM RELEASE</option>
-            <option value="MENTION">MENTION</option>
-            <option value="DONE">DONE</option>
-          </select>
+          <div className="min-w-[150px]">
+            <NoteTypeSelect
+              value={typeParam}
+              onChange={(val) => handleFilterChange('type', val || undefined)}
+              allowAll
+              allLabel="All Types"
+              size="sm"
+            />
+          </div>
 
           {/* Taxonomy Filter */}
           <select
@@ -250,11 +247,31 @@ export const NotesListPage: React.FC = () => {
                     >
                       {note.title}
                     </div>
-                    {note.feed && (
-                      <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
-                        feed: {note.feed.title}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {note.feed && (
+                        <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
+                          feed: {note.feed.title}
+                        </span>
+                      )}
+                      {note.sourceLink && (
+                        <a
+                          href={note.sourceLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-0.5 text-[11px] font-mono text-primary/80 hover:text-primary transition-colors"
+                          title={`Source: ${note.sourceLink}`}
+                        >
+                          <span className="material-symbols-outlined text-[13px]">link</span>
+                          source
+                          {note.links && note.links.length > 1 && (
+                            <span className="text-[10px] text-on-surface-variant font-mono">
+                              (+{note.links.length - 1})
+                            </span>
+                          )}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -275,9 +292,12 @@ export const NotesListPage: React.FC = () => {
                     note.tags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors"
                       >
-                        {tag.path}
+                        <span className="material-symbols-outlined text-[12px] text-primary/80">
+                          {tag.icon || 'label'}
+                        </span>
+                        <span>{tag.path}</span>
                       </span>
                     ))
                   ) : (

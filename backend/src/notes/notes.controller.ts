@@ -20,6 +20,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
+import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
 
 @ApiTags('Notes')
 @Controller('notes')
@@ -127,6 +128,59 @@ export class NotesController {
     @Param('imageId') imageId: string,
   ) {
     return this.notesService.deleteImage(id, imageId);
+  }
+
+  // ==========================================
+  // Link Endpoints
+  // ==========================================
+
+  @Post(':id/links')
+  @ApiOperation({ summary: 'Add one or multiple links to a note' })
+  addLinks(
+    @Param('id') id: string,
+    @Body() dto: AddNoteLinksDto,
+  ) {
+    if (!dto.links || dto.links.length === 0) {
+      throw new BadRequestException('At least one link must be provided');
+    }
+    return this.notesService.addLinks(id, dto.links);
+  }
+
+  @Patch(':id/links/:linkId/source')
+  @ApiOperation({ summary: 'Set a link as the primary source for a note' })
+  setSourceLink(
+    @Param('id') id: string,
+    @Param('linkId') linkId: string,
+  ) {
+    return this.notesService.setSourceLink(id, linkId);
+  }
+
+  @Put(':id/links/reorder')
+  @ApiOperation({ summary: 'Reorder links for a note' })
+  reorderLinks(
+    @Param('id') id: string,
+    @Body() dto: ReorderNoteLinksDto,
+  ) {
+    return this.notesService.reorderLinks(id, dto.items);
+  }
+
+  @Patch(':id/links/:linkId')
+  @ApiOperation({ summary: 'Update a note link (title, URL, order, isSource)' })
+  updateLink(
+    @Param('id') id: string,
+    @Param('linkId') linkId: string,
+    @Body() dto: UpdateNoteLinkDto,
+  ) {
+    return this.notesService.updateLink(id, linkId, dto);
+  }
+
+  @Delete(':id/links/:linkId')
+  @ApiOperation({ summary: 'Delete a link from a note' })
+  deleteLink(
+    @Param('id') id: string,
+    @Param('linkId') linkId: string,
+  ) {
+    return this.notesService.deleteLink(id, linkId);
   }
 
   @Post('upload-media')

@@ -24,6 +24,9 @@ export class SyncService {
           images: {
             orderBy: { order: 'asc' },
           },
+          links: {
+            orderBy: { order: 'asc' },
+          },
         },
       }),
       this.prisma.taxonomyNode.findMany({

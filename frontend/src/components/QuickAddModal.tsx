@@ -3,6 +3,7 @@ import { message, Modal } from 'antd';
 import { useFeeds, useTaxonomyTree, useCreateNote } from '../api/queries';
 import { NoteType } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
+import { NoteTypeSelect } from './NoteTypeSelect';
 
 interface QuickAddModalProps {
   open: boolean;
@@ -130,18 +131,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
                 Note Type
               </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as NoteType)}
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-              >
-                <option value="SINGLE" className="bg-surface-container">SINGLE</option>
-                <option value="PERIOD" className="bg-surface-container">PERIOD</option>
-                <option value="EVENT" className="bg-surface-container">EVENT</option>
-                <option value="FILM_RELEASE" className="bg-surface-container">FILM_RELEASE</option>
-                <option value="MENTION" className="bg-surface-container">MENTION</option>
-                <option value="DONE" className="bg-surface-container">DONE</option>
-              </select>
+              <NoteTypeSelect value={type} onChange={setType} />
             </div>
           </div>
 

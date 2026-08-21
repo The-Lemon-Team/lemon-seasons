@@ -161,9 +161,20 @@ export const DashboardPage: React.FC = () => {
                           {note.title}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
+                      <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant flex-wrap">
                         <span>{new Date(note.startDate).toLocaleDateString()}</span>
                         {note.feed && <span>• feed: {note.feed.title}</span>}
+                        {note.sourceLink && (
+                          <span className="inline-flex items-center gap-0.5 text-primary/80">
+                            • <span className="material-symbols-outlined text-[13px]">link</span>
+                            source
+                            {note.links && note.links.length > 1 && (
+                              <span className="text-[10px] text-on-surface-variant font-mono">
+                                (+{note.links.length - 1})
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

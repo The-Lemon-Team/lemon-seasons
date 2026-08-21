@@ -10,10 +10,12 @@ import {
   useDeleteNote,
 } from '../../api/queries';
 import { notesApi } from '../../api/client';
-import { NoteType } from '../../types';
+import { NoteType, CreateNoteLinkInput } from '../../types';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
+import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { ImageManager } from '../../components/ImageManager';
+import { LinkManager } from '../../components/LinkManager';
 
 export const NoteEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,15 +38,16 @@ export const NoteEditorPage: React.FC = () => {
     new Date().toISOString().slice(0, 16),
   );
   const [endDate, setEndDate] = useState('');
-  const [sourceLink, setSourceLink] = useState('');
   const [icon, setIcon] = useState('');
   const [selectedTagPaths, setSelectedTagPaths] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [description, setDescription] = useState('');
 
-  // Pending images for new note
+  // Pending images & links for new note
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingMainIndex, setPendingMainIndex] = useState(0);
+  const [pendingLinks, setPendingLinks] = useState<CreateNoteLinkInput[]>([]);
+  const [pendingSourceIndex, setPendingSourceIndex] = useState(0);
 
   // Populate data when editing
   useEffect(() => {
@@ -54,7 +57,6 @@ export const NoteEditorPage: React.FC = () => {
       setType(note.type);
       setStartDate(new Date(note.startDate).toISOString().slice(0, 16));
       setEndDate(note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '');
-      setSourceLink(note.sourceLink || '');
       setIcon(note.icon || '');
       setDescription(note.description || '');
       setSelectedTagPaths(note.tags?.map((t) => t.path) || []);
@@ -96,10 +98,16 @@ export const NoteEditorPage: React.FC = () => {
           type,
           startDate: new Date(startDate).toISOString(),
           endDate: endDate ? new Date(endDate).toISOString() : undefined,
-          sourceLink: sourceLink.trim() || undefined,
           icon: icon.trim() || undefined,
           description: description.trim() || undefined,
           tagIds: selectedTagPaths,
+          links:
+            pendingLinks.length > 0
+              ? pendingLinks.map((l, i) => ({
+                  ...l,
+                  isSource: i === pendingSourceIndex,
+                }))
+              : undefined,
         });
 
         // Upload any pending photos that were selected before creating the note
@@ -128,7 +136,6 @@ export const NoteEditorPage: React.FC = () => {
             type,
             startDate: new Date(startDate).toISOString(),
             endDate: endDate ? new Date(endDate).toISOString() : undefined,
-            sourceLink: sourceLink.trim() || undefined,
             icon: icon.trim() || undefined,
             description: description.trim() || undefined,
             tagIds: selectedTagPaths,
@@ -212,7 +219,7 @@ export const NoteEditorPage: React.FC = () => {
 
       {/* Main Editor Grid */}
       <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Title, Markdown Content & Image Gallery (Span 2) */}
+        {/* Left Column: Title, Markdown Content, Links & Image Gallery (Span 2) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Main Content Box */}
           <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5">
@@ -242,6 +249,21 @@ export const NoteEditorPage: React.FC = () => {
                 minHeight={280}
               />
             </div>
+          </div>
+
+          {/* Link Manager Section */}
+          <div className="bg-surface-container rounded-lg border border-white/5 p-5">
+            <LinkManager
+              noteId={id}
+              links={note?.links || []}
+              pendingLinks={pendingLinks}
+              pendingSourceIndex={pendingSourceIndex}
+              onPendingLinksChange={(links, sourceIdx) => {
+                setPendingLinks(links);
+                setPendingSourceIndex(sourceIdx);
+              }}
+              onInsertMarkdown={handleInsertMarkdownSnippet}
+            />
           </div>
 
           {/* Image Manager Section */}
@@ -289,18 +311,7 @@ export const NoteEditorPage: React.FC = () => {
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
               Note Type
             </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as NoteType)}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
-            >
-              <option value="SINGLE">SINGLE (One-off milestone or post)</option>
-              <option value="PERIOD">PERIOD (Span with start and end)</option>
-              <option value="EVENT">EVENT (Scheduled conference / meeting)</option>
-              <option value="FILM_RELEASE">FILM_RELEASE (Media premiere)</option>
-              <option value="MENTION">MENTION (Reference / citation)</option>
-              <option value="DONE">DONE (Completed deliverable)</option>
-            </select>
+            <NoteTypeSelect value={type} onChange={setType} />
           </div>
 
           {/* Start Date */}
@@ -326,20 +337,6 @@ export const NoteEditorPage: React.FC = () => {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
-            />
-          </div>
-
-          {/* Source Link */}
-          <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Source URL
-            </label>
-            <input
-              type="url"
-              value={sourceLink}
-              onChange={(e) => setSourceLink(e.target.value)}
-              placeholder="https://..."
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface text-xs focus:border-primary outline-none"
             />
           </div>
 
@@ -404,26 +401,32 @@ export const NoteEditorPage: React.FC = () => {
                   Active Selected ({selectedTagPaths.length})
                 </div>
                 <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                  {selectedTagPaths.map((path) => (
-                    <span
-                      key={path}
-                      className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full font-mono text-[11px] bg-primary/20 text-primary border border-primary/40 font-semibold"
-                    >
-                      <span className="truncate max-w-[180px]" title={path}>
-                        {path}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleTagToggle(path)}
-                        className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors flex items-center justify-center cursor-pointer"
-                        title={`Remove tag ${path}`}
+                  {selectedTagPaths.map((path) => {
+                    const tagNode = taxonomyNodes.find((n) => n.path === path);
+                    return (
+                      <span
+                        key={path}
+                        className="inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full font-mono text-[11px] bg-primary/20 text-primary border border-primary/40 font-semibold"
                       >
-                        <span className="material-symbols-outlined text-[12px] leading-none">
-                          close
+                        <span className="material-symbols-outlined text-[13px] text-primary">
+                          {tagNode?.icon || 'label'}
                         </span>
-                      </button>
-                    </span>
-                  ))}
+                        <span className="truncate max-w-[180px]" title={path}>
+                          {path}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleTagToggle(path)}
+                          className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors flex items-center justify-center cursor-pointer"
+                          title={`Remove tag ${path}`}
+                        >
+                          <span className="material-symbols-outlined text-[12px] leading-none">
+                            close
+                          </span>
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -441,21 +444,24 @@ export const NoteEditorPage: React.FC = () => {
                       type="button"
                       onClick={() => handleTagToggle(node.path)}
                       title={hasDifferentName ? `${node.name} (${node.path})` : node.path}
-                      className={`group px-2 py-0.5 rounded-full font-mono text-[11px] border transition-all flex items-center gap-1 text-left cursor-pointer ${
+                      className={`group px-2 py-0.5 rounded-full font-mono text-[11px] border transition-all flex items-center gap-1.5 text-left cursor-pointer ${
                         isSelected
                           ? 'bg-primary/20 text-primary border-primary/40 font-semibold shadow-sm'
                           : 'bg-surface-container text-on-surface-variant border-white/5 hover:border-white/20 hover:text-on-surface hover:bg-surface-container-high'
                       }`}
                     >
-                      {isSelected && (
-                        <span className="material-symbols-outlined text-[12px] leading-none text-primary">
-                          check
-                        </span>
-                      )}
+                      <span className="material-symbols-outlined text-[13px] leading-none text-primary/80 group-hover:text-primary">
+                        {node.icon || 'label'}
+                      </span>
                       <span>{node.path}</span>
                       {hasDifferentName && (
                         <span className="text-[10px] text-on-surface-variant/60 group-hover:text-on-surface-variant font-sans">
                           ({node.name})
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="material-symbols-outlined text-[12px] leading-none text-primary ml-0.5">
+                          check
                         </span>
                       )}
                     </button>
