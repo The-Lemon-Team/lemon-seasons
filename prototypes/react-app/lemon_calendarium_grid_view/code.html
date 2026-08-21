@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lemon Calendarium - Grid</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#383939",
+                        "outline": "#93927e",
+                        "surface": "#121414",
+                        "on-primary": "#313300",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#e5e971",
+                        "on-secondary-container": "#b3b5b5",
+                        "surface-variant": "#333535",
+                        "error-container": "#93000a",
+                        "tertiary": "#eaddff",
+                        "tertiary-fixed-dim": "#d2bcff",
+                        "on-surface-variant": "#c9c7b2",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#535600",
+                        "on-background": "#e2e2e2",
+                        "primary-container": "#c9cd58",
+                        "on-tertiary-fixed": "#220e47",
+                        "on-primary-fixed": "#1c1d00",
+                        "inverse-primary": "#5f6200",
+                        "surface-tint": "#c9cd58",
+                        "on-error": "#690005",
+                        "surface-container": "#1e2020",
+                        "tertiary-container": "#d2bcff",
+                        "surface-container-low": "#1a1c1c",
+                        "on-secondary-fixed-variant": "#444747",
+                        "surface-container-high": "#282a2a",
+                        "surface-dim": "#121414",
+                        "secondary-fixed-dim": "#c5c7c6",
+                        "surface-container-highest": "#333535",
+                        "secondary": "#c5c7c6",
+                        "primary-fixed-dim": "#c9cd58",
+                        "on-primary-fixed-variant": "#484a00",
+                        "tertiary-fixed": "#eaddff",
+                        "on-tertiary-container": "#5b4983",
+                        "on-secondary": "#2e3131",
+                        "background": "#121414",
+                        "inverse-on-surface": "#2f3131",
+                        "on-secondary-fixed": "#191c1c",
+                        "on-tertiary": "#38265e",
+                        "secondary-container": "#444747",
+                        "primary": "#e5e971",
+                        "on-surface": "#e2e2e2",
+                        "outline-variant": "#484837",
+                        "inverse-surface": "#e2e2e2",
+                        "surface-container-lowest": "#0d0f0f",
+                        "on-tertiary-fixed-variant": "#4f3d76",
+                        "secondary-fixed": "#e1e3e2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "mono-date": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "mono-label": ["JetBrains Mono"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "mono-date": ["14px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "mono-label": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for swimlanes */
+        .swimlane-scroll::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .swimlane-scroll::-webkit-scrollbar-track {
+            background: #121414;
+        }
+        .swimlane-scroll::-webkit-scrollbar-thumb {
+            background: #242828;
+            border-radius: 4px;
+        }
+        .swimlane-scroll::-webkit-scrollbar-thumb:hover {
+            background: #333535;
+        }
+        
+        /* Hide scrollbar for standard webkit */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface-container h-full w-64 fixed left-0 top-0 border-r border-outline-variant flex flex-col py-stack-md gap-stack-sm z-50 hidden md:flex">
+<!-- Header -->
+<div class="px-margin-desktop mb-stack-md flex flex-col gap-unit">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">Lemon Calendarium</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant">Instrumental Luxury</span>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-2 px-gutter w-full">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="home">home</span>
+<span class="font-body-sm text-body-sm">Home</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-primary border-l-4 border-primary bg-surface-variant/50 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="rss_feed" data-weight="fill" style="font-variation-settings: 'FILL' 1;">rss_feed</span>
+<span class="font-body-sm text-body-sm">Feeds</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-sm text-body-sm">Archive</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="insights">insights</span>
+<span class="font-body-sm text-body-sm">Analytics</span>
+</a>
+</nav>
+<div class="mt-auto px-gutter w-full">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 md:ml-64 flex flex-col h-screen relative w-full overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full border-b border-outline-variant z-40">
+<div class="flex justify-between items-center px-margin-desktop py-4 max-w-[1200px] mx-auto">
+<!-- Left: Navigation Links -->
+<nav class="flex items-center gap-stack-md hidden md:flex">
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Timeline</a>
+<a class="font-body-lg text-body-lg text-primary border-b-2 border-primary pb-1 transition-colors cursor-pointer active:opacity-80" href="#">Grid</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Calendar</a>
+</nav>
+<!-- Mobile Logo (shown only on mobile if top bar is present) -->
+<div class="md:hidden flex items-center">
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">Lemon Calendarium</span>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-stack-sm">
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80 p-2">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80 p-2 md:hidden">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Filter Pill Bar -->
+<div class="w-full px-margin-desktop py-stack-sm border-b border-surface-container-high bg-surface flex gap-stack-sm overflow-x-auto no-scrollbar shrink-0">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-surface font-mono-label text-mono-label border border-primary-container cursor-pointer whitespace-nowrap">ALL FEEDS</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface-variant font-mono-label text-mono-label border border-surface-container-high cursor-pointer whitespace-nowrap transition-colors">CINEMA</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface-variant font-mono-label text-mono-label border border-surface-container-high cursor-pointer whitespace-nowrap transition-colors">TECH NEWS</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface-variant font-mono-label text-mono-label border border-surface-container-high cursor-pointer whitespace-nowrap transition-colors">WORLD.EUROPE</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-variant text-on-surface-variant font-mono-label text-mono-label border border-surface-container-high cursor-pointer whitespace-nowrap transition-colors">RESEARCH</button>
+</div>
+<!-- Swimlane Container -->
+<main class="flex-1 overflow-x-auto overflow-y-hidden swimlane-scroll p-margin-desktop relative">
+<div class="flex h-full gap-stack-md min-w-max pb-4">
+<!-- Column 1: Cinema -->
+<section class="w-[320px] h-full flex flex-col shrink-0">
+<div class="flex items-center justify-between mb-stack-sm border-b border-surface-container-high pb-2 sticky top-0 bg-surface z-10">
+<h2 class="font-mono-label text-mono-label text-on-surface-variant tracking-widest uppercase">Cinema</h2>
+<span class="text-xs text-on-surface-variant/50">3 updates</span>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-stack-sm pr-2">
+<!-- Event Card 1 -->
+<article class="bg-[#1b1e1e] border border-[#242828] rounded p-4 flex flex-col gap-3 relative group transition-colors hover:border-outline-variant">
+<div class="flex justify-between items-start">
+<span class="bg-[#242828] text-primary px-2 py-1 rounded text-[10px] font-mono-label uppercase tracking-wider">RELEASE</span>
+<time class="font-mono-date text-mono-date text-on-surface-variant text-xs">OCT 24</time>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Dune: Part Two - Global Premiere Details</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">The highly anticipated sequel secures extensive IMAX run worldwide, promising unprecedented visual fidelity.</p>
+<div class="mt-2 w-full h-32 rounded bg-surface-container overflow-hidden relative">
+<img class="object-cover w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A cinematic still from a highly anticipated sci-fi epic film featuring vast, arid desert landscapes under a harsh, bright sun. The color palette is dominated by warm ochres, deep ambers, and stark, contrasting black shadows. The scene portrays immense scale and a sense of impending, dramatic action within a serious, high-stakes narrative setting. The aesthetic is extremely detailed, modern, and visually striking." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDz3V6txRg0IKSg8kA0FHaPXB7aTRD-VMYpEQvDnTD6obz5VHM3TCtRZmHjC1XCA-pQoIBRh7aTF4j5EkNq1J_ZnNI1JYEs_1kccVbthmAUluhbW6FVyjKUMdXxuDGzykdTkKIZtrk6K--wIM1jI22T6yJW8Q5W03X002eAg68NgSB_jygpjQBEpn5sTKnWQePfzeP21um43y0aax3NekvFZd856lKUIcKD_fvDcurcZvQXj3W1ATdi"/>
+</div>
+</article>
+<!-- Event Card 2 -->
+<article class="bg-[#1b1e1e] border-l-4 border-primary border-t border-r border-b border-[#242828] rounded p-4 flex flex-col gap-3 relative">
+<div class="flex justify-between items-start">
+<span class="bg-primary/20 text-primary px-2 py-1 rounded text-[10px] font-mono-label uppercase tracking-wider">SINGLE</span>
+<time class="font-mono-date text-mono-date text-on-surface-variant text-xs">OCT 22</time>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Auteur Director Announces Next Project</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Production slated to begin in late 2024, focusing on a historical espionage thriller set during the Cold War.</p>
+</article>
+</div>
+</section>
+<!-- Column 2: Tech News -->
+<section class="w-[320px] h-full flex flex-col shrink-0">
+<div class="flex items-center justify-between mb-stack-sm border-b border-surface-container-high pb-2 sticky top-0 bg-surface z-10">
+<h2 class="font-mono-label text-mono-label text-on-surface-variant tracking-widest uppercase">Tech News</h2>
+<span class="text-xs text-on-surface-variant/50">4 updates</span>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-stack-sm pr-2">
+<!-- Event Card 3 -->
+<article class="bg-[#1b1e1e] border border-[#242828] rounded p-4 flex flex-col gap-3 relative hover:border-outline-variant transition-colors">
+<div class="flex justify-between items-start">
+<span class="bg-[#242828] text-on-surface-variant px-2 py-1 rounded text-[10px] font-mono-label uppercase tracking-wider">PERIOD</span>
+<time class="font-mono-date text-mono-date text-on-surface-variant text-xs">OCT 20 - OCT 25</time>
+</div>
+<div class="flex gap-3">
+<div class="flex-1 flex flex-col gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Quantum Computing Summit 2023</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Major breakthroughs in qubit stability expected to be announced by leading research consortiums.</p>
+</div>
+<div class="w-16 h-16 rounded bg-surface-container shrink-0 overflow-hidden">
+<img class="object-cover w-full h-full grayscale opacity-70" data-alt="A macro shot of a complex, futuristic quantum computer processor chip inside a high-tech laboratory setting. The lighting is cold, precise, and highly analytical, featuring neon blue and stark white accents against a predominantly metallic and black background. The image conveys cutting-edge technology, computational power, and scientific rigor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8_w0l5CK1jPatQ0Quk-kC1Iaf-C03pysLY_S0bE8JezEUJKEBsIu2Zbpts4Fz4CTDEzFF1YUMxArWIYsmN6qFkhV5Scw9ggSEBUT4gMzEBPqTLiggtGa7FpWYyQkK-yhqtPbWIeSAlsRQBlSTwb8_eEm6DH3nsAZEvGfVAk4HRZiL-8TK0gApDhBLXsuLg13cDXgt2IlQUujLrciqJeGeDAiUQgwFoDzVNC-d8jeDXwELtgo2SilQ"/>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Spacer for scrolling -->
+<div class="w-4 shrink-0"></div>
+</div>
+</main>
+</div>
+</body></html>

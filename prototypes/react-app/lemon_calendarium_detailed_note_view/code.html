@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dune: Part Two - Detailed Note | Lemon Calendarium</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#5b4983",
+                        "primary": "#e5e971",
+                        "secondary-container": "#444747",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#b3b5b5",
+                        "outline": "#93927e",
+                        "surface-bright": "#383939",
+                        "primary-container": "#c9cd58",
+                        "tertiary-container": "#d2bcff",
+                        "inverse-primary": "#5f6200",
+                        "surface-container-low": "#1a1c1c",
+                        "tertiary-fixed-dim": "#d2bcff",
+                        "on-primary": "#313300",
+                        "surface-variant": "#333535",
+                        "on-error": "#690005",
+                        "on-primary-fixed": "#1c1d00",
+                        "on-surface": "#e2e2e2",
+                        "secondary-fixed-dim": "#c5c7c6",
+                        "tertiary": "#eaddff",
+                        "on-tertiary": "#38265e",
+                        "on-background": "#e2e2e2",
+                        "inverse-on-surface": "#2f3131",
+                        "primary-fixed-dim": "#c9cd58",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed": "#191c1c",
+                        "background": "#121414",
+                        "surface-container-lowest": "#0d0f0f",
+                        "surface-container": "#1e2020",
+                        "on-secondary-fixed-variant": "#444747",
+                        "surface-container-highest": "#333535",
+                        "surface": "#121414",
+                        "secondary": "#c5c7c6",
+                        "on-tertiary-fixed-variant": "#4f3d76",
+                        "surface-tint": "#c9cd58",
+                        "on-tertiary-fixed": "#220e47",
+                        "inverse-surface": "#e2e2e2",
+                        "on-surface-variant": "#c9c7b2",
+                        "surface-dim": "#121414",
+                        "outline-variant": "#484837",
+                        "on-secondary": "#2e3131",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed": "#e1e3e2",
+                        "primary-fixed": "#e5e971",
+                        "on-primary-container": "#535600",
+                        "tertiary-fixed": "#eaddff",
+                        "surface-container-high": "#282a2a",
+                        "on-primary-fixed-variant": "#484a00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "margin-desktop": "32px",
+                        "stack-lg": "48px",
+                        "stack-md": "24px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "mono-date": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "mono-label": ["JetBrains Mono"],
+                        "display-lg": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "mono-date": ["14px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "mono-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #333535; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #444747; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased flex min-h-screen overflow-hidden">
+<!-- SideNavBar (from JSON) -->
+<aside class="hidden md:flex flex-col py-stack-md bg-surface-container dark:bg-surface-container border-r border-outline-variant dark:border-outline-variant w-64 h-full fixed left-0 top-0 z-40 transition-all duration-200 ease-in-out">
+<div class="px-gutter mb-stack-lg flex items-center gap-unit">
+<img alt="Lemon Calendarium Logo" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UTnHKoNjXbr3rDbkhQL6jxjy4WFQjUwwy-WcDOlzaLNNcOmRxXSFAgTF9rjMjbv_IPqCYokCkNj-L4bPitfGLo68xT2tKY7VkbkzeuEa-jh-reTU_ORVaAmDhMi94rDrbuCfAs-mYuOnVV7xz_iMqnUcS8yx7HNuYnMlKfW5E_uIMK08WsDaGd9_ua1Od7PGWSjYizj4ZF58zqtc0LrLoWcQYMjIThZ91CF1aaj0_4Tgu3AB6FZgQe0Q"/>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary">Calendarium</h1>
+<p class="font-mono-label text-mono-label text-on-surface-variant">Instrumental Luxury</p>
+</div>
+</div>
+<button class="mx-gutter mb-stack-md bg-primary-container text-on-primary font-mono-label text-mono-label py-2 px-4 rounded flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" style="font-size: 16px;">add</span> New Entry
+        </button>
+<nav class="flex-1 overflow-y-auto custom-scrollbar">
+<ul class="flex flex-col gap-unit">
+<li>
+<a class="flex items-center gap-3 px-gutter py-3 font-mono-label text-mono-label text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">home</span> Home
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-gutter py-3 font-mono-label text-mono-label text-primary dark:text-primary border-l-4 border-primary bg-secondary-container/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">rss_feed</span> Feeds
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-gutter py-3 font-mono-label text-mono-label text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">archive</span> Archive
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-gutter py-3 font-mono-label text-mono-label text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant hover:text-on-surface transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">analytics</span> Analytics
+                    </a>
+</li>
+</ul>
+</nav>
+<div class="mt-auto pt-stack-md px-gutter flex flex-col gap-unit">
+<a class="flex items-center gap-3 py-2 font-mono-label text-mono-label text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">help</span> Help
+            </a>
+<a class="flex items-center gap-3 py-2 font-mono-label text-mono-label text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span> Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col md:ml-64 relative min-h-screen">
+<!-- TopAppBar (from JSON) -->
+<header class="flex justify-between items-center px-margin-desktop h-16 w-full fixed top-0 md:left-64 md:w-[calc(100%-16rem)] z-50 border-b border-outline-variant dark:border-outline-variant bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary hidden md:block">Lemon Calendarium</h2>
+<!-- Breadcrumb -->
+<div class="flex items-center gap-2 font-mono-label text-mono-label text-on-surface-variant">
+<span>Timeline</span>
+<span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
+<span class="text-on-surface">Dune: Part Two</span>
+</div>
+</div>
+<nav class="hidden md:flex gap-6 font-headline-sm text-headline-sm">
+<a class="text-primary dark:text-primary border-b-2 border-primary pb-1 cursor-pointer active:opacity-80" href="#">Timeline</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Grid</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Calendar</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A small circular avatar portrait of a modern professional, wearing a dark minimal jacket against a muted charcoal grey background, softly lit with cinematic studio lighting, highly detailed." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6MmvLG3TEj4KcXMebNMrXGtOAIB4HzQ3hWnD9X9ekzY1TQfO99fqh4CGdwJHZMkvPKNCJ5NJ4SVDazavaeTBFEIeNqYd40AwTC9zWY5rj8c_uO40WsrH5aXlyAlCJAEa3bY-NVWkCZh3CBjt-k1aj82vGHKrJZSWYEOZlfp3AxgWfbdoaIG1j776Clwp1qap3w4q076yPWBkoSqnkvIMoBdQP9JOWg-bvtdFCohfD6mz3KA0duqAe"/>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto mt-16 pb-stack-lg custom-scrollbar">
+<!-- Hero Image -->
+<div class="w-full h-[40vh] min-h-[300px] border-b border-outline-variant relative group">
+<img class="w-full h-full object-cover" data-alt="A vast, sweeping cinematic shot of an endless desert landscape under a harsh, glaring white sun. The sand dunes are sharp and angular, creating striking contrasts of light and deep shadow. A single, tiny, indistinct silhouetted figure stands in the distance. The overall color palette is dominated by burnt orange, deep ochre, and stark blacks, evoking a premium, high-contrast, moody science fiction aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB5MXYc9uo_Z9ZpVeVjVbM4EKDdzNHdE7gw-V8K08D8N1Q3Hphc5-COQ-Q0RGpPSRYXb2KSkGdHYVb2_J8pYyGJGEsEUI7EELwQnzR6TXgGysEqLOMVulQxvTAKA_ieNCVeFFoud1A1QG_FaMVkuUeOebHeNrKNMgqzGW1Gd_LHmqKFDjHngC1xCzVQroCJ3UcAN1EVwJgK4tsNFuAS9xEIQakmPgMn5w-kOZ4N0BtKBmWWoKBU-SC"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
+</div>
+<!-- Content Grid -->
+<div class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Primary Reading Area -->
+<article class="lg:col-span-8 flex flex-col gap-stack-md">
+<!-- Header -->
+<header class="flex flex-col gap-unit">
+<div class="flex items-center gap-3 mb-2">
+<span class="bg-primary-container text-on-primary px-2 py-1 rounded font-mono-label text-mono-label tracking-wider uppercase border border-primary-container">Release</span>
+<span class="font-mono-date text-mono-date text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 14px;">schedule</span> 14:00 UTC | AUGUST 21, 2026
+                            </span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface leading-tight tracking-tight">Dune: Part Two - Special Edition</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 border-l-2 border-primary-container pl-4">The highly anticipated expanded cut of Denis Villeneuve's sci-fi masterpiece, featuring 40 minutes of unseen footage and a newly mastered Atmos mix.</p>
+</header>
+<div class="h-px w-full bg-outline-variant my-stack-sm"></div>
+<!-- Markdown Content -->
+<div class="prose prose-invert prose-p:font-body-lg prose-p:text-body-lg prose-p:text-on-surface prose-h2:font-headline-md prose-h2:text-headline-md prose-h2:text-primary prose-a:text-primary-container prose-a:underline hover:prose-a:text-primary prose-li:font-body-lg prose-li:text-on-surface max-w-none flex flex-col gap-6">
+<p>The journey back to Arrakis is finally complete. This Special Edition release marks the culmination of the director's original vision, restoring crucial narrative threads that were previously excised for theatrical constraints. The emphasis remains heavily on the stark, brutalist architecture of Geidi Prime contrasted against the sweeping, organic chaos of the deep desert.</p>
+<h2 class="mt-4 border-b border-surface-variant pb-2 inline-block">Restored Sequences</h2>
+<ul class="list-disc pl-6 space-y-2 marker:text-primary-container">
+<li><strong>The Navigator Guild Assembly:</strong> A fully realized 12-minute sequence detailing the political machinations behind the Emperor's initial decree.</li>
+<li><strong>Expanded Sietch Tabr Protocols:</strong> Deeper immersion into Fremen water discipline rituals, shot entirely in practical IMAX.</li>
+<li><strong>Feyd-Rautha's Ascension:</strong> Extended gladiator combat sequence in the Harkonnen arena, presented in stark infrared monochrome.</li>
+</ul>
+<p>Technically, the presentation is flawless. The mastering process utilized the original 65mm negatives, scanning them at 8K resolution to ensure the grain structure of the harsh desert sunlight translates perfectly to the digital medium. The audio mix has been described by early reviewers as "physically punishing" in its low-end frequencies, accurately recreating the thumper resonance.</p>
+</div>
+</article>
+<!-- Technical Sidebar -->
+<aside class="lg:col-span-4 flex flex-col gap-stack-md">
+<!-- Metadata Panel -->
+<div class="bg-surface-container-low border border-outline-variant p-6 rounded-lg flex flex-col gap-4">
+<h3 class="font-mono-label text-mono-label text-primary uppercase tracking-widest border-b border-outline-variant pb-2">Technical Specifications</h3>
+<dl class="flex flex-col gap-3">
+<div class="flex justify-between items-center border-b border-surface-variant pb-2">
+<dt class="font-mono-label text-mono-label text-on-surface-variant">Run Time</dt>
+<dd class="font-mono-date text-mono-date text-on-surface">02:46:12</dd>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-2">
+<dt class="font-mono-label text-mono-label text-on-surface-variant">Format</dt>
+<dd class="font-mono-date text-mono-date text-on-surface">IMAX 70MM</dd>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-2">
+<dt class="font-mono-label text-mono-label text-on-surface-variant">Aspect Ratio</dt>
+<dd class="font-mono-date text-mono-date text-on-surface">1.43:1</dd>
+</div>
+<div class="flex justify-between items-center border-b border-surface-variant pb-2">
+<dt class="font-mono-label text-mono-label text-on-surface-variant">Audio</dt>
+<dd class="font-mono-date text-mono-date text-on-surface">Dolby Atmos (Theatrical)</dd>
+</div>
+<div class="flex justify-between items-center pt-1">
+<dt class="font-mono-label text-mono-label text-on-surface-variant">Status</dt>
+<dd class="font-mono-label text-mono-label text-error bg-error-container/20 px-2 py-1 rounded border border-error/30">ARCHIVED</dd>
+</div>
+</dl>
+</div>
+<!-- Tags & Links -->
+<div class="flex flex-col gap-4 mt-4">
+<h3 class="font-mono-label text-mono-label text-on-surface-variant uppercase tracking-widest">Taxonomy</h3>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-variant text-on-surface font-mono-label text-mono-label px-3 py-1.5 rounded-full border border-outline-variant hover:border-primary-container hover:text-primary-container cursor-pointer transition-colors">#scifi</span>
+<span class="bg-surface-variant text-on-surface font-mono-label text-mono-label px-3 py-1.5 rounded-full border border-outline-variant hover:border-primary-container hover:text-primary-container cursor-pointer transition-colors">#cinema</span>
+<span class="bg-surface-variant text-on-surface font-mono-label text-mono-label px-3 py-1.5 rounded-full border border-outline-variant hover:border-primary-container hover:text-primary-container cursor-pointer transition-colors">#denis-villeneuve</span>
+<span class="bg-surface-variant text-on-surface font-mono-label text-mono-label px-3 py-1.5 rounded-full border border-outline-variant hover:border-primary-container hover:text-primary-container cursor-pointer transition-colors">#imax</span>
+</div>
+</div>
+<div class="mt-4">
+<a class="w-full flex items-center justify-center gap-2 border border-outline-variant text-on-surface font-mono-label text-mono-label py-3 rounded hover:bg-surface-variant hover:border-primary transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">open_in_new</span> View Original Source
+                        </a>
+</div>
+</aside>
+</div>
+</div>
+</main>
+</body></html>

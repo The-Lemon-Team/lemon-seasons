@@ -1,16 +1,30 @@
 {
-  "name": "lemon-lenta",
+  "name": "lemon-lenta-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Project Lenta - Headless CMS and chronological data hub",
+  "description": "Project Lenta (Lemon Calendarium) Monorepo - Backend, Admin CMS, Calendar Consumer App, Shared Library, and Obsidian Sync Plugin",
+  "packageManager": "pnpm@10.34.4",
   "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "backend:dev": "npm --prefix backend run start:dev",
-    "backend:build": "npm --prefix backend run build",
-    "backend:prisma:migrate": "npm --prefix backend run prisma:migrate",
-    "backend:prisma:seed": "npm --prefix backend run prisma:seed",
-    "frontend:dev": "npm --prefix frontend run dev",
-    "frontend:build": "npm --prefix frontend run build"
+    "backend:dev": "pnpm --filter lemon-lenta-backend run start:dev",
+    "backend:build": "pnpm --filter lemon-lenta-backend run build",
+    "backend:prisma:generate": "pnpm --filter lemon-lenta-backend run prisma:generate",
+    "backend:prisma:migrate": "pnpm --filter lemon-lenta-backend run prisma:migrate",
+    "backend:prisma:seed": "pnpm --filter lemon-lenta-backend run prisma:seed",
+    "admin:dev": "pnpm --filter lemon-seasons-admin run dev",
+    "admin:build": "pnpm --filter lemon-seasons-admin run build",
+    "calendar:dev": "pnpm --filter @lenta/calendar-app run dev",
+    "calendar:build": "pnpm --filter @lenta/calendar-app run build",
+    "shared:build": "pnpm --filter @lenta/shared run build",
+    "plugin:build": "pnpm --filter @lemon/obsidian-lenta-plugin run build",
+    "plugin:dev": "pnpm --filter @lemon/obsidian-lenta-plugin run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
   }
 }

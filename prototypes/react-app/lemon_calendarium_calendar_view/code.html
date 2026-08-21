@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lemon Calendarium - Calendar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#220e47",
+                        "surface-container-high": "#282a2a",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#121414",
+                        "surface-container-highest": "#333535",
+                        "tertiary-fixed-dim": "#d2bcff",
+                        "surface-variant": "#333535",
+                        "error-container": "#93000a",
+                        "outline": "#93927e",
+                        "secondary-container": "#444747",
+                        "on-surface": "#e2e2e2",
+                        "on-tertiary-container": "#5b4983",
+                        "surface-container": "#1e2020",
+                        "surface-container-low": "#1a1c1c",
+                        "primary-fixed-dim": "#c9cd58",
+                        "tertiary-container": "#d2bcff",
+                        "on-secondary-fixed": "#191c1c",
+                        "inverse-on-surface": "#2f3131",
+                        "surface-tint": "#c9cd58",
+                        "on-tertiary-fixed-variant": "#4f3d76",
+                        "on-surface-variant": "#c9c7b2",
+                        "on-primary": "#313300",
+                        "on-secondary-container": "#b3b5b5",
+                        "on-primary-fixed-variant": "#484a00",
+                        "error": "#ffb4ab",
+                        "secondary-fixed": "#e1e3e2",
+                        "on-primary-container": "#535600",
+                        "on-tertiary": "#38265e",
+                        "inverse-primary": "#5f6200",
+                        "on-primary-fixed": "#1c1d00",
+                        "background": "#121414",
+                        "on-secondary": "#2e3131",
+                        "primary-fixed": "#e5e971",
+                        "primary-container": "#c9cd58",
+                        "on-background": "#e2e2e2",
+                        "primary": "#e5e971",
+                        "outline-variant": "#484837",
+                        "on-error": "#690005",
+                        "tertiary-fixed": "#eaddff",
+                        "tertiary": "#eaddff",
+                        "secondary": "#c5c7c6",
+                        "surface-container-lowest": "#0d0f0f",
+                        "secondary-fixed-dim": "#c5c7c6",
+                        "on-secondary-fixed-variant": "#444747",
+                        "surface-bright": "#383939",
+                        "inverse-surface": "#e2e2e2",
+                        "surface": "#121414"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "stack-lg": "48px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "stack-md": "24px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "mono-date": ["JetBrains Mono"],
+                        "display-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "mono-label": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "mono-date": ["14px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "mono-label": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #121414; color: #e2e2e2; }
+        .border-technical { border-color: #242828; }
+        .border-hover:hover { border-color: #323636; }
+        .text-olive { color: #c9cd58; }
+        .bg-olive { background-color: #c9cd58; }
+        .border-olive { border-color: #c9cd58; }
+    </style>
+</head>
+<body class="font-body-lg text-body-lg flex h-screen overflow-hidden bg-background text-on-background">
+<!-- SideNavBar -->
+<aside class="fixed left-0 h-full w-64 bg-surface-container flex flex-col py-stack-md border-r border-outline-variant z-40 hidden md:flex transition-all duration-200 ease-in-out">
+<div class="px-margin-desktop mb-stack-lg">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Lemon Calendarium</h1>
+<p class="font-mono-label text-mono-label text-on-surface-variant mt-unit">Technical Edition</p>
+</div>
+<nav class="flex-1 px-gutter space-y-unit">
+<a class="flex items-center space-x-gutter px-gutter py-stack-sm rounded hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-on-surface">home</span>
+<span class="font-mono-label text-mono-label">Home</span>
+</a>
+<a class="flex items-center space-x-gutter px-gutter py-stack-sm rounded border-l-4 border-primary bg-secondary-container/30 text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">rss_feed</span>
+<span class="font-mono-label text-mono-label">Feeds</span>
+</a>
+<a class="flex items-center space-x-gutter px-gutter py-stack-sm rounded hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-on-surface">archive</span>
+<span class="font-mono-label text-mono-label">Archive</span>
+</a>
+<a class="flex items-center space-x-gutter px-gutter py-stack-sm rounded hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-on-surface">analytics</span>
+<span class="font-mono-label text-mono-label">Analytics</span>
+</a>
+</nav>
+<div class="px-margin-desktop mt-auto space-y-stack-sm">
+<button class="w-full border border-primary text-primary hover:bg-primary/10 font-mono-label text-mono-label py-stack-sm flex items-center justify-center space-x-unit rounded transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>New Entry</span>
+</button>
+<div class="pt-stack-sm border-t border-technical flex flex-col space-y-unit">
+<a class="flex items-center space-x-gutter text-on-surface-variant hover:text-on-surface transition-colors py-unit" href="#">
+<span class="material-symbols-outlined text-[16px]">help</span>
+<span class="font-mono-label text-mono-label">Help</span>
+</a>
+<a class="flex items-center space-x-gutter text-on-surface-variant hover:text-on-surface transition-colors py-unit" href="#">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+<span class="font-mono-label text-mono-label">Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 relative h-full">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant md:w-[calc(100%-16rem)]">
+<div class="flex items-center space-x-stack-lg">
+<!-- Mobile Menu Button (Visible only on mobile) -->
+<button class="md:hidden text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="hidden md:flex space-x-stack-md">
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95 py-unit" href="#">Timeline</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95 py-unit" href="#">Grid</a>
+<a class="font-body-lg text-body-lg text-primary border-b-2 border-primary pb-1 cursor-pointer active:scale-95" href="#">Calendar</a>
+</div>
+</div>
+<div class="flex items-center space-x-stack-md">
+<div class="hidden lg:flex items-center border border-technical rounded px-gutter py-unit bg-surface-container focus-within:border-primary transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant mr-unit text-[18px]">search</span>
+<input class="bg-transparent border-none outline-none text-on-surface font-mono-label text-mono-label w-48 placeholder-on-surface-variant focus:ring-0" placeholder="Search archive..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Calendar Canvas -->
+<main class="flex-1 overflow-y-auto pt-16 px-margin-mobile md:px-margin-desktop pb-stack-lg flex flex-col">
+<!-- Header -->
+<div class="py-stack-md flex items-center justify-between sticky top-0 bg-surface/90 backdrop-blur-md z-30 border-b border-technical mb-stack-sm">
+<h2 class="font-mono-date text-mono-date text-on-surface text-[24px]">August 2026</h2>
+<div class="flex space-x-unit">
+<button class="p-unit border border-technical hover:border-primary text-on-surface-variant hover:text-primary transition-colors rounded">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="p-unit border border-technical hover:border-primary text-on-surface-variant hover:text-primary transition-colors rounded font-mono-label text-mono-label px-gutter">
+                        Today
+                    </button>
+<button class="p-unit border border-technical hover:border-primary text-on-surface-variant hover:text-primary transition-colors rounded">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Calendar Grid Container -->
+<div class="flex-1 flex flex-col min-h-[600px] border border-technical rounded bg-surface-container-low overflow-hidden">
+<!-- Days of Week Header -->
+<div class="grid grid-cols-7 border-b border-technical bg-surface-container">
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">MON</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">TUE</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">WED</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">THU</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">FRI</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant border-r border-technical">SAT</div>
+<div class="py-unit text-center font-mono-label text-mono-label text-on-surface-variant">SUN</div>
+</div>
+<!-- Grid Cells -->
+<div class="flex-1 grid grid-cols-7 grid-rows-5 bg-surface">
+<!-- Row 1 -->
+<div class="border-r border-b border-technical p-unit flex flex-col text-on-surface-variant/50 relative bg-surface-container-lowest">
+<span class="font-mono-label text-mono-label">27</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col text-on-surface-variant/50 relative bg-surface-container-lowest">
+<span class="font-mono-label text-mono-label">28</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col text-on-surface-variant/50 relative bg-surface-container-lowest">
+<span class="font-mono-label text-mono-label">29</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col text-on-surface-variant/50 relative bg-surface-container-lowest">
+<span class="font-mono-label text-mono-label">30</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col text-on-surface-variant/50 relative bg-surface-container-lowest">
+<span class="font-mono-label text-mono-label">31</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">1</span>
+</div>
+<div class="border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">2</span>
+</div>
+<!-- Row 2 -->
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">3</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">4</span>
+<div class="flex flex-wrap gap-[2px] mt-auto">
+<div class="w-1.5 h-1.5 rounded-full bg-olive"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-surface-variant"></div>
+</div>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">5</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">6</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">7</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group relative">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">8</span>
+</div>
+<div class="border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">9</span>
+</div>
+<!-- Row 3 -->
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">10</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">11</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">12</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">13</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group bg-surface-container-high relative">
+<!-- Current Date Indicator -->
+<div class="absolute top-0 left-0 w-full h-[2px] bg-olive"></div>
+<span class="font-mono-label text-mono-label text-olive font-bold mb-unit">14</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">15</span>
+</div>
+<div class="border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">16</span>
+</div>
+<!-- Row 4 -->
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">17</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">18</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">19</span>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">20</span>
+</div>
+<!-- Highlighted Cell (Aug 21) -->
+<div class="border-r border-b border-olive border-l-[3px] bg-surface-container-highest p-unit flex flex-col cursor-pointer relative z-20 group">
+<span class="font-mono-label text-mono-label text-olive mb-unit">21</span>
+<!-- Mini Event Indicators -->
+<div class="flex flex-col space-y-[2px] mt-auto">
+<div class="text-[10px] bg-olive/10 text-olive px-1 rounded truncate border border-olive/30 font-mono-label">FILM: Dune Pt 2</div>
+<div class="text-[10px] bg-surface-variant text-on-surface px-1 rounded truncate border border-technical font-mono-label">SCI: Q-Compute</div>
+</div>
+<!-- Popover Preview (Hidden by default, shown on hover for demo, but positioned as if active) -->
+<div class="absolute top-0 left-full ml-unit w-64 bg-surface-dim border border-technical rounded shadow-lg p-gutter hidden group-hover:block z-50">
+<h4 class="font-mono-date text-mono-date text-on-surface mb-stack-sm pb-unit border-b border-technical">August 21, 2026</h4>
+<div class="space-y-stack-sm">
+<!-- Card 1 -->
+<div class="bg-surface-container rounded border border-technical p-stack-sm hover:border-olive transition-colors">
+<div class="flex items-center space-x-unit mb-unit">
+<span class="material-symbols-outlined text-[14px] text-olive">movie</span>
+<span class="font-mono-label text-mono-label text-olive uppercase">Premiere</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface mb-1">Dune: Part Two</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">The mythic journey continues as Paul Atreides unites with Chani and the Fremen.</p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container rounded border border-technical p-stack-sm hover:border-surface-variant transition-colors">
+<div class="flex items-center space-x-unit mb-unit">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">science</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant uppercase">Tech</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface mb-1">Quantum Breakthrough</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Researchers achieve sustained coherence at room temperature.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="border-r border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">22</span>
+</div>
+<div class="border-b border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">23</span>
+</div>
+<!-- Row 5 -->
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">24</span>
+</div>
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">25</span>
+</div>
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">26</span>
+</div>
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">27</span>
+</div>
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">28</span>
+</div>
+<div class="border-r border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">29</span>
+</div>
+<div class="border-technical p-unit flex flex-col hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="font-mono-label text-mono-label text-on-surface mb-unit">30</span>
+</div>
+</div>
+</div>
+<div class="mt-stack-md flex items-center justify-between font-mono-label text-mono-label text-on-surface-variant">
+<span>Displaying 1 month view</span>
+<div class="flex items-center space-x-gutter">
+<span class="flex items-center"><div class="w-2 h-2 bg-olive rounded-full mr-unit"></div> Tracked Events</span>
+<span class="flex items-center"><div class="w-2 h-2 bg-surface-variant rounded-full mr-unit"></div> System Logs</span>
+</div>
+</div>
+</main>
+</div>
+</body></html>

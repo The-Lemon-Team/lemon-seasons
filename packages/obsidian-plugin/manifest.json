@@ -1,0 +1,10 @@
+{
+  "id": "lemon-lenta-sync",
+  "name": "Lemon Lenta — Chronological Hub & Sync",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Project Lenta integration for Obsidian: feed & preset container sync, chronological note creation, taxonomy autocompletion, and Git-backed versioning.",
+  "author": "The Lemon Team",
+  "authorUrl": "https://github.com/The-Lemon-Team/lemon-seasons",
+  "isDesktopOnly": true
+}

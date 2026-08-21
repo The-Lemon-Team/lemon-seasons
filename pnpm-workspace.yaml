@@ -1,0 +1,5 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - '!packages/obsidian-containers'
+  - '!packages/obsidian-containers/**'

@@ -1,0 +1,31 @@
+{
+  "name": "@lemon/obsidian-lenta-plugin",
+  "version": "1.0.0",
+  "description": "Project Lenta (Lemon Calendarium) Dedicated Obsidian Sync & Chronological Hub Plugin",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "lemon-calendarium",
+    "project-lenta",
+    "sync",
+    "chronological-data-hub"
+  ],
+  "author": "The Lemon Team",
+  "license": "MIT",
+  "dependencies": {
+    "@lenta/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.2",
+    "obsidian": "latest",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5"
+  }
+}
