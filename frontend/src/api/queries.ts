@@ -3,6 +3,7 @@ import {
   feedsApi,
   notesApi,
   taxonomyApi,
+  hashtagsApi,
   syncApi,
 } from './client';
 import {
@@ -94,6 +95,7 @@ export function useCreateNote() {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
       queryClient.invalidateQueries({ queryKey: ['taxonomy'] });
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
     },
   });
 }
@@ -107,6 +109,7 @@ export function useUpdateNote() {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
       queryClient.invalidateQueries({ queryKey: ['taxonomy'] });
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
     },
   });
 }
@@ -118,6 +121,7 @@ export function useDeleteNote() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
     },
   });
 }
@@ -129,6 +133,7 @@ export function useRestoreNote() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
     },
   });
 }
@@ -342,6 +347,52 @@ export function useRestoreTaxonomy() {
     mutationFn: (id: string) => taxonomyApi.restore(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taxonomy'] });
+    },
+  });
+}
+
+// Hashtags Queries & Mutations
+export function useHashtags(includeDeleted = false, search?: string) {
+  return useQuery({
+    queryKey: ['hashtags', { includeDeleted, search }],
+    queryFn: () => hashtagsApi.getAll(includeDeleted, search),
+  });
+}
+
+export function useHashtagSuggestions(query?: string, limit = 10) {
+  return useQuery({
+    queryKey: ['hashtags', 'suggestions', { query, limit }],
+    queryFn: () => hashtagsApi.suggest(query, limit),
+    enabled: query !== undefined,
+  });
+}
+
+export function useHashtag(id: string) {
+  return useQuery({
+    queryKey: ['hashtags', id],
+    queryFn: () => hashtagsApi.getOne(id),
+    enabled: Boolean(id),
+  });
+}
+
+export function useDeleteHashtag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => hashtagsApi.softDelete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useRestoreHashtag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => hashtagsApi.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
   });
 }

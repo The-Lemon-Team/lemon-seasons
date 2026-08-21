@@ -5,11 +5,13 @@ import {
   useNotes,
   useFeeds,
   useTaxonomyFlat,
+  useHashtags,
   useDeleteNote,
   useRestoreNote,
 } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
+import { HashtagBadge } from '../../components/HashtagBadge';
 import { NoteType } from '../../types';
 
 export const NotesListPage: React.FC = () => {
@@ -20,6 +22,7 @@ export const NotesListPage: React.FC = () => {
   const feedId = searchParams.get('feedId') || undefined;
   const typeParam = (searchParams.get('type') as NoteType) || undefined;
   const tagPath = searchParams.get('tagPath') || undefined;
+  const hashtagParam = searchParams.get('hashtag') || undefined;
   const search = searchParams.get('search') || '';
   const includeDeleted = searchParams.get('includeDeleted') === 'true';
 
@@ -29,11 +32,13 @@ export const NotesListPage: React.FC = () => {
 
   const { data: feeds = [] } = useFeeds();
   const { data: tags = [] } = useTaxonomyFlat();
+  const { data: hashtags = [] } = useHashtags();
 
   const { data: notesData, isLoading } = useNotes({
     feedId,
     type: typeParam,
     tagPath,
+    hashtag: hashtagParam,
     search: search || undefined,
     includeDeleted,
     limit,
@@ -89,7 +94,7 @@ export const NotesListPage: React.FC = () => {
             All Notes
           </h1>
           <p className="text-on-surface-variant font-sans text-sm">
-            Manage and filter your entire library of chronological records and markdown content.
+            Manage and filter your entire library of chronological records, hashtags and markdown content.
           </p>
         </div>
 
@@ -113,12 +118,26 @@ export const NotesListPage: React.FC = () => {
               type="text"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Filter by title, markdown, feed..."
+              placeholder="Filter by title, markdown, #hashtag, feed..."
               className="w-full bg-surface-container border border-outline-variant/40 rounded pl-9 pr-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
             />
           </form>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {hashtagParam && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-cyan-950/60 text-cyan-300 border border-cyan-700/50 rounded-full font-mono text-xs shadow-xs">
+                <span className="text-cyan-500 font-bold">#</span>
+                <span>{hashtagParam}</span>
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange('hashtag', undefined)}
+                  className="p-0.5 hover:bg-cyan-800/60 rounded-full text-cyan-400 hover:text-white transition-colors"
+                  title="Clear hashtag filter"
+                >
+                  <span className="material-symbols-outlined text-[12px] leading-none">close</span>
+                </button>
+              </div>
+            )}
             <span className="px-2.5 py-1 bg-surface-container-highest rounded font-mono text-xs text-on-surface-variant border border-white/5">
               {total} {total === 1 ? 'total note' : 'total notes'}
             </span>
@@ -166,6 +185,20 @@ export const NotesListPage: React.FC = () => {
             ))}
           </select>
 
+          {/* Hashtag Filter */}
+          <select
+            value={hashtagParam || ''}
+            onChange={(e) => handleFilterChange('hashtag', e.target.value || undefined)}
+            className="bg-surface-container border border-cyan-800/40 text-cyan-300 rounded px-2.5 py-1 text-xs font-mono focus:border-cyan-400 outline-none"
+          >
+            <option value="" className="text-on-surface">All Hashtags</option>
+            {hashtags.map((h) => (
+              <option key={h.id} value={h.name} className="text-on-surface">
+                #{h.name} {h._count?.notes ? `(${h._count.notes})` : ''}
+              </option>
+            ))}
+          </select>
+
           {/* Include Deleted Checkbox */}
           <label className="ml-auto flex items-center gap-1.5 text-xs font-mono text-on-surface-variant cursor-pointer">
             <input
@@ -182,11 +215,11 @@ export const NotesListPage: React.FC = () => {
       {/* Table / List Container */}
       <div className="bg-surface-container rounded border border-white/5 overflow-hidden">
         {/* Table Header */}
-        <div className="grid grid-cols-[3fr_1.2fr_1.8fr_2fr_1fr_80px] gap-4 p-4 border-b border-white/5 bg-surface-container-high font-mono text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
+        <div className="grid grid-cols-[3fr_1.2fr_1.8fr_2.2fr_1fr_80px] gap-4 p-4 border-b border-white/5 bg-surface-container-high font-mono text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
           <div>Title & Feed</div>
           <div>Type</div>
           <div>Date Range / Start</div>
-          <div>Taxonomy Paths</div>
+          <div>Taxonomy & Hashtags</div>
           <div>Status</div>
           <div className="text-right">Actions</div>
         </div>
@@ -213,10 +246,13 @@ export const NotesListPage: React.FC = () => {
                 : `${apiBase}${mainImage.url}`
               : null;
 
+            const hasTags = note.tags && note.tags.length > 0;
+            const hasHashtags = note.hashtags && note.hashtags.length > 0;
+
             return (
               <div
                 key={note.id}
-                className={`group grid grid-cols-[3fr_1.2fr_1.8fr_2fr_1fr_80px] gap-4 p-4 items-center hover:bg-white/5 transition-colors ${
+                className={`group grid grid-cols-[3fr_1.2fr_1.8fr_2.2fr_1fr_80px] gap-4 p-4 items-center hover:bg-white/5 transition-colors ${
                   isDeleted ? 'opacity-50' : ''
                 }`}
               >
@@ -286,21 +322,34 @@ export const NotesListPage: React.FC = () => {
                   <span>{dateStr}{endDateStr ? ` - ${endDateStr}` : ''}</span>
                 </div>
 
-                {/* Taxonomy Tags */}
-                <div className="flex flex-wrap gap-1">
-                  {note.tags && note.tags.length > 0 ? (
+                {/* Taxonomy Tags & Hashtags */}
+                <div className="flex flex-wrap gap-1 items-center">
+                  {hasTags &&
                     note.tags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors"
+                        onClick={() => handleFilterChange('tagPath', tag.path)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors cursor-pointer"
+                        title={`Filter by tag: ${tag.path}`}
                       >
                         <span className="material-symbols-outlined text-[12px] text-primary/80">
                           {tag.icon || 'label'}
                         </span>
                         <span>{tag.path}</span>
                       </span>
-                    ))
-                  ) : (
+                    ))}
+
+                  {hasHashtags &&
+                    note.hashtags?.map((h) => (
+                      <HashtagBadge
+                        key={h.id}
+                        name={h.name}
+                        size="xs"
+                        onClick={() => handleFilterChange('hashtag', h.name)}
+                      />
+                    ))}
+
+                  {!hasTags && !hasHashtags && (
                     <span className="font-mono text-[11px] text-outline/50">no tags</span>
                   )}
                 </div>

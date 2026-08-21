@@ -49,6 +49,16 @@ export class QueryNotesDto {
   @IsOptional()
   tagPath?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by hashtag name (e.g. "keynote" or "#keynote")' })
+  @IsString()
+  @IsOptional()
+  hashtag?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by exact Hashtag UUID' })
+  @IsString()
+  @IsOptional()
+  hashtagId?: string;
+
   @ApiPropertyOptional({ description: 'Text search across title and description' })
   @IsString()
   @IsOptional()

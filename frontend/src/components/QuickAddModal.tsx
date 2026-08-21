@@ -4,6 +4,7 @@ import { useFeeds, useTaxonomyTree, useCreateNote } from '../api/queries';
 import { NoteType } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
+import { HashtagInput } from './HashtagInput';
 
 interface QuickAddModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
   );
   const [endDate, setEndDate] = useState('');
   const [taxonomyPath, setTaxonomyPath] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
 
   // Auto-select first feed if none selected
@@ -59,6 +61,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         description: description.trim() || undefined,
         tagIds,
+        hashtags,
       });
 
       message.success('Note added successfully!');
@@ -67,6 +70,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       setDescription('');
       setEndDate('');
       setTaxonomyPath('');
+      setHashtags([]);
       onClose();
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Failed to create note');
@@ -186,6 +190,13 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
               />
             </div>
           </div>
+
+          {/* Hashtags / Global Mentions */}
+          <HashtagInput
+            value={hashtags}
+            onChange={setHashtags}
+            placeholder="Type #tag or keyword and press Enter..."
+          />
 
           {/* Markdown Description */}
           <MarkdownEditor

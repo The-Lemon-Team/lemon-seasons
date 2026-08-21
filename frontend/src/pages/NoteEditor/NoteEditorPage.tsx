@@ -16,6 +16,7 @@ import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { ImageManager } from '../../components/ImageManager';
 import { LinkManager } from '../../components/LinkManager';
+import { HashtagInput } from '../../components/HashtagInput';
 
 export const NoteEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +41,7 @@ export const NoteEditorPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [icon, setIcon] = useState('');
   const [selectedTagPaths, setSelectedTagPaths] = useState<string[]>([]);
+  const [hashtags, setHashtags] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [description, setDescription] = useState('');
 
@@ -60,6 +62,7 @@ export const NoteEditorPage: React.FC = () => {
       setIcon(note.icon || '');
       setDescription(note.description || '');
       setSelectedTagPaths(note.tags?.map((t) => t.path) || []);
+      setHashtags(note.hashtags?.map((h) => h.name) || []);
     } else if (isNew && feeds.length > 0 && !feedId) {
       setFeedId(feeds[0].id);
     }
@@ -101,6 +104,7 @@ export const NoteEditorPage: React.FC = () => {
           icon: icon.trim() || undefined,
           description: description.trim() || undefined,
           tagIds: selectedTagPaths,
+          hashtags,
           links:
             pendingLinks.length > 0
               ? pendingLinks.map((l, i) => ({
@@ -139,6 +143,7 @@ export const NoteEditorPage: React.FC = () => {
             icon: icon.trim() || undefined,
             description: description.trim() || undefined,
             tagIds: selectedTagPaths,
+            hashtags,
           },
         });
         message.success('Note updated successfully!');
@@ -337,6 +342,15 @@ export const NoteEditorPage: React.FC = () => {
             }}
             onInsertMarkdown={handleInsertMarkdownSnippet}
           />
+
+          {/* Hashtags / Global Mentions */}
+          <div className="pt-2 border-t border-white/5">
+            <HashtagInput
+              value={hashtags}
+              onChange={setHashtags}
+              placeholder="e.g. keynote, ai, launch2026..."
+            />
+          </div>
 
           {/* Taxonomy Tags Selection */}
           <div className="space-y-2 pt-2 border-t border-white/5">

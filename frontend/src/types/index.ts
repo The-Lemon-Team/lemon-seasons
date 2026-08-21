@@ -43,6 +43,17 @@ export interface TaxonomyTreeNode {
   children: TaxonomyTreeNode[];
 }
 
+export interface Hashtag {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  _count?: {
+    notes: number;
+  };
+}
+
 export interface NoteImage {
   id: string;
   noteId: string;
@@ -98,6 +109,7 @@ export interface Note {
   sourceLink: string | null;
   icon: string | null;
   tags: TaxonomyNode[];
+  hashtags?: Hashtag[];
   images?: NoteImage[];
   links?: NoteLink[];
   createdAt: string;
@@ -115,6 +127,8 @@ export interface QueryNotesParams {
   endDateTo?: string;
   tagId?: string;
   tagPath?: string;
+  hashtag?: string;
+  hashtagId?: string;
   search?: string;
   includeDeleted?: boolean;
   limit?: number;
@@ -138,6 +152,7 @@ export interface CreateNoteInput {
   sourceLink?: string;
   icon?: string;
   tagIds?: string[];
+  hashtags?: string[];
   links?: CreateNoteLinkInput[];
 }
 
@@ -160,8 +175,10 @@ export interface SyncChangesResponse {
     feeds: number;
     notes: number;
     taxonomy: number;
+    hashtags?: number;
   };
   feeds: Feed[];
   notes: Note[];
   taxonomy: TaxonomyNode[];
+  hashtags?: Hashtag[];
 }

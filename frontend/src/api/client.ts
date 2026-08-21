@@ -8,6 +8,7 @@ import {
   UpdateNoteLinkInput,
   TaxonomyNode,
   TaxonomyTreeNode,
+  Hashtag,
   QueryNotesParams,
   NotesResponse,
   CreateNoteInput,
@@ -189,6 +190,34 @@ export const taxonomyApi = {
   },
   restore: async (id: string): Promise<TaxonomyNode> => {
     const res = await apiClient.post<TaxonomyNode>(`/taxonomy/${id}/restore`);
+    return res.data;
+  },
+};
+
+// Hashtags API
+export const hashtagsApi = {
+  getAll: async (includeDeleted = false, search?: string): Promise<Hashtag[]> => {
+    const res = await apiClient.get<Hashtag[]>('/hashtags', {
+      params: { includeDeleted, search },
+    });
+    return res.data;
+  },
+  suggest: async (q?: string, limit = 10): Promise<Hashtag[]> => {
+    const res = await apiClient.get<Hashtag[]>('/hashtags/suggest', {
+      params: { q, limit },
+    });
+    return res.data;
+  },
+  getOne: async (id: string): Promise<Hashtag & { notes: Note[] }> => {
+    const res = await apiClient.get<Hashtag & { notes: Note[] }>(`/hashtags/${id}`);
+    return res.data;
+  },
+  softDelete: async (id: string): Promise<Hashtag> => {
+    const res = await apiClient.delete<Hashtag>(`/hashtags/${id}`);
+    return res.data;
+  },
+  restore: async (id: string): Promise<Hashtag> => {
+    const res = await apiClient.post<Hashtag>(`/hashtags/${id}/restore`);
     return res.data;
   },
 };

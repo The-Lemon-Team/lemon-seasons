@@ -9,7 +9,7 @@ export class SyncService {
     const sinceDate = sinceIsoString ? new Date(sinceIsoString) : new Date(0);
     const now = new Date();
 
-    const [feeds, notes, taxonomy] = await Promise.all([
+    const [feeds, notes, taxonomy, hashtags] = await Promise.all([
       this.prisma.feed.findMany({
         where: {
           updatedAt: { gte: sinceDate },
@@ -21,6 +21,7 @@ export class SyncService {
         },
         include: {
           tags: true,
+          hashtags: true,
           images: {
             orderBy: { order: 'asc' },
           },
@@ -34,6 +35,11 @@ export class SyncService {
           updatedAt: { gte: sinceDate },
         },
       }),
+      this.prisma.hashtag.findMany({
+        where: {
+          updatedAt: { gte: sinceDate },
+        },
+      }),
     ]);
 
     return {
@@ -43,10 +49,12 @@ export class SyncService {
         feeds: feeds.length,
         notes: notes.length,
         taxonomy: taxonomy.length,
+        hashtags: hashtags.length,
       },
       feeds,
       notes,
       taxonomy,
+      hashtags,
     };
   }
 }

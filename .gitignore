@@ -40,3 +40,7 @@ postgres_data/
 uploads/
 backend/uploads/
 
+# Scratch & Temporary
+scratch/
+
+

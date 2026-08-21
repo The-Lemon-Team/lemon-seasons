@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { FeedsModule } from './feeds/feeds.module';
 import { NotesModule } from './notes/notes.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
+import { HashtagsModule } from './hashtags/hashtags.module';
 import { SyncModule } from './sync/sync.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { SyncModule } from './sync/sync.module';
     FeedsModule,
     NotesModule,
     TaxonomyModule,
+    HashtagsModule,
     SyncModule,
   ],
 })

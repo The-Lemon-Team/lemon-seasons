@@ -74,6 +74,16 @@ export class CreateNoteDto {
   tagIds?: string[];
 
   @ApiPropertyOptional({
+    description: 'Array of hashtag names or keywords (with or without # prefix)',
+    example: ['keynote', 'ai', 'launch2026'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  hashtags?: string[];
+
+  @ApiPropertyOptional({
     description: 'Initial links to create with the note',
     type: 'array',
   })

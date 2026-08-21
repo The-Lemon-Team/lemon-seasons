@@ -30,6 +30,7 @@ model Note {
   sourceLink  String?
   icon        String?
   tags        TaxonomyNode[]
+  hashtags    Hashtag[]
   images      NoteImage[]
   links       NoteLink[]
   createdAt   DateTime  @default(now())
@@ -37,6 +38,18 @@ model Note {
   deletedAt   DateTime?
 
   @@index([startDate, endDate])
+  @@index([updatedAt])
+}
+
+model Hashtag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  notes     Note[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([name])
   @@index([updatedAt])
 }
 

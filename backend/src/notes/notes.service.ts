@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { HashtagsService } from '../hashtags/hashtags.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
@@ -13,6 +14,7 @@ export class NotesService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private hashtagsService: HashtagsService,
   ) {}
 
   private async resolveTagIds(tagIdentifiers?: string[]): Promise<string[]> {
@@ -64,6 +66,11 @@ export class NotesService {
     }
 
     const tagIds = await this.resolveTagIds(createNoteDto.tagIds);
+    const hashtagIds = await this.hashtagsService.resolveHashtags(
+      createNoteDto.hashtags,
+      createNoteDto.description,
+      createNoteDto.title,
+    );
 
     // Prepare initial links if provided
     let linksData: Prisma.NoteLinkCreateWithoutNoteInput[] | undefined = undefined;
@@ -96,11 +103,13 @@ export class NotesService {
         icon: createNoteDto.icon,
         feed: { connect: { id: createNoteDto.feedId } },
         tags: tagIds.length > 0 ? { connect: tagIds.map((id) => ({ id })) } : undefined,
+        hashtags: hashtagIds.length > 0 ? { connect: hashtagIds.map((id) => ({ id })) } : undefined,
         links: linksData ? { create: linksData } : undefined,
       },
       include: {
         feed: true,
         tags: { where: { deletedAt: null } },
+        hashtags: { where: { deletedAt: null } },
         images: { orderBy: { order: 'asc' } },
         links: { orderBy: { order: 'asc' } },
       },
@@ -118,6 +127,8 @@ export class NotesService {
       endDateTo,
       tagId,
       tagPath,
+      hashtag,
+      hashtagId,
       search,
       includeDeleted = false,
       limit = 50,
@@ -156,12 +167,33 @@ export class NotesService {
             },
           }
         : {}),
+      ...(hashtag
+        ? {
+            hashtags: {
+              some: {
+                name: HashtagsService.normalizeName(hashtag),
+                deletedAt: null,
+              },
+            },
+          }
+        : {}),
+      ...(hashtagId
+        ? {
+            hashtags: {
+              some: {
+                id: hashtagId,
+                deletedAt: null,
+              },
+            },
+          }
+        : {}),
       ...(search
         ? {
             OR: [
               { title: { contains: search, mode: 'insensitive' } },
               { description: { contains: search, mode: 'insensitive' } },
               { feed: { title: { contains: search, mode: 'insensitive' } } },
+              { hashtags: { some: { name: { contains: HashtagsService.normalizeName(search), mode: 'insensitive' }, deletedAt: null } } },
             ],
           }
         : {}),
@@ -177,6 +209,7 @@ export class NotesService {
         include: {
           feed: true,
           tags: { where: { deletedAt: null } },
+          hashtags: { where: { deletedAt: null } },
           images: { orderBy: { order: 'asc' } },
           links: { orderBy: { order: 'asc' } },
         },
@@ -197,6 +230,7 @@ export class NotesService {
       include: {
         feed: true,
         tags: { where: { deletedAt: null } },
+        hashtags: { where: { deletedAt: null } },
         images: { orderBy: { order: 'asc' } },
         links: { orderBy: { order: 'asc' } },
       },
@@ -209,7 +243,7 @@ export class NotesService {
   }
 
   async update(id: string, updateNoteDto: UpdateNoteDto) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
 
     if (updateNoteDto.feedId) {
       const feed = await this.prisma.feed.findUnique({
@@ -228,6 +262,33 @@ export class NotesService {
       };
     }
 
+    let hashtagUpdates: Prisma.NoteUpdateInput['hashtags'] = undefined;
+    if (
+      updateNoteDto.hashtags !== undefined ||
+      updateNoteDto.description !== undefined ||
+      updateNoteDto.title !== undefined
+    ) {
+      const explicitTags =
+        updateNoteDto.hashtags !== undefined
+          ? updateNoteDto.hashtags
+          : current.hashtags?.map((h) => h.name);
+      const desc =
+        updateNoteDto.description !== undefined
+          ? updateNoteDto.description
+          : current.description || undefined;
+      const tit =
+        updateNoteDto.title !== undefined ? updateNoteDto.title : current.title;
+
+      const resolvedHIds = await this.hashtagsService.resolveHashtags(
+        explicitTags,
+        desc,
+        tit,
+      );
+      hashtagUpdates = {
+        set: resolvedHIds.map((hid) => ({ id: hid })),
+      };
+    }
+
     return this.prisma.note.update({
       where: { id },
       data: {
@@ -242,10 +303,12 @@ export class NotesService {
         ...(updateNoteDto.icon !== undefined ? { icon: updateNoteDto.icon } : {}),
         ...(updateNoteDto.feedId ? { feed: { connect: { id: updateNoteDto.feedId } } } : {}),
         tags: tagUpdates,
+        hashtags: hashtagUpdates,
       },
       include: {
         feed: true,
         tags: { where: { deletedAt: null } },
+        hashtags: { where: { deletedAt: null } },
         images: { orderBy: { order: 'asc' } },
         links: { orderBy: { order: 'asc' } },
       },
@@ -271,6 +334,7 @@ export class NotesService {
       include: {
         feed: true,
         tags: { where: { deletedAt: null } },
+        hashtags: { where: { deletedAt: null } },
         images: { orderBy: { order: 'asc' } },
         links: { orderBy: { order: 'asc' } },
       },

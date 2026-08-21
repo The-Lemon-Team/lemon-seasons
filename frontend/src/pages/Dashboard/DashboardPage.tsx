@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useFeeds, useNotes, useTaxonomyFlat, useSyncChanges } from '../../api/queries';
+import { useFeeds, useNotes, useTaxonomyFlat, useHashtags, useSyncChanges } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
+import { HashtagBadge } from '../../components/HashtagBadge';
 import { useNavigate } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
@@ -10,6 +11,7 @@ export const DashboardPage: React.FC = () => {
   const { data: feeds = [] } = useFeeds();
   const { data: notesData } = useNotes({ limit: 6 });
   const { data: tags = [] } = useTaxonomyFlat();
+  const { data: hashtags = [] } = useHashtags();
   const { data: syncData, isFetching: isSyncFetching, refetch: refetchSync } = useSyncChanges(
     sinceTime || undefined,
   );
@@ -74,13 +76,16 @@ export const DashboardPage: React.FC = () => {
           className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">Taxonomy Nodes</span>
+            <span className="font-mono text-xs uppercase tracking-wider">Taxonomy & Tags</span>
             <span className="material-symbols-outlined text-tertiary text-[20px] group-hover:scale-110 transition-transform">
               account_tree
             </span>
           </div>
-          <div className="font-sans font-bold text-3xl text-on-surface">{tags.length}</div>
-          <p className="text-xs text-outline mt-1 font-mono">PostgreSQL Ltree paths</p>
+          <div className="font-sans font-bold text-3xl text-on-surface flex items-baseline gap-2">
+            <span>{tags.length}</span>
+            <span className="text-xs text-cyan-400 font-mono font-normal">+{hashtags.length} #tags</span>
+          </div>
+          <p className="text-xs text-outline mt-1 font-mono">Ltree nodes & #{hashtags.length} hashtags</p>
         </div>
 
         <div className="bg-surface-container rounded-lg border border-white/5 p-5">
@@ -164,6 +169,18 @@ export const DashboardPage: React.FC = () => {
                       <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant flex-wrap">
                         <span>{new Date(note.startDate).toLocaleDateString()}</span>
                         {note.feed && <span>• feed: {note.feed.title}</span>}
+                        {note.hashtags && note.hashtags.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            {note.hashtags.slice(0, 2).map((h) => (
+                              <HashtagBadge key={h.id} name={h.name} size="xs" />
+                            ))}
+                            {note.hashtags.length > 2 && (
+                              <span className="text-[10px] text-cyan-500/70">
+                                +{note.hashtags.length - 2}
+                              </span>
+                            )}
+                          </span>
+                        )}
                         {note.sourceLink && (
                           <span className="inline-flex items-center gap-0.5 text-primary/80">
                             • <span className="material-symbols-outlined text-[13px]">link</span>
@@ -223,6 +240,7 @@ export const DashboardPage: React.FC = () => {
               <div className="mt-3 bg-surface-container-lowest rounded p-3 border border-white/5 font-mono text-[11px] space-y-1">
                 <div className="text-primary font-semibold">
                   ✓ Synced {syncData.counts.notes} notes, {syncData.counts.feeds} feeds, {syncData.counts.taxonomy} tags
+                  {syncData.counts.hashtags !== undefined ? `, ${syncData.counts.hashtags} hashtags` : ''}
                 </div>
                 <div className="text-outline text-[10px]">
                   Server Timestamp: {syncData.syncedAt}

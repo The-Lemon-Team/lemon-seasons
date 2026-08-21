@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Eye, Edit3, Columns, Sparkles } from 'lucide-react';
+import { HashtagBadge } from './HashtagBadge';
 
 interface MarkdownEditorProps {
   value: string;
@@ -19,6 +20,37 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   label = 'Description',
 }) => {
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('edit');
+
+  const renderWithHashtags = (children: React.ReactNode): React.ReactNode => {
+    if (typeof children === 'string') {
+      const parts = children.split(/(#[a-zA-Z0-9_\-]+)/g);
+      if (parts.length === 1) return children;
+      return parts.map((part, i) => {
+        if (part.startsWith('#') && part.length > 1) {
+          const tagName = part.slice(1);
+          return (
+            <HashtagBadge
+              key={i}
+              name={tagName}
+              size="xs"
+              clickable
+              className="mx-0.5 inline-flex align-middle"
+            />
+          );
+        }
+        return part;
+      });
+    }
+    if (Array.isArray(children)) {
+      return React.Children.map(children, (child) => renderWithHashtags(child));
+    }
+    return children;
+  };
+
+  const markdownComponents = {
+    p: ({ children }: any) => <p className="mb-2 leading-relaxed">{renderWithHashtags(children)}</p>,
+    li: ({ children }: any) => <li className="my-0.5">{renderWithHashtags(children)}</li>,
+  };
 
   return (
     <div className="space-y-1.5 w-full">
@@ -93,7 +125,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             className="p-4 markdown-body text-sm font-sans overflow-y-auto max-h-[400px]"
           >
             {value.trim() ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {value}
+              </ReactMarkdown>
             ) : (
               <span className="text-outline-variant italic">No markdown content written yet.</span>
             )}
@@ -110,7 +144,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             />
             <div className="p-3 markdown-body text-sm font-sans overflow-y-auto max-h-[350px] bg-surface-container-low/50">
               {value.trim() ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {value}
+                </ReactMarkdown>
               ) : (
                 <span className="text-outline-variant text-xs italic">Live preview updates here...</span>
               )}
