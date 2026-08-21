@@ -300,10 +300,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Add Link Form */}
       {isAdding && !readOnly && (
-        <form
-          onSubmit={handleAddLink}
-          className="p-3.5 bg-surface-container-high border border-primary/30 rounded-xl space-y-3 shadow-md animate-in fade-in duration-200"
-        >
+        <div className="p-3.5 bg-surface-container-high border border-primary/30 rounded-xl space-y-3 shadow-md animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-mono text-on-surface-variant uppercase font-medium">
@@ -313,6 +310,13 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                 type="text"
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddLink();
+                  }
+                }}
                 placeholder="https://..."
                 autoFocus
                 className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
@@ -326,6 +330,13 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddLink();
+                  }
+                }}
                 placeholder="e.g. Official Trailer, Documentation, Source Article"
                 className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
               />
@@ -344,15 +355,20 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddLink();
+              }}
               disabled={!newUrl.trim() || isMutating}
-              className="px-4 py-1.5 bg-primary text-on-primary rounded text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow disabled:opacity-50 flex items-center gap-1.5"
+              className="px-4 py-1.5 bg-primary text-on-primary rounded text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">add</span>
               Save Link
             </button>
           </div>
-        </form>
+        </div>
       )}
 
       {/* Loading Spinner */}

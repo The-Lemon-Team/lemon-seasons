@@ -79,8 +79,8 @@ export const NoteEditorPage: React.FC = () => {
     );
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!title.trim()) {
       message.error('Please enter a note title');
       return;
@@ -218,7 +218,7 @@ export const NoteEditorPage: React.FC = () => {
       </div>
 
       {/* Main Editor Grid */}
-      <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Title, Markdown Content, Links & Image Gallery (Span 2) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Main Content Box */}
@@ -488,7 +488,7 @@ export const NoteEditorPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
