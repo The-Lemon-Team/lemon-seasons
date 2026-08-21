@@ -251,21 +251,6 @@ export const NoteEditorPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Link Manager Section */}
-          <div className="bg-surface-container rounded-lg border border-white/5 p-5">
-            <LinkManager
-              noteId={id}
-              links={note?.links || []}
-              pendingLinks={pendingLinks}
-              pendingSourceIndex={pendingSourceIndex}
-              onPendingLinksChange={(links, sourceIdx) => {
-                setPendingLinks(links);
-                setPendingSourceIndex(sourceIdx);
-              }}
-              onInsertMarkdown={handleInsertMarkdownSnippet}
-            />
-          </div>
-
           {/* Image Manager Section */}
           <div className="bg-surface-container rounded-lg border border-white/5 p-5">
             <ImageManager
@@ -339,6 +324,19 @@ export const NoteEditorPage: React.FC = () => {
               className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
             />
           </div>
+
+          {/* Links & Sources Manager */}
+          <LinkManager
+            noteId={id}
+            links={note?.links || []}
+            pendingLinks={pendingLinks}
+            pendingSourceIndex={pendingSourceIndex}
+            onPendingLinksChange={(links, sourceIdx) => {
+              setPendingLinks(links);
+              setPendingSourceIndex(sourceIdx);
+            }}
+            onInsertMarkdown={handleInsertMarkdownSnippet}
+          />
 
           {/* Taxonomy Tags Selection */}
           <div className="space-y-2 pt-2 border-t border-white/5">

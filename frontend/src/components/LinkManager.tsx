@@ -30,12 +30,12 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 }) => {
   const isExistingNote = Boolean(noteId && noteId !== 'new');
 
-  // New link form state
+  // Add Link State
+  const [isAdding, setIsAdding] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newTitle, setNewTitle] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
 
-  // Edit modal state
+  // Edit Modal State
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [editingPendingIndex, setEditingPendingIndex] = useState<number | null>(null);
   const [editUrl, setEditUrl] = useState('');
@@ -63,17 +63,17 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     }
   };
 
-  const handleAddLink = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleAddLink = async () => {
     const trimmedUrl = newUrl.trim();
     if (!trimmedUrl) {
       message.warning('Please enter a valid URL');
       return;
     }
 
-    const formattedUrl = trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')
-      ? trimmedUrl
-      : `https://${trimmedUrl}`;
+    const formattedUrl =
+      trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')
+        ? trimmedUrl
+        : `https://${trimmedUrl}`;
 
     const titleToUse = newTitle.trim() || extractDomain(formattedUrl);
 
@@ -110,11 +110,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       setNewUrl('');
       setNewTitle('');
       setIsAdding(false);
-      message.success('Link added to list');
+      message.success('Link added');
     }
   };
 
-  // Set Primary Source
   const handleSetSource = async (link: NoteLink) => {
     if (!isExistingNote || !noteId) return;
     try {
@@ -136,7 +135,6 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     }
   };
 
-  // Reorder
   const handleMove = async (currentIndex: number, targetIndex: number) => {
     if (targetIndex < 0) return;
 
@@ -171,7 +169,6 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     }
   };
 
-  // Delete
   const handleDelete = async (linkId: string) => {
     if (!isExistingNote || !noteId) return;
     try {
@@ -199,7 +196,6 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     }
   };
 
-  // Start Edit
   const handleStartEdit = (link: NoteLink) => {
     setEditingLinkId(link.id);
     setEditUrl(link.url);
@@ -219,9 +215,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       message.warning('URL cannot be empty');
       return;
     }
-    const formattedUrl = trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')
-      ? trimmedUrl
-      : `https://${trimmedUrl}`;
+    const formattedUrl =
+      trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')
+        ? trimmedUrl
+        : `https://${trimmedUrl}`;
 
     if (isExistingNote && noteId && editingLinkId) {
       try {
@@ -251,7 +248,6 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     }
   };
 
-  // Copy / Insert Markdown
   const handleCopyMarkdown = (url: string, title?: string | null) => {
     const label = title || extractDomain(url) || 'Source Link';
     const snippet = `[${label}](${url})`;
@@ -268,18 +264,15 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
   const itemsCount = isExistingNote ? links.length : pendingLinks.length;
 
   return (
-    <div className="space-y-4">
-      {/* Header & Controls */}
+    <div className="space-y-2 pt-2 border-t border-white/5">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            link
-          </span>
-          <h3 className="font-sans font-semibold text-base text-on-surface">
+        <div className="flex items-center gap-1.5">
+          <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Links & Sources
-          </h3>
-          <span className="bg-surface-container-highest px-2 py-0.5 rounded-full text-xs font-mono text-on-surface-variant">
-            {itemsCount} {itemsCount === 1 ? 'link' : 'links'}
+          </label>
+          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant">
+            {itemsCount}
           </span>
         </div>
 
@@ -288,10 +281,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
             type="button"
             onClick={() => setIsAdding((prev) => !prev)}
             disabled={isMutating}
-            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-white/10 hover:border-primary/40 text-on-surface rounded text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            className="text-[11px] text-primary hover:text-primary-fixed-dim font-mono font-medium inline-flex items-center gap-0.5 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary">
-              {isAdding ? 'close' : 'add_link'}
+            <span className="material-symbols-outlined text-[14px]">
+              {isAdding ? 'close' : 'add'}
             </span>
             {isAdding ? 'Cancel' : 'Add Link'}
           </button>
@@ -300,49 +293,40 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Add Link Form */}
       {isAdding && !readOnly && (
-        <div className="p-3.5 bg-surface-container-high border border-primary/30 rounded-xl space-y-3 shadow-md animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-mono text-on-surface-variant uppercase font-medium">
-                URL <span className="text-primary">*</span>
-              </label>
-              <input
-                type="text"
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleAddLink();
-                  }
-                }}
-                placeholder="https://..."
-                autoFocus
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[11px] font-mono text-on-surface-variant uppercase font-medium">
-                Title / Label (Optional)
-              </label>
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleAddLink();
-                  }
-                }}
-                placeholder="e.g. Official Trailer, Documentation, Source Article"
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
-              />
-            </div>
+        <div className="p-2.5 bg-surface-container-lowest border border-primary/30 rounded-lg space-y-2 animate-in fade-in duration-150">
+          <div className="space-y-1">
+            <input
+              type="text"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddLink();
+                }
+              }}
+              placeholder="URL: https://..."
+              autoFocus
+              className="w-full bg-surface-container border border-white/10 rounded px-2.5 py-1 text-xs text-on-surface focus:border-primary outline-none"
+            />
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddLink();
+                }
+              }}
+              placeholder="Title / Label (optional)"
+              className="w-full bg-surface-container border border-white/10 rounded px-2.5 py-1 text-xs text-on-surface focus:border-primary outline-none"
+            />
           </div>
-          <div className="flex items-center justify-end gap-2 pt-1">
+
+          <div className="flex items-center justify-end gap-1.5 pt-0.5">
             <button
               type="button"
               onClick={() => {
@@ -350,7 +334,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                 setNewUrl('');
                 setNewTitle('');
               }}
-              className="px-3 py-1.5 text-xs text-on-surface-variant hover:text-on-surface rounded hover:bg-white/5 transition-colors"
+              className="px-2 py-0.5 text-[11px] text-on-surface-variant hover:text-on-surface rounded transition-colors"
             >
               Cancel
             </button>
@@ -362,10 +346,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                 handleAddLink();
               }}
               disabled={!newUrl.trim() || isMutating}
-              className="px-4 py-1.5 bg-primary text-on-primary rounded text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1 bg-primary text-on-primary rounded text-[11px] font-semibold hover:bg-primary-fixed-dim transition-all shadow disabled:opacity-50 flex items-center gap-1 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              Save Link
+              <span className="material-symbols-outlined text-[13px]">add</span>
+              Add
             </button>
           </div>
         </div>
@@ -373,7 +357,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Loading Spinner */}
       {isMutating && (
-        <div className="flex items-center justify-center py-3 gap-2 text-xs text-primary font-mono bg-surface-container/40 rounded-lg">
+        <div className="flex items-center justify-center py-1.5 gap-1.5 text-[11px] text-primary font-mono bg-surface-container-lowest rounded">
           <Spin size="small" />
           <span>Updating links...</span>
         </div>
@@ -381,22 +365,16 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Empty State */}
       {itemsCount === 0 && !isAdding && (
-        <div className="border border-dashed border-white/10 rounded-xl p-6 text-center bg-surface-container/30">
-          <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center mx-auto mb-2 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[20px]">link_off</span>
-          </div>
-          <p className="text-sm font-medium text-on-surface">No links added yet</p>
-          <p className="text-xs text-outline mt-1 font-mono">
-            Add relevant reference links, press citations, or documentation URLs. You can mark one as the primary source.
-          </p>
+        <div className="p-3 text-center bg-surface-container-lowest/60 rounded border border-white/5">
+          <p className="text-[11px] text-on-surface-variant font-mono">No links attached</p>
           {!readOnly && (
             <button
               type="button"
               onClick={() => setIsAdding(true)}
-              className="mt-3 px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-white/10 text-primary rounded text-xs font-medium inline-flex items-center gap-1 transition-colors"
+              className="mt-1 text-[11px] text-primary hover:underline font-mono inline-flex items-center gap-0.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px]">add</span>
-              Add First Link
+              <span className="material-symbols-outlined text-[13px]">add</span>
+              Add Link / Source
             </button>
           )}
         </div>
@@ -404,179 +382,153 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Links List - Existing Note */}
       {isExistingNote && links.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
           {links.map((link, idx) => {
             const domain = extractDomain(link.url);
 
             return (
               <div
                 key={link.id}
-                className={`group rounded-lg p-3 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                className={`group rounded-lg p-2 border transition-all text-xs ${
                   link.isSource
-                    ? 'bg-surface-container-high border-primary/40 ring-1 ring-primary/20 shadow-sm'
-                    : 'bg-surface-container border-white/10 hover:border-white/20'
+                    ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+                    : 'bg-surface-container-lowest border-white/5 hover:border-white/20'
                 }`}
               >
-                {/* Link Info */}
-                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                  {/* Link / Domain Icon */}
-                  <div
-                    className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
-                      link.isSource
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-surface-container-highest text-on-surface-variant group-hover:text-primary'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {link.isSource ? 'star' : 'language'}
+                {/* Title & Star Toggle */}
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {!readOnly ? (
+                      <Tooltip title={link.isSource ? 'Primary Source' : 'Set as primary source'}>
+                        <button
+                          type="button"
+                          onClick={() => handleSetSource(link)}
+                          disabled={link.isSource || isMutating}
+                          className={`p-0.5 rounded transition-colors flex-shrink-0 cursor-pointer ${
+                            link.isSource
+                              ? 'text-primary'
+                              : 'text-outline hover:text-primary'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[16px] leading-none">
+                            {link.isSource ? 'star' : 'star_border'}
+                          </span>
+                        </button>
+                      </Tooltip>
+                    ) : (
+                      <span className={`material-symbols-outlined text-[16px] leading-none ${link.isSource ? 'text-primary' : 'text-outline'}`}>
+                        {link.isSource ? 'star' : 'link'}
+                      </span>
+                    )}
+
+                    <span className="font-medium text-on-surface truncate text-xs" title={link.title || domain}>
+                      {link.title || domain}
                     </span>
+
+                    {link.isSource && (
+                      <span className="bg-primary text-on-primary text-[9px] font-bold uppercase tracking-wider px-1 py-0.2 rounded flex-shrink-0">
+                        Source
+                      </span>
+                    )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-xs sm:text-sm text-on-surface truncate">
-                        {link.title || domain}
-                      </span>
-                      {link.isSource && (
-                        <span className="bg-primary text-on-primary text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
-                          <span className="material-symbols-outlined text-[12px]">verified</span>
-                          Source
-                        </span>
-                      )}
-                      <span className="text-[11px] font-mono text-outline">
-                        {domain}
-                      </span>
-                    </div>
-
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-on-surface-variant hover:text-primary transition-colors truncate block max-w-full underline underline-offset-2 opacity-80 hover:opacity-100"
-                    >
-                      {link.url}
-                    </a>
-                  </div>
-                </div>
-
-                {/* Actions & Controls */}
-                <div className="flex items-center justify-between sm:justify-end gap-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                  {/* Set As Source */}
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={() => handleSetSource(link)}
-                      disabled={link.isSource || isMutating}
-                      className={`text-xs px-2 py-1 rounded font-medium flex items-center gap-1 transition-all ${
-                        link.isSource
-                          ? 'text-primary font-bold cursor-default bg-primary/10'
-                          : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[15px]">
-                        {link.isSource ? 'verified' : 'star_border'}
-                      </span>
-                      {link.isSource ? 'Primary Source' : 'Set as Source'}
-                    </button>
-                  )}
-
-                  {/* Action Icons */}
-                  <div className="flex items-center gap-0.5">
-                    {/* Open Link */}
-                    <Tooltip title="Open in new tab">
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-white/5 rounded transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">
-                          open_in_new
-                        </span>
-                      </a>
-                    </Tooltip>
-
-                    {/* Copy / Insert to Markdown */}
-                    <Tooltip title="Insert Markdown Link [Title](url)">
+                  {/* Actions */}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <Tooltip title="Insert Markdown [Title](url)">
                       <button
                         type="button"
                         onClick={() => handleCopyMarkdown(link.url, link.title)}
-                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-white/5 rounded transition-colors"
+                        className="p-1 text-on-surface-variant hover:text-primary rounded transition-colors cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
+                        <span className="material-symbols-outlined text-[14px] leading-none">
                           content_paste_go
                         </span>
                       </button>
                     </Tooltip>
 
-                    {/* Edit */}
-                    {!readOnly && (
-                      <Tooltip title="Edit link">
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(link)}
-                          disabled={isMutating}
-                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            edit
-                          </span>
-                        </button>
-                      </Tooltip>
-                    )}
-
-                    {/* Move Up */}
-                    {!readOnly && idx > 0 && (
-                      <Tooltip title="Move Up">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx - 1)}
-                          disabled={isMutating}
-                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            arrow_upward
-                          </span>
-                        </button>
-                      </Tooltip>
-                    )}
-
-                    {/* Move Down */}
-                    {!readOnly && idx < links.length - 1 && (
-                      <Tooltip title="Move Down">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx + 1)}
-                          disabled={isMutating}
-                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            arrow_downward
-                          </span>
-                        </button>
-                      </Tooltip>
-                    )}
-
-                    {/* Delete */}
-                    {!readOnly && (
-                      <Popconfirm
-                        title="Remove link"
-                        description="Are you sure you want to remove this link?"
-                        okText="Delete"
-                        cancelText="Cancel"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleDelete(link.id)}
+                    <Tooltip title="Open link">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-on-surface-variant hover:text-primary rounded transition-colors"
                       >
-                        <button
-                          type="button"
-                          disabled={isMutating}
-                          className="p-1.5 text-outline hover:text-error hover:bg-error/10 rounded transition-colors"
+                        <span className="material-symbols-outlined text-[14px] leading-none">
+                          open_in_new
+                        </span>
+                      </a>
+                    </Tooltip>
+
+                    {!readOnly && (
+                      <>
+                        <Tooltip title="Edit">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(link)}
+                            disabled={isMutating}
+                            className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px] leading-none">
+                              edit
+                            </span>
+                          </button>
+                        </Tooltip>
+
+                        {idx > 0 && (
+                          <Tooltip title="Move Up">
+                            <button
+                              type="button"
+                              onClick={() => handleMove(idx, idx - 1)}
+                              disabled={isMutating}
+                              className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[14px] leading-none">
+                                arrow_upward
+                              </span>
+                            </button>
+                          </Tooltip>
+                        )}
+
+                        {idx < links.length - 1 && (
+                          <Tooltip title="Move Down">
+                            <button
+                              type="button"
+                              onClick={() => handleMove(idx, idx + 1)}
+                              disabled={isMutating}
+                              className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[14px] leading-none">
+                                arrow_downward
+                              </span>
+                            </button>
+                          </Tooltip>
+                        )}
+
+                        <Popconfirm
+                          title="Remove link?"
+                          okText="Delete"
+                          cancelText="Cancel"
+                          okButtonProps={{ danger: true }}
+                          onConfirm={() => handleDelete(link.id)}
                         >
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
-                      </Popconfirm>
+                          <button
+                            type="button"
+                            disabled={isMutating}
+                            className="p-1 text-outline hover:text-error rounded transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px] leading-none">
+                              delete
+                            </span>
+                          </button>
+                        </Popconfirm>
+                      </>
                     )}
                   </div>
+                </div>
+
+                {/* Subtitle / URL line */}
+                <div className="pl-6 text-[10px] font-mono text-on-surface-variant/70 truncate" title={link.url}>
+                  {link.url}
                 </div>
               </div>
             );
@@ -586,7 +538,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
       {/* Links List - Pending Links (New Note) */}
       {!isExistingNote && pendingLinks.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
           {pendingLinks.map((link, idx) => {
             const isSource = idx === pendingSourceIndex || link.isSource;
             const domain = extractDomain(link.url);
@@ -594,88 +546,59 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
             return (
               <div
                 key={`${link.url}-${idx}`}
-                className={`group rounded-lg p-3 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                className={`group rounded-lg p-2 border transition-all text-xs ${
                   isSource
-                    ? 'bg-surface-container-high border-primary/40 ring-1 ring-primary/20 shadow-sm'
-                    : 'bg-surface-container border-white/10 hover:border-white/20'
+                    ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+                    : 'bg-surface-container-lowest border-white/5 hover:border-white/20'
                 }`}
               >
-                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isSource
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-surface-container-highest text-on-surface-variant'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {isSource ? 'star' : 'language'}
-                    </span>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-xs sm:text-sm text-on-surface truncate">
-                        {link.title || domain}
-                      </span>
-                      {isSource && (
-                        <span className="bg-primary text-on-primary text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
-                          <span className="material-symbols-outlined text-[12px]">verified</span>
-                          Source
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <Tooltip title={isSource ? 'Primary Source' : 'Set as primary source'}>
+                      <button
+                        type="button"
+                        onClick={() => handleSetPendingSource(idx)}
+                        className={`p-0.5 rounded transition-colors flex-shrink-0 cursor-pointer ${
+                          isSource ? 'text-primary' : 'text-outline hover:text-primary'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[16px] leading-none">
+                          {isSource ? 'star' : 'star_border'}
                         </span>
-                      )}
-                      <span className="text-[11px] font-mono text-outline">
-                        {domain}
-                      </span>
-                    </div>
+                      </button>
+                    </Tooltip>
 
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-on-surface-variant hover:text-primary transition-colors truncate block max-w-full underline underline-offset-2 opacity-80 hover:opacity-100"
-                    >
-                      {link.url}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => handleSetPendingSource(idx)}
-                    className={`text-xs px-2 py-1 rounded font-medium flex items-center gap-1 transition-all ${
-                      isSource
-                        ? 'text-primary font-bold cursor-default bg-primary/10'
-                        : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[15px]">
-                      {isSource ? 'verified' : 'star_border'}
+                    <span className="font-medium text-on-surface truncate text-xs" title={link.title || domain}>
+                      {link.title || domain}
                     </span>
-                    {isSource ? 'Primary Source' : 'Set as Source'}
-                  </button>
 
-                  <div className="flex items-center gap-0.5">
-                    <Tooltip title="Insert Markdown Link [Title](url)">
+                    {isSource && (
+                      <span className="bg-primary text-on-primary text-[9px] font-bold uppercase tracking-wider px-1 py-0.2 rounded flex-shrink-0">
+                        Source
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <Tooltip title="Insert Markdown [Title](url)">
                       <button
                         type="button"
                         onClick={() => handleCopyMarkdown(link.url, link.title)}
-                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-white/5 rounded transition-colors"
+                        className="p-1 text-on-surface-variant hover:text-primary rounded transition-colors cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
+                        <span className="material-symbols-outlined text-[14px] leading-none">
                           content_paste_go
                         </span>
                       </button>
                     </Tooltip>
 
-                    <Tooltip title="Edit link">
+                    <Tooltip title="Edit">
                       <button
                         type="button"
                         onClick={() => handleStartEditPending(idx)}
-                        className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
+                        className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
+                        <span className="material-symbols-outlined text-[14px] leading-none">
                           edit
                         </span>
                       </button>
@@ -686,9 +609,9 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                         <button
                           type="button"
                           onClick={() => handleMove(idx, idx - 1)}
-                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
+                          className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-[16px]">
+                          <span className="material-symbols-outlined text-[14px] leading-none">
                             arrow_upward
                           </span>
                         </button>
@@ -700,9 +623,9 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                         <button
                           type="button"
                           onClick={() => handleMove(idx, idx + 1)}
-                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
+                          className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-[16px]">
+                          <span className="material-symbols-outlined text-[14px] leading-none">
                             arrow_downward
                           </span>
                         </button>
@@ -712,11 +635,17 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDeletePending(idx)}
-                      className="p-1.5 text-outline hover:text-error hover:bg-error/10 rounded transition-colors"
+                      className="p-1 text-outline hover:text-error rounded transition-colors cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      <span className="material-symbols-outlined text-[14px] leading-none">
+                        delete
+                      </span>
                     </button>
                   </div>
+                </div>
+
+                <div className="pl-6 text-[10px] font-mono text-on-surface-variant/70 truncate" title={link.url}>
+                  {link.url}
                 </div>
               </div>
             );
@@ -734,10 +663,11 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
         }}
         onOk={handleSaveEdit}
         confirmLoading={isMutating}
-        okText="Save Changes"
+        okText="Save"
         centered
+        width={420}
       >
-        <div className="space-y-3 pt-2">
+        <div className="space-y-2.5 pt-2">
           <div className="space-y-1">
             <label className="block text-xs font-mono text-on-surface-variant uppercase">
               URL
