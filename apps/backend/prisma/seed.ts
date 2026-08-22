@@ -76,6 +76,13 @@ async function main() {
     { name: 'UX', path: 'Product/UX', icon: 'group' },
     { name: 'Projects', path: 'Projects', icon: 'folder_special' },
     { name: 'Lenta', path: 'Projects/Lenta', icon: 'rocket_launch' },
+    // Preset Taxonomy Folders
+    { name: 'Films', path: 'Films', icon: 'movie' },
+    { name: 'Marvel', path: 'Films/Marvel', icon: 'shield' },
+    { name: 'Fantastic', path: 'Films/Fantastic', icon: 'rocket_launch' },
+    { name: 'Politics', path: 'Politics', icon: 'account_balance' },
+    { name: 'USA', path: 'Politics/USA', icon: 'flag' },
+    { name: 'Russia', path: 'Politics/Russia', icon: 'public' },
   ];
 
   const folderMap = new Map<string, string>();
@@ -90,8 +97,13 @@ async function main() {
 
   // 3. Create Taxonomy Hierarchy (Ltree format)
   const taxonomyData = [
+    { name: 'Films', path: 'films', icon: 'movie' },
+    { name: 'Marvel', path: 'films.marvel', icon: 'shield' },
+    { name: 'Fantastic', path: 'films.fantastic', icon: 'rocket' },
+    { name: 'Politics', path: 'politics', icon: 'account_balance' },
+    { name: 'USA', path: 'politics.usa', icon: 'flag' },
+    { name: 'Russia', path: 'politics.russia', icon: 'public' },
     { name: 'Movies', path: 'movies', icon: 'movie' },
-    { name: 'Marvel', path: 'movies.marvel', icon: 'auto_awesome' },
     { name: 'Avengers', path: 'movies.marvel.avengers', icon: 'shield' },
     { name: 'Technology', path: 'technology', icon: 'memory' },
     { name: 'Frontend', path: 'technology.frontend', icon: 'web' },
@@ -257,6 +269,48 @@ Initial feedback on the 3-step onboarding wizard:
 The climax of Phase 6 bringing together heroes across multiple alternate realities and universes.
 
 **Confirmed Timeline:** Summer 2027 Theatrical Release.`,
+    },
+    {
+      feedId: feedMcu.id,
+      title: 'Fantastic Four: First Steps Premiere',
+      type: NoteType.FILM_RELEASE,
+      startDate: new Date('2025-07-25T18:00:00.000Z'),
+      icon: 'rocket_launch',
+      tags: ['films.fantastic', 'films'],
+      folders: [
+        { path: 'Films/Fantastic', isPrimary: true },
+        { path: 'Films', isPrimary: false },
+      ],
+      description: `### Marvel Studios Fantastic Four Debut
+Introducing the First Family into the MCU timeline with a retro-futuristic aesthetic.`,
+    },
+    {
+      feedId: feedProduct.id,
+      title: 'US Presidential Debates & Policy Overview',
+      type: NoteType.EVENT,
+      startDate: new Date('2026-09-15T20:00:00.000Z'),
+      icon: 'flag',
+      tags: ['politics.usa', 'politics'],
+      folders: [
+        { path: 'Politics/USA', isPrimary: true },
+        { path: 'Politics', isPrimary: false },
+      ],
+      description: `### Global Policy & Economic Strategy
+Analysis of upcoming regulatory frameworks and technology trade policies.`,
+    },
+    {
+      feedId: feedProduct.id,
+      title: 'Global Geopolitics & Regional Summit',
+      type: NoteType.EVENT,
+      startDate: new Date('2026-10-10T11:00:00.000Z'),
+      icon: 'public',
+      tags: ['politics.russia', 'politics'],
+      folders: [
+        { path: 'Politics/Russia', isPrimary: true },
+        { path: 'Politics', isPrimary: false },
+      ],
+      description: `### International Summit on Energy and Digital Infrastructure
+Cross-border discussions and bilateral agreements review.`,
     },
     {
       feedId: feedTech.id,
