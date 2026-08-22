@@ -2,11 +2,10 @@ import React, { useMemo } from 'react';
 import {
   Note,
   NoteTypeColors,
-  NoteTypeLabels,
-  getDaysDifference,
 } from '@lenta/shared';
 import dayjs from 'dayjs';
-import { GanttChartSquare, Clock, ArrowRight, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface GanttViewProps {
   notes: Note[];
@@ -23,6 +22,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
   isLoading,
   onSelectNote,
 }) => {
+  const { t } = useI18n();
   const windowStart = useMemo(() => dayjs(startDate).startOf('day'), [startDate]);
   const windowEnd = useMemo(() => dayjs(endDate).endOf('day'), [endDate]);
   const totalDays = useMemo(() => Math.max(1, windowEnd.diff(windowStart, 'day') + 1), [windowStart, windowEnd]);
@@ -63,7 +63,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-neutral-400">
         <div className="w-10 h-10 border-2 border-[#c9cd58] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-medium">Computing Gantt swimlanes...</p>
+        <p className="text-sm font-medium">{t.computingGantt}</p>
       </div>
     );
   }
@@ -74,9 +74,9 @@ export const GanttView: React.FC<GanttViewProps> = ({
         <div className="w-16 h-16 rounded-2xl bg-surface-elevated/60 border border-border flex items-center justify-center text-3xl mb-4 shadow-sm">
           📊
         </div>
-        <h3 className="text-base font-semibold text-white mb-1">No multi-day periods in this range</h3>
+        <h3 className="text-base font-semibold text-white mb-1">{t.emptyGantt}</h3>
         <p className="text-xs text-neutral-500 max-w-sm">
-          Select a broader date window or switch to Timeline View to see point events.
+          {t.emptyGanttSub}
         </p>
       </div>
     );
@@ -99,8 +99,8 @@ export const GanttView: React.FC<GanttViewProps> = ({
 
     const isOngoing = !note.endDate;
     const totalDurationText = note.endDate
-      ? `${Math.max(1, noteEnd.diff(noteStart, 'day'))} days`
-      : 'Ongoing';
+      ? t.durationDays(Math.max(1, noteEnd.diff(noteStart, 'day')))
+      : t.ongoing;
 
     return {
       left: `${leftPercent}%`,
@@ -117,7 +117,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
         <div className="flex border-b border-border/80 pb-3 mb-4 sticky top-0 bg-[#16191b] z-20">
           <div className="w-52 flex-shrink-0 text-xs font-bold text-neutral-400 uppercase tracking-wider pl-2 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-[#c9cd58]" />
-            <span>Feed / Channel</span>
+            <span>{t.swimlaneTitle}</span>
           </div>
 
           <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
@@ -149,7 +149,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                   {lane.feedTitle}
                 </span>
                 <span className="text-[10px] font-mono text-neutral-500 bg-surface-elevated px-1.5 py-0.5 rounded">
-                  {lane.notes.length} {lane.notes.length === 1 ? 'period' : 'periods'}
+                  {t.periodsCount(lane.notes.length)}
                 </span>
               </div>
 
@@ -207,3 +207,4 @@ export const GanttView: React.FC<GanttViewProps> = ({
     </div>
   );
 };
+

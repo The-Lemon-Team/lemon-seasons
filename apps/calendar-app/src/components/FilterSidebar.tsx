@@ -1,22 +1,28 @@
-import React from 'react';
-import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeLabels, NoteTypeColors } from '@lenta/shared';
+import React, { useEffect } from 'react';
+import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
 import { useFeeds, useTaxonomyTree, useHashtags } from '../api/queries';
 import {
   X,
   Filter,
-  Layers,
   Tag,
   Hash,
   Shapes,
   Check,
   RotateCcw,
+  Radio,
 } from 'lucide-react';
+import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
+import { useI18n } from '../i18n';
 
 interface FilterSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   filterState: CalendarFilterState;
-  onToggleFeed: (feedSlug: string) => void;
+  onSelectFeed?: (feedSlug?: string) => void;
+  onToggleFeed?: (feedSlug: string) => void;
+  onSelectOnlyFeed?: (feedSlug: string) => void;
+  onClearFeed?: () => void;
+  onClearFeeds?: () => void;
   onToggleTag: (tagPath: string) => void;
   onToggleHashtag: (hashtag: string) => void;
   onToggleType: (type: NoteType) => void;
@@ -27,15 +33,53 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   isOpen,
   onClose,
   filterState,
+  onSelectFeed,
   onToggleFeed,
+  onSelectOnlyFeed,
+  onClearFeed,
+  onClearFeeds,
   onToggleTag,
   onToggleHashtag,
   onToggleType,
   onResetFilters,
 }) => {
+  const { t, lang, getTypeLabel } = useI18n();
   const { data: feeds = [] } = useFeeds();
   const { data: taxonomyNodes = [] } = useTaxonomyTree();
   const { data: hashtags = [] } = useHashtags();
+
+  const handleSelectFeed = (slug?: string) => {
+    if (!slug) {
+      if (onClearFeed) onClearFeed();
+      else if (onClearFeeds) onClearFeeds();
+      else if (onSelectFeed) onSelectFeed(undefined);
+    } else {
+      if (filterState.feed === slug) {
+        if (onClearFeed) onClearFeed();
+        else if (onClearFeeds) onClearFeeds();
+        else if (onSelectFeed) onSelectFeed(undefined);
+      } else {
+        if (onSelectFeed) onSelectFeed(slug);
+        else if (onSelectOnlyFeed) onSelectOnlyFeed(slug);
+        else if (onToggleFeed) onToggleFeed(slug);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -45,16 +89,16 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2 text-white font-semibold text-sm">
           <Filter className="w-4 h-4 text-[#c9cd58]" />
-          <span>Filters & Channels</span>
+          <span>{t.filtersAndChannels}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onResetFilters}
-            title="Reset Filters"
+            title={t.reset}
             className="p-1 rounded-lg text-neutral-400 hover:text-neutral-200 hover:bg-surface-hover transition-colors text-xs flex items-center gap-1"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>Reset</span>
+            <span>{t.reset}</span>
           </button>
           <button
             onClick={onClose}
@@ -67,49 +111,151 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        {/* 1. Feeds */}
+        {/* 1. Taxonomy & Folder Hierarchy */}
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
-            <Layers className="w-3.5 h-3.5 text-[#c9cd58]" />
-            <span>Data Feeds</span>
+          <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#e5e971] mb-3">
+            <div className="flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <span>{t.taxonomyHierarchy}</span>
+            </div>
+            {filterState.tags.length > 0 && (
+              <span className="text-[10px] font-mono text-[#c9cd58] bg-[#c9cd58]/15 px-1.5 py-0.5 rounded-full font-bold">
+                {filterState.tags.length}
+              </span>
+            )}
           </div>
-          <div className="space-y-1.5">
-            {feeds.map((feed) => {
-              const isSelected = filterState.feeds.includes(feed.slug);
-              return (
-                <button
-                  key={feed.id}
-                  onClick={() => onToggleFeed(feed.slug)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all border ${
-                    isSelected
-                      ? 'bg-[#c9cd58]/15 border-[#c9cd58]/40 text-[#d4e157] font-medium'
-                      : 'bg-surface-elevated/40 border-border/50 text-neutral-300 hover:bg-surface-hover hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        isSelected ? 'bg-[#c9cd58]' : 'bg-neutral-500'
+
+          {/* Preset Hierarchy Folders */}
+          <div className="space-y-2 mb-3">
+            {/* Films Group */}
+            <div className="bg-[#121414]/90 border border-[#242828] rounded-xl p-2.5 space-y-1.5">
+              <button
+                onClick={() => onToggleTag('Films')}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-lg text-xs font-mono transition-all ${
+                  filterState.tags.includes('Films')
+                    ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold border border-[#c9cd58]/50'
+                    : 'text-neutral-200 hover:bg-[#242828] hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400">🎬</span>
+                  <span className="font-semibold">{lang === 'ru' ? 'Фильмы' : 'Films'}</span>
+                </div>
+                {filterState.tags.includes('Films') && (
+                  <Check className="w-3 h-3 text-[#c9cd58]" />
+                )}
+              </button>
+
+              <div className="pl-5 space-y-1 border-l border-[#242828]/80 ml-2">
+                {[
+                  { path: 'Films/Marvel', name: lang === 'ru' ? 'Марвел' : 'Marvel', icon: '🦸' },
+                  { path: 'Films/Fantastic', name: lang === 'ru' ? 'Фантастика' : 'Fantastic', icon: '🚀' },
+                ].map((item) => {
+                  const isSelected = filterState.tags.includes(item.path);
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => onToggleTag(item.path)}
+                      className={`w-full flex items-center justify-between px-2 py-1 rounded text-xs font-mono transition-all ${
+                        isSelected
+                          ? 'bg-[#c9cd58]/20 text-[#e5e971] font-medium border border-[#c9cd58]/40'
+                          : 'text-neutral-400 hover:text-white hover:bg-[#242828]'
                       }`}
-                    />
-                    <span>{feed.title}</span>
-                  </div>
-                  {feed._count?.notes !== undefined && (
-                    <span className="text-[10px] font-mono text-neutral-500">
-                      {feed._count.notes}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>{item.icon}</span>
+                        <span>{item.name}</span>
+                      </div>
+                      {isSelected && <Check className="w-3 h-3 text-[#c9cd58]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Politics Group */}
+            <div className="bg-[#121414]/90 border border-[#242828] rounded-xl p-2.5 space-y-1.5">
+              <button
+                onClick={() => onToggleTag('Politics')}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-lg text-xs font-mono transition-all ${
+                  filterState.tags.includes('Politics')
+                    ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold border border-[#c9cd58]/50'
+                    : 'text-neutral-200 hover:bg-[#242828] hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-400">🏛️</span>
+                  <span className="font-semibold">{lang === 'ru' ? 'Политика' : 'Politics'}</span>
+                </div>
+                {filterState.tags.includes('Politics') && (
+                  <Check className="w-3 h-3 text-[#c9cd58]" />
+                )}
+              </button>
+
+              <div className="pl-5 space-y-1 border-l border-[#242828]/80 ml-2">
+                {[
+                  { path: 'Politics/USA', name: lang === 'ru' ? 'США' : 'USA', icon: '🇺🇸' },
+                  { path: 'Politics/Russia', name: lang === 'ru' ? 'Россия' : 'Russia', icon: '🌐' },
+                ].map((item) => {
+                  const isSelected = filterState.tags.includes(item.path);
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => onToggleTag(item.path)}
+                      className={`w-full flex items-center justify-between px-2 py-1 rounded text-xs font-mono transition-all ${
+                        isSelected
+                          ? 'bg-[#c9cd58]/20 text-[#e5e971] font-medium border border-[#c9cd58]/40'
+                          : 'text-neutral-400 hover:text-white hover:bg-[#242828]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>{item.icon}</span>
+                        <span>{item.name}</span>
+                      </div>
+                      {isSelected && <Check className="w-3 h-3 text-[#c9cd58]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+          {/* Dynamic Backend Taxonomy Nodes */}
+          {taxonomyNodes.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {taxonomyNodes
+                .filter(
+                  (n) =>
+                    !['films', 'films.marvel', 'films.fantastic', 'politics', 'politics.usa', 'politics.russia'].includes(
+                      n.path.toLowerCase()
+                    )
+                )
+                .slice(0, 8)
+                .map((node) => {
+                  const isSelected = filterState.tags.includes(node.path);
+                  return (
+                    <button
+                      key={node.id}
+                      onClick={() => onToggleTag(node.path)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all border ${
+                        isSelected
+                          ? 'bg-[#c9cd58]/20 border-[#c9cd58]/60 text-[#e5e971] font-medium'
+                          : 'bg-surface-elevated/40 border-border/60 text-neutral-400 hover:text-white hover:bg-surface-hover'
+                      }`}
+                    >
+                      <span>{node.path}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          )}
         </div>
 
         {/* 2. Note Types */}
         <div>
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
             <Shapes className="w-3.5 h-3.5 text-[#c9cd58]" />
-            <span>Note Types</span>
+            <span>{t.entryTypes}</span>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {NOTE_TYPES.map((type) => {
@@ -130,48 +276,144 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     borderColor: isSelected ? colors.accent : colors.border,
                   }}
                 >
-                  <span>{NoteTypeLabels[type]}</span>
-                  {isSelected && <Check className="w-3 h-3" />}
+                  <span className="truncate">{getTypeLabel(type)}</span>
+                  {isSelected && <Check className="w-3 h-3 flex-shrink-0" />}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* 3. Taxonomy Tags */}
-        {taxonomyNodes.length > 0 && (
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
-              <Tag className="w-3.5 h-3.5 text-[#c9cd58]" />
-              <span>Taxonomy Hierarchy</span>
+        {/* 3. Feeds & Channels (Single Stream) */}
+        <div>
+          <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
+            <div className="flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <span>{t.newsFeeds}</span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {taxonomyNodes.map((node) => {
-                const isSelected = filterState.tags.includes(node.path);
-                return (
-                  <button
-                    key={node.id}
-                    onClick={() => onToggleTag(node.path)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all border ${
-                      isSelected
-                        ? 'bg-[#c9cd58]/20 border-[#c9cd58]/60 text-[#e5f05b] font-medium'
-                        : 'bg-surface-elevated/40 border-border/60 text-neutral-300 hover:text-white hover:bg-surface-hover'
-                    }`}
-                  >
-                    <span>{node.path}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {filterState.feed && (
+              <span className="text-[10px] font-mono text-[#c9cd58] bg-[#c9cd58]/15 px-1.5 py-0.5 rounded-full font-bold">
+                1 active
+              </span>
+            )}
           </div>
-        )}
+
+          {/* Preset Buttons */}
+          <div className="grid grid-cols-2 gap-1 mb-2.5">
+            {FEED_PRESET_OPTIONS.slice(0, 4).map((preset) => {
+              const isActive = preset.slug === filterState.feed || (!preset.slug && !filterState.feed);
+
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => handleSelectFeed(preset.slug)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-mono flex items-center justify-between border transition-all ${
+                    isActive
+                      ? 'bg-[#c9cd58]/20 border-[#c9cd58]/60 text-[#e5e971] font-semibold'
+                      : 'bg-[#121414] border-[#242828] text-neutral-400 hover:text-white hover:bg-[#202222]'
+                  }`}
+                >
+                  <span className="truncate">{preset.emoji} {preset.id === 'all' ? t.presetAll : preset.name}</span>
+                  {isActive && <Check className="w-2.5 h-2.5 text-[#c9cd58]" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Feed Channels List */}
+          <div className="space-y-1.5">
+            {/* All Channels Option */}
+            <div
+              onClick={() => handleSelectFeed(undefined)}
+              className={`group w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all border cursor-pointer select-none ${
+                !filterState.feed
+                  ? 'bg-[#191d1e] border-[#c9cd58]/50 shadow-sm'
+                  : 'bg-surface-elevated/40 border-border/50 hover:bg-surface-hover hover:border-[#383a3a]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0 border bg-[#c9cd58]/15 border-[#c9cd58]/40">
+                  <span>📡</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className={`font-semibold truncate text-[11px] block ${!filterState.feed ? 'text-[#e5e971]' : 'text-neutral-200'}`}>
+                    {t.allChannels}
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500 truncate block">
+                    {t.hubSubtitle}
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-4 h-4 rounded-full flex items-center justify-center border transition-all flex-shrink-0 border-[#383a3a] bg-[#1a1c1c]">
+                {!filterState.feed && <div className="w-1.5 h-1.5 rounded-full bg-[#c9cd58]" />}
+              </div>
+            </div>
+
+            {feeds.map((feed) => {
+              const isSelected = filterState.feed === feed.slug;
+              const theme = getFeedTheme(feed.slug, feed.title);
+
+              return (
+                <div
+                  key={feed.id}
+                  onClick={() => handleSelectFeed(feed.slug)}
+                  className={`group w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all border cursor-pointer select-none ${
+                    isSelected
+                      ? 'bg-[#191d1e] border-[#c9cd58]/50 shadow-sm'
+                      : 'bg-surface-elevated/40 border-border/50 hover:bg-surface-hover hover:border-[#383a3a]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0 border"
+                      style={{
+                        backgroundColor: theme.bgLight,
+                        borderColor: theme.borderAccent,
+                      }}
+                    >
+                      <span>{theme.emoji}</span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`font-semibold truncate text-[11px] ${
+                            isSelected ? 'text-[#e5e971]' : 'text-neutral-200'
+                          }`}
+                        >
+                          {feed.title}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-neutral-500 truncate block">
+                        {theme.tagline}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center border transition-all ${
+                        isSelected
+                          ? 'border-[#c9cd58] bg-[#c9cd58]'
+                          : 'border-[#383a3a] bg-[#1a1c1c] group-hover:border-neutral-400'
+                      }`}
+                    >
+                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#121414]" />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 4. Hashtags Cloud */}
         {hashtags.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
               <Hash className="w-3.5 h-3.5 text-[#c9cd58]" />
-              <span>Hashtags</span>
+              <span>{t.hashtags}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {hashtags.slice(0, 25).map((ht) => {

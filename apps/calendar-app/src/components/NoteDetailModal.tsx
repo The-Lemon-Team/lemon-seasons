@@ -1,5 +1,5 @@
-import React from 'react';
-import { Note, NoteTypeLabels, NoteTypeColors } from '@lenta/shared';
+import React, { useEffect } from 'react';
+import { Note, NoteTypeColors } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
@@ -13,8 +13,8 @@ import {
   Rss,
   Edit3,
   Image as ImageIcon,
-  Share2,
 } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -22,12 +22,28 @@ interface NoteDetailModalProps {
 }
 
 export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose }) => {
+  const { t, getTypeLabel } = useI18n();
+
+  useEffect(() => {
+    if (!note) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [note, onClose]);
+
   if (!note) return null;
 
   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
   const startDay = dayjs(note.startDate);
   const endDay = note.endDate ? dayjs(note.endDate) : null;
-  const isMultiDay = endDay && !endDay.isSame(startDay, 'day');
   const durationDays = endDay ? Math.max(1, endDay.diff(startDay, 'day') + 1) : 1;
 
   const primaryFolder =
@@ -37,7 +53,10 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const mainImage = note.images?.find((img) => img.isMain) || note.images?.[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
       <div
         className="bg-[#1b1e1e] border border-[#323636] rounded-lg max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
@@ -53,7 +72,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                 borderColor: typeColor.border,
               }}
             >
-              {NoteTypeLabels[note.type]}
+              {getTypeLabel(note.type)}
             </span>
 
             {note.feed && (
@@ -73,7 +92,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#484837] hover:border-[#c9cd58] text-xs font-mono text-[#c9c7b2] hover:text-[#e5e971] transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Note</span>
+              <span>{t.editNote}</span>
             </a>
 
             {/* Close Button */}
@@ -109,7 +128,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
             <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#c9c7b2] bg-[#121414] p-3 rounded border border-[#242828]">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#c9cd58]" />
-                <span>{startDay.format('MMMM D, YYYY')}</span>
+                <span className="capitalize">{startDay.format('D MMMM YYYY')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-[#c9cd58]" />
@@ -119,7 +138,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                 <div className="flex items-center gap-1.5 text-[#93927e]">
                   <span>→</span>
                   <span>
-                    {endDay.format('MMMM D, YYYY HH:mm')} ({durationDays} days)
+                    {endDay.format('D MMMM YYYY HH:mm')} ({t.durationDays(durationDays)})
                   </span>
                 </div>
               )}
@@ -132,7 +151,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               <div className="bg-[#121414] p-3 rounded border border-[#242828] flex items-center gap-2">
                 <Folder className="w-4 h-4 text-[#c9cd58]" />
                 <div>
-                  <span className="text-[#93927e] block text-[10px] uppercase">Folder</span>
+                  <span className="text-[#93927e] block text-[10px] uppercase">{t.obsidianFolder}</span>
                   <span className="text-white">{primaryFolder}</span>
                 </div>
               </div>
@@ -142,7 +161,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               <div className="bg-[#121414] p-3 rounded border border-[#242828] flex items-center gap-2">
                 <ExternalLink className="w-4 h-4 text-[#c9cd58]" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-[#93927e] block text-[10px] uppercase">Source URL</span>
+                  <span className="text-[#93927e] block text-[10px] uppercase">{t.links}</span>
                   <a
                     href={note.sourceLink}
                     target="_blank"
@@ -159,13 +178,13 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           {/* Tags & Taxonomy Paths */}
           {((note.tags && note.tags.length > 0) || (note.hashtags && note.hashtags.length > 0)) && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-[#242828]">
-              {note.tags?.map((t) => (
+              {note.tags?.map((tagItem) => (
                 <span
-                  key={t.id}
+                  key={tagItem.id}
                   className="px-2.5 py-1 rounded bg-[#282a2a] border border-[#242828] text-xs font-mono text-[#c9c7b2] flex items-center gap-1.5"
                 >
                   <Tag className="w-3 h-3 text-[#c9cd58]" />
-                  <span>{t.path}</span>
+                  <span>{tagItem.path}</span>
                 </span>
               ))}
               {note.hashtags?.map((h) => (
@@ -183,7 +202,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           {note.description && (
             <div className="border-t border-[#242828] pt-4">
               <h4 className="text-xs font-mono uppercase tracking-widest text-[#93927e] mb-3">
-                Content & Notes
+                {t.noteDetails}
               </h4>
               <div className="prose-dark bg-[#121414] p-4 rounded border border-[#242828] text-sm">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -198,7 +217,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
             <div className="border-t border-[#242828] pt-4">
               <h4 className="text-xs font-mono uppercase tracking-widest text-[#93927e] mb-3 flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
-                <span>Media Attachments ({note.images.length})</span>
+                <span>{t.attachments} ({note.images.length})</span>
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {note.images.map((img) => (
@@ -224,9 +243,10 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
         {/* Modal Footer */}
         <div className="px-6 py-3 border-t border-[#242828] bg-[#121414]/60 flex items-center justify-between text-xs font-mono text-[#93927e]">
           <span>ID: {note.id}</span>
-          <span>Updated: {dayjs(note.updatedAt).format('YYYY-MM-DD HH:mm')}</span>
+          <span>{t.updated}: {dayjs(note.updatedAt).format('YYYY-MM-DD HH:mm')}</span>
         </div>
       </div>
     </div>
   );
 };
+

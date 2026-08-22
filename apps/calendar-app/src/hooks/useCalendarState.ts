@@ -9,7 +9,7 @@ function getDefaultFilterState(): CalendarFilterState {
     start: bounds.start,
     end: bounds.end,
     view: 'timeline',
-    feeds: [],
+    feed: undefined,
     tags: [],
     hashtags: [],
     types: [],
@@ -29,9 +29,8 @@ export function parseUrlSearch(searchString: string): CalendarFilterState {
       ? viewRaw
       : 'timeline';
 
-  const feeds = params.get('feeds')
-    ? params.get('feeds')!.split(',').map((s) => s.trim()).filter(Boolean)
-    : [];
+  const feedParam = params.get('feed') || params.get('feeds');
+  const feed = feedParam ? feedParam.split(',')[0].trim() || undefined : undefined;
 
   const tags = params.get('tags')
     ? params.get('tags')!.split(',').map((s) => s.trim()).filter(Boolean)
@@ -51,7 +50,7 @@ export function parseUrlSearch(searchString: string): CalendarFilterState {
     start,
     end,
     view,
-    feeds,
+    feed,
     tags,
     hashtags,
     types,
@@ -65,7 +64,7 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.start) params.set('start', state.start);
   if (state.end) params.set('end', state.end);
   if (state.view && state.view !== 'timeline') params.set('view', state.view);
-  if (state.feeds && state.feeds.length > 0) params.set('feeds', state.feeds.join(','));
+  if (state.feed) params.set('feed', state.feed);
   if (state.tags && state.tags.length > 0) params.set('tags', state.tags.join(','));
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
@@ -119,24 +118,23 @@ export function useCalendarState() {
     updateFilter({ view });
   }, [updateFilter]);
 
+  const selectFeed = useCallback((feedSlug?: string | null) => {
+    updateFilter({ feed: feedSlug || undefined });
+  }, [updateFilter]);
+
   const toggleFeed = useCallback((feedSlug: string) => {
-    updateFilter((prev) => {
-      const exists = prev.feeds.includes(feedSlug);
-      const feeds = exists ? prev.feeds.filter((f) => f !== feedSlug) : [...prev.feeds, feedSlug];
-      return { ...prev, feeds };
-    });
+    updateFilter((prev) => ({
+      ...prev,
+      feed: prev.feed === feedSlug ? undefined : feedSlug,
+    }));
   }, [updateFilter]);
 
   const selectOnlyFeed = useCallback((feedSlug: string) => {
-    updateFilter({ feeds: [feedSlug] });
+    updateFilter({ feed: feedSlug });
   }, [updateFilter]);
 
-  const setAllFeeds = useCallback((feeds: string[]) => {
-    updateFilter({ feeds });
-  }, [updateFilter]);
-
-  const clearFeeds = useCallback(() => {
-    updateFilter({ feeds: [] });
+  const clearFeed = useCallback(() => {
+    updateFilter({ feed: undefined });
   }, [updateFilter]);
 
   const toggleTag = useCallback((tagPath: string) => {
@@ -237,7 +235,7 @@ export function useCalendarState() {
 
   const resetFilters = useCallback(() => {
     updateFilter({
-      feeds: [],
+      feed: undefined,
       tags: [],
       hashtags: [],
       types: [],
@@ -253,10 +251,11 @@ export function useCalendarState() {
     setStartDate,
     setEndDate,
     setView,
+    selectFeed,
     toggleFeed,
     selectOnlyFeed,
-    setAllFeeds,
-    clearFeeds,
+    clearFeed,
+    clearFeeds: clearFeed,
     toggleTag,
     selectOnlyTag,
     setAllTags,
@@ -276,3 +275,4 @@ export function useCalendarState() {
     resetFilters,
   };
 }
+

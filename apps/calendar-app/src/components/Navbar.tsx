@@ -9,8 +9,10 @@ import {
   Calendar as CalendarIcon,
   ListFilter,
   GanttChartSquare,
-  Sparkles,
+  Radio,
+  Globe,
 } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface NavbarProps {
   startDate: string;
@@ -39,6 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToday,
   onToggleFilter,
 }) => {
+  const { t, lang, setLang } = useI18n();
   const currentMonth = dayjs(startDate).format('MMMM YYYY');
 
   return (
@@ -55,19 +58,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={onPrevMonth}
             className="p-1 rounded text-[#c9c7b2] hover:text-white hover:bg-[#333535] transition-colors"
-            title="Previous Month"
+            title={t.previousMonth}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span className="font-mono text-xs font-semibold px-2 text-[#e2e2e2] min-w-[110px] text-center">
+          <span className="font-mono text-xs font-semibold px-2 text-[#e2e2e2] min-w-[110px] text-center capitalize">
             {currentMonth}
           </span>
 
           <button
             onClick={onNextMonth}
             className="p-1 rounded text-[#c9c7b2] hover:text-white hover:bg-[#333535] transition-colors"
-            title="Next Month"
+            title={t.nextMonth}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -77,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onToday}
           className="hidden sm:block text-xs font-mono px-3 py-1.5 rounded bg-[#1e2020] border border-[#242828] text-[#c9c7b2] hover:text-[#e5e971] hover:border-[#c9cd58] transition-colors"
         >
-          Today
+          {t.today}
         </button>
       </div>
 
@@ -87,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#93927e]" />
           <input
             type="text"
-            placeholder="Search notes, tags, feeds..."
+            placeholder={t.searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] focus:ring-1 focus:ring-[#c9cd58] rounded text-xs font-mono pl-8 pr-3 py-1.5 text-[#e2e2e2] placeholder-[#93927e] outline-none transition-all"
@@ -95,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Right: View Switchers & Filter Toggle */}
+      {/* Right: View Switchers, Language Switcher & Filter Toggle */}
       <div className="flex items-center gap-2">
         {/* View Mode Toggle Buttons */}
         <div className="hidden sm:flex items-center bg-[#1e2020] p-1 rounded border border-[#242828]">
@@ -108,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <ListFilter className="w-3.5 h-3.5" />
-            <span>Timeline</span>
+            <span>{t.timeline}</span>
           </button>
 
           <button
@@ -120,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            <span>Calendar</span>
+            <span>{t.calendar}</span>
           </button>
 
           <button
@@ -132,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <GanttChartSquare className="w-3.5 h-3.5" />
-            <span>Gantt</span>
+            <span>{t.gantt}</span>
           </button>
 
           <button
@@ -142,11 +145,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-[#c9cd58] text-[#121414] font-semibold shadow-glow-lemon'
                 : 'text-[#c9c7b2] hover:text-white hover:bg-[#333535]'
             }`}
+            title="Feeds Newsstand & Channel Command Center"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Feeds & Tags</span>
+            <Radio className="w-3.5 h-3.5" />
+            <span>{t.feeds}</span>
           </button>
         </div>
+
+        {/* Language Switcher Button */}
+        <button
+          onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
+          title={lang === 'ru' ? 'Переключить на английский (English)' : 'Switch to Russian (Русский)'}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#1e2020] border border-[#242828] hover:border-[#c9cd58] hover:text-[#e5e971] text-[#c9c7b2] font-mono text-xs font-semibold transition-all"
+        >
+          <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />
+          <span>{lang.toUpperCase()}</span>
+        </button>
 
         {/* Filter Sidebar Toggle Button */}
         <button
@@ -158,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Filters</span>
+          <span className="hidden md:inline">{t.filters}</span>
           {activeFilterCount > 0 && (
             <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
               {activeFilterCount}
@@ -169,3 +183,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

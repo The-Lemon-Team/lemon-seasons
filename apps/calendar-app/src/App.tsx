@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Note } from '@lenta/shared';
+import { I18nProvider } from './i18n';
 import { useCalendarState } from './hooks/useCalendarState';
 import { useTimeSliceNotes } from './api/queries';
 import { SideNavBar } from './components/SideNavBar';
@@ -9,18 +10,18 @@ import { FilterSidebar } from './components/FilterSidebar';
 import { TimelineView } from './components/TimelineView';
 import { MonthGridView } from './components/MonthGridView';
 import { GanttView } from './components/GanttView';
-import { FeedsTagsView } from './components/FeedsTagsView';
+import { FeedsHubView } from './components/FeedsHubView';
 import { NoteDetailModal } from './components/NoteDetailModal';
 
-export const App: React.FC = () => {
+const CalendarAppInner: React.FC = () => {
   const {
     filters,
     setStartDate,
     setView,
     setSearch,
+    selectFeed,
     toggleFeed,
     selectOnlyFeed,
-    setAllFeeds,
     clearFeeds,
     toggleTag,
     selectOnlyTag,
@@ -51,7 +52,7 @@ export const App: React.FC = () => {
 
   // Active filter count for badge
   const activeFilterCount =
-    filters.feeds.length +
+    (filters.feed ? 1 : 0) +
     filters.tags.length +
     filters.hashtags.length +
     filters.types.length +
@@ -86,13 +87,11 @@ export const App: React.FC = () => {
         />
 
         {/* Dynamic Stats Overview Bar */}
-        {filters.view !== 'feeds' && (
-          <StatsBar
-            notes={notes}
-            isLoading={isNotesLoading}
-            total={totalNotes}
-          />
-        )}
+        <StatsBar
+          notes={notes}
+          isLoading={isNotesLoading}
+          total={totalNotes}
+        />
 
         {/* View Content Canvas */}
         <main className="flex-1 flex overflow-hidden relative">
@@ -101,6 +100,18 @@ export const App: React.FC = () => {
               notes={notes}
               isLoading={isNotesLoading}
               onSelectNote={setSelectedNote}
+              filterState={filters}
+              onToggleFeed={toggleFeed}
+              onSelectOnlyFeed={selectOnlyFeed}
+              onClearFeeds={clearFeeds}
+              onOpenFeedsHub={() => setView('feeds')}
+              onToggleType={toggleType}
+              onSelectOnlyType={selectOnlyType}
+              onClearTypes={clearTypes}
+              onToggleTag={toggleTag}
+              onSelectOnlyTag={selectOnlyTag}
+              onClearTags={clearTags}
+              onResetFilters={resetFilters}
             />
           )}
 
@@ -108,11 +119,25 @@ export const App: React.FC = () => {
             <MonthGridView
               notes={notes}
               startDate={filters.start}
+              filterState={filters}
               onSelectNote={setSelectedNote}
               onSelectDay={(dateKey) => {
                 setStartDate(dateKey);
                 setView('timeline');
               }}
+              onToggleFeed={toggleFeed}
+              onSelectOnlyFeed={selectOnlyFeed}
+              onClearFeeds={clearFeeds}
+              onOpenFeedsHub={() => setView('feeds')}
+              onToggleType={toggleType}
+              onSelectOnlyType={selectOnlyType}
+              onClearTypes={clearTypes}
+              onToggleTag={toggleTag}
+              onSelectOnlyTag={selectOnlyTag}
+              onClearTags={clearTags}
+              onToggleHashtag={toggleHashtag}
+              onResetFilters={resetFilters}
+              onOpenFilterDrawer={() => setIsFilterOpen(true)}
             />
           )}
 
@@ -127,29 +152,18 @@ export const App: React.FC = () => {
           )}
 
           {filters.view === 'feeds' && (
-            <FeedsTagsView
+            <FeedsHubView
               notes={notes}
               isLoading={isNotesLoading}
-              filterState={filters}
-              onSetView={setView}
+              selectedFeed={filters.feed}
+              onSelectFeed={selectFeed}
               onToggleFeed={toggleFeed}
               onSelectOnlyFeed={selectOnlyFeed}
-              onSetAllFeeds={setAllFeeds}
+              onClearFeed={clearFeeds}
               onClearFeeds={clearFeeds}
-              onToggleTag={toggleTag}
-              onSelectOnlyTag={selectOnlyTag}
-              onSetAllTags={setAllTags}
-              onClearTags={clearTags}
-              onToggleHashtag={toggleHashtag}
-              onSelectOnlyHashtag={selectOnlyHashtag}
-              onSetAllHashtags={setAllHashtags}
-              onClearHashtags={clearHashtags}
-              onToggleType={toggleType}
-              onSelectOnlyType={selectOnlyType}
-              onSetAllTypes={setAllTypes}
-              onClearTypes={clearTypes}
-              onResetFilters={resetFilters}
               onSelectNote={setSelectedNote}
+              onNavigateToTimeline={() => setView('timeline')}
+              onNavigateToCalendar={() => setView('month')}
             />
           )}
         </main>
@@ -160,7 +174,11 @@ export const App: React.FC = () => {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         filterState={filters}
+        onSelectFeed={selectFeed}
         onToggleFeed={toggleFeed}
+        onSelectOnlyFeed={selectOnlyFeed}
+        onClearFeed={clearFeeds}
+        onClearFeeds={clearFeeds}
         onToggleTag={toggleTag}
         onToggleHashtag={toggleHashtag}
         onToggleType={toggleType}
@@ -175,3 +193,12 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
+export const App: React.FC = () => {
+  return (
+    <I18nProvider>
+      <CalendarAppInner />
+    </I18nProvider>
+  );
+};
+

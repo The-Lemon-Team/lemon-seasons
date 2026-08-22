@@ -5,7 +5,7 @@ import { NoteType, QueryNotesParams } from '@lenta/shared';
 export interface TimeSliceFilter {
   start: string;
   end: string;
-  feeds?: string[];
+  feed?: string;
   tags?: string[];
   hashtags?: string[];
   types?: NoteType[];
@@ -38,8 +38,8 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
       };
 
       // If feed filter active
-      if (filter.feeds && filter.feeds.length === 1) {
-        params.feedSlug = filter.feeds[0];
+      if (filter.feed) {
+        params.feedSlug = filter.feed;
       }
 
       // If tag path filter active
@@ -55,19 +55,93 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
       const response = await calendarApi.getNotes(params);
       let items = response.items;
 
-      // Client-side multi-filter refinement if multiple feeds/tags/types are selected
-      if (filter.feeds && filter.feeds.length > 1) {
-        const feedSet = new Set(filter.feeds);
-        items = items.filter((n) => n.feed?.slug && feedSet.has(n.feed.slug));
+      // Helper to check if a note matches a hierarchy tag/folder path
+      const matchesHierarchyPath = (note: typeof items[0], filterTag: string): boolean => {
+        const lower = filterTag.toLowerCase().trim();
+        const parts = lower.split('/');
+        const lastPart = parts[parts.length - 1];
+        const dotPath = lower.replace(/\//g, '.');
+
+        // 1. Check folder paths and names
+        if (
+          note.folders?.some((f) => {
+            const fp = (f.folder?.path || '').toLowerCase();
+            const fn = (f.folder?.name || '').toLowerCase();
+            return fp === lower || fp.startsWith(lower + '/') || fn === lastPart;
+          })
+        ) {
+          return true;
+        }
+
+        // 2. Check taxonomy tags
+        if (
+          note.tags?.some((t) => {
+            const tp = (t.path || '').toLowerCase();
+            const tn = (t.name || '').toLowerCase();
+            return tp === dotPath || tp.startsWith(dotPath + '.') || tn === lastPart;
+          })
+        ) {
+          return true;
+        }
+
+        // 3. Preset and semantic aliases
+        if (lastPart === 'marvel') {
+          return Boolean(
+            note.title.toLowerCase().includes('marvel') ||
+            note.title.toLowerCase().includes('avengers') ||
+            note.tags?.some((t) => t.path.includes('marvel')) ||
+            note.feed?.slug?.includes('mcu')
+          );
+        }
+        if (lastPart === 'fantastic') {
+          return Boolean(
+            note.title.toLowerCase().includes('fantastic') ||
+            note.title.toLowerCase().includes('sci-fi') ||
+            note.title.toLowerCase().includes('universe')
+          );
+        }
+        if (lastPart === 'usa') {
+          return Boolean(
+            note.title.toLowerCase().includes('usa') ||
+            note.title.toLowerCase().includes('america') ||
+            note.title.toLowerCase().includes('election')
+          );
+        }
+        if (lastPart === 'russia') {
+          return Boolean(
+            note.title.toLowerCase().includes('russia') ||
+            note.title.toLowerCase().includes('moscow') ||
+            note.title.toLowerCase().includes('foreign')
+          );
+        }
+        if (lower === 'films') {
+          return Boolean(
+            matchesHierarchyPath(note, 'Films/Marvel') ||
+            matchesHierarchyPath(note, 'Films/Fantastic') ||
+            note.type === 'FILM_RELEASE' ||
+            note.tags?.some((t) => t.path.startsWith('movies') || t.path.startsWith('films')) ||
+            note.folders?.some((f) => (f.folder?.path || '').toLowerCase().startsWith('news/marvel') || (f.folder?.path || '').toLowerCase().startsWith('news/cinema'))
+          );
+        }
+        if (lower === 'politics') {
+          return Boolean(matchesHierarchyPath(note, 'Politics/USA') || matchesHierarchyPath(note, 'Politics/Russia'));
+        }
+
+        return false;
+      };
+
+      // Client-side feed filter refinement
+      if (filter.feed) {
+        items = items.filter((n) => n.feed?.slug === filter.feed);
       }
 
-      if (filter.tags && filter.tags.length > 1) {
+      if (filter.tags && filter.tags.length > 0) {
         items = items.filter((n) =>
-          n.tags?.some((t) => filter.tags!.some((filterTag) => t.path.startsWith(filterTag)))
+          filter.tags!.some((filterTag) => matchesHierarchyPath(n, filterTag))
         );
       }
 
-      if (filter.hashtags && filter.hashtags.length > 1) {
+      if (filter.hashtags && filter.hashtags.length > 0) {
         const hashSet = new Set(filter.hashtags.map((h) => h.toLowerCase().replace(/^#/, '')));
         items = items.filter((n) =>
           n.hashtags?.some((h) => hashSet.has(h.name.toLowerCase().replace(/^#/, '')))
@@ -109,14 +183,6 @@ export function useTaxonomyTree() {
   return useQuery({
     queryKey: queryKeys.taxonomyTree,
     queryFn: () => calendarApi.getTaxonomyTree(),
-    staleTime: 60_000,
-  });
-}
-
-export function useTaxonomyNodes() {
-  return useQuery({
-    queryKey: queryKeys.taxonomyFlat,
-    queryFn: () => calendarApi.getTaxonomyNodes(),
     staleTime: 60_000,
   });
 }
