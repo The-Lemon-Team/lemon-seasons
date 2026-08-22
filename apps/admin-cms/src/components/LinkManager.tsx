@@ -8,6 +8,7 @@ import {
   useUpdateNoteLink,
   useDeleteNoteLink,
 } from '../api/queries';
+import { useAdminI18n } from '../i18n';
 
 interface LinkManagerProps {
   noteId?: string;
@@ -28,6 +29,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
   onInsertMarkdown,
   readOnly = false,
 }) => {
+  const { t } = useAdminI18n();
   const isExistingNote = Boolean(noteId && noteId !== 'new');
 
   // Add Link State
@@ -66,7 +68,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
   const handleAddLink = async () => {
     const trimmedUrl = newUrl.trim();
     if (!trimmedUrl) {
-      message.warning('Please enter a valid URL');
+      message.warning(t.urlCol);
       return;
     }
 
@@ -89,12 +91,12 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
             },
           ],
         });
-        message.success('Link added successfully');
+        message.success(t.feedSavedSuccess);
         setNewUrl('');
         setNewTitle('');
         setIsAdding(false);
       } catch (err: any) {
-        message.error(err.response?.data?.message || 'Failed to add link');
+        message.error(err.response?.data?.message || 'Error');
       }
     } else if (onPendingLinksChange) {
       const isSource = pendingLinks.length === 0;
@@ -110,7 +112,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       setNewUrl('');
       setNewTitle('');
       setIsAdding(false);
-      message.success('Link added');
+      message.success(t.feedSavedSuccess);
     }
   };
 
@@ -118,9 +120,9 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     if (!isExistingNote || !noteId) return;
     try {
       await setSourceMutation.mutateAsync({ noteId, linkId: link.id });
-      message.success('Primary source updated');
+      message.success(t.feedSavedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to update source link');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -131,7 +133,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
         isSource: i === index,
       }));
       onPendingLinksChange(updated, index);
-      message.success('Primary source updated');
+      message.success(t.feedSavedSuccess);
     }
   };
 
@@ -148,7 +150,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       try {
         await reorderMutation.mutateAsync({ noteId, items });
       } catch (err: any) {
-        message.error(err.response?.data?.message || 'Failed to reorder links');
+        message.error(err.response?.data?.message || 'Error');
       }
     } else if (onPendingLinksChange) {
       if (targetIndex >= pendingLinks.length) return;
@@ -173,9 +175,9 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     if (!isExistingNote || !noteId) return;
     try {
       await deleteMutation.mutateAsync({ noteId, linkId });
-      message.success('Link removed');
+      message.success(t.tagDeletedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete link');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -192,7 +194,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
         newSourceIndex = Math.max(0, pendingSourceIndex - 1);
       }
       onPendingLinksChange(updated, newSourceIndex);
-      message.success('Link removed');
+      message.success(t.tagDeletedSuccess);
     }
   };
 
@@ -212,7 +214,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
   const handleSaveEdit = async () => {
     const trimmedUrl = editUrl.trim();
     if (!trimmedUrl) {
-      message.warning('URL cannot be empty');
+      message.warning(t.urlCol);
       return;
     }
     const formattedUrl =
@@ -230,10 +232,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
             title: editTitle.trim() || undefined,
           },
         });
-        message.success('Link updated successfully');
+        message.success(t.feedSavedSuccess);
         setEditingLinkId(null);
       } catch (err: any) {
-        message.error(err.response?.data?.message || 'Failed to update link');
+        message.error(err.response?.data?.message || 'Error');
       }
     } else if (onPendingLinksChange && editingPendingIndex !== null) {
       const updated = [...pendingLinks];
@@ -244,7 +246,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       };
       onPendingLinksChange(updated, pendingSourceIndex);
       setEditingPendingIndex(null);
-      message.success('Link updated');
+      message.success(t.feedSavedSuccess);
     }
   };
 
@@ -254,10 +256,10 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
     if (onInsertMarkdown) {
       onInsertMarkdown(snippet);
-      message.success('Inserted Markdown link into editor');
+      message.success(t.feedSavedSuccess);
     } else {
       navigator.clipboard.writeText(snippet);
-      message.success('Copied Markdown link to clipboard: ' + snippet);
+      message.success(snippet);
     }
   };
 
@@ -269,7 +271,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-            Links & Sources
+            {t.linksLabel}
           </label>
           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant">
             {itemsCount}
@@ -286,7 +288,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
             <span className="material-symbols-outlined text-[14px]">
               {isAdding ? 'close' : 'add'}
             </span>
-            {isAdding ? 'Cancel' : 'Add Link'}
+            {isAdding ? t.cancel : t.addLinkBtn}
           </button>
         )}
       </div>
@@ -321,7 +323,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                   handleAddLink();
                 }
               }}
-              placeholder="Title / Label (optional)"
+              placeholder="Title (optional)"
               className="w-full bg-surface-container border border-white/10 rounded px-2.5 py-1 text-xs text-on-surface focus:border-primary outline-none"
             />
           </div>
@@ -336,7 +338,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
               }}
               className="px-2 py-0.5 text-[11px] text-on-surface-variant hover:text-on-surface rounded transition-colors"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="button"
@@ -349,7 +351,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
               className="px-3 py-1 bg-primary text-on-primary rounded text-[11px] font-semibold hover:bg-primary-fixed-dim transition-all shadow disabled:opacity-50 flex items-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[13px]">add</span>
-              Add
+              {t.add}
             </button>
           </div>
         </div>
@@ -359,24 +361,14 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       {isMutating && (
         <div className="flex items-center justify-center py-1.5 gap-1.5 text-[11px] text-primary font-mono bg-surface-container-lowest rounded">
           <Spin size="small" />
-          <span>Updating links...</span>
+          <span>{t.loading}</span>
         </div>
       )}
 
       {/* Empty State */}
       {itemsCount === 0 && !isAdding && (
         <div className="p-3 text-center bg-surface-container-lowest/60 rounded border border-white/5">
-          <p className="text-[11px] text-on-surface-variant font-mono">No links attached</p>
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={() => setIsAdding(true)}
-              className="mt-1 text-[11px] text-primary hover:underline font-mono inline-flex items-center gap-0.5 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[13px]">add</span>
-              Add Link / Source
-            </button>
-          )}
+          <p className="text-[11px] text-on-surface-variant font-mono">—</p>
         </div>
       )}
 
@@ -434,7 +426,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
                   {/* Actions */}
                   <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <Tooltip title="Insert Markdown [Title](url)">
+                    <Tooltip title="Markdown">
                       <button
                         type="button"
                         onClick={() => handleCopyMarkdown(link.url, link.title)}
@@ -446,7 +438,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                       </button>
                     </Tooltip>
 
-                    <Tooltip title="Open link">
+                    <Tooltip title="Open">
                       <a
                         href={link.url}
                         target="_blank"
@@ -461,53 +453,47 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
 
                     {!readOnly && (
                       <>
-                        <Tooltip title="Edit">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(link)}
+                          disabled={isMutating}
+                          className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px] leading-none">
+                            edit
+                          </span>
+                        </button>
+
+                        {idx > 0 && (
                           <button
                             type="button"
-                            onClick={() => handleStartEdit(link)}
+                            onClick={() => handleMove(idx, idx - 1)}
                             disabled={isMutating}
                             className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[14px] leading-none">
-                              edit
+                              arrow_upward
                             </span>
                           </button>
-                        </Tooltip>
-
-                        {idx > 0 && (
-                          <Tooltip title="Move Up">
-                            <button
-                              type="button"
-                              onClick={() => handleMove(idx, idx - 1)}
-                              disabled={isMutating}
-                              className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[14px] leading-none">
-                                arrow_upward
-                              </span>
-                            </button>
-                          </Tooltip>
                         )}
 
                         {idx < links.length - 1 && (
-                          <Tooltip title="Move Down">
-                            <button
-                              type="button"
-                              onClick={() => handleMove(idx, idx + 1)}
-                              disabled={isMutating}
-                              className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[14px] leading-none">
-                                arrow_downward
-                              </span>
-                            </button>
-                          </Tooltip>
+                          <button
+                            type="button"
+                            onClick={() => handleMove(idx, idx + 1)}
+                            disabled={isMutating}
+                            className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px] leading-none">
+                              arrow_downward
+                            </span>
+                          </button>
                         )}
 
                         <Popconfirm
-                          title="Remove link?"
-                          okText="Delete"
-                          cancelText="Cancel"
+                          title={t.confirmDeleteFeed}
+                          okText={t.delete}
+                          cancelText={t.cancel}
                           okButtonProps={{ danger: true }}
                           onConfirm={() => handleDelete(link.id)}
                         >
@@ -580,7 +566,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                   </div>
 
                   <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <Tooltip title="Insert Markdown [Title](url)">
+                    <Tooltip title="Markdown">
                       <button
                         type="button"
                         onClick={() => handleCopyMarkdown(link.url, link.title)}
@@ -592,44 +578,38 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
                       </button>
                     </Tooltip>
 
-                    <Tooltip title="Edit">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditPending(idx)}
+                      className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px] leading-none">
+                        edit
+                      </span>
+                    </button>
+
+                    {idx > 0 && (
                       <button
                         type="button"
-                        onClick={() => handleStartEditPending(idx)}
+                        onClick={() => handleMove(idx, idx - 1)}
                         className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[14px] leading-none">
-                          edit
+                          arrow_upward
                         </span>
                       </button>
-                    </Tooltip>
-
-                    {idx > 0 && (
-                      <Tooltip title="Move Up">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx - 1)}
-                          className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[14px] leading-none">
-                            arrow_upward
-                          </span>
-                        </button>
-                      </Tooltip>
                     )}
 
                     {idx < pendingLinks.length - 1 && (
-                      <Tooltip title="Move Down">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx + 1)}
-                          className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[14px] leading-none">
-                            arrow_downward
-                          </span>
-                        </button>
-                      </Tooltip>
+                      <button
+                        type="button"
+                        onClick={() => handleMove(idx, idx + 1)}
+                        className="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[14px] leading-none">
+                          arrow_downward
+                        </span>
+                      </button>
                     )}
 
                     <button
@@ -656,21 +636,21 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
       {/* Edit Link Modal */}
       <Modal
         open={Boolean(editingLinkId || editingPendingIndex !== null)}
-        title="Edit Link"
+        title={t.linksLabel}
         onCancel={() => {
           setEditingLinkId(null);
           setEditingPendingIndex(null);
         }}
         onOk={handleSaveEdit}
         confirmLoading={isMutating}
-        okText="Save"
+        okText={t.save}
         centered
         width={420}
       >
         <div className="space-y-2.5 pt-2">
           <div className="space-y-1">
             <label className="block text-xs font-mono text-on-surface-variant uppercase">
-              URL
+              {t.urlCol}
             </label>
             <Input
               value={editUrl}
@@ -680,7 +660,7 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-mono text-on-surface-variant uppercase">
-              Title / Label
+              {t.titleInputLabel}
             </label>
             <Input
               value={editTitle}
@@ -693,3 +673,4 @@ export const LinkManager: React.FC<LinkManagerProps> = ({
     </div>
   );
 };
+

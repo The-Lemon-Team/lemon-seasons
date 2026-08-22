@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { message, Modal, Popconfirm, Table, Tag } from 'antd';
+import { message, Modal, Popconfirm } from 'antd';
 import {
   useFeeds,
   useCreateFeed,
@@ -9,10 +9,12 @@ import {
 } from '../../api/queries';
 import { Feed } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import { useAdminI18n } from '../../i18n';
 
 export const FeedsPage: React.FC = () => {
+  const { t } = useAdminI18n();
   const [includeDeleted, setIncludeDeleted] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
 
@@ -48,7 +50,7 @@ export const FeedsPage: React.FC = () => {
   const handleSaveFeed = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      message.error('Please provide a feed title');
+      message.error(t.feedTitleLabel);
       return;
     }
 
@@ -62,36 +64,36 @@ export const FeedsPage: React.FC = () => {
             slug: slug.trim() || undefined,
           },
         });
-        message.success('Feed updated successfully');
+        message.success(t.feedSavedSuccess);
       } else {
         await createFeedMutation.mutateAsync({
           title: title.trim(),
           description: description.trim() || undefined,
           slug: slug.trim() || undefined,
         });
-        message.success('Feed created successfully');
+        message.success(t.feedSavedSuccess);
       }
       setIsCreateModalOpen(false);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to save feed');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
   const handleDeleteFeed = async (id: string) => {
     try {
       await deleteFeedMutation.mutateAsync(id);
-      message.success('Feed soft-deleted successfully');
+      message.success(t.feedDeletedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete feed');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
   const handleRestoreFeed = async (id: string) => {
     try {
       await restoreFeedMutation.mutateAsync(id);
-      message.success('Feed restored successfully');
+      message.success(t.feedSavedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to restore feed');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -101,10 +103,10 @@ export const FeedsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
-            Feed Management
+            {t.feedsPageTitle}
           </h1>
           <p className="text-on-surface-variant font-sans text-sm">
-            Configure chronological streams and data feeds for your notes and events.
+            {t.feedsPageSubtitle}
           </p>
         </div>
 
@@ -116,14 +118,14 @@ export const FeedsPage: React.FC = () => {
               onChange={(e) => setIncludeDeleted(e.target.checked)}
               className="rounded bg-surface-container border-white/20 text-primary focus:ring-0"
             />
-            Show Deleted
+            {t.status}: Deleted
           </label>
           <button
             onClick={openCreateModal}
             className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            New Feed
+            {t.createFeedBtn}
           </button>
         </div>
       </div>
@@ -161,21 +163,20 @@ export const FeedsPage: React.FC = () => {
                       <button
                         onClick={() => openEditModal(feed)}
                         className="p-1 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-white/5"
-                        title="Edit Feed"
+                        title={t.edit}
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                       </button>
                       <Popconfirm
-                        title="Soft-delete this feed?"
-                        description="Notes in this feed will remain preserved."
+                        title={t.confirmDeleteFeed}
                         onConfirm={() => handleDeleteFeed(feed.id)}
-                        okText="Delete"
-                        cancelText="Cancel"
+                        okText={t.delete}
+                        cancelText={t.cancel}
                         okButtonProps={{ danger: true }}
                       >
                         <button
                           className="p-1 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-white/5"
-                          title="Delete Feed"
+                          title={t.delete}
                         >
                           <span className="material-symbols-outlined text-[16px]">delete</span>
                         </button>
@@ -185,7 +186,7 @@ export const FeedsPage: React.FC = () => {
                     <button
                       onClick={() => handleRestoreFeed(feed.id)}
                       className="p-1 text-tertiary hover:text-primary transition-colors rounded hover:bg-white/5"
-                      title="Restore Feed"
+                      title="Restore"
                     >
                       <span className="material-symbols-outlined text-[16px]">restore</span>
                     </button>
@@ -202,7 +203,7 @@ export const FeedsPage: React.FC = () => {
                   {feed.title}
                 </h3>
                 <p className="text-on-surface-variant text-xs line-clamp-2 leading-relaxed">
-                  {feed.description || 'No description provided.'}
+                  {feed.description || '—'}
                 </p>
               </div>
 
@@ -213,7 +214,7 @@ export const FeedsPage: React.FC = () => {
                   className="inline-flex items-center gap-1.5 text-secondary hover:text-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-[14px]">description</span>
-                  {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+                  {noteCount} {t.notesCountBadge(noteCount)}
                 </button>
 
                 <span className="text-[11px] text-outline">
@@ -228,15 +229,15 @@ export const FeedsPage: React.FC = () => {
       {feeds.length === 0 && !isLoading && (
         <div className="bg-surface-container rounded-lg border border-white/5 p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-outline mb-2">dynamic_feed</span>
-          <h3 className="font-semibold text-on-surface text-base">No feeds found</h3>
+          <h3 className="font-semibold text-on-surface text-base">{t.noFeedsFound}</h3>
           <p className="text-on-surface-variant text-xs mt-1 mb-4">
-            Create your first feed to start streaming chronological notes.
+            {t.feedsPageSubtitle}
           </p>
           <button
             onClick={openCreateModal}
             className="px-4 py-2 bg-primary text-on-primary rounded font-semibold text-sm"
           >
-            Create Feed
+            {t.createFeedBtn}
           </button>
         </div>
       )}
@@ -258,13 +259,13 @@ export const FeedsPage: React.FC = () => {
       >
         <div className="p-2 space-y-4">
           <h2 className="font-sans font-bold text-lg text-on-surface">
-            {editingFeed ? 'Edit Feed' : 'Create New Feed'}
+            {editingFeed ? t.editFeedTitle : t.createFeedTitle}
           </h2>
 
           <form onSubmit={handleSaveFeed} className="space-y-4">
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Feed Title
+                {t.feedTitleLabel}
               </label>
               <input
                 type="text"
@@ -277,26 +278,26 @@ export const FeedsPage: React.FC = () => {
 
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Slug (URL Identifier)
+                {t.feedSlugLabel}
               </label>
               <input
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. mcu-radar (auto-generated if empty)"
+                placeholder="e.g. mcu-radar"
                 className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
               />
             </div>
 
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Description
+                {t.feedDescriptionLabel}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="Brief description of this feed's content..."
+                placeholder="—"
                 className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-sm focus:border-primary outline-none resize-none"
               />
             </div>
@@ -307,14 +308,14 @@ export const FeedsPage: React.FC = () => {
                 onClick={() => setIsCreateModalOpen(false)}
                 className="px-4 py-2 rounded text-sm text-on-surface-variant hover:text-on-surface"
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={createFeedMutation.isPending || updateFeedMutation.isPending}
                 className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm shadow"
               >
-                {editingFeed ? 'Update Feed' : 'Create Feed'}
+                {editingFeed ? t.save : t.createFeedBtn}
               </button>
             </div>
           </form>
@@ -323,3 +324,4 @@ export const FeedsPage: React.FC = () => {
     </div>
   );
 };
+

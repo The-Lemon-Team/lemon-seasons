@@ -6,6 +6,7 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
+import { useAdminI18n } from '../i18n';
 
 interface QuickAddModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface QuickAddModalProps {
 }
 
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) => {
+  const { t } = useAdminI18n();
   const { data: feeds = [] } = useFeeds();
   const createNoteMutation = useCreateNote();
 
@@ -38,11 +40,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      message.error('Please enter a note title');
+      message.error(t.titleInputLabel);
       return;
     }
     if (!feedId) {
-      message.error('Please select a feed');
+      message.error(t.selectFeedPlaceholder);
       return;
     }
 
@@ -50,7 +52,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       const tagIds = taxonomyPath.trim()
         ? taxonomyPath
             .split(',')
-            .map((t) => t.trim())
+            .map((item) => item.trim())
             .filter(Boolean)
         : [];
 
@@ -66,7 +68,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
         folders: folders.length > 0 ? folders : undefined,
       });
 
-      message.success('Note added successfully!');
+      message.success(t.quickAddNoteCreated);
       // Reset form
       setTitle('');
       setDescription('');
@@ -76,7 +78,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       setHashtags([]);
       onClose();
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to create note');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -108,7 +110,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
               src="/logo.png"
             />
             <h2 className="font-sans font-semibold text-lg text-on-surface">
-              Quick Add Note
+              {t.quickAddModalTitle}
             </h2>
           </div>
         </div>
@@ -119,7 +121,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Target Feed
+                {t.feedInputLabel}
               </label>
               <select
                 value={feedId}
@@ -136,7 +138,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
 
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Note Type
+                {t.typeInputLabel}
               </label>
               <NoteTypeSelect value={type} onChange={setType} />
             </div>
@@ -145,13 +147,13 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
           {/* Title */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-              Title
+              {t.titleInputLabel}
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter note title..."
+              placeholder={t.titleInputPlaceholder}
               className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-sm placeholder:text-outline/60 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
             />
           </div>
@@ -160,7 +162,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Dates (Start - End)
+                {t.datesCol}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -174,7 +176,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  placeholder="Optional end"
+                  placeholder={t.endDateLabel}
                   className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
                 />
               </div>
@@ -182,7 +184,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
 
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Taxonomy Path (Ltree)
+                {t.taxonomy}
               </label>
               <input
                 type="text"
@@ -197,12 +199,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
           {/* Obsidian Vault Folders */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-              Vault Folders (Obsidian)
+              {t.folderInputLabel}
             </label>
             <FolderSelect
               value={folders}
               onChange={setFolders}
-              placeholder="Assign folder (e.g. News/Tech)..."
+              placeholder={t.selectFolderPlaceholder}
             />
           </div>
 
@@ -210,14 +212,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
           <HashtagInput
             value={hashtags}
             onChange={setHashtags}
-            placeholder="Type #tag or keyword and press Enter..."
+            placeholder={t.hashtagsPlaceholder}
           />
 
           {/* Markdown Description */}
           <MarkdownEditor
             value={description}
             onChange={setDescription}
-            placeholder="# Write note description in Markdown..."
+            placeholder="# Markdown..."
             minHeight={120}
           />
 
@@ -228,14 +230,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
               onClick={onClose}
               className="px-4 py-2 rounded text-sm text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors font-medium cursor-pointer"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
               disabled={createNoteMutation.isPending}
               className="px-5 py-2 rounded text-sm font-semibold bg-primary text-on-primary hover:bg-primary-fixed-dim transition-all shadow hover:shadow-lg disabled:opacity-50 cursor-pointer"
             >
-              {createNoteMutation.isPending ? 'Saving...' : 'Save Note'}
+              {createNoteMutation.isPending ? t.loading : t.save}
             </button>
           </div>
         </form>
@@ -243,3 +245,4 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
     </Modal>
   );
 };
+

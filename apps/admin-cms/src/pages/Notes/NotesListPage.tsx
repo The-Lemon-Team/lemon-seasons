@@ -15,8 +15,10 @@ import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { HashtagBadge } from '../../components/HashtagBadge';
 import { FolderExplorer } from '../../components/FolderExplorer';
 import { NoteType } from '../../types';
+import { useAdminI18n } from '../../i18n';
 
 export const NotesListPage: React.FC = () => {
+  const { t } = useAdminI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -99,18 +101,18 @@ export const NotesListPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteNoteMutation.mutateAsync(id);
-      message.success('Note soft-deleted successfully');
+      message.success(t.noteDeletedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete note');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
   const handleRestore = async (id: string) => {
     try {
       await restoreNoteMutation.mutateAsync(id);
-      message.success('Note restored successfully');
+      message.success(t.noteSavedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to restore note');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -124,14 +126,14 @@ export const NotesListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
-              All Notes & News
+              {t.notesListPageTitle}
             </h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
               Admin & Obsidian Sync
             </span>
           </div>
           <p className="text-on-surface-variant font-sans text-sm">
-            Manage your chronological notes library with Obsidian vault physical folder structure, hashtags, and markdown.
+            {t.notesListPageSubtitle}
           </p>
         </div>
 
@@ -144,12 +146,12 @@ export const NotesListPage: React.FC = () => {
                 ? 'bg-primary/20 text-primary border-primary/40 font-semibold'
                 : 'bg-surface-container-high text-on-surface-variant border-white/10 hover:text-on-surface'
             }`}
-            title="Toggle Obsidian Folder Explorer"
+            title="Toggle Folder Explorer"
           >
             <span className="material-symbols-outlined text-[17px]">
               {showFolderSidebar ? 'folder_open' : 'folder'}
             </span>
-            <span>{showFolderSidebar ? 'Hide Folders' : 'Show Folders'}</span>
+            <span>{showFolderSidebar ? 'Папки' : 'Папки'}</span>
           </button>
 
           <button
@@ -157,7 +159,7 @@ export const NotesListPage: React.FC = () => {
             className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            New Note
+            {t.newNoteBtn}
           </button>
         </div>
       </div>
@@ -192,7 +194,7 @@ export const NotesListPage: React.FC = () => {
                   type="text"
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
-                  placeholder="Filter by title, markdown, #hashtag, folder, feed..."
+                  placeholder={t.searchNotesPlaceholder}
                   className="w-full bg-surface-container border border-outline-variant/40 rounded pl-9 pr-3 py-1.5 text-xs text-on-surface focus:border-primary outline-none"
                 />
               </form>
@@ -207,7 +209,7 @@ export const NotesListPage: React.FC = () => {
                       type="button"
                       onClick={() => handleFilterChange('folder', undefined)}
                       className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors"
-                      title="Clear folder filter"
+                      title={t.reset}
                     >
                       <span className="material-symbols-outlined text-[12px] leading-none">close</span>
                     </button>
@@ -223,7 +225,7 @@ export const NotesListPage: React.FC = () => {
                       type="button"
                       onClick={() => handleFilterChange('unfiled', undefined)}
                       className="p-0.5 hover:bg-white/10 rounded-full text-on-surface-variant hover:text-white transition-colors"
-                      title="Clear unfiled filter"
+                      title={t.reset}
                     >
                       <span className="material-symbols-outlined text-[12px] leading-none">close</span>
                     </button>
@@ -239,7 +241,7 @@ export const NotesListPage: React.FC = () => {
                       type="button"
                       onClick={() => handleFilterChange('hashtag', undefined)}
                       className="p-0.5 hover:bg-cyan-800/60 rounded-full text-cyan-400 hover:text-white transition-colors"
-                      title="Clear hashtag filter"
+                      title={t.reset}
                     >
                       <span className="material-symbols-outlined text-[12px] leading-none">close</span>
                     </button>
@@ -247,7 +249,7 @@ export const NotesListPage: React.FC = () => {
                 )}
 
                 <span className="px-2.5 py-1 bg-surface-container-highest rounded font-mono text-xs text-on-surface-variant border border-white/5">
-                  {total} {total === 1 ? 'note' : 'notes'}
+                  {t.totalNotesCountBadge(total)}
                 </span>
               </div>
             </div>
@@ -260,10 +262,10 @@ export const NotesListPage: React.FC = () => {
                 onChange={(e) => handleFilterChange('feedId', e.target.value || undefined)}
                 className="bg-surface-container border border-outline-variant/40 rounded px-2.5 py-1 text-xs text-on-surface font-sans focus:border-primary outline-none"
               >
-                <option value="">All Feeds</option>
+                <option value="">{t.filterFeedPlaceholder}</option>
                 {feeds.map((f) => (
                   <option key={f.id} value={f.id}>
-                    Feed: {f.title}
+                    {f.title}
                   </option>
                 ))}
               </select>
@@ -274,7 +276,7 @@ export const NotesListPage: React.FC = () => {
                   value={typeParam}
                   onChange={(val) => handleFilterChange('type', val || undefined)}
                   allowAll
-                  allLabel="All Types"
+                  allLabel={t.filterTypePlaceholder}
                   size="sm"
                 />
               </div>
@@ -292,7 +294,7 @@ export const NotesListPage: React.FC = () => {
                 }}
                 className="bg-surface-container border border-primary/30 text-primary font-mono rounded px-2.5 py-1 text-xs focus:border-primary outline-none"
               >
-                <option value="" className="text-on-surface">All Folders</option>
+                <option value="" className="text-on-surface">{t.filterFolderPlaceholder}</option>
                 <option value="__unfiled__" className="text-on-surface">📥 Unfiled (Root)</option>
                 {folders.map((f) => (
                   <option key={f.id} value={f.path} className="text-on-surface">
@@ -307,10 +309,10 @@ export const NotesListPage: React.FC = () => {
                 onChange={(e) => handleFilterChange('tagPath', e.target.value || undefined)}
                 className="bg-surface-container border border-outline-variant/40 rounded px-2.5 py-1 text-xs text-on-surface font-mono focus:border-primary outline-none"
               >
-                <option value="">All Taxonomy Tags</option>
-                {tags.map((t) => (
-                  <option key={t.id} value={t.path}>
-                    Tag: {t.path}
+                <option value="">{t.taxonomy}</option>
+                {tags.map((tagItem) => (
+                  <option key={tagItem.id} value={tagItem.path}>
+                    {tagItem.path}
                   </option>
                 ))}
               </select>
@@ -321,7 +323,7 @@ export const NotesListPage: React.FC = () => {
                 onChange={(e) => handleFilterChange('hashtag', e.target.value || undefined)}
                 className="bg-surface-container border border-cyan-800/40 text-cyan-300 rounded px-2.5 py-1 text-xs font-mono focus:border-cyan-400 outline-none"
               >
-                <option value="" className="text-on-surface">All Hashtags</option>
+                <option value="" className="text-on-surface">{t.hashtagsPlaceholder}</option>
                 {hashtags.map((h) => (
                   <option key={h.id} value={h.name} className="text-on-surface">
                     #{h.name} {h._count?.notes ? `(${h._count.notes})` : ''}
@@ -337,7 +339,7 @@ export const NotesListPage: React.FC = () => {
                   onChange={(e) => handleFilterChange('includeDeleted', e.target.checked ? 'true' : undefined)}
                   className="rounded bg-surface-container border-white/20 text-primary focus:ring-0"
                 />
-                Include Deleted
+                {t.status}: Deleted
               </label>
             </div>
           </div>
@@ -346,12 +348,12 @@ export const NotesListPage: React.FC = () => {
           <div className="bg-surface-container rounded border border-white/5 overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-4 p-4 border-b border-white/5 bg-surface-container-high font-mono text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
-              <div>Title & Feed</div>
-              <div>Vault Folders</div>
-              <div>Type</div>
-              <div>Date Range / Start</div>
-              <div>Taxonomy & Hashtags</div>
-              <div className="text-right">Actions</div>
+              <div>{t.titleCol} & {t.feedCol}</div>
+              <div>{t.folderCol}</div>
+              <div>{t.typeCol}</div>
+              <div>{t.datesCol}</div>
+              <div>{t.tagsCol}</div>
+              <div className="text-right">{t.actionsCol || t.actions}</div>
             </div>
 
             {/* Rows */}
@@ -419,7 +421,7 @@ export const NotesListPage: React.FC = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           {note.feed && (
                             <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
-                              feed: {note.feed.title}
+                              {note.feed.title}
                             </span>
                           )}
                           {note.sourceLink && (
@@ -444,7 +446,7 @@ export const NotesListPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Vault Folders Column (Obsidian Multi-Folder Physical Location) */}
+                    {/* Vault Folders Column */}
                     <div className="min-w-0">
                       {primaryFolder?.folder ? (
                         <div className="space-y-1">
@@ -452,7 +454,7 @@ export const NotesListPage: React.FC = () => {
                             type="button"
                             onClick={() => handleSelectFolder(primaryFolder.folder!.path)}
                             className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono bg-primary/15 text-primary border border-primary/30 hover:border-primary hover:bg-primary/25 transition-all text-left max-w-full truncate cursor-pointer"
-                            title={`Primary Folder (Canonical): ${primaryFolder.folder.path}`}
+                            title={`Folder: ${primaryFolder.folder.path}`}
                           >
                             <span className="material-symbols-outlined text-[13px] text-primary">
                               folder
@@ -469,7 +471,7 @@ export const NotesListPage: React.FC = () => {
                                   type="button"
                                   onClick={() => handleSelectFolder(sf.folder!.path)}
                                   className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-surface-container-highest text-on-surface-variant/80 border border-white/5 hover:border-white/20 hover:text-on-surface transition-all cursor-pointer"
-                                  title={`Linked Folder (Sub-ID): ${sf.folder?.path}`}
+                                  title={`Linked Folder: ${sf.folder?.path}`}
                                 >
                                   <span className="material-symbols-outlined text-[11px]">
                                     link
@@ -484,7 +486,6 @@ export const NotesListPage: React.FC = () => {
                         <span
                           onClick={handleSelectUnfiled}
                           className="inline-flex items-center gap-1 text-[11px] font-mono text-outline/50 hover:text-secondary transition-colors cursor-pointer"
-                          title="Click to view all unfiled notes"
                         >
                           <span className="material-symbols-outlined text-[13px]">draft</span>
                           Unfiled (Root)
@@ -511,7 +512,7 @@ export const NotesListPage: React.FC = () => {
                             key={tag.id}
                             onClick={() => handleFilterChange('tagPath', tag.path)}
                             className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors cursor-pointer"
-                            title={`Filter by tag: ${tag.path}`}
+                            title={`Filter: ${tag.path}`}
                           >
                             <span className="material-symbols-outlined text-[12px] text-primary/80">
                               {tag.icon || 'label'}
@@ -531,7 +532,7 @@ export const NotesListPage: React.FC = () => {
                         ))}
 
                       {!hasTags && !hasHashtags && (
-                        <span className="font-mono text-[11px] text-outline/50">no tags</span>
+                        <span className="font-mono text-[11px] text-outline/50">—</span>
                       )}
                     </div>
 
@@ -542,21 +543,20 @@ export const NotesListPage: React.FC = () => {
                           <button
                             onClick={() => navigate(`/notes/${note.id}`)}
                             className="p-1 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-white/5"
-                            title="Edit Note"
+                            title={t.edit}
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <Popconfirm
-                            title="Soft-delete this note?"
-                            description="This note will be marked as deleted."
+                            title={t.confirmDeleteNote}
                             onConfirm={() => handleDelete(note.id)}
-                            okText="Delete"
-                            cancelText="Cancel"
+                            okText={t.delete}
+                            cancelText={t.cancel}
                             okButtonProps={{ danger: true }}
                           >
                             <button
                               className="p-1 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-white/5"
-                              title="Delete Note"
+                              title={t.delete}
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
@@ -566,7 +566,7 @@ export const NotesListPage: React.FC = () => {
                         <button
                           onClick={() => handleRestore(note.id)}
                           className="p-1 text-tertiary hover:text-primary transition-colors rounded hover:bg-white/5"
-                          title="Restore Note"
+                          title="Restore"
                         >
                           <span className="material-symbols-outlined text-[18px]">restore</span>
                         </button>
@@ -580,14 +580,14 @@ export const NotesListPage: React.FC = () => {
             {items.length === 0 && !isLoading && (
               <div className="p-12 text-center text-on-surface-variant space-y-2">
                 <span className="material-symbols-outlined text-4xl text-outline mb-2">description</span>
-                <p className="font-sans text-sm">No notes found matching current filters.</p>
+                <p className="font-sans text-sm">{t.noNotesFound}</p>
                 {(folderParam || unfiledParam || hashtagParam || tagPath || feedId || search) && (
                   <button
                     type="button"
                     onClick={() => setSearchParams(new URLSearchParams())}
                     className="text-primary hover:underline text-xs font-mono"
                   >
-                    Clear all filters
+                    {t.reset}
                   </button>
                 )}
               </div>
@@ -598,7 +598,7 @@ export const NotesListPage: React.FC = () => {
           {total > limit && (
             <div className="flex justify-between items-center text-xs font-mono text-on-surface-variant pt-2">
               <span>
-                Showing {offset + 1} to {Math.min(offset + limit, total)} of {total}
+                {offset + 1} - {Math.min(offset + limit, total)} / {total}
               </span>
               <div className="flex gap-1">
                 <button
@@ -606,14 +606,14 @@ export const NotesListPage: React.FC = () => {
                   disabled={offset === 0}
                   className="px-3 py-1 bg-surface-container border border-outline-variant rounded hover:border-primary disabled:opacity-30 cursor-pointer"
                 >
-                  Previous
+                  ←
                 </button>
                 <button
                   onClick={() => setOffset(offset + limit)}
                   disabled={offset + limit >= total}
                   className="px-3 py-1 bg-surface-container border border-outline-variant rounded hover:border-primary disabled:opacity-30 cursor-pointer"
                 >
-                  Next
+                  →
                 </button>
               </div>
             </div>
@@ -623,3 +623,4 @@ export const NotesListPage: React.FC = () => {
     </div>
   );
 };
+

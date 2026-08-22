@@ -7,6 +7,7 @@ import {
   useReorderNoteImages,
   useDeleteNoteImage,
 } from '../api/queries';
+import { useAdminI18n } from '../i18n';
 
 interface ImageManagerProps {
   noteId?: string;
@@ -27,6 +28,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   onInsertMarkdown,
   readOnly = false,
 }) => {
+  const { t } = useAdminI18n();
   const isExistingNote = Boolean(noteId && noteId !== 'new');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +55,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
       if (file.type.startsWith('image/')) {
         validFiles.push(file);
       } else {
-        message.warning(`"${file.name}" is not a recognized image file.`);
+        message.warning(`"${file.name}" is not an image`);
       }
     }
 
@@ -62,9 +64,9 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     if (isExistingNote && noteId) {
       try {
         await uploadMutation.mutateAsync({ id: noteId, files: validFiles });
-        message.success(`Uploaded ${validFiles.length} photo${validFiles.length > 1 ? 's' : ''}`);
+        message.success(t.feedSavedSuccess);
       } catch (err: any) {
-        message.error(err.response?.data?.message || 'Failed to upload images');
+        message.error(err.response?.data?.message || 'Error');
       }
     } else if (onPendingFilesChange) {
       const updated = [...pendingFiles, ...validFiles];
@@ -95,9 +97,9 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     if (!isExistingNote || !noteId) return;
     try {
       await setMainMutation.mutateAsync({ noteId, imageId: image.id });
-      message.success('Cover photo updated');
+      message.success(t.feedSavedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to set cover photo');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -120,7 +122,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     try {
       await reorderMutation.mutateAsync({ noteId, items });
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to reorder images');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -129,9 +131,9 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     if (!isExistingNote || !noteId) return;
     try {
       await deleteMutation.mutateAsync({ noteId, imageId });
-      message.success('Image deleted');
+      message.success(t.tagDeletedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete image');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -152,10 +154,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
 
     if (onInsertMarkdown) {
       onInsertMarkdown(snippet);
-      message.success('Inserted image snippet into Markdown editor');
+      message.success(t.feedSavedSuccess);
     } else {
       navigator.clipboard.writeText(snippet);
-      message.success('Copied Markdown snippet to clipboard: ' + snippet);
+      message.success(snippet);
     }
   };
 
@@ -170,10 +172,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
             photo_library
           </span>
           <h3 className="font-sans font-semibold text-base text-on-surface">
-            Note Gallery
+            {t.mediaGalleryLabel}
           </h3>
           <span className="bg-surface-container-highest px-2 py-0.5 rounded-full text-xs font-mono text-on-surface-variant">
-            {isExistingNote ? images.length : pendingFiles.length} photos
+            {isExistingNote ? images.length : pendingFiles.length}
           </span>
         </div>
 
@@ -187,7 +189,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
             <span className="material-symbols-outlined text-[16px] text-primary">
               add_photo_alternate
             </span>
-            Add Photos
+            {t.uploadImagesBtn}
           </button>
         )}
 
@@ -222,10 +224,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
               <span className="material-symbols-outlined text-[22px]">cloud_upload</span>
             </div>
             <p className="text-sm font-medium text-on-surface">
-              Drag and drop multiple photos here, or <span className="text-primary underline">browse</span>
-            </p>
-            <p className="text-xs text-outline font-mono">
-              Supports WebP, PNG, JPG, GIF. Automatically optimized with thumbnails.
+              {t.uploadImagesBtn}
             </p>
           </div>
         </div>
@@ -235,7 +234,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
       {isMutating && (
         <div className="flex items-center justify-center py-4 gap-2 text-sm text-primary font-mono bg-surface-container/40 rounded-lg">
           <Spin size="small" />
-          <span>Processing & updating images...</span>
+          <span>{t.loading}</span>
         </div>
       )}
 
@@ -278,7 +277,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                   {img.isMain && (
                     <div className="absolute top-2 left-2 bg-primary text-on-primary px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
                       <span className="material-symbols-outlined text-[14px]">star</span>
-                      Cover
+                      {t.mainImageBadge}
                     </div>
                   )}
 
@@ -307,14 +306,14 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                       <span className="material-symbols-outlined text-[14px]">
                         {img.isMain ? 'verified' : 'star_border'}
                       </span>
-                      {img.isMain ? 'Main Photo' : 'Set Cover'}
+                      {img.isMain ? t.mainImageBadge : t.setMainImageBtn}
                     </button>
                   )}
 
                   {/* Action Icons */}
                   <div className="flex items-center gap-0.5">
                     {/* Copy / Insert to Markdown */}
-                    <Tooltip title="Copy or Insert Markdown ![alt](url)">
+                    <Tooltip title="Markdown">
                       <button
                         type="button"
                         onClick={() => handleCopyMarkdown(img)}
@@ -328,43 +327,38 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
 
                     {/* Move Left */}
                     {!readOnly && idx > 0 && (
-                      <Tooltip title="Move Left">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx - 1)}
-                          disabled={isMutating}
-                          className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            chevron_left
-                          </span>
-                        </button>
-                      </Tooltip>
+                      <button
+                        type="button"
+                        onClick={() => handleMove(idx, idx - 1)}
+                        disabled={isMutating}
+                        className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          chevron_left
+                        </span>
+                      </button>
                     )}
 
                     {/* Move Right */}
                     {!readOnly && idx < images.length - 1 && (
-                      <Tooltip title="Move Right">
-                        <button
-                          type="button"
-                          onClick={() => handleMove(idx, idx + 1)}
-                          disabled={isMutating}
-                          className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">
-                            chevron_right
-                          </span>
-                        </button>
-                      </Tooltip>
+                      <button
+                        type="button"
+                        onClick={() => handleMove(idx, idx + 1)}
+                        disabled={isMutating}
+                        className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          chevron_right
+                        </span>
+                      </button>
                     )}
 
                     {/* Delete with Popconfirm */}
                     {!readOnly && (
                       <Popconfirm
-                        title="Delete image"
-                        description="Are you sure you want to remove this photo?"
-                        okText="Delete"
-                        cancelText="Cancel"
+                        title={t.deleteImageBtn}
+                        okText={t.delete}
+                        cancelText={t.cancel}
                         okButtonProps={{ danger: true }}
                         onConfirm={() => handleDelete(img.id)}
                       >
@@ -416,7 +410,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                   {isMain && (
                     <div className="absolute top-2 left-2 bg-primary text-on-primary px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
                       <span className="material-symbols-outlined text-[14px]">star</span>
-                      Cover
+                      {t.mainImageBadge}
                     </div>
                   )}
                 </div>
@@ -434,7 +428,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     <span className="material-symbols-outlined text-[14px]">
                       {isMain ? 'verified' : 'star_border'}
                     </span>
-                    {isMain ? 'Main Photo' : 'Set Cover'}
+                    {isMain ? t.mainImageBadge : t.setMainImageBtn}
                   </button>
 
                   <button
@@ -454,7 +448,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
       {/* Lightbox / Preview Modal */}
       <Modal
         open={Boolean(previewImageUrl)}
-        title={previewTitle || 'Image Preview'}
+        title={previewTitle || 'Preview'}
         footer={null}
         onCancel={() => setPreviewImageUrl(null)}
         width={800}
@@ -473,3 +467,4 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     </div>
   );
 };
+

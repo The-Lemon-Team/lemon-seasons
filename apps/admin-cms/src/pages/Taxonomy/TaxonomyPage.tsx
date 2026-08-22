@@ -10,8 +10,10 @@ import {
 import { TaxonomyTreeNode } from '../../types';
 import { IconPicker } from '../../components/IconPicker';
 import { useNavigate } from 'react-router-dom';
+import { useAdminI18n } from '../../i18n';
 
 export const TaxonomyPage: React.FC = () => {
+  const { t } = useAdminI18n();
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [expandedPaths, setExpandedPaths] = useState<Record<string, boolean>>({
     movies: true,
@@ -72,7 +74,7 @@ export const TaxonomyPage: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nodeName.trim()) {
-      message.error('Please enter a node name');
+      message.error(t.tagNameLabel);
       return;
     }
 
@@ -87,7 +89,7 @@ export const TaxonomyPage: React.FC = () => {
           path,
           icon: iconValue,
         });
-        message.success('Root node created');
+        message.success(t.tagSavedSuccess);
       } else if (modalMode === 'child') {
         const path = `${targetNode!.path}.${childSegment.trim().toLowerCase().replace(/\s+/g, '_')}`;
         await createMutation.mutateAsync({
@@ -95,7 +97,7 @@ export const TaxonomyPage: React.FC = () => {
           path,
           icon: iconValue,
         });
-        message.success('Child taxonomy node created');
+        message.success(t.tagSavedSuccess);
       } else if (modalMode === 'edit') {
         await updateMutation.mutateAsync({
           id: targetNode!.id,
@@ -105,29 +107,29 @@ export const TaxonomyPage: React.FC = () => {
             icon: iconValue || '',
           },
         });
-        message.success('Taxonomy node updated');
+        message.success(t.tagSavedSuccess);
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to save taxonomy node');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      message.success('Taxonomy node soft-deleted');
+      message.success(t.tagDeletedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete taxonomy node');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
   const handleRestore = async (id: string) => {
     try {
       await restoreMutation.mutateAsync(id);
-      message.success('Taxonomy node restored');
+      message.success(t.tagSavedSuccess);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to restore taxonomy node');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -188,7 +190,7 @@ export const TaxonomyPage: React.FC = () => {
               onClick={() => navigate(`/notes?tagPath=${encodeURIComponent(node.path)}`)}
               className="font-mono text-[11px] text-on-surface-variant/80 bg-white/5 px-2 py-0.5 rounded-full hover:bg-white/10 hover:text-secondary transition-colors cursor-pointer flex-shrink-0"
             >
-              {node.notesCount} {node.notesCount === 1 ? 'note' : 'notes'}
+              {node.notesCount}
             </span>
 
             {isDeleted && (
@@ -205,27 +207,27 @@ export const TaxonomyPage: React.FC = () => {
                 <button
                   onClick={() => openAddChildModal(node)}
                   className="p-1 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5"
-                  title="Add Child Tag"
+                  title={t.add}
                 >
                   <span className="material-symbols-outlined text-[16px]">add</span>
                 </button>
                 <button
                   onClick={() => openEditModal(node)}
                   className="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-white/5"
-                  title="Edit Tag"
+                  title={t.edit}
                 >
                   <span className="material-symbols-outlined text-[16px]">edit</span>
                 </button>
                 <Popconfirm
-                  title="Soft-delete this tag?"
+                  title={t.confirmDeleteTag}
                   onConfirm={() => handleDelete(node.id)}
-                  okText="Delete"
-                  cancelText="Cancel"
+                  okText={t.delete}
+                  cancelText={t.cancel}
                   okButtonProps={{ danger: true }}
                 >
                   <button
                     className="p-1 text-on-surface-variant hover:text-error rounded hover:bg-white/5"
-                    title="Delete Tag"
+                    title={t.delete}
                   >
                     <span className="material-symbols-outlined text-[16px]">delete</span>
                   </button>
@@ -235,7 +237,7 @@ export const TaxonomyPage: React.FC = () => {
               <button
                 onClick={() => handleRestore(node.id)}
                 className="p-1 text-tertiary hover:text-primary rounded hover:bg-white/5"
-                title="Restore Tag"
+                title="Restore"
               >
                 <span className="material-symbols-outlined text-[16px]">restore</span>
               </button>
@@ -259,14 +261,10 @@ export const TaxonomyPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
-            Taxonomy Tree
+            {t.taxonomyPageTitle}
           </h1>
           <p className="text-on-surface-variant font-sans text-sm">
-            Manage your hierarchical classification system. Paths are represented in PostgreSQL{' '}
-            <code className="text-primary font-mono bg-surface-container px-1 py-0.5 rounded">
-              Ltree
-            </code>{' '}
-            format.
+            {t.taxonomyPageSubtitle}
           </p>
         </div>
 
@@ -278,14 +276,14 @@ export const TaxonomyPage: React.FC = () => {
               onChange={(e) => setIncludeDeleted(e.target.checked)}
               className="rounded bg-surface-container border-white/20 text-primary focus:ring-0"
             />
-            Show Deleted
+            {t.status}: Deleted
           </label>
           <button
             onClick={openAddRootModal}
             className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
-            New Root Node
+            {t.createTagBtn}
           </button>
         </div>
       </div>
@@ -301,12 +299,12 @@ export const TaxonomyPage: React.FC = () => {
             <span className="material-symbols-outlined text-4xl text-outline mb-2">
               account_tree
             </span>
-            <p className="font-sans text-sm">No taxonomy nodes configured.</p>
+            <p className="font-sans text-sm">{t.taxonomyPageSubtitle}</p>
             <button
               onClick={openAddRootModal}
               className="mt-3 px-4 py-1.5 bg-primary text-on-primary rounded text-xs font-semibold"
             >
-              Add First Root Tag
+              {t.createTagBtn}
             </button>
           </div>
         )}
@@ -330,16 +328,16 @@ export const TaxonomyPage: React.FC = () => {
         <div className="p-2 space-y-4">
           <h2 className="font-sans font-bold text-lg text-on-surface">
             {modalMode === 'root'
-              ? 'New Root Taxonomy Tag'
+              ? t.createTagTitle
               : modalMode === 'child'
-              ? `Add Child Tag under '${targetNode?.path}'`
-              : 'Edit Taxonomy Tag'}
+              ? `${t.createTagBtn} (${targetNode?.path})`
+              : t.editTagTitle}
           </h2>
 
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Display Name
+                {t.tagNameLabel}
               </label>
               <input
                 type="text"
@@ -353,7 +351,7 @@ export const TaxonomyPage: React.FC = () => {
             {modalMode === 'child' ? (
               <div className="space-y-1">
                 <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                  Child Identifier
+                  {t.tagSlugLabel}
                 </label>
                 <div className="flex items-center gap-1 font-mono text-xs">
                   <span className="text-secondary bg-surface-container-low px-2 py-1.5 rounded border border-white/5">
@@ -371,7 +369,7 @@ export const TaxonomyPage: React.FC = () => {
             ) : (
               <div className="space-y-1">
                 <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                  Ltree Path
+                  {t.tagSlugLabel}
                 </label>
                 <input
                   type="text"
@@ -387,7 +385,7 @@ export const TaxonomyPage: React.FC = () => {
             <IconPicker
               value={nodeIcon}
               onChange={setNodeIcon}
-              label="Node Icon (Material Symbol)"
+              label="Icon (Material Symbol)"
             />
 
             <div className="pt-3 border-t border-white/5 flex justify-end gap-2">
@@ -396,14 +394,14 @@ export const TaxonomyPage: React.FC = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 rounded text-sm text-on-surface-variant hover:text-on-surface"
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm shadow"
               >
-                Save Tag
+                {t.save}
               </button>
             </div>
           </form>
@@ -412,3 +410,4 @@ export const TaxonomyPage: React.FC = () => {
     </div>
   );
 };
+

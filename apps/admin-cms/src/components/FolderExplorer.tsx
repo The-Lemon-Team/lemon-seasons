@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useFolderTree, useCreateFolder } from '../api/queries';
 import { FolderTreeNode } from '../types';
 import { message, Modal } from 'antd';
+import { useAdminI18n } from '../i18n';
 
 interface FolderExplorerProps {
   selectedFolder?: string;
@@ -22,6 +23,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
   unfiledNotesCount = 0,
   className = '',
 }) => {
+  const { t } = useAdminI18n();
   const { data: tree = [], isLoading } = useFolderTree();
   const createFolderMutation = useCreateFolder();
 
@@ -84,7 +86,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
     e.preventDefault();
     const cleanPath = newFolderPath.trim();
     if (!cleanPath) {
-      message.error('Please specify a folder path');
+      message.error(t.folderInputLabel);
       return;
     }
     try {
@@ -96,7 +98,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       setNewFolderPath('');
       onSelectFolder(cleanPath);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to create folder');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -224,7 +226,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               folder_managed
             </span>
             <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
-              Vault Folders
+              {t.vaultFoldersMetric}
             </span>
           </div>
 
@@ -233,7 +235,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={expandAll}
               className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-              title="Expand all folders"
+              title="Expand all"
             >
               <span className="material-symbols-outlined text-[15px]">unfold_more</span>
             </button>
@@ -241,7 +243,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={collapseAll}
               className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-              title="Collapse all folders"
+              title="Collapse all"
             >
               <span className="material-symbols-outlined text-[15px]">unfold_less</span>
             </button>
@@ -249,7 +251,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={() => handleOpenCreateModal()}
               className="p-1 rounded hover:bg-primary/20 text-primary transition-colors cursor-pointer"
-              title="Create new root folder"
+              title="Add folder"
             >
               <span className="material-symbols-outlined text-[16px]">add</span>
             </button>
@@ -265,7 +267,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search folders..."
+            placeholder={t.selectFolderPlaceholder}
             className="w-full bg-surface-container-lowest border border-white/10 rounded pl-7 pr-6 py-1 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary outline-none"
           />
           {searchQuery && (
@@ -293,7 +295,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
         >
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[16px]">library_books</span>
-            <span className="font-sans text-[12px]">All Notes</span>
+            <span className="font-sans text-[12px]">{t.allNotes}</span>
           </div>
           <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant/80">
             {totalNotesCount}
@@ -325,22 +327,13 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {isLoading ? (
           <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60">
-            Loading folders...
+            {t.loading}
           </div>
         ) : displayedTree.length > 0 ? (
           displayedTree.map((node) => renderNode(node, 0))
         ) : (
           <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60 space-y-2">
-            <p>{searchQuery ? 'No folders match search' : 'No folders created yet'}</p>
-            {!searchQuery && (
-              <button
-                type="button"
-                onClick={() => handleOpenCreateModal()}
-                className="text-primary hover:underline text-[11px] font-mono cursor-pointer"
-              >
-                + Create first folder
-              </button>
-            )}
+            <p>—</p>
           </div>
         )}
       </div>
@@ -351,7 +344,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Obsidian Vault
         </span>
-        <span>{tree.length} folders</span>
+        <span>{tree.length}</span>
       </div>
 
       {/* Create Folder Modal */}
@@ -364,7 +357,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <span className="material-symbols-outlined text-primary text-[20px]">
               create_new_folder
             </span>
-            Create Vault Folder
+            {t.folderInputLabel}
           </span>
         }
         width={440}
@@ -378,19 +371,16 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
         <form onSubmit={handleCreateFolder} className="space-y-4 pt-3">
           <div className="space-y-1.5">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Folder Path (Slash-separated)
+              {t.folderInputLabel}
             </label>
             <input
               type="text"
               value={newFolderPath}
               onChange={(e) => setNewFolderPath(e.target.value)}
-              placeholder="e.g. News/Tech/AI or Projects/2026"
+              placeholder="e.g. News/Tech or Projects"
               className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
               autoFocus
             />
-            <p className="text-[11px] text-on-surface-variant/60 font-sans">
-              Parent folders will be automatically provisioned if they do not exist.
-            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
@@ -399,14 +389,14 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               onClick={() => setCreateModalOpen(false)}
               className="px-3 py-1.5 text-xs text-on-surface-variant hover:text-on-surface rounded font-medium"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
               disabled={createFolderMutation.isPending}
               className="px-4 py-1.5 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-xs transition-all shadow disabled:opacity-50"
             >
-              {createFolderMutation.isPending ? 'Creating...' : 'Create Folder'}
+              {createFolderMutation.isPending ? t.loading : t.add}
             </button>
           </div>
         </form>
@@ -414,3 +404,4 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
     </div>
   );
 };
+

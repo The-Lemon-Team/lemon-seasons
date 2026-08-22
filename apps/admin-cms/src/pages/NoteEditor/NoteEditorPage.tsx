@@ -18,8 +18,10 @@ import { ImageManager } from '../../components/ImageManager';
 import { LinkManager } from '../../components/LinkManager';
 import { HashtagInput } from '../../components/HashtagInput';
 import { FolderSelect } from '../../components/FolderSelect';
+import { useAdminI18n } from '../../i18n';
 
 export const NoteEditorPage: React.FC = () => {
+  const { t } = useAdminI18n();
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
   const navigate = useNavigate();
@@ -94,11 +96,11 @@ export const NoteEditorPage: React.FC = () => {
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!title.trim()) {
-      message.error('Please enter a note title');
+      message.error(t.titleInputLabel);
       return;
     }
     if (!feedId) {
-      message.error('Please select a target feed');
+      message.error(t.selectFeedPlaceholder);
       return;
     }
 
@@ -139,7 +141,7 @@ export const NoteEditorPage: React.FC = () => {
           }
         }
 
-        message.success('Note created successfully!');
+        message.success(t.noteSavedSuccess);
         navigate(`/notes/${created.id}`);
       } else {
         await updateNoteMutation.mutateAsync({
@@ -157,10 +159,10 @@ export const NoteEditorPage: React.FC = () => {
             folders: assignedFolders,
           },
         });
-        message.success('Note updated successfully!');
+        message.success(t.noteSavedSuccess);
       }
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to save note');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -168,10 +170,10 @@ export const NoteEditorPage: React.FC = () => {
     if (!id) return;
     try {
       await deleteNoteMutation.mutateAsync(id);
-      message.success('Note soft-deleted successfully');
+      message.success(t.noteDeletedSuccess);
       navigate('/notes');
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to delete note');
+      message.error(err.response?.data?.message || 'Error');
     }
   };
 
@@ -194,12 +196,12 @@ export const NoteEditorPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-sans font-bold text-2xl text-on-surface">
-                {isNew ? 'Create New Note' : 'Edit Note'}
+                {isNew ? t.editorTitleNew : t.editorTitleEdit}
               </h1>
               {!isNew && <NoteTypeBadge type={type} />}
             </div>
             <p className="text-xs font-mono text-on-surface-variant">
-              {isNew ? 'Single source of truth record' : `ID: ${id}`}
+              {isNew ? t.editorSubtitle : `ID: ${id}`}
             </p>
           </div>
         </div>
@@ -207,17 +209,17 @@ export const NoteEditorPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {!isNew && (
             <Popconfirm
-              title="Soft-delete this note?"
+              title={t.confirmDeleteNote}
               onConfirm={handleDelete}
-              okText="Delete"
-              cancelText="Cancel"
+              okText={t.delete}
+              cancelText={t.cancel}
               okButtonProps={{ danger: true }}
             >
               <button
                 type="button"
                 className="px-3 py-1.5 border border-error/40 text-error hover:bg-error/10 rounded text-xs font-mono transition-colors cursor-pointer"
               >
-                Delete
+                {t.delete}
               </button>
             </Popconfirm>
           )}
@@ -227,8 +229,8 @@ export const NoteEditorPage: React.FC = () => {
             className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all shadow hover:shadow-lg disabled:opacity-50 cursor-pointer"
           >
             {createNoteMutation.isPending || updateNoteMutation.isPending
-              ? 'Saving...'
-              : 'Save Note'}
+              ? t.loading
+              : t.saveNoteBtn}
           </button>
         </div>
       </div>
@@ -242,13 +244,13 @@ export const NoteEditorPage: React.FC = () => {
             {/* Note Title */}
             <div className="space-y-1.5">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Note Title
+                {t.titleInputLabel}
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Marvel Cinematic Universe Phase 5 Overview"
+                placeholder={t.titleInputPlaceholder}
                 className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-base focus:border-primary outline-none"
               />
             </div>
@@ -256,12 +258,12 @@ export const NoteEditorPage: React.FC = () => {
             {/* Description (Raw Markdown Editor + Live Preview) */}
             <div className="space-y-1.5">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                Note Content (Markdown)
+                {t.contentLabel}
               </label>
               <MarkdownEditor
                 value={description}
                 onChange={setDescription}
-                placeholder="# Write note description in Markdown..."
+                placeholder="# Markdown..."
                 minHeight={280}
               />
             </div>
@@ -286,13 +288,13 @@ export const NoteEditorPage: React.FC = () => {
         {/* Right Column: Metadata & Chronological Details (Span 1) */}
         <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5 h-fit">
           <h3 className="font-sans font-bold text-sm text-on-surface border-b border-white/5 pb-2">
-            Metadata & Chronology
+            {t.taxonomy} & {t.datesCol}
           </h3>
 
           {/* Target Feed */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Target Feed
+              {t.feedInputLabel}
             </label>
             <select
               value={feedId}
@@ -310,7 +312,7 @@ export const NoteEditorPage: React.FC = () => {
           {/* Note Type */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Note Type
+              {t.typeInputLabel}
             </label>
             <NoteTypeSelect value={type} onChange={setType} />
           </div>
@@ -318,7 +320,7 @@ export const NoteEditorPage: React.FC = () => {
           {/* Start Date */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              Start Date & Time
+              {t.startDateLabel}
             </label>
             <input
               type="datetime-local"
@@ -331,7 +333,7 @@ export const NoteEditorPage: React.FC = () => {
           {/* End Date */}
           <div className="space-y-1">
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              End Date & Time (Optional)
+              {t.endDateLabel}
             </label>
             <input
               type="datetime-local"
@@ -341,24 +343,21 @@ export const NoteEditorPage: React.FC = () => {
             />
           </div>
 
-          {/* Vault Folders Section (Obsidian Physical Multi-Folder Location) */}
+          {/* Vault Folders Section */}
           <div className="pt-2 border-t border-white/5 space-y-2">
             <div className="flex items-center justify-between">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Vault Folders (Obsidian)
+                {t.folderInputLabel}
               </label>
               <span className="text-[10px] font-mono text-primary/80">
-                multi-folder sync
+                Obsidian
               </span>
             </div>
             <FolderSelect
               value={assignedFolders}
               onChange={setAssignedFolders}
-              placeholder="Assign folder (e.g. News/Tech)..."
+              placeholder={t.selectFolderPlaceholder}
             />
-            <p className="text-[10px] font-mono text-on-surface-variant/60 leading-tight">
-              Primary folder holds canonical note. Secondary folders hold linked references with sub-id.
-            </p>
           </div>
 
           {/* Links & Sources Manager */}
@@ -379,7 +378,7 @@ export const NoteEditorPage: React.FC = () => {
             <HashtagInput
               value={hashtags}
               onChange={setHashtags}
-              placeholder="e.g. keynote, ai, launch2026..."
+              placeholder={t.hashtagsPlaceholder}
             />
           </div>
 
@@ -387,19 +386,19 @@ export const NoteEditorPage: React.FC = () => {
           <div className="space-y-2 pt-2 border-t border-white/5">
             <div className="flex items-center justify-between">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Taxonomy Tags (Ltree)
+                {t.tagsInputLabel}
               </label>
               {selectedTagPaths.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                    {selectedTagPaths.length} selected
+                    {selectedTagPaths.length}
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedTagPaths([])}
                     className="text-[10px] font-mono text-error/80 hover:text-error transition-colors underline cursor-pointer"
                   >
-                    Clear
+                    {t.reset}
                   </button>
                 </div>
               )}
@@ -422,7 +421,7 @@ export const NoteEditorPage: React.FC = () => {
                     }
                   }
                 }}
-                placeholder="Search tags by name or path..."
+                placeholder={t.selectTagsPlaceholder}
                 className="w-full bg-surface-container-lowest border border-white/10 rounded pl-8 pr-7 py-1.5 text-on-surface font-mono text-xs placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
               />
               {tagSearchQuery && (
@@ -441,7 +440,7 @@ export const NoteEditorPage: React.FC = () => {
             {selectedTagPaths.length > 0 && (
               <div className="space-y-1 p-2 bg-surface-container-lowest/70 border border-primary/20 rounded">
                 <div className="text-[10px] font-mono uppercase tracking-wider text-primary/80">
-                  Active Selected ({selectedTagPaths.length})
+                  {t.taxonomy} ({selectedTagPaths.length})
                 </div>
                 <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                   {selectedTagPaths.map((path) => {
@@ -461,7 +460,7 @@ export const NoteEditorPage: React.FC = () => {
                           type="button"
                           onClick={() => handleTagToggle(path)}
                           className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors flex items-center justify-center cursor-pointer"
-                          title={`Remove tag ${path}`}
+                          title={`Remove ${path}`}
                         >
                           <span className="material-symbols-outlined text-[12px] leading-none">
                             close
@@ -512,20 +511,7 @@ export const NoteEditorPage: React.FC = () => {
                 })
               ) : (
                 <div className="w-full py-4 text-center text-xs text-on-surface-variant font-mono">
-                  {taxonomyNodes.length === 0 ? (
-                    <p>No taxonomy tags configured.</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <p>No tags matching &ldquo;{tagSearchQuery}&rdquo;</p>
-                      <button
-                        type="button"
-                        onClick={() => setTagSearchQuery('')}
-                        className="text-primary hover:underline text-[11px] font-mono cursor-pointer"
-                      >
-                        Clear search filter
-                      </button>
-                    </div>
-                  )}
+                  <p>—</p>
                 </div>
               )}
             </div>
@@ -535,3 +521,4 @@ export const NoteEditorPage: React.FC = () => {
     </div>
   );
 };
+

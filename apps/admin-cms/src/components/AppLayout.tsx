@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { QuickAddModal } from './QuickAddModal';
 import { useSyncChanges } from '../api/queries';
+import { useAdminI18n } from '../i18n';
 
 export const AppLayout: React.FC = () => {
+  const { t, lang, setLang } = useAdminI18n();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const location = useLocation();
@@ -12,11 +14,11 @@ export const AppLayout: React.FC = () => {
   const { data: syncData, isFetching: isSyncing } = useSyncChanges();
 
   const getPageTitle = () => {
-    if (location.pathname.startsWith('/feeds')) return 'Feeds';
-    if (location.pathname.startsWith('/notes')) return 'All Notes';
-    if (location.pathname.startsWith('/taxonomy')) return 'Taxonomy Tree';
-    if (location.pathname.startsWith('/sync')) return 'Sync Hub';
-    return 'Lenta Dashboard';
+    if (location.pathname.startsWith('/feeds')) return t.feeds;
+    if (location.pathname.startsWith('/notes')) return t.allNotes;
+    if (location.pathname.startsWith('/taxonomy')) return t.taxonomy;
+    if (location.pathname.startsWith('/sync')) return t.syncHub;
+    return t.dashboard;
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -40,9 +42,9 @@ export const AppLayout: React.FC = () => {
             />
             <div>
               <h2 className="font-sans font-bold text-[15px] text-primary leading-tight tracking-tight">
-                Lemon Seasons
+                {t.adminTitle}
               </h2>
-              <p className="font-mono text-[11px] text-on-surface-variant/80">Technical Admin</p>
+              <p className="font-mono text-[11px] text-on-surface-variant/80">{t.adminTagline}</p>
             </div>
           </div>
 
@@ -54,7 +56,7 @@ export const AppLayout: React.FC = () => {
             <span className="material-symbols-outlined text-[18px] group-hover:rotate-90 transition-transform duration-200">
               add
             </span>
-            Quick Add
+            {t.quickAdd}
           </button>
         </div>
 
@@ -71,7 +73,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <span className="material-symbols-outlined text-[20px]">dynamic_feed</span>
-            Feeds
+            {t.feeds}
           </NavLink>
 
           <NavLink
@@ -85,7 +87,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <span className="material-symbols-outlined text-[20px]">description</span>
-            All Notes
+            {t.allNotes}
           </NavLink>
 
           <NavLink
@@ -99,7 +101,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <span className="material-symbols-outlined text-[20px]">account_tree</span>
-            Taxonomy
+            {t.taxonomy}
           </NavLink>
 
           <NavLink
@@ -113,7 +115,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <span className="material-symbols-outlined text-[20px]">sync</span>
-            Sync Hub
+            {t.syncHub}
           </NavLink>
         </nav>
 
@@ -132,8 +134,8 @@ export const AppLayout: React.FC = () => {
           </div>
           <p className="text-[11px] text-outline/80 truncate">
             {syncData?.counts
-              ? `${syncData.counts.notes} notes synced`
-              : 'Sync ready'}
+              ? t.notesSynced(syncData.counts.notes)
+              : t.syncReady}
           </p>
         </div>
 
@@ -146,7 +148,7 @@ export const AppLayout: React.FC = () => {
             className="flex items-center gap-3 px-3.5 py-2 rounded text-sm text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">menu_book</span>
-            API Docs
+            {t.apiDocs}
           </a>
         </div>
       </aside>
@@ -171,15 +173,25 @@ export const AppLayout: React.FC = () => {
                 type="text"
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                placeholder="Search notes, feeds..."
+                placeholder={t.searchPlaceholder}
                 className="bg-surface-container-high border border-outline-variant/50 rounded pl-9 pr-3 py-1.5 text-xs font-sans text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-56 transition-all"
               />
             </form>
 
+            {/* Language Switcher Button */}
+            <button
+              onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-surface-container-high border border-outline-variant/40 hover:border-primary/60 text-primary transition-all cursor-pointer shadow-sm"
+              title="Переключить язык / Switch Language"
+            >
+              <span className="material-symbols-outlined text-[16px]">language</span>
+              <span>{lang.toUpperCase()}</span>
+            </button>
+
             <button
               onClick={() => navigate('/sync')}
               className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-white/5 relative cursor-pointer"
-              title="Sync Status"
+              title={t.syncStatus}
             >
               <span className="material-symbols-outlined text-[20px]">cloud_sync</span>
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
@@ -212,3 +224,4 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
+

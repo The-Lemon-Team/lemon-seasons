@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NoteType } from '../types';
 import { NOTE_TYPE_CONFIGS, NOTE_TYPE_LIST } from '../constants/noteTypes';
+import { useAdminI18n } from '../i18n';
 
 interface NoteTypeSelectProps {
   value?: NoteType;
@@ -21,6 +22,7 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
   size = 'md',
   disabled = false,
 }) => {
+  const { getTypeLabel } = useAdminI18n();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -108,10 +110,7 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                 {selectedConfig.icon}
               </span>
               <span className="font-semibold text-on-surface truncate">
-                {selectedConfig.value}
-              </span>
-              <span className="text-on-surface-variant/80 text-[11px] truncate hidden sm:inline">
-                ({selectedConfig.description})
+                {getTypeLabel(selectedConfig.value)}
               </span>
             </>
           ) : allowAll ? (
@@ -129,7 +128,7 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
             </>
           ) : (
             <span className="text-on-surface-variant/60 font-sans italic truncate">
-              Select note type...
+              —
             </span>
           )}
         </div>
@@ -194,23 +193,14 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                     {item.icon}
                   </span>
 
-                  {/* Title & Description */}
+                  {/* Title */}
                   <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
                     <span
                       className={`font-semibold uppercase tracking-wider shrink-0 ${
                         isSelected ? 'text-on-primary' : 'text-on-surface'
                       }`}
                     >
-                      {item.value}
-                    </span>
-                    <span
-                      className={`text-[11px] truncate ${
-                        isSelected
-                          ? 'text-on-primary/90'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      ({item.description})
+                      {getTypeLabel(item.value)}
                     </span>
                   </div>
 
@@ -228,3 +218,4 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
     </div>
   );
 };
+
