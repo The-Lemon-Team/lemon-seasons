@@ -19,7 +19,9 @@ export const NOTE_TYPES: NoteType[] = [
   'DONE',
 ];
 
-export const NoteTypeLabels: Record<NoteType, string> = {
+export type Language = 'ru' | 'en';
+
+export const NoteTypeLabelsEn: Record<NoteType, string> = {
   SINGLE: 'Point Note',
   PERIOD: 'Time Period',
   EVENT: 'Scheduled Event',
@@ -27,6 +29,24 @@ export const NoteTypeLabels: Record<NoteType, string> = {
   MENTION: 'Citation / Mention',
   DONE: 'Milestone / Done',
 };
+
+export const NoteTypeLabelsRu: Record<NoteType, string> = {
+  SINGLE: 'Точечная заметка',
+  PERIOD: 'Период времени',
+  EVENT: 'Событие',
+  FILM_RELEASE: 'Медиа / Релиз',
+  MENTION: 'Цитата / Упоминание',
+  DONE: 'Веха / Выполнено',
+};
+
+export const NoteTypeLabels = NoteTypeLabelsEn;
+
+export function getNoteTypeLabel(type: NoteType, lang: Language = 'ru'): string {
+  if (lang === 'ru') {
+    return NoteTypeLabelsRu[type] || type;
+  }
+  return NoteTypeLabelsEn[type] || type;
+}
 
 export const NoteTypeColors: Record<NoteType, { bg: string; text: string; border: string; accent: string }> = {
   SINGLE: { bg: '#232924', text: '#d4e157', border: '#384435', accent: '#c9cd58' },
@@ -46,3 +66,17 @@ export const ConflictStrategy = {
 
 export type ConflictStrategy = (typeof ConflictStrategy)[keyof typeof ConflictStrategy];
 export type ConflictStrategyValue = ConflictStrategy;
+
+export const ConflictStrategyLabelsEn: Record<ConflictStrategy, string> = {
+  server_wins: 'Server Wins (Keep Remote)',
+  client_wins: 'Client Wins (Overwrite Remote)',
+  create_backup_fork: 'Create Backup Fork',
+  manual_merge: 'Manual Merge Required',
+};
+
+export const ConflictStrategyLabelsRu: Record<ConflictStrategy, string> = {
+  server_wins: 'Приоритет сервера (Оставить удалённую версию)',
+  client_wins: 'Приоритет клиента (Перезаписать удалённую версию)',
+  create_backup_fork: 'Создать резервную копию (Форк)',
+  manual_merge: 'Требуется ручное слияние',
+};

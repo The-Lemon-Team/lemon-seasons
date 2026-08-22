@@ -348,7 +348,7 @@ export interface CalendarFilterState {
   start: string;
   end: string;
   view: CalendarViewMode;
-  feeds: string[];
+  feed?: string;
   tags: string[];
   hashtags: string[];
   types: NoteType[];

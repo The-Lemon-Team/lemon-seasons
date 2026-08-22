@@ -2,7 +2,7 @@
   "name": "lemon-lenta-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Project Lenta (Lemon Calendarium) Monorepo - Backend, Admin CMS, Calendar Consumer App, Shared Library, and Obsidian Sync Plugin",
+  "description": "Lemon Seasons (Project Lenta) Monorepo - Backend, Admin CMS, Calendar Consumer App, Shared Library, and Obsidian Sync Plugin",
   "packageManager": "pnpm@10.34.4",
   "scripts": {
     "build": "turbo run build",
