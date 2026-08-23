@@ -1,6 +1,7 @@
 import { Plugin, WorkspaceLeaf, Notice, TFile } from 'obsidian';
 import { LentaApiClient } from './services/lenta-api-client';
 import { LentaSyncEngine } from './services/lenta-sync-engine';
+import { LentaFrontmatterUtil } from './services/lenta-frontmatter';
 import { LentaPluginSettings, DEFAULT_SETTINGS } from './types';
 import { LentaQuickAddModal } from './ui/quick-add-modal';
 import { LentaSyncModal } from './ui/sync-modal';
@@ -13,10 +14,17 @@ export default class WorkspaceLentaPlugin extends Plugin {
   syncEngine: LentaSyncEngine;
   private statusBarItemEl: HTMLElement;
 
+  // Auto-sync debounce: file path → timeout handle
+  private autoSyncTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private readonly AUTO_SYNC_DELAY_MS = 2000;
+
   async onload() {
     await this.loadSettings();
 
-    this.apiClient = new LentaApiClient(() => this.settings.serverUrl);
+    this.apiClient = new LentaApiClient(
+      () => this.settings.serverUrl,
+      () => this.settings.authToken
+    );
     this.syncEngine = new LentaSyncEngine(
       this.app,
       this.apiClient,
@@ -115,6 +123,14 @@ export default class WorkspaceLentaPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: 'lenta-push-all-changed',
+      name: 'Push All Modified Notes Since Last Sync',
+      callback: async () => {
+        await this.pushAllChangedNotes();
+      },
+    });
+
     // 5. Settings Tab
     this.addSettingTab(new LentaSettingTab(this.app, this));
 
@@ -127,11 +143,87 @@ export default class WorkspaceLentaPlugin extends Plugin {
       })
     );
 
+    // 7. Auto-Sync: Debounce push when a Lenta-tracked file is modified
+    this.registerEvent(
+      this.app.vault.on('modify', (file) => {
+        if (!(file instanceof TFile) || file.extension !== 'md') return;
+        if (!this.settings.autoSyncOnEdit) return;
+
+        // Debounce per file path
+        const existing = this.autoSyncTimers.get(file.path);
+        if (existing) clearTimeout(existing);
+
+        const timer = setTimeout(async () => {
+          this.autoSyncTimers.delete(file.path);
+          await this.autoSyncFile(file);
+        }, this.AUTO_SYNC_DELAY_MS);
+
+        this.autoSyncTimers.set(file.path, timer);
+      })
+    );
+
     console.log('Project Lenta Obsidian Plugin loaded successfully.');
   }
 
   onunload() {
+    // Clear all pending auto-sync timers
+    for (const timer of this.autoSyncTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.autoSyncTimers.clear();
     console.log('Project Lenta Obsidian Plugin unloaded.');
+  }
+
+  /**
+   * Auto-sync a single file if it is Lenta-tracked (has lenta_id frontmatter).
+   */
+  private async autoSyncFile(file: TFile): Promise<void> {
+    try {
+      const content = await this.app.vault.cachedRead(file);
+      const parsed = LentaFrontmatterUtil.parseMarkdown(content);
+      const lentaId = parsed.lentaId || parsed.frontmatter?.id;
+      if (!lentaId) return; // not a Lenta-tracked note
+
+      this.updateStatusBar('Auto-syncing...');
+      const res = await this.syncEngine.pushLocalNote(file);
+      if (res.success) {
+        this.updateStatusBar('Synced ✓');
+        setTimeout(() => this.updateStatusBar('Ready'), 3000);
+      }
+    } catch (err: any) {
+      console.warn('🍋 Auto-sync failed for', file.path, err?.message);
+      this.updateStatusBar('Auto-sync error');
+      setTimeout(() => this.updateStatusBar('Ready'), 4000);
+    }
+  }
+
+  /**
+   * Push all modified Lenta notes since the last sync timestamp.
+   */
+  async pushAllChangedNotes(): Promise<void> {
+    const { scanChangedFiles } = await import('./services/changed-files-scanner');
+    const changed = await scanChangedFiles(this.app, this.settings);
+
+    if (changed.length === 0) {
+      new Notice('🍋 No local changes since last sync.');
+      return;
+    }
+
+    this.updateStatusBar(`Pushing ${changed.length} files...`);
+    let pushed = 0;
+
+    for (const item of changed) {
+      try {
+        const res = await this.syncEngine.pushLocalNote(item.file);
+        if (res.success) pushed++;
+      } catch (err: any) {
+        console.warn('Push failed for', item.relPath, err?.message);
+      }
+    }
+
+    new Notice(`🍋 Pushed ${pushed}/${changed.length} modified notes.`);
+    this.updateStatusBar('Synced ✓');
+    setTimeout(() => this.updateStatusBar('Ready'), 3000);
   }
 
   async activateSidebarView() {

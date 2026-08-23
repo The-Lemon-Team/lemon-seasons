@@ -11,8 +11,13 @@ import {
   GanttChartSquare,
   Radio,
   Globe,
+  ShieldCheck,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
+import { ObsidianLogo } from './ObsidianLogo';
 
 interface NavbarProps {
   startDate: string;
@@ -42,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleFilter,
 }) => {
   const { t, lang, setLang } = useI18n();
+  const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
   const currentMonth = dayjs(startDate).format('MMMM YYYY');
 
   return (
@@ -150,7 +156,70 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Radio className="w-3.5 h-3.5" />
             <span>{t.feeds}</span>
           </button>
+
+          <button
+            onClick={() => onSetView('obsidian')}
+            className={`px-2.5 py-1 rounded text-xs font-mono transition-colors flex items-center gap-1.5 ${
+              view === 'obsidian'
+                ? 'bg-[#a855f7] text-white font-semibold shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                : 'text-[#c9c7b2] hover:text-[#d8b4fe] hover:bg-[#333535]'
+            }`}
+            title="Obsidian Containers & 2-Way Vault Sync"
+          >
+            <ObsidianLogo size={14} />
+            <span>Obsidian</span>
+          </button>
         </div>
+
+
+        {/* Admin CMS Direct Launcher (Admin Role Only) */}
+        {isAdmin && (
+          <a
+            href="http://localhost:5173"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#ef4444]/15 border border-[#ef4444]/60 text-[#fca5a5] hover:bg-[#ef4444]/25 text-xs font-mono font-semibold transition-all shadow-sm"
+            title="Перейти в административную панель Admin CMS"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-[#ef4444]" />
+            <span>Admin CMS</span>
+          </a>
+        )}
+
+        {/* User Profile & Auth Trigger */}
+        {isAuthenticated ? (
+          <div className="flex items-center gap-2 pl-1">
+            <div className="flex items-center gap-2 bg-[#1e2020] border border-[#242828] py-1 px-2.5 rounded">
+              <div className="w-5 h-5 rounded-full bg-[#c9cd58]/30 border border-[#c9cd58] flex items-center justify-center text-[10px] font-bold text-[#e5e971]">
+                {user?.name ? user.name[0].toUpperCase() : 'U'}
+              </div>
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-[11px] font-sans font-semibold text-[#e2e2e2] leading-none">
+                  {user?.name}
+                </span>
+                <span className={`text-[9px] font-mono leading-none mt-0.5 ${isAdmin ? 'text-[#ef4444] font-bold' : 'text-[#c9cd58]'}`}>
+                  {isAdmin ? t.adminRole : t.memberRole}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={logout}
+              title={t.logout}
+              className="p-1.5 rounded bg-[#1e2020] border border-[#242828] hover:border-[#ef4444] text-[#93927e] hover:text-[#fca5a5] transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => openAuthModal('login')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-sans font-bold text-xs shadow-glow-lemon transition-all"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>{t.login}</span>
+          </button>
+        )}
 
         {/* Language Switcher Button */}
         <button
@@ -183,4 +252,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 

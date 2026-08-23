@@ -280,3 +280,248 @@
   background: var(--background-modifier-border);
   color: var(--text-muted);
 }
+
+/* 6. Sidebar Footer Quick-Add */
+.lenta-sidebar-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 8px 8px;
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: auto;
+}
+
+.lenta-footer-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.lenta-footer-btn-primary {
+  background: var(--lenta-lemon);
+  color: #121414;
+}
+
+.lenta-footer-btn-primary:hover {
+  background: var(--lenta-lemon-hover);
+  box-shadow: 0 0 10px var(--lenta-lemon-glow);
+  transform: translateY(-1px);
+}
+
+.lenta-footer-btn-secondary {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.lenta-footer-btn-secondary:hover {
+  background: var(--background-modifier-hover);
+  color: var(--lenta-lemon);
+}
+
+/* 7. Feed item header row with preview toggle */
+.lenta-feed-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.lenta-preview-toggle {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.lenta-tree-item:hover .lenta-preview-toggle {
+  opacity: 1;
+}
+
+/* 8. Markdown Preview Pane */
+.lenta-markdown-preview-pane {
+  margin: 8px 4px 4px 20px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 0.82rem;
+}
+
+.lenta-preview-note-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-normal);
+  margin-bottom: 8px;
+}
+
+.lenta-preview-md-body {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.lenta-preview-md-body p {
+  margin: 0 0 6px 0;
+}
+
+.lenta-preview-loading,
+.lenta-preview-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* 9. Changes Since Last Sync Section */
+.lenta-changes-section {
+  margin-top: 18px;
+}
+
+.lenta-changes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.lenta-changes-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.lenta-changes-refresh-btn {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  transition: color 0.15s ease;
+}
+
+.lenta-changes-refresh-btn:hover {
+  color: var(--lenta-lemon);
+}
+
+.lenta-changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.lenta-change-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  transition: border-color 0.15s ease;
+}
+
+.lenta-change-row:hover {
+  border-color: rgba(201, 205, 88, 0.4);
+}
+
+.lenta-change-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.lenta-change-icon {
+  margin-right: 4px;
+}
+
+.lenta-change-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lenta-change-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lenta-change-path {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.lenta-change-time {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lenta-file-push-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(201, 205, 88, 0.12);
+  color: var(--lenta-lemon);
+  border: 1px solid rgba(201, 205, 88, 0.35);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lenta-file-push-btn:hover:not(:disabled) {
+  background: var(--lenta-lemon);
+  color: #121414;
+  box-shadow: 0 0 8px var(--lenta-lemon-glow);
+}
+
+.lenta-file-push-btn:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
+.lenta-changes-empty {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  padding: 10px 0;
+  text-align: center;
+}
+
+/* 10. Auto-sync toggle in footer */
+.lenta-autosync-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: 6px;
+}
+

@@ -109,6 +109,10 @@ export interface FileDiffItemDto {
 
 export interface LentaPluginSettings {
   serverUrl: string;
+  authToken?: string;
+  username?: string;
+  userEmail?: string;
+  isPrivateContainerConnected?: boolean;
   activeContainerId: string;
   vaultRootFolder: string;
   autoSyncIntervalMinutes: number;
@@ -116,10 +120,15 @@ export interface LentaPluginSettings {
   lastSyncedAt: string;
   lastSyncedCommit: string;
   defaultConflictStrategy: ConflictStrategy;
+  autoSyncOnEdit: boolean;
 }
 
 export const DEFAULT_SETTINGS: LentaPluginSettings = {
   serverUrl: 'http://localhost:3001',
+  authToken: '',
+  username: '',
+  userEmail: '',
+  isPrivateContainerConnected: false,
   activeContainerId: 'feed-all',
   vaultRootFolder: 'Lenta',
   autoSyncIntervalMinutes: 0,
@@ -127,4 +136,6 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   lastSyncedAt: '',
   lastSyncedCommit: '',
   defaultConflictStrategy: 'create_backup_fork',
+  autoSyncOnEdit: false,
 };
+

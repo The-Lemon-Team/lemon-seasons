@@ -1,9 +1,12 @@
 import { PrismaClient, NoteType } from '@prisma/client';
+import { HolidaysEngineService } from '../src/ingestion/services/holidays-engine.service';
+import { TmdbService } from '../src/ingestion/services/tmdb.service';
+import { PoliticalEngineService } from '../src/ingestion/services/political-engine.service';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting Project Lenta database seed with Multi-Folder support...');
+  console.log('🌱 Starting Project Lenta database seed with AI & Ingestion Engines...');
 
   // Clean existing data
   await prisma.noteFolder.deleteMany();
@@ -19,8 +22,32 @@ async function main() {
   const feedMcu = await prisma.feed.create({
     data: {
       title: 'Marvel Cinematic Universe',
-      description: 'Tracking film releases, character arcs, and multiverse phases.',
+      description: 'Радар релизов, хронология Фаз 5 и 6 и таймлайн Саги Мультивселенной.',
       slug: 'mcu-radar',
+    },
+  });
+
+  const feedRussianHolidays = await prisma.feed.create({
+    data: {
+      title: 'Русские праздники',
+      description: 'Официальные нерабочие праздничные дни, памятные даты и Дни воинской славы России по 32-ФЗ.',
+      slug: 'russian-holidays',
+    },
+  });
+
+  const feedChristianHolidays = await prisma.feed.create({
+    data: {
+      title: 'Христианские праздники',
+      description: 'Двунадесятые праздники, Пасха Христова и ключевые дни православного церковного года 2026.',
+      slug: 'christian-holidays',
+    },
+  });
+
+  const feedPolitics2026 = await prisma.feed.create({
+    data: {
+      title: 'Политика 2026',
+      description: 'Ключевые международные саммиты, выборы, парламентские сессии и геополитические события 2026 года.',
+      slug: 'politics-2026',
     },
   });
 
@@ -56,334 +83,295 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 5 Feeds');
+  console.log('✅ Created 8 Feeds');
 
-  // 2. Create Folders (Obsidian physical hierarchy)
-  const foldersData = [
-    { name: 'News', path: 'News', icon: 'newspaper' },
-    { name: 'Marvel', path: 'News/Marvel', icon: 'auto_awesome' },
-    { name: 'Cinema', path: 'News/Cinema', icon: 'movie' },
-    { name: 'Engineering', path: 'Engineering', icon: 'terminal' },
-    { name: 'Architecture', path: 'Engineering/Architecture', icon: 'architecture' },
-    { name: 'Backend', path: 'Engineering/Backend', icon: 'dns' },
-    { name: 'Design', path: 'Design', icon: 'palette' },
-    { name: 'Tokens', path: 'Design/Tokens', icon: 'palette' },
-    { name: 'Operations', path: 'Operations', icon: 'cloud' },
-    { name: 'Infrastructure', path: 'Operations/Infrastructure', icon: 'dns' },
-    { name: 'Strategy', path: 'Strategy', icon: 'timeline' },
-    { name: 'Planning', path: 'Strategy/Planning', icon: 'timeline' },
-    { name: 'Product', path: 'Product', icon: 'brush' },
-    { name: 'UX', path: 'Product/UX', icon: 'group' },
-    { name: 'Projects', path: 'Projects', icon: 'folder_special' },
-    { name: 'Lenta', path: 'Projects/Lenta', icon: 'rocket_launch' },
-    // Preset Taxonomy Folders
-    { name: 'Films', path: 'Films', icon: 'movie' },
-    { name: 'Marvel', path: 'Films/Marvel', icon: 'shield' },
-    { name: 'Fantastic', path: 'Films/Fantastic', icon: 'rocket_launch' },
-    { name: 'Politics', path: 'Politics', icon: 'account_balance' },
-    { name: 'USA', path: 'Politics/USA', icon: 'flag' },
-    { name: 'Russia', path: 'Politics/Russia', icon: 'public' },
-  ];
-
+  // 2. Helper functions for upserting Folder, Taxonomy, Hashtag, Image, Links
   const folderMap = new Map<string, string>();
-  for (const item of foldersData) {
-    const createdFolder = await prisma.folder.create({
-      data: item,
+  async function getOrCreateFolder(path: string, icon = 'folder'): Promise<string> {
+    if (folderMap.has(path)) return folderMap.get(path)!;
+    const existing = await prisma.folder.findUnique({ where: { path } });
+    if (existing) {
+      folderMap.set(path, existing.id);
+      return existing.id;
+    }
+    const parts = path.split('/');
+    const name = parts[parts.length - 1];
+    const created = await prisma.folder.create({
+      data: { path, name, icon },
     });
-    folderMap.set(item.path, createdFolder.id);
+    folderMap.set(path, created.id);
+    return created.id;
   }
-
-  console.log(`✅ Created ${foldersData.length} Obsidian Folders`);
-
-  // 3. Create Taxonomy Hierarchy (Ltree format)
-  const taxonomyData = [
-    { name: 'Films', path: 'films', icon: 'movie' },
-    { name: 'Marvel', path: 'films.marvel', icon: 'shield' },
-    { name: 'Fantastic', path: 'films.fantastic', icon: 'rocket' },
-    { name: 'Politics', path: 'politics', icon: 'account_balance' },
-    { name: 'USA', path: 'politics.usa', icon: 'flag' },
-    { name: 'Russia', path: 'politics.russia', icon: 'public' },
-    { name: 'Movies', path: 'movies', icon: 'movie' },
-    { name: 'Avengers', path: 'movies.marvel.avengers', icon: 'shield' },
-    { name: 'Technology', path: 'technology', icon: 'memory' },
-    { name: 'Frontend', path: 'technology.frontend', icon: 'web' },
-    { name: 'React', path: 'technology.frontend.react', icon: 'code_blocks' },
-    { name: 'Backend', path: 'technology.backend', icon: 'terminal' },
-    { name: 'NestJS', path: 'technology.backend.nestjs', icon: 'dns' },
-    { name: 'Architecture', path: 'engineering.architecture', icon: 'architecture' },
-    { name: 'Backend Eng', path: 'engineering.backend', icon: 'settings_system_daydream' },
-    { name: 'UX & Product', path: 'product.ux', icon: 'brush' },
-    { name: 'Planning', path: 'strategy.planning', icon: 'timeline' },
-    { name: 'Infrastructure', path: 'devops.infrastructure', icon: 'cloud' },
-    { name: 'Design Tokens', path: 'design.tokens', icon: 'palette' },
-  ];
 
   const taxonomyMap = new Map<string, string>();
-  for (const item of taxonomyData) {
-    const node = await prisma.taxonomyNode.create({
-      data: item,
+  async function getOrCreateTaxonomy(path: string, name?: string, icon = 'tag'): Promise<string> {
+    const clean = path.toLowerCase().trim();
+    if (taxonomyMap.has(clean)) return taxonomyMap.get(clean)!;
+    const existing = await prisma.taxonomyNode.findUnique({ where: { path: clean } });
+    if (existing) {
+      taxonomyMap.set(clean, existing.id);
+      return existing.id;
+    }
+    const parts = clean.split('.');
+    const autoName = name || parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+    const created = await prisma.taxonomyNode.create({
+      data: { path: clean, name: autoName, icon },
     });
-    taxonomyMap.set(item.path, node.id);
+    taxonomyMap.set(clean, created.id);
+    return created.id;
   }
 
-  console.log(`✅ Created ${taxonomyData.length} Taxonomy Nodes`);
+  async function seedNoteItem(item: {
+    feedId: string;
+    title: string;
+    description: string;
+    type: NoteType;
+    startDate: string | Date;
+    endDate?: string | Date;
+    icon?: string;
+    sourceLink?: string;
+    taxonomyPath: string;
+    folders: string[];
+    hashtags: string[];
+    imageUrl?: string;
+    imageCaption?: string;
+    trailerUrl?: string;
+  }) {
+    const tagId = await getOrCreateTaxonomy(item.taxonomyPath);
+    const sDate = new Date(item.startDate);
+    const eDate = item.endDate ? new Date(item.endDate) : null;
 
-  // 4. Create Chronological Notes with Raw Markdown & Multi-Folder associations
-  const notesData = [
-    {
+    const note = await prisma.note.create({
+      data: {
+        feedId: item.feedId,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        startDate: sDate,
+        endDate: eDate,
+        icon: item.icon,
+        sourceLink: item.sourceLink,
+        tags: {
+          connect: [{ id: tagId }],
+        },
+      },
+    });
+
+    // Folders
+    if (item.folders && item.folders.length > 0) {
+      for (let i = 0; i < item.folders.length; i++) {
+        const folderId = await getOrCreateFolder(item.folders[i]);
+        await prisma.noteFolder.create({
+          data: {
+            noteId: note.id,
+            folderId,
+            isPrimary: i === 0,
+            order: i,
+          },
+        });
+      }
+    }
+
+    // Hashtags
+    if (item.hashtags && item.hashtags.length > 0) {
+      for (const ht of item.hashtags) {
+        const cleanName = ht.replace(/^#/, '').toLowerCase().trim();
+        if (!cleanName) continue;
+        const hashtag = await prisma.hashtag.upsert({
+          where: { name: cleanName },
+          update: {},
+          create: { name: cleanName },
+        });
+        await prisma.note.update({
+          where: { id: note.id },
+          data: {
+            hashtags: {
+              connect: [{ id: hashtag.id }],
+            },
+          },
+        });
+      }
+    }
+
+    // Images
+    if (item.imageUrl) {
+      await prisma.noteImage.create({
+        data: {
+          noteId: note.id,
+          url: item.imageUrl,
+          filename: `${item.title.slice(0, 30)}.jpg`,
+          mimeType: 'image/jpeg',
+          sizeBytes: 102400,
+          caption: item.imageCaption || item.title,
+          isMain: true,
+          order: 0,
+        },
+      });
+    }
+
+    // Links
+    if (item.sourceLink) {
+      await prisma.noteLink.create({
+        data: {
+          noteId: note.id,
+          url: item.sourceLink,
+          title: 'Официальный источник',
+          isSource: true,
+          order: 0,
+        },
+      });
+    }
+
+    if (item.trailerUrl) {
+      await prisma.noteLink.create({
+        data: {
+          noteId: note.id,
+          url: item.trailerUrl,
+          title: 'Официальный трейлер (YouTube)',
+          isSource: false,
+          order: 1,
+        },
+      });
+    }
+  }
+
+  // 3. Seed Marvel Releases (TMDB dataset)
+  console.log('🎬 Seeding Marvel Cinematic Universe...');
+  const tmdbService = new TmdbService({ get: () => undefined } as any);
+  const mcuReleases = tmdbService.getCuratedMcuDataset();
+  for (const m of mcuReleases) {
+    await seedNoteItem({
       feedId: feedMcu.id,
-      title: 'Marvel Cinematic Universe Phase 5 Overview',
-      type: NoteType.SINGLE,
-      startDate: new Date('2023-10-24T14:30:00.000Z'),
-      sourceLink: 'https://marvel.com/movies/phase-5',
+      title: m.title,
+      description: m.description,
+      type: m.type,
+      startDate: m.releaseDate,
+      endDate: m.endDate,
       icon: 'movie',
-      tags: ['movies.marvel.avengers', 'movies.marvel'],
-      folders: [
-        { path: 'News/Marvel', isPrimary: true },
-        { path: 'News/Cinema', isPrimary: false },
-      ],
-      description: `### Multiverse Saga Continuation
-The upcoming phase includes several highly anticipated releases, continuing the Multiverse Saga.
+      sourceLink: m.sourceLink,
+      taxonomyPath: m.taxonomyPath,
+      folders: m.folders,
+      hashtags: m.hashtags,
+      imageUrl: m.posterUrl,
+      imageCaption: `Постер фильма: ${m.title}`,
+      trailerUrl: m.trailerUrl,
+    });
+  }
+  console.log(`✅ Seeded ${mcuReleases.length} MCU releases with TMDB posters and trailers`);
 
-**Key Focus Areas:**
-- Integrating new character arcs alongside established ones.
-- Establishing the overarching threat of Kang across multiple timelines.
-- Grounded street-level stories balancing cosmic events.
+  // 4. Seed Russian Holidays & Military Glory Days
+  console.log('🇷🇺 Seeding Russian Holidays & Military Glory Days...');
+  const holidaysEngine = new HolidaysEngineService();
+  const russianHolidays = holidaysEngine.getRussianHolidays(2026);
+  for (const h of russianHolidays) {
+    await seedNoteItem({
+      feedId: feedRussianHolidays.id,
+      title: h.title,
+      description: h.description,
+      type: h.type,
+      startDate: h.startDate,
+      endDate: h.endDate,
+      icon: h.icon,
+      sourceLink: h.sourceLink,
+      taxonomyPath: h.taxonomyPath,
+      folders: h.folders,
+      hashtags: h.hashtags,
+      imageUrl: h.imageUrl,
+      imageCaption: h.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${russianHolidays.length} Russian & Military Holidays`);
 
-> Production schedules remain fluid pending writing room adjustments.`,
-    },
+  // 5. Seed Christian Holidays & Easter Cycle
+  console.log('☦️ Seeding Christian Holidays & Easter Cycle 2026...');
+  const christianHolidays = holidaysEngine.getChristianHolidays(2026);
+  for (const c of christianHolidays) {
+    await seedNoteItem({
+      feedId: feedChristianHolidays.id,
+      title: c.title,
+      description: c.description,
+      type: c.type,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      icon: c.icon,
+      sourceLink: c.sourceLink,
+      taxonomyPath: c.taxonomyPath,
+      folders: c.folders,
+      hashtags: c.hashtags,
+      imageUrl: c.imageUrl,
+      imageCaption: c.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${christianHolidays.length} Christian Feasts & Fasts`);
+
+  // 6. Seed Political Events 2026
+  console.log('🌐 Seeding Political Events 2026...');
+  const politicalEngine = new PoliticalEngineService();
+  const politicalEvents = politicalEngine.getPoliticalEvents2026();
+  for (const p of politicalEvents) {
+    await seedNoteItem({
+      feedId: feedPolitics2026.id,
+      title: p.title,
+      description: p.description,
+      type: p.type,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      icon: p.icon,
+      sourceLink: p.sourceLink,
+      taxonomyPath: p.taxonomyPath,
+      folders: p.folders,
+      hashtags: p.hashtags,
+      imageUrl: p.imageUrl,
+      imageCaption: p.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${politicalEvents.length} Political Events 2026`);
+
+  // 7. Seed Engineering & Design System Notes
+  console.log('⚡ Seeding Tech, Design, & DevOps Notes...');
+  const techNotes = [
     {
       feedId: feedTech.id,
       title: 'Q4 Content Strategy Review',
       type: NoteType.PERIOD,
-      startDate: new Date('2023-11-01T00:00:00.000Z'),
-      endDate: new Date('2023-11-30T23:59:59.000Z'),
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.000Z',
       sourceLink: 'https://notion.so/strategy/q4-content',
       icon: 'trending_up',
-      tags: ['strategy.planning'],
-      folders: [
-        { path: 'Strategy/Planning', isPrimary: true },
-        { path: 'Projects/Lenta', isPrimary: false },
-      ],
-      description: `### Strategy Review & Goals
-Evaluating the performance metrics for Q3 and aligning editorial calendars for the upcoming holiday push.
-
-1. **Taxonomy Alignment:** Ensure taxonomy tags are strictly adhered to for cross-referencing across Obsidian and Admin CMS.
-2. **Performance Metrics:** Review read times, syndication reach, and sync latency.
-3. **Draft Approvals:** Complete review by November 15.`,
+      taxonomyPath: 'strategy.planning',
+      folders: ['Strategy/Planning', 'Projects/Lenta'],
+      hashtags: ['Strategy', 'Roadmap', 'Q4'],
+      description: `### Strategy Review & Goals\nEvaluating the performance metrics for Q3 and aligning editorial calendars for the upcoming holiday push.\n\n1. **Taxonomy Alignment:** Ensure taxonomy tags are strictly adhered to for cross-referencing across Obsidian and Admin CMS.\n2. **Performance Metrics:** Review read times, syndication reach, and sync latency.`,
     },
     {
       feedId: feedDesign.id,
-      title: 'Design System V2 Tokens',
+      title: 'Design System V2 Tokens & Olive Gold Palette',
       type: NoteType.SINGLE,
-      startDate: new Date('2023-10-24T12:00:00.000Z'),
+      startDate: '2026-10-24T12:00:00.000Z',
       icon: 'palette',
-      tags: ['design.tokens'],
-      folders: [
-        { path: 'Design/Tokens', isPrimary: true },
-        { path: 'Projects/Lenta', isPrimary: false },
-      ],
-      description: `### New Palette Configuration
-Drafting the new JSON structure for the theme configuration:
-
-\`\`\`json
-{
-  "colors": {
-    "primary": "#c9cd58",
-    "surface": "#121414",
-    "secondary": "#c9c8a5",
-    "tertiary": "#a4d0bf"
-  },
-  "fonts": {
-    "ui": "Inter",
-    "metadata": "JetBrains Mono"
-  }
-}
-\`\`\`
-
-All components now adhere to the 4px base unit grid and Level 1/Level 2 elevation borders.`,
+      taxonomyPath: 'design.tokens',
+      folders: ['Design/Tokens', 'Projects/Lenta'],
+      hashtags: ['DesignSystem', 'Tokens', 'UI'],
+      description: `### New Palette Configuration\n\n\`\`\`json\n{\n  "colors": {\n    "primary": "#c9cd58",\n    "surface": "#121414",\n    "secondary": "#c9c8a5",\n    "tertiary": "#a4d0bf"\n  },\n  "fonts": {\n    "ui": "Inter",\n    "metadata": "JetBrains Mono"\n  }\n}\n\`\`\`\n\nAll components now adhere to the 4px base unit grid and Level 1/Level 2 elevation borders.`,
     },
     {
       feedId: feedDevOps.id,
-      title: 'Server Migration Checklist',
+      title: 'Server Migration & Ingestion Pipeline Checklist',
       type: NoteType.SINGLE,
-      startDate: new Date('2023-10-23T09:15:00.000Z'),
+      startDate: '2026-10-23T09:15:00.000Z',
       icon: 'dns',
-      tags: ['devops.infrastructure'],
-      folders: [
-        { path: 'Operations/Infrastructure', isPrimary: true },
-      ],
-      description: `### Infrastructure Step-by-Step
-- [x] Backup current PostgreSQL database
-- [x] Provision new containerized instances with Docker Compose
-- [ ] Enable PostgreSQL \`ltree\` extension for hierarchical taxonomy
-- [ ] Update DNS records with TTL 300
-- [ ] Verify healthcheck endpoints across all microservices`,
-    },
-    {
-      feedId: feedTech.id,
-      title: 'Q3 Technical Architecture Review',
-      type: NoteType.EVENT,
-      startDate: new Date('2023-10-24T10:00:00.000Z'),
-      endDate: new Date('2023-10-24T11:30:00.000Z'),
-      icon: 'architecture',
-      tags: ['engineering.architecture'],
-      folders: [
-        { path: 'Engineering/Architecture', isPrimary: true },
-        { path: 'Projects/Lenta', isPrimary: false },
-      ],
-      description: `### Architectural Decisions (ADRs)
-Completed evaluation of headless data store sync patterns:
-- Selected **Soft Deletes** with \`updatedAt\` indexing for offline-first Obsidian clients.
-- Adopted PostgreSQL native \`ltree\` for lightning-fast hierarchical queries (\`<@\`, \`@>\`).
-- Decoupled admin UI using TanStack Query caching and Ant Design tokens.`,
-    },
-    {
-      feedId: feedProduct.id,
-      title: 'User Onboarding Flow V2',
-      type: NoteType.MENTION,
-      startDate: new Date('2023-10-22T15:00:00.000Z'),
-      icon: 'group',
-      tags: ['product.ux'],
-      folders: [
-        { path: 'Product/UX', isPrimary: true },
-      ],
-      description: `### Feedback Summary
-Initial feedback on the 3-step onboarding wizard:
-- Completion rate increased by **24%**.
-- Drop-off occurs predominantly on workspace team invites.
-- Recommendation: Make team invite optional during initial setup.`,
-    },
-    {
-      feedId: feedMcu.id,
-      title: 'Avengers: Secret Wars Release Event',
-      type: NoteType.FILM_RELEASE,
-      startDate: new Date('2027-05-07T00:00:00.000Z'),
-      icon: 'local_movies',
-      tags: ['movies.marvel.avengers'],
-      folders: [
-        { path: 'News/Marvel', isPrimary: true },
-        { path: 'News/Cinema', isPrimary: false },
-      ],
-      description: `### Culmination of the Multiverse Saga
-The climax of Phase 6 bringing together heroes across multiple alternate realities and universes.
-
-**Confirmed Timeline:** Summer 2027 Theatrical Release.`,
-    },
-    {
-      feedId: feedMcu.id,
-      title: 'Fantastic Four: First Steps Premiere',
-      type: NoteType.FILM_RELEASE,
-      startDate: new Date('2025-07-25T18:00:00.000Z'),
-      icon: 'rocket_launch',
-      tags: ['films.fantastic', 'films'],
-      folders: [
-        { path: 'Films/Fantastic', isPrimary: true },
-        { path: 'Films', isPrimary: false },
-      ],
-      description: `### Marvel Studios Fantastic Four Debut
-Introducing the First Family into the MCU timeline with a retro-futuristic aesthetic.`,
-    },
-    {
-      feedId: feedProduct.id,
-      title: 'US Presidential Debates & Policy Overview',
-      type: NoteType.EVENT,
-      startDate: new Date('2026-09-15T20:00:00.000Z'),
-      icon: 'flag',
-      tags: ['politics.usa', 'politics'],
-      folders: [
-        { path: 'Politics/USA', isPrimary: true },
-        { path: 'Politics', isPrimary: false },
-      ],
-      description: `### Global Policy & Economic Strategy
-Analysis of upcoming regulatory frameworks and technology trade policies.`,
-    },
-    {
-      feedId: feedProduct.id,
-      title: 'Global Geopolitics & Regional Summit',
-      type: NoteType.EVENT,
-      startDate: new Date('2026-10-10T11:00:00.000Z'),
-      icon: 'public',
-      tags: ['politics.russia', 'politics'],
-      folders: [
-        { path: 'Politics/Russia', isPrimary: true },
-        { path: 'Politics', isPrimary: false },
-      ],
-      description: `### International Summit on Energy and Digital Infrastructure
-Cross-border discussions and bilateral agreements review.`,
-    },
-    {
-      feedId: feedTech.id,
-      title: 'Prisma & PostgreSQL Ltree Setup Completed',
-      type: NoteType.DONE,
-      startDate: new Date('2026-08-20T16:00:00.000Z'),
-      icon: 'check_circle',
-      tags: ['technology.backend.nestjs'],
-      folders: [
-        { path: 'Engineering/Backend', isPrimary: true },
-        { path: 'Projects/Lenta', isPrimary: false },
-      ],
-      description: `### Milestone Achieved
-Successfully implemented:
-- Nest.js backend RESTful endpoints for Feeds, Notes, Taxonomy, and Sync.
-- Soft deletion middleware and delta sync support.
-- Materialized path tree builder with fast Ltree indexing.`,
+      taxonomyPath: 'devops.infrastructure',
+      folders: ['Operations/Infrastructure'],
+      hashtags: ['DevOps', 'Postgres', 'Sync'],
+      description: `### Infrastructure Step-by-Step\n- [x] Multi-Provider calendar ingestion services initialized\n- [x] TMDB Marvel radar with high-res CDN posters\n- [x] Computus Orthodox Easter & Russian statutory holiday engines`,
     },
   ];
 
-  for (const note of notesData) {
-    const tagIds = note.tags
-      .map((path) => taxonomyMap.get(path))
-      .filter((id): id is string => Boolean(id));
-
-    const noteFoldersToCreate = note.folders
-      .map((f, idx) => {
-        const folderId = folderMap.get(f.path);
-        if (!folderId) return null;
-        return {
-          folderId,
-          isPrimary: f.isPrimary ?? idx === 0,
-          order: idx,
-        };
-      })
-      .filter((item): item is { folderId: string; isPrimary: boolean; order: number } => Boolean(item));
-
-    await prisma.note.create({
-      data: {
-        feedId: note.feedId,
-        title: note.title,
-        description: note.description,
-        type: note.type,
-        startDate: note.startDate,
-        endDate: note.endDate,
-        sourceLink: note.sourceLink,
-        icon: note.icon,
-        tags: {
-          connect: tagIds.map((id) => ({ id })),
-        },
-        folders: noteFoldersToCreate.length > 0
-          ? {
-              create: noteFoldersToCreate,
-            }
-          : undefined,
-        links: note.sourceLink
-          ? {
-              create: [
-                {
-                  url: note.sourceLink,
-                  title: 'Primary Source',
-                  isSource: true,
-                  order: 0,
-                },
-              ],
-            }
-          : undefined,
-      },
-    });
+  for (const n of techNotes) {
+    await seedNoteItem(n);
   }
 
-  console.log(`✅ Created ${notesData.length} Notes with Multi-Folder mapping, NoteTypes, and Markdown`);
-  console.log('🎉 Seed completed successfully!');
+  console.log('🎉 Database successfully seeded with all 4 rich calendar channels and technical notes!');
 }
 
 main()

@@ -161,9 +161,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   }, [selectedDayKey, calendarCells, notes]);
 
   return (
-    <div className="flex-1 flex flex-col p-3 lg:p-5 overflow-hidden h-[calc(100vh-70px)] max-w-[1600px] mx-auto w-full gap-3">
+    <div className="flex-1 flex flex-col p-3 lg:p-4 overflow-hidden h-full max-w-[1600px] mx-auto w-full gap-2.5 min-h-0">
       {/* 1. Header Toolbar & Direct Filter Navigation */}
-      <div className="bg-[#1a1c1c] border border-[#242828] rounded-xl p-3.5 flex flex-col gap-3 shadow-md flex-shrink-0">
+      <div className="bg-[#1a1c1c] border border-[#242828] rounded-xl p-3 flex flex-col gap-2.5 shadow-md flex-shrink-0">
         {/* Top Level: Month Title, Quick Stats & Jump to Filters Buttons */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
         </div>
 
         {/* Inline Quick Filter Toolbar: Hierarchy (ACCENT FIRST), Note Types (WRAPPED), and Feeds */}
-        <div className="pt-2.5 border-t border-[#242828] flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="pt-2 border-t border-[#242828] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5 flex-wrap min-w-0">
             {/* 1. Hierarchy / Taxonomy Selector (FIRST FILTER WITH ACCENT) */}
             <HierarchySelector
@@ -260,7 +260,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
 
         {/* 4. Active Filters Ledger (Always rendered with fixed stable height to prevent layout shifts/reflows) */}
         <div className="pt-2 border-t border-[#242828]">
-          <div className="flex items-center justify-between gap-2 text-xs bg-[#121414]/60 px-2.5 py-1 rounded-lg h-9 border border-[#242828]/50 box-border overflow-hidden">
+          <div className="flex items-center justify-between gap-2 text-xs bg-[#121414]/60 px-2.5 py-1 rounded-lg h-8 border border-[#242828]/50 box-border overflow-hidden">
             <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-w-0 flex-1 h-full">
               <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-semibold mr-1 flex items-center gap-1 shrink-0">
                 <Filter className="w-3 h-3 text-[#c9cd58]" />
@@ -386,9 +386,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
       </div>
 
       {/* 3. 6-Week Month Grid Matrix */}
-      <div className="grid grid-cols-7 flex-1 border-t border-l border-[#242828] bg-[#121414] overflow-y-auto rounded-b-lg shadow-inner">
+      <div className="grid grid-cols-7 grid-rows-6 auto-rows-fr flex-1 border-t border-l border-[#242828] bg-[#121414] overflow-y-auto rounded-b-lg shadow-inner min-h-0">
         {calendarCells.map((cell) => {
-          const maxVisible = 3;
+          const maxVisible = 2;
           const visibleNotes = cell.notes.slice(0, maxVisible);
           const hiddenCount = cell.notes.length - maxVisible;
 
@@ -398,7 +398,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               onClick={() => setSelectedDayKey(cell.dateKey)}
               onMouseEnter={() => setHoveredDayKey(cell.dateKey)}
               onMouseLeave={() => setHoveredDayKey(null)}
-              className={`min-h-[100px] lg:min-h-[115px] border-r border-b border-[#242828] p-2 flex flex-col transition-all group relative cursor-pointer ${
+              className={`min-h-[75px] sm:min-h-[85px] lg:min-h-0 border-r border-b border-[#242828] p-1.5 sm:p-2 flex flex-col transition-all group relative cursor-pointer overflow-hidden ${
                 cell.isCurrentMonth ? 'bg-[#121414]' : 'bg-[#0d0f0f]/80 opacity-45'
               } ${
                 selectedDayKey === cell.dateKey
@@ -409,7 +409,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               }`}
             >
               {/* Day Number Header */}
-              <div className="flex items-center justify-between mb-1.5 pointer-events-none">
+              <div className="flex items-center justify-between mb-1 pointer-events-none flex-shrink-0">
                 <span
                   className={`text-xs font-mono font-semibold px-1.5 py-0.5 rounded transition-colors ${
                     selectedDayKey === cell.dateKey
@@ -432,7 +432,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               </div>
 
               {/* Event Pills List */}
-              <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar flex-1">
+              <div className="flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
                 {visibleNotes.map((note) => {
                   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
                   const startHour = dayjs(note.startDate).format('HH:mm');
@@ -444,7 +444,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                         e.stopPropagation();
                         onSelectNote(note);
                       }}
-                      className="text-left w-full px-1.5 py-0.5 rounded text-[11px] font-mono truncate transition-all duration-150 flex items-center gap-1.5 hover:brightness-125 hover:scale-[1.01] border shadow-xs"
+                      className="text-left w-full px-1.5 py-0.5 rounded text-[11px] font-mono truncate transition-all duration-150 flex items-center gap-1.5 hover:brightness-125 hover:scale-[1.01] border shadow-xs flex-shrink-0"
                       style={{
                         backgroundColor: typeColor.bg,
                         color: typeColor.text,
@@ -467,7 +467,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                       e.stopPropagation();
                       setSelectedDayKey(cell.dateKey);
                     }}
-                    className="w-full py-0.5 text-[10px] font-mono text-center text-[#c9cd58] bg-[#1e2020] hover:bg-[#282a2a] border border-[#242828] hover:border-[#c9cd58]/50 rounded transition-colors"
+                    className="w-full py-0.5 text-[10px] font-mono text-center text-[#c9cd58] bg-[#1e2020] hover:bg-[#282a2a] border border-[#242828] hover:border-[#c9cd58]/50 rounded transition-colors flex-shrink-0"
                   >
                     {t.moreCount(hiddenCount)}
                   </button>

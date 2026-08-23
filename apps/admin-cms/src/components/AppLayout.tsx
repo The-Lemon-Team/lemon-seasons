@@ -17,6 +17,7 @@ export const AppLayout: React.FC = () => {
     if (location.pathname.startsWith('/feeds')) return t.feeds;
     if (location.pathname.startsWith('/notes')) return t.allNotes;
     if (location.pathname.startsWith('/taxonomy')) return t.taxonomy;
+    if (location.pathname.startsWith('/generators')) return t.generatorLab;
     if (location.pathname.startsWith('/sync')) return t.syncHub;
     return t.dashboard;
   };
@@ -102,6 +103,21 @@ export const AppLayout: React.FC = () => {
           >
             <span className="material-symbols-outlined text-[20px]">account_tree</span>
             {t.taxonomy}
+          </NavLink>
+
+          <NavLink
+            to="/generators"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
+                isActive
+                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
+                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined text-[20px] text-primary">auto_awesome</span>
+            <span className="flex-1 truncate">{t.generatorLab}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">AI</span>
           </NavLink>
 
           <NavLink

@@ -9,6 +9,7 @@ import { FeedsPage } from './pages/Feeds/FeedsPage';
 import { NotesListPage } from './pages/Notes/NotesListPage';
 import { NoteEditorPage } from './pages/NoteEditor/NoteEditorPage';
 import { TaxonomyPage } from './pages/Taxonomy/TaxonomyPage';
+import { GeneratorLabPage } from './pages/GeneratorLab/GeneratorLabPage';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
             <Route path="/notes/new" element={<NoteEditorPage />} />
             <Route path="/notes/:id" element={<NoteEditorPage />} />
             <Route path="/taxonomy" element={<TaxonomyPage />} />
+            <Route path="/generators" element={<GeneratorLabPage />} />
             <Route path="/sync" element={<DashboardPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

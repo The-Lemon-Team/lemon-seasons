@@ -86,6 +86,48 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeConfig> = {
     emoji: '🛠️',
     iconName: 'Server',
   },
+  'russian-holidays': {
+    slug: 'russian-holidays',
+    title: 'Русские праздники',
+    shortTitle: 'Праздники РФ',
+    tagline: 'Государственные торжества и Дни воинской славы России',
+    category: 'general',
+    accentColor: '#60a5fa', // Blue/Red
+    gradient: 'from-blue-500/20 via-red-500/10 to-transparent',
+    borderAccent: '#3b82f6',
+    bgLight: 'rgba(59, 130, 246, 0.12)',
+    badgeBg: 'rgba(59, 130, 246, 0.25)',
+    emoji: '🇷🇺',
+    iconName: 'Flag',
+  },
+  'christian-holidays': {
+    slug: 'christian-holidays',
+    title: 'Христианские праздники',
+    shortTitle: 'Пасха & Праздники',
+    tagline: 'Двунадесятые праздники, Пасха и церковный год 2026',
+    category: 'general',
+    accentColor: '#fbbf24', // Gold / Amber
+    gradient: 'from-amber-500/20 via-yellow-500/10 to-transparent',
+    borderAccent: '#f59e0b',
+    bgLight: 'rgba(245, 158, 11, 0.12)',
+    badgeBg: 'rgba(245, 158, 11, 0.25)',
+    emoji: '☦️',
+    iconName: 'Sparkles',
+  },
+  'politics-2026': {
+    slug: 'politics-2026',
+    title: 'Политика 2026',
+    shortTitle: 'Политика 2026',
+    tagline: 'Международные саммиты, выборы и геополитика 2026 года',
+    category: 'general',
+    accentColor: '#f43f5e', // Rose/Indigo
+    gradient: 'from-rose-500/20 via-indigo-500/10 to-transparent',
+    borderAccent: '#f43f5e',
+    bgLight: 'rgba(244, 63, 94, 0.12)',
+    badgeBg: 'rgba(244, 63, 94, 0.25)',
+    emoji: '🌐',
+    iconName: 'Globe',
+  },
 };
 
 // Curated dynamic palette for unmapped feeds
@@ -177,6 +219,27 @@ export const FEED_PRESET_OPTIONS: FeedPresetOption[] = [
     emoji: '🛠️',
     description: 'DevOps, cloud infra & deployment logs',
     slug: 'devops-infra',
+  },
+  {
+    id: 'russian-holidays',
+    name: 'Русские праздники',
+    emoji: '🇷🇺',
+    description: 'Государственные праздники и Дни воинской славы России',
+    slug: 'russian-holidays',
+  },
+  {
+    id: 'christian-holidays',
+    name: 'Христианские праздники',
+    emoji: '☦️',
+    description: 'Двунадесятые праздники, Пасха Христова и посты 2026',
+    slug: 'christian-holidays',
+  },
+  {
+    id: 'politics-2026',
+    name: 'Политика 2026',
+    emoji: '🌐',
+    description: 'Международные саммиты, выборы и геополитика 2026',
+    slug: 'politics-2026',
   },
 ];
 

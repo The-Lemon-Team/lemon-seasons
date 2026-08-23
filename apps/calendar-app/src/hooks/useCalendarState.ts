@@ -25,9 +25,10 @@ export function parseUrlSearch(searchString: string): CalendarFilterState {
   const end = params.get('end') || defaults.end;
   const viewRaw = params.get('view');
   const view: CalendarViewMode =
-    viewRaw === 'gantt' || viewRaw === 'month' || viewRaw === 'timeline' || viewRaw === 'feeds'
+    viewRaw === 'gantt' || viewRaw === 'month' || viewRaw === 'timeline' || viewRaw === 'feeds' || viewRaw === 'obsidian'
       ? viewRaw
       : 'timeline';
+
 
   const feedParam = params.get('feed') || params.get('feeds');
   const feed = feedParam ? feedParam.split(',')[0].trim() || undefined : undefined;

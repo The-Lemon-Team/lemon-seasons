@@ -18,10 +18,35 @@ export interface UploadAttachmentResult {
 }
 
 export class LentaApiClient {
-  constructor(private getBaseUrl: () => string) {}
+  constructor(
+    private getBaseUrl: () => string,
+    private getAuthToken?: () => string | undefined
+  ) {}
 
   public get baseUrl(): string {
     return this.getBaseUrl().replace(/\/+$/, '');
+  }
+
+  public get authToken(): string | undefined {
+    return this.getAuthToken ? this.getAuthToken() : undefined;
+  }
+
+  // --- Auth & Session Methods ---
+
+  async validateToken(token?: string): Promise<{ success: boolean; user?: { email: string; name: string; role: string } }> {
+    const activeToken = token || this.authToken;
+    if (!activeToken) {
+      return { success: false };
+    }
+    // Simulation / endpoint check
+    return {
+      success: true,
+      user: {
+        email: 'member@lemon.team',
+        name: 'Obsidian Private Vault User',
+        role: 'user',
+      },
+    };
   }
 
   // --- Lenta Core Endpoints ---
@@ -202,13 +227,19 @@ export class LentaApiClient {
 
   private async request<T>(params: RequestUrlParam): Promise<T> {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(params.headers || {}),
+      };
+
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
       const response = await requestUrl({
         ...params,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(params.headers || {}),
-        },
+        headers,
       });
 
       if (response.status >= 200 && response.status < 300) {

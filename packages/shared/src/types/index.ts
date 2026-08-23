@@ -14,12 +14,15 @@ export interface Feed {
   notes?: Note[];
 }
 
+export type FolderPrivacy = 'private' | 'public';
+
 export interface Folder {
   id: string;
   name: string;
   path: string;
   icon: string | null;
   color: string | null;
+  privacy?: FolderPrivacy;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -34,6 +37,7 @@ export interface FolderTreeNode {
   path: string;
   icon: string | null;
   color: string | null;
+  privacy?: FolderPrivacy;
   notesCount: number;
   directNotesCount: number;
   updatedAt: string;
@@ -230,6 +234,7 @@ export interface CreateFolderInput {
   path: string;
   icon?: string;
   color?: string;
+  privacy?: FolderPrivacy;
 }
 
 export interface UpdateFolderInput {
@@ -237,6 +242,7 @@ export interface UpdateFolderInput {
   path?: string;
   icon?: string;
   color?: string;
+  privacy?: FolderPrivacy;
 }
 
 export interface CreateTaxonomyInput {
@@ -342,7 +348,7 @@ export interface FileDiffItemDto {
 }
 
 // Calendar View Types & URL Filter State
-export type CalendarViewMode = 'timeline' | 'gantt' | 'month' | 'feeds';
+export type CalendarViewMode = 'timeline' | 'gantt' | 'month' | 'feeds' | 'obsidian' | 'folders';
 
 export interface CalendarFilterState {
   start: string;
@@ -354,3 +360,86 @@ export interface CalendarFilterState {
   types: NoteType[];
   search: string;
 }
+
+// User & Privacy Access Types
+export type UserRole = 'guest' | 'user' | 'admin';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  createdAt: string;
+}
+
+export interface AuthSession {
+  token: string;
+  user: User;
+}
+
+export interface LoginInput {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterInput {
+  name: string;
+  email: string;
+  password?: string;
+}
+
+export interface PublicFeedPreset {
+  id: string;
+  title: string;
+  slug: string;
+  icon: string;
+  category: string;
+  description: string;
+  color: string;
+  count?: number;
+}
+
+export type ContainerPrivacy = 'private' | 'public';
+
+export type ContainerObserveMode = 'all' | 'filtered' | 'recursive';
+
+export interface BoundFolder {
+  id: string;
+  path: string;
+  name?: string;
+  isPrimary?: boolean;
+  observeMode: ContainerObserveMode;
+  filterTag?: string;
+  notesCount?: number;
+  status?: 'active' | 'paused';
+  privacy?: FolderPrivacy;
+}
+
+export interface ObsidianContainer {
+  id: string;
+  name: string;
+  description?: string;
+  vaultPath: string;
+  privacy: ContainerPrivacy;
+  token: string;
+  boundFolders: BoundFolder[];
+  notesCount: number;
+  createdAt: string;
+  lastSyncedAt?: string;
+  status: 'connected' | 'idle' | 'syncing' | 'error';
+  color?: string;
+}
+
+export interface PrivateContainer {
+  id: string;
+  name: string;
+  vaultPath: string;
+  isPrivate: boolean;
+  token: string;
+  createdAt: string;
+  lastSyncedAt?: string;
+  notesCount: number;
+}
+
+

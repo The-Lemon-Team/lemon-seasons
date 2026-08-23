@@ -271,3 +271,130 @@ export const syncApi = {
     return res.data;
   },
 };
+
+// Ingestion & AI Generator Lab API
+export interface IngestionStatus {
+  status: string;
+  geminiActive: boolean;
+  tmdbActive: boolean;
+  availableFeeds: Array<{ slug: string; name: string; provider: string }>;
+}
+
+export interface IngestionResult {
+  feedSlug: string;
+  feedTitle: string;
+  notesCount: number;
+  created: number;
+  updated: number;
+}
+
+export interface GeneratedNoteEnrichment {
+  description: string;
+  hashtags: string[];
+  suggestedTags?: string[];
+  keyQuote?: string;
+}
+
+export interface MovieReleaseItem {
+  title: string;
+  originalTitle?: string;
+  releaseDate: string;
+  endDate?: string;
+  type: any;
+  description: string;
+  posterUrl: string;
+  backdropUrl?: string;
+  trailerUrl?: string;
+  sourceLink?: string;
+  taxonomyPath: string;
+  folders: string[];
+  hashtags: string[];
+  rating?: number;
+}
+
+export interface HolidayItem {
+  title: string;
+  startDate: string;
+  endDate?: string;
+  type: any;
+  description: string;
+  icon?: string;
+  sourceLink?: string;
+  imageUrl?: string;
+  imageCaption?: string;
+  taxonomyPath: string;
+  folders: string[];
+  hashtags: string[];
+}
+
+export interface PoliticalEventItem {
+  title: string;
+  startDate: string;
+  endDate?: string;
+  type: any;
+  description: string;
+  icon?: string;
+  sourceLink?: string;
+  imageUrl?: string;
+  imageCaption?: string;
+  taxonomyPath: string;
+  folders: string[];
+  hashtags: string[];
+}
+
+export interface ImportNoteDto {
+  feedSlug: string;
+  title: string;
+  description: string;
+  type: any;
+  startDate: string;
+  endDate?: string;
+  icon?: string;
+  sourceLink?: string;
+  taxonomyPath: string;
+  folders: string[];
+  hashtags: string[];
+  imageUrl?: string;
+  imageCaption?: string;
+  trailerUrl?: string;
+}
+
+export const ingestionApi = {
+  getStatus: async (): Promise<IngestionStatus> => {
+    const res = await apiClient.get<IngestionStatus>('/ingestion/status');
+    return res.data;
+  },
+  syncAll: async (): Promise<{ success: boolean; results: IngestionResult[] }> => {
+    const res = await apiClient.post<{ success: boolean; results: IngestionResult[] }>('/ingestion/sync-all');
+    return res.data;
+  },
+  syncFeed: async (slug: string): Promise<{ success: boolean; result: IngestionResult }> => {
+    const res = await apiClient.post<{ success: boolean; result: IngestionResult }>(`/ingestion/sync/${slug}`);
+    return res.data;
+  },
+  generateAiContent: async (data: { title: string; category: string; dateStr: string; context?: string }): Promise<GeneratedNoteEnrichment> => {
+    const res = await apiClient.post<GeneratedNoteEnrichment>('/ingestion/ai/generate-content', data);
+    return res.data;
+  },
+  searchMovies: async (query?: string): Promise<MovieReleaseItem[]> => {
+    const res = await apiClient.get<MovieReleaseItem[]>('/ingestion/tmdb/search', {
+      params: { query },
+    });
+    return res.data;
+  },
+  getHolidaysPreview: async (year = 2026, category: 'russian' | 'christian' = 'russian'): Promise<HolidayItem[]> => {
+    const res = await apiClient.get<HolidayItem[]>('/ingestion/holidays/preview', {
+      params: { year, category },
+    });
+    return res.data;
+  },
+  getPoliticsPreview: async (): Promise<PoliticalEventItem[]> => {
+    const res = await apiClient.get<PoliticalEventItem[]>('/ingestion/politics/preview');
+    return res.data;
+  },
+  importNote: async (dto: ImportNoteDto): Promise<{ success: boolean; isNew: boolean; title: string }> => {
+    const res = await apiClient.post<{ success: boolean; isNew: boolean; title: string }>('/ingestion/import-note', dto);
+    return res.data;
+  },
+};
+

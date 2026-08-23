@@ -21,6 +21,9 @@ export const queryKeys = {
   taxonomyTree: ['taxonomy', 'tree'] as const,
   taxonomyFlat: ['taxonomy', 'flat'] as const,
   hashtags: ['hashtags'] as const,
+  folders: ['folders'] as const,
+  folderTree: ['folders', 'tree'] as const,
+  folderDetail: (id: string) => ['folders', 'detail', id] as const,
 };
 
 /**
@@ -194,3 +197,20 @@ export function useHashtags() {
     staleTime: 60_000,
   });
 }
+
+export function useFolders(search?: string) {
+  return useQuery({
+    queryKey: [...queryKeys.folders, search],
+    queryFn: () => calendarApi.getFolders(false, search),
+    staleTime: 30_000,
+  });
+}
+
+export function useFolderTree() {
+  return useQuery({
+    queryKey: queryKeys.folderTree,
+    queryFn: () => calendarApi.getFolderTree(),
+    staleTime: 30_000,
+  });
+}
+

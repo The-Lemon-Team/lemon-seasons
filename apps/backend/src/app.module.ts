@@ -8,6 +8,7 @@ import { HashtagsModule } from './hashtags/hashtags.module';
 import { FoldersModule } from './folders/folders.module';
 import { SyncModule } from './sync/sync.module';
 import { StorageModule } from './storage/storage.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StorageModule } from './storage/storage.module';
     FoldersModule,
     SyncModule,
     StorageModule,
+    IngestionModule,
   ],
 })
 export class AppModule {}

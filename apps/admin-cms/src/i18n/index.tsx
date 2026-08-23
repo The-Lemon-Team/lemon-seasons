@@ -14,6 +14,7 @@ export interface AdminTranslations {
   allNotes: string;
   taxonomy: string;
   syncHub: string;
+  generatorLab: string;
   quickAdd: string;
   apiDocs: string;
   searchPlaceholder: string;
@@ -176,6 +177,7 @@ export const ruAdminTranslations: AdminTranslations = {
   allNotes: 'Все заметки',
   taxonomy: 'Таксономия',
   syncHub: 'Центр синхронизации',
+  generatorLab: 'Генератор & AI Лаборатория',
   quickAdd: 'Быстрое добавление',
   apiDocs: 'Документация API',
   searchPlaceholder: 'Поиск заметок, лент...',
@@ -338,6 +340,7 @@ export const enAdminTranslations: AdminTranslations = {
   allNotes: 'All Notes',
   taxonomy: 'Taxonomy',
   syncHub: 'Sync Hub',
+  generatorLab: 'AI & Generation Lab',
   quickAdd: 'Quick Add',
   apiDocs: 'API Docs',
   searchPlaceholder: 'Search notes, feeds...',

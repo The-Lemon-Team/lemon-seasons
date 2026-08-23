@@ -9,6 +9,7 @@ export interface FolderTreeNode {
   path: string;
   icon: string | null;
   color: string | null;
+  privacy?: 'private' | 'public';
   notesCount: number;
   directNotesCount: number;
   updatedAt: Date;
@@ -136,6 +137,7 @@ export class FoldersService {
         path: folder.path,
         icon: folder.icon,
         color: folder.color,
+        privacy: (folder as any).privacy || 'public',
         directNotesCount: directCount,
         notesCount: directCount, // will accumulate children counts
         updatedAt: folder.updatedAt,

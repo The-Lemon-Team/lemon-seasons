@@ -2,6 +2,8 @@ import React from 'react';
 import { Note, NoteType, NoteTypeColors } from '@lenta/shared';
 import { Sparkles, Layers } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { useObsidianContainers } from '../context/ObsidianContainersContext';
+import { ObsidianLogo } from './ObsidianLogo';
 
 interface StatsBarProps {
   notes: Note[];
@@ -11,6 +13,7 @@ interface StatsBarProps {
 
 export const StatsBar: React.FC<StatsBarProps> = ({ notes, isLoading, total }) => {
   const { t, getTypeLabel } = useI18n();
+  const { containers } = useObsidianContainers();
 
   if (isLoading) {
     return (
@@ -41,7 +44,17 @@ export const StatsBar: React.FC<StatsBarProps> = ({ notes, isLoading, total }) =
             {t.activeFeeds(uniqueFeeds)}
           </span>
         </div>
+        {containers.length > 0 && (
+          <>
+            <span className="text-neutral-600 hidden sm:inline">•</span>
+            <div className="hidden sm:flex items-center gap-1.5 text-[#d8b4fe] bg-[#a855f7]/10 border border-[#a855f7]/25 px-2 py-0.5 rounded-full font-mono text-[11px]">
+              <ObsidianLogo size={12} />
+              <span>{containers.length} {containers.length === 1 ? 'Vault' : 'Vaults'}</span>
+            </div>
+          </>
+        )}
       </div>
+
 
       {/* Note Types pills */}
       <div className="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar min-h-[22px]">

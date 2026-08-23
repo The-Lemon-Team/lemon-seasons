@@ -33,4 +33,13 @@ export class CreateFolderDto {
   @IsString()
   @IsOptional()
   color?: string;
+
+  @ApiPropertyOptional({
+    description: 'Folder privacy setting (public or private)',
+    example: 'public',
+    enum: ['public', 'private'],
+  })
+  @IsString()
+  @IsOptional()
+  privacy?: 'public' | 'private';
 }
