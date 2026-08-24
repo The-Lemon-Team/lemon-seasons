@@ -42,10 +42,13 @@ export class LentaConnectionsModal extends Modal {
     const titleRow = header.createDiv({ cls: 'lenta-sync-title-row' });
     titleRow.createEl('h2', { text: '🔌 Lenta Server & API Connections' });
     
-    const activeId = this.settings.activeContainerId || this.settings.containerKey;
-    if (activeId) {
+    const selectedCount = Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0
+      ? this.settings.activeContainerIds.length
+      : this.settings.activeContainerId ? 1 : 0;
+    
+    if (selectedCount > 0) {
       const badge = titleRow.createSpan({ cls: 'lenta-badge' });
-      badge.setText(`ACTIVE CONTAINER: ${this.settings.connectedContainerName || activeId}`);
+      badge.setText(`CONNECTED: ${selectedCount} Container${selectedCount > 1 ? 's' : ''} Selected`);
     }
 
     header.createEl('p', {
@@ -69,11 +72,11 @@ export class LentaConnectionsModal extends Modal {
       ].join(';');
 
       const textWrap = card.createDiv();
-      const cardTitle = textWrap.createEl('h4', { text: '📦 Containers & Folders Manager' });
+      const cardTitle = textWrap.createEl('h4', { text: '📦 Containers & Folders Workspace' });
       cardTitle.style.cssText = 'margin: 0 0 4px 0; color: #c9cd58; font-size: 1.05em;';
       const cardDesc = textWrap.createEl('div');
       cardDesc.style.cssText = 'font-size: 0.85em; color: #aaa;';
-      cardDesc.setText('Load all containers, select an active container for work, and manage vault folder mappings.');
+      cardDesc.setText(`Browse and select containers (${selectedCount} currently active for sync) and manage vault folder mappings.`);
 
       const openWorkspaceBtn = card.createEl('button', {
         cls: 'mod-cta lenta-btn-lemon',

@@ -99,11 +99,13 @@ export class LentaSidebarView extends ItemView {
     const header = container.createDiv({ cls: 'lenta-sidebar-header' });
     const titleRow = header.createDiv({ cls: 'lenta-sidebar-title' });
     titleRow.createEl('h4', { text: '🍋 Project Lenta' });
-    const settings = this.getSettings();
-    if (settings.containerKey) {
+    const selectedCount = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0
+      ? settings.activeContainerIds.length
+      : settings.activeContainerId ? 1 : 0;
+    if (selectedCount > 0) {
       const badge = titleRow.createSpan({ cls: 'lenta-badge' });
-      badge.setText(`KEY: ${settings.containerKey.slice(0, 10)}…`);
-      badge.title = `Connected container key: ${settings.containerKey}`;
+      badge.setText(`CONTAINERS: ${selectedCount}`);
+      badge.title = `Connected containers count (${selectedCount}): ${settings.activeContainerIds.join(', ')}`;
     }
 
     const toolbar = header.createDiv({ cls: 'lenta-sidebar-toolbar' });

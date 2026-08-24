@@ -356,6 +356,14 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (!Array.isArray(this.settings.activeContainerIds)) {
+      this.settings.activeContainerIds = [];
+    }
+    if (this.settings.activeContainerIds.length === 0 && this.settings.activeContainerId) {
+      this.settings.activeContainerIds = [this.settings.activeContainerId];
+    } else if (this.settings.activeContainerIds.length > 0 && !this.settings.activeContainerId) {
+      this.settings.activeContainerId = this.settings.activeContainerIds[0];
+    }
   }
 
   async saveSettings() {

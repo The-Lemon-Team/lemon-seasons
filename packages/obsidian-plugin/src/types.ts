@@ -118,6 +118,8 @@ export interface LentaPluginSettings {
   userEmail?: string;
   isPrivateContainerConnected?: boolean;
   activeContainerId: string;
+  /** List of selected Obsidian container IDs for multi-container work. */
+  activeContainerIds: string[];
   /** Key of the connected Obsidian container. */
   containerKey: string;
   /** Optional metadata of the connected container */
@@ -149,6 +151,7 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   userEmail: '',
   isPrivateContainerConnected: false,
   activeContainerId: '',
+  activeContainerIds: [],
   containerKey: '',
   connectedContainerName: '',
   connectedContainerType: 'git',

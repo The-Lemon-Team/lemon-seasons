@@ -30,13 +30,16 @@ export class LentaSettingTab extends PluginSettingTab {
     const cardTitle = card.createEl('h3', { text: '📦 Containers, Folders & Connections Workspaces' });
     cardTitle.style.cssText = 'margin-top:0; margin-bottom:6px; color:#c9cd58; font-size:1.1em;';
 
-    const activeContainer = this.plugin.settings.connectedContainerName || this.plugin.settings.activeContainerId || this.plugin.settings.containerKey;
+    const selectedCount = Array.isArray(this.plugin.settings.activeContainerIds) && this.plugin.settings.activeContainerIds.length > 0
+      ? this.plugin.settings.activeContainerIds.length
+      : this.plugin.settings.activeContainerId ? 1 : 0;
+
     const authUser = this.plugin.settings.userEmail;
 
     const desc = card.createEl('p', { cls: 'setting-item-description' });
     desc.style.cssText = 'margin-bottom: 14px; color: #aaa; font-size: 0.9em;';
     desc.innerHTML = `Manage container selection, vault folder structures, user authentication, and server endpoints in dedicated workspace modals.<br/><br/>` +
-      `<strong>Current Status:</strong> ${activeContainer ? `✅ Connected to <code>${activeContainer}</code>` : '⚠️ No container connected'} ` +
+      `<strong>Current Status:</strong> ${selectedCount > 0 ? `✅ Connected to <code>${selectedCount} Container${selectedCount > 1 ? 's' : ''}</code>` : '⚠️ No containers selected'} ` +
       `(${authUser ? `Auth: ${authUser}` : 'Unauthenticated'})`;
 
     const btnRow = card.createDiv();
