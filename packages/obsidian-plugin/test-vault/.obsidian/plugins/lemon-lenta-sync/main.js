@@ -4480,7 +4480,7 @@ __export(main_exports, {
   default: () => WorkspaceLentaPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/services/lenta-api-client.ts
 var import_obsidian = require("obsidian");
@@ -6076,58 +6076,64 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
 // src/ui/connections-modal.ts
 var import_obsidian8 = require("obsidian");
 var LentaConnectionsModal = class extends import_obsidian8.Modal {
-  constructor(app, apiClient, settings, onSaveSettings) {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenContainersFoldersModal) {
     super(app);
-    this.availableContainers = [];
-    this.serverFolders = [];
     this.isLoading = false;
-    this.customKeyInput = "";
     this.apiClient = apiClient;
     this.settings = settings;
     this.onSaveSettings = onSaveSettings;
+    this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
   }
   async onOpen() {
     this.modalEl.addClass("lenta-connections-modal");
-    await this.refreshData();
+    this.render();
   }
   onClose() {
     this.contentEl.empty();
-  }
-  async refreshData() {
-    this.isLoading = true;
-    this.render();
-    try {
-      const [containers, folders] = await Promise.all([
-        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
-        this.apiClient.getFolders().catch(() => [])
-      ]);
-      this.availableContainers = containers;
-      this.serverFolders = folders;
-    } catch (e) {
-      console.warn("Failed to refresh connection data:", e);
-    } finally {
-      this.isLoading = false;
-      this.render();
-    }
   }
   render() {
     const { contentEl } = this;
     contentEl.empty();
     const header = contentEl.createDiv({ cls: "lenta-modal-header" });
     const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
-    titleRow.createEl("h2", { text: "\u{1F50C} Connections & Obsidian Containers" });
+    titleRow.createEl("h2", { text: "\u{1F50C} Lenta Server & API Connections" });
     const activeId = this.settings.activeContainerId || this.settings.containerKey;
     if (activeId) {
       const badge = titleRow.createSpan({ cls: "lenta-badge" });
-      badge.setText(`CONNECTED: ${this.settings.connectedContainerName || activeId}`);
+      badge.setText(`ACTIVE CONTAINER: ${this.settings.connectedContainerName || activeId}`);
     }
     header.createEl("p", {
       cls: "lenta-modal-subtitle",
-      text: "Manage container connections, user authentication tokens, and vault folder mappings for Project Lenta."
+      text: "Configure NestJS backend API connections, container sync server endpoints, and authentication credentials."
     });
-    if (this.isLoading) {
-      contentEl.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading available containers and folder structures..." });
-      return;
+    if (this.onOpenContainersFoldersModal) {
+      const card = contentEl.createDiv({ cls: "lenta-workspace-banner-card" });
+      card.style.cssText = [
+        "padding: 14px 16px",
+        "margin-bottom: 20px",
+        "border-radius: 8px",
+        "border: 1px solid rgba(201, 205, 88, 0.4)",
+        "background: #1b1e1e",
+        "display: flex",
+        "justify-content: space-between",
+        "align-items: center",
+        "gap: 12px"
+      ].join(";");
+      const textWrap = card.createDiv();
+      const cardTitle = textWrap.createEl("h4", { text: "\u{1F4E6} Containers & Folders Manager" });
+      cardTitle.style.cssText = "margin: 0 0 4px 0; color: #c9cd58; font-size: 1.05em;";
+      const cardDesc = textWrap.createEl("div");
+      cardDesc.style.cssText = "font-size: 0.85em; color: #aaa;";
+      cardDesc.setText("Load all containers, select an active container for work, and manage vault folder mappings.");
+      const openWorkspaceBtn = card.createEl("button", {
+        cls: "mod-cta lenta-btn-lemon",
+        text: "\u{1F4E6} Open Workspace"
+      });
+      openWorkspaceBtn.style.cssText = "padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap;";
+      openWorkspaceBtn.onclick = () => {
+        this.close();
+        this.onOpenContainersFoldersModal();
+      };
     }
     contentEl.createEl("h3", { text: "\u{1F510} User API Key & Authentication" });
     const authStatusEl = contentEl.createEl("div", { cls: "lenta-auth-status-box" });
@@ -6143,7 +6149,7 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
     if (this.settings.authToken) {
       authStatusEl.innerHTML = `<strong>Status:</strong> Connected via User API Key (${this.settings.userEmail || "Member User"})`;
     } else {
-      authStatusEl.innerHTML = `<strong>Status:</strong> Unauthenticated. Enter your User API Key / Personal Access Token below to connect to your account.`;
+      authStatusEl.innerHTML = `<strong>Status:</strong> Unauthenticated. Enter your User API Key / Personal Access Token below to connect.`;
     }
     new import_obsidian8.Setting(contentEl).setName("User API Key / Personal Access Token").setDesc("Bearer authentication token from your Project Lenta profile.").addText(
       (text) => text.setPlaceholder("lenta_jwt_...").setValue(this.settings.authToken || "").onChange(async (val) => {
@@ -6158,7 +6164,7 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
           this.settings.userEmail = "member@lemon.team";
           this.settings.isPrivateContainerConnected = true;
           await this.onSaveSettings();
-          await this.refreshData();
+          this.render();
           return;
         }
         const res = await this.apiClient.validateToken(this.settings.authToken);
@@ -6167,7 +6173,7 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
           this.settings.isPrivateContainerConnected = true;
           await this.onSaveSettings();
           new import_obsidian8.Notice("Session validated successfully!");
-          await this.refreshData();
+          this.render();
         } else {
           new import_obsidian8.Notice("Failed to validate User API Key");
         }
@@ -6181,94 +6187,174 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
         this.settings.containerKey = "";
         this.settings.connectedContainerName = "";
         await this.onSaveSettings();
-        await this.refreshData();
+        this.render();
       })
     );
-    contentEl.createEl("h3", { text: "\u{1F4E6} Obsidian Containers Connection" });
-    const isConnected = Boolean(activeId);
-    const containerStatusEl = contentEl.createEl("div", { cls: "lenta-container-status-box" });
-    containerStatusEl.style.cssText = [
-      "padding: 10px 14px",
-      "margin-bottom: 14px",
-      "border-radius: 6px",
-      "border: 1px solid #333",
-      "background: " + (isConnected ? "#1a291e" : "#222"),
-      "color: " + (isConnected ? "#8ee29a" : "#bbb"),
-      "font-size: 0.9em"
-    ].join(";");
-    if (isConnected) {
-      const name = this.settings.connectedContainerName || activeId || "Selected Container";
-      const cType = this.settings.connectedContainerType || "git";
-      containerStatusEl.innerHTML = `<strong>Status:</strong> \u2705 Active Container: <code>${name}</code> (Type: <code>${cType}</code>, Key: <code>${activeId}</code>)`;
-    } else {
-      containerStatusEl.innerHTML = `<strong>Status:</strong> \u26A0\uFE0F No container connected. Select a container from the dropdown below or connect using a Container Key.`;
-    }
-    new import_obsidian8.Setting(contentEl).setName("Container Privacy Filter").setDesc("Filter containers by visibility.").addDropdown((dropdown) => {
-      dropdown.addOption("all", "\u{1F310} All Containers (Public & Private)");
-      dropdown.addOption("public", "\u{1F4F0} Public Containers Only");
-      dropdown.addOption("private", "\u{1F510} Private Containers Only");
-      dropdown.setValue(this.settings.containerPrivacyFilter || "all");
-      dropdown.onChange(async (val) => {
-        this.settings.containerPrivacyFilter = val;
+    contentEl.createEl("h3", { text: "\u{1F310} Backend & Container Sync Server URLs" });
+    new import_obsidian8.Setting(contentEl).setName("Project Lenta Backend URL").setDesc("Base address of the NestJS API (port 3001 by default).").addText(
+      (text) => text.setPlaceholder("http://localhost:3001").setValue(this.settings.serverUrl).onChange(async (val) => {
+        this.settings.serverUrl = val.trim();
         await this.onSaveSettings();
-        await this.refreshData();
-      });
-    });
-    const currentFilter = this.settings.containerPrivacyFilter || "all";
-    const filteredContainers = this.availableContainers.filter((c) => {
-      if (currentFilter === "public")
-        return c.isPublic !== false;
-      if (currentFilter === "private")
-        return c.isPublic === false;
-      return true;
-    });
-    const containerSetting = new import_obsidian8.Setting(contentEl).setName("Select Container").setDesc("Choose an Obsidian container to connect and sync with this vault.");
-    containerSetting.addDropdown((dropdown) => {
-      dropdown.addOption("", "-- Select a container --");
-      for (const container of filteredContainers) {
-        const typeTag = container.type ? container.type.toUpperCase() : "GIT";
-        const privacyTag = container.isPublic !== false ? "PUBLIC" : "PRIVATE";
-        const noteCount = typeof container.totalNotes === "number" ? ` \u2022 ${container.totalNotes} notes` : "";
-        dropdown.addOption(container.id, `${container.name} [${privacyTag} \u2022 ${typeTag}${noteCount}]`);
-      }
-      if (activeId && filteredContainers.some((c) => c.id === activeId)) {
-        dropdown.setValue(activeId);
-      } else if (activeId) {
-        dropdown.addOption(activeId, `Connected: ${this.settings.connectedContainerName || activeId}`);
-        dropdown.setValue(activeId);
-      } else {
-        dropdown.setValue("");
-      }
-      dropdown.onChange(async (selectedId) => {
-        if (!selectedId) {
-          this.settings.activeContainerId = "";
-          this.settings.containerKey = "";
-          this.settings.connectedContainerName = "";
-          this.settings.connectedContainerType = void 0;
+      })
+    );
+    new import_obsidian8.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Sync Server (port 3000 by default).").addText(
+      (text) => text.setPlaceholder("http://localhost:3000").setValue(this.settings.containerServerUrl || "http://localhost:3000").onChange(async (val) => {
+        this.settings.containerServerUrl = val.trim();
+        await this.onSaveSettings();
+      })
+    );
+    new import_obsidian8.Setting(contentEl).setName("Container API Key (X-Api-Key)").setDesc("Optional API key sent to the container sync server.").addText(
+      (text) => text.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
+        this.settings.containerApiKey = val.trim();
+        await this.onSaveSettings();
+      })
+    );
+    new import_obsidian8.Setting(contentEl).setName("Test Server Connections").setDesc("Ping the container sync server and backend API to verify connectivity.").addButton(
+      (btn) => btn.setButtonText("Test Connection").setIcon("zap").onClick(async () => {
+        btn.setDisabled(true);
+        const ping = await this.apiClient.pingContainerServer();
+        btn.setDisabled(false);
+        if (ping.success) {
+          new import_obsidian8.Notice(`\u2705 Connected! Found ${ping.containerCount ?? 0} container(s) on sync server.`);
         } else {
-          const matched = this.availableContainers.find((c) => c.id === selectedId);
-          this.settings.activeContainerId = selectedId;
-          this.settings.containerKey = selectedId;
-          this.settings.connectedContainerName = matched ? matched.name : selectedId;
-          this.settings.connectedContainerType = matched ? matched.type : "git";
+          new import_obsidian8.Notice(`\u26A0\uFE0F Container server ping warning: ${ping.error}`);
         }
-        await this.onSaveSettings();
-        await this.refreshData();
-      });
+      })
+    );
+  }
+};
+
+// src/ui/containers-folders-modal.ts
+var import_obsidian9 = require("obsidian");
+var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenConnectionsModal) {
+    super(app);
+    this.containers = [];
+    this.folders = [];
+    this.isLoading = false;
+    this.searchQuery = "";
+    this.privacyFilter = "all";
+    this.customKeyInput = "";
+    this.apiClient = apiClient;
+    this.settings = settings;
+    this.onSaveSettings = onSaveSettings;
+    this.onOpenConnectionsModal = onOpenConnectionsModal;
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-containers-folders-modal");
+    await this.loadData();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  async loadData() {
+    this.isLoading = true;
+    this.render();
+    try {
+      const [containers, folders] = await Promise.all([
+        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
+        this.apiClient.getFolders().catch(() => [])
+      ]);
+      this.containers = containers;
+      this.folders = folders;
+    } catch (err) {
+      console.warn("Failed to load containers or folders:", err);
+    } finally {
+      this.isLoading = false;
+      this.render();
+    }
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
+    const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
+    titleRow.createEl("h2", { text: "\u{1F4E6} Containers & Folders Workspace" });
+    const activeId = this.settings.activeContainerId || this.settings.containerKey;
+    if (activeId) {
+      const badge = titleRow.createSpan({ cls: "lenta-badge" });
+      badge.setText(`ACTIVE: ${this.settings.connectedContainerName || activeId}`);
+    } else {
+      const badge = titleRow.createSpan({ cls: "lenta-badge" });
+      badge.style.borderColor = "#d97706";
+      badge.style.color = "#f59e0b";
+      badge.setText("NO CONTAINER CONNECTED");
+    }
+    header.createEl("p", {
+      cls: "lenta-modal-subtitle",
+      text: "Browse and load all available containers, select a container for active vault work, and configure folder mappings."
     });
-    containerSetting.addButton((btn) => {
-      btn.setButtonText("Refresh List").setIcon("refresh-cw").onClick(async () => {
-        await this.refreshData();
-      });
+    const toolbar = contentEl.createDiv({ cls: "lenta-containers-toolbar" });
+    toolbar.style.cssText = [
+      "display: flex",
+      "gap: 10px",
+      "align-items: center",
+      "flex-wrap: wrap",
+      "margin-bottom: 16px",
+      "padding: 10px 14px",
+      "background: var(--background-secondary)",
+      "border-radius: 8px",
+      "border: 1px solid var(--background-modifier-border)"
+    ].join(";");
+    const searchWrap = toolbar.createDiv({ cls: "lenta-search-wrap" });
+    searchWrap.style.cssText = "flex: 1; min-width: 180px;";
+    const searchInput = searchWrap.createEl("input", {
+      type: "text",
+      placeholder: "\u{1F50D} Search containers...",
+      value: this.searchQuery
     });
-    new import_obsidian8.Setting(contentEl).setName("Connect Container by Key").setDesc("Enter a custom Container Key or Feed Key directly.").addText(
-      (text) => text.setPlaceholder("e.g. cont-workspace-alpha or feed-tech").setValue(this.customKeyInput).onChange((val) => {
+    searchInput.style.cssText = "width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;";
+    searchInput.oninput = (e) => {
+      this.searchQuery = e.target.value;
+      this.renderContainersGrid();
+    };
+    const filterWrap = toolbar.createDiv();
+    const filterSelect = filterWrap.createEl("select");
+    filterSelect.style.cssText = "padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;";
+    filterSelect.innerHTML = `
+      <option value="all" ${this.privacyFilter === "all" ? "selected" : ""}>\u{1F310} All Containers</option>
+      <option value="public" ${this.privacyFilter === "public" ? "selected" : ""}>\u{1F4F0} Public Only</option>
+      <option value="private" ${this.privacyFilter === "private" ? "selected" : ""}>\u{1F510} Private Only</option>
+    `;
+    filterSelect.onchange = (e) => {
+      this.privacyFilter = e.target.value;
+      this.renderContainersGrid();
+    };
+    const refreshBtn = toolbar.createEl("button", {
+      cls: "mod-cta lenta-btn-lemon",
+      text: "\u{1F504} Load All Containers"
+    });
+    refreshBtn.style.cssText = "padding: 6px 14px; font-weight: 600; font-size: 0.9em;";
+    refreshBtn.onclick = () => this.loadData();
+    if (this.onOpenConnectionsModal) {
+      const connBtn = toolbar.createEl("button", {
+        text: "\u{1F50C} Server Settings"
+      });
+      connBtn.style.cssText = "padding: 6px 12px; font-size: 0.9em;";
+      connBtn.onclick = () => {
+        this.close();
+        this.onOpenConnectionsModal();
+      };
+    }
+    if (this.isLoading) {
+      contentEl.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers and folder structures..." });
+      return;
+    }
+    const gridContainer = contentEl.createDiv({ cls: "lenta-containers-grid-section" });
+    gridContainer.createEl("h3", { text: "\u{1F4E6} Available Obsidian Containers" });
+    const gridEl = gridContainer.createDiv({ cls: "lenta-containers-grid" });
+    gridEl.id = "lenta-containers-grid-list";
+    this.renderContainersGrid(gridEl);
+    const keySection = contentEl.createDiv({ cls: "lenta-key-section" });
+    keySection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
+    new import_obsidian9.Setting(keySection).setName("Connect Container by Custom Key").setDesc("Directly input a container or feed key if not listed in default overview.").addText(
+      (text) => text.setPlaceholder("e.g. cont-workspace-prod or feed-science").setValue(this.customKeyInput).onChange((val) => {
         this.customKeyInput = val.trim();
       })
     ).addButton(
       (btn) => btn.setButtonText("Connect Key").setCta().onClick(async () => {
         if (!this.customKeyInput) {
-          new import_obsidian8.Notice("Please enter a container key");
+          new import_obsidian9.Notice("Please enter a container key");
           return;
         }
         const res = await this.apiClient.connectContainerByKey(this.customKeyInput);
@@ -6278,55 +6364,31 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
           this.settings.connectedContainerName = res.container.name;
           this.settings.connectedContainerType = res.container.type;
           await this.onSaveSettings();
-          new import_obsidian8.Notice(`Connected to container: ${res.container.name}`);
-          await this.refreshData();
+          new import_obsidian9.Notice(`Connected to container: ${res.container.name}`);
+          await this.loadData();
         } else {
-          new import_obsidian8.Notice(`Failed to connect container: ${res.error || "Unknown error"}`);
+          new import_obsidian9.Notice(`Failed to connect container: ${res.error || "Unknown error"}`);
         }
       })
     );
-    new import_obsidian8.Setting(contentEl).setName("Container Server URL").setDesc("Base address of the Obsidian Container Sync Server (port 3000 by default).").addText(
-      (text) => text.setPlaceholder("http://localhost:3000").setValue(this.settings.containerServerUrl || "http://localhost:3000").onChange(async (val) => {
-        this.settings.containerServerUrl = val.trim();
-        await this.onSaveSettings();
-      })
-    );
-    new import_obsidian8.Setting(contentEl).setName("Container API Key (X-Api-Key)").setDesc("API key sent to the container server (if authentication is required).").addText(
-      (text) => text.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
-        this.settings.containerApiKey = val.trim();
-        await this.onSaveSettings();
-      })
-    );
-    contentEl.createEl("h3", { text: "\u{1F4C1} Folder & Vault Structure Mappings" });
-    new import_obsidian8.Setting(contentEl).setName("Vault Root Directory").setDesc("Root folder in your Obsidian vault where synced Lenta container notes are stored.").addText(
+    const folderSection = contentEl.createDiv({ cls: "lenta-folders-workspace-section" });
+    folderSection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
+    folderSection.createEl("h3", { text: "\u{1F4C1} Vault Root & Container Folders Workspace" });
+    new import_obsidian9.Setting(folderSection).setName("Vault Root Directory").setDesc("Base folder in your Obsidian vault where synced Lenta notes are saved.").addText(
       (text) => text.setPlaceholder("Lenta").setValue(this.settings.vaultRootFolder || "Lenta").onChange(async (val) => {
         this.settings.vaultRootFolder = val.trim() || "Lenta";
         await this.onSaveSettings();
+        this.renderFolderMappingInfo(folderMappingEl);
       })
     );
-    const rootFolder = this.settings.vaultRootFolder || "Lenta";
-    const cName = this.settings.connectedContainerName || activeId || "Default-Container";
-    const folderMappingEl = contentEl.createDiv({ cls: "lenta-folder-mapping-box" });
-    folderMappingEl.style.cssText = [
-      "padding: 12px 14px",
-      "margin-bottom: 14px",
-      "border-radius: 6px",
-      "border: 1px solid #3b4242",
-      "background: #181b1b",
-      "font-size: 0.88em",
-      "color: #d1d5db"
-    ].join(";");
-    folderMappingEl.innerHTML = `
-      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Active Vault Folder Path:</div>
-      <code>${rootFolder}/${cName}</code>
-      <div style="font-size:0.85em; margin-top:6px; color:#888;">Notes in this container will sync into this directory in your Obsidian vault.</div>
-    `;
-    contentEl.createEl("h4", { text: "Remote Lenta Folders" });
-    if (this.serverFolders.length === 0) {
-      contentEl.createDiv({ cls: "lenta-empty-state", text: "No remote folders created on server yet." });
+    const folderMappingEl = folderSection.createDiv({ cls: "lenta-folder-mapping-box" });
+    this.renderFolderMappingInfo(folderMappingEl);
+    folderSection.createEl("h4", { text: "Remote Lenta Server Folders" });
+    if (this.folders.length === 0) {
+      folderSection.createDiv({ cls: "lenta-empty-state", text: "No folders found on Lenta server." });
     } else {
-      const folderList = contentEl.createDiv({ cls: "lenta-tree-list" });
-      for (const folder of this.serverFolders) {
+      const folderList = folderSection.createDiv({ cls: "lenta-tree-list" });
+      for (const folder of this.folders) {
         const item = folderList.createDiv({ cls: "lenta-tree-item lenta-tree-item-folder" });
         item.createSpan({ text: folder.icon ? `${folder.icon} ` : "\u{1F4C1} ", cls: "lenta-item-icon" });
         item.createSpan({ text: folder.path, cls: "lenta-item-name" });
@@ -6336,13 +6398,103 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
       }
     }
   }
+  renderFolderMappingInfo(container) {
+    container.empty();
+    const rootFolder = this.settings.vaultRootFolder || "Lenta";
+    const activeId = this.settings.activeContainerId || this.settings.containerKey;
+    const cName = this.settings.connectedContainerName || activeId || "Default-Container";
+    container.style.cssText = [
+      "padding: 12px 14px",
+      "margin-bottom: 14px",
+      "border-radius: 6px",
+      "border: 1px solid #3b4242",
+      "background: #181b1b",
+      "font-size: 0.88em",
+      "color: #d1d5db"
+    ].join(";");
+    container.innerHTML = `
+      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Connected Vault Path:</div>
+      <code>${rootFolder}/${cName}</code>
+      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for this container will be organized in this directory inside your Obsidian vault.</div>
+    `;
+  }
+  renderContainersGrid(targetEl) {
+    const gridEl = targetEl || this.contentEl.querySelector("#lenta-containers-grid-list");
+    if (!gridEl)
+      return;
+    gridEl.empty();
+    const filtered = this.containers.filter((c) => {
+      const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const isPublic = c.isPublic !== false;
+      const matchPrivacy = this.privacyFilter === "all" || this.privacyFilter === "public" && isPublic || this.privacyFilter === "private" && !isPublic;
+      return matchSearch && matchPrivacy;
+    });
+    if (filtered.length === 0) {
+      gridEl.createDiv({ cls: "lenta-empty-state", text: "No containers match your search or filter." });
+      return;
+    }
+    gridEl.style.cssText = [
+      "display: grid",
+      "grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))",
+      "gap: 14px",
+      "margin-top: 10px"
+    ].join(";");
+    const activeId = this.settings.activeContainerId || this.settings.containerKey;
+    for (const c of filtered) {
+      const isSelected = activeId === c.id;
+      const card = gridEl.createDiv({ cls: `lenta-container-card ${isSelected ? "selected" : ""}` });
+      card.style.cssText = [
+        "padding: 14px",
+        "border-radius: 8px",
+        "border: 1px solid " + (isSelected ? "var(--lenta-lemon)" : "var(--background-modifier-border)"),
+        "background: " + (isSelected ? "#1c241d" : "var(--background-secondary)"),
+        "display: flex",
+        "flex-direction: column",
+        "justify-content: space-between",
+        "gap: 10px",
+        "transition: all 0.15s ease"
+      ].join(";");
+      const topRow = card.createDiv({ cls: "lenta-card-top" });
+      const title = topRow.createEl("h4", { text: c.name });
+      title.style.cssText = "margin: 0 0 6px 0; font-size: 1em; color: var(--text-normal); font-weight: 600;";
+      const tagsRow = topRow.createDiv({ cls: "lenta-card-tags" });
+      tagsRow.style.cssText = "display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;";
+      const typeTag = tagsRow.createSpan({ cls: "lenta-badge" });
+      typeTag.setText((c.type || "git").toUpperCase());
+      const privacyTag = tagsRow.createSpan({ cls: "lenta-badge" });
+      const isPub = c.isPublic !== false;
+      privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
+      privacyTag.style.borderColor = isPub ? "rgba(74, 222, 128, 0.4)" : "rgba(248, 113, 113, 0.4)";
+      privacyTag.style.color = isPub ? "#4ade80" : "#f87171";
+      if (typeof c.totalNotes === "number") {
+        const notesTag = topRow.createDiv({ cls: "lenta-card-notes" });
+        notesTag.style.cssText = "font-size: 0.82em; color: var(--text-muted);";
+        notesTag.setText(`\u{1F4C4} ${c.totalNotes} notes`);
+      }
+      const actionBtn = card.createEl("button", {
+        cls: isSelected ? "mod-cta lenta-btn-lemon" : "lenta-action-btn",
+        text: isSelected ? "\u2713 Active Container" : "Use Container"
+      });
+      actionBtn.style.cssText = "width: 100%; margin-top: 4px; padding: 6px 12px; font-weight: 600; cursor: pointer;";
+      actionBtn.disabled = isSelected;
+      actionBtn.onclick = async () => {
+        this.settings.activeContainerId = c.id;
+        this.settings.containerKey = c.id;
+        this.settings.connectedContainerName = c.name;
+        this.settings.connectedContainerType = c.type;
+        await this.onSaveSettings();
+        new import_obsidian9.Notice(`Switched active container to: ${c.name}`);
+        this.render();
+      };
+    }
+  }
 };
 
 // src/ui/sidebar-view.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var VIEW_TYPE_LENTA_SIDEBAR = "lemon-lenta-sidebar-view";
-var LentaSidebarView = class extends import_obsidian9.ItemView {
-  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal) {
+var LentaSidebarView = class extends import_obsidian10.ItemView {
+  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal) {
     super(leaf);
     this.feeds = [];
     this.folders = [];
@@ -6359,7 +6511,8 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.onOpenQuickAdd = onOpenQuickAdd;
     this.onOpenSyncModal = onOpenSyncModal;
     this.onOpenConnectionsModal = onOpenConnectionsModal;
-    this.mdComponent = new import_obsidian9.Component();
+    this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
+    this.mdComponent = new import_obsidian10.Component();
   }
   getViewType() {
     return VIEW_TYPE_LENTA_SIDEBAR;
@@ -6390,7 +6543,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       this.folders = folders;
       this.taxonomy = taxonomy;
     } catch (err) {
-      new import_obsidian9.Notice(`Failed to load Lenta hierarchy: ${err.message}`);
+      new import_obsidian10.Notice(`Failed to load Lenta hierarchy: ${err.message}`);
     } finally {
       this.isLoading = false;
       this.render();
@@ -6411,18 +6564,23 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
     const toolbar = header.createDiv({ cls: "lenta-sidebar-toolbar" });
     const addBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Quick Add Note" } });
-    (0, import_obsidian9.setIcon)(addBtn, "plus");
+    (0, import_obsidian10.setIcon)(addBtn, "plus");
     addBtn.onclick = () => this.onOpenQuickAdd();
     const syncBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Sync Hub" } });
-    (0, import_obsidian9.setIcon)(syncBtn, "zap");
+    (0, import_obsidian10.setIcon)(syncBtn, "zap");
     syncBtn.onclick = () => this.onOpenSyncModal();
+    if (this.onOpenContainersFoldersModal) {
+      const containerBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Containers & Folders Workspace" } });
+      (0, import_obsidian10.setIcon)(containerBtn, "box");
+      containerBtn.onclick = () => this.onOpenContainersFoldersModal();
+    }
     if (this.onOpenConnectionsModal) {
-      const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Containers" } });
-      (0, import_obsidian9.setIcon)(connBtn, "link-2");
+      const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Auth" } });
+      (0, import_obsidian10.setIcon)(connBtn, "link-2");
       connBtn.onclick = () => this.onOpenConnectionsModal();
     }
     const refreshBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Refresh Data" } });
-    (0, import_obsidian9.setIcon)(refreshBtn, "refresh-cw");
+    (0, import_obsidian10.setIcon)(refreshBtn, "refresh-cw");
     refreshBtn.onclick = () => this.refreshData();
     const tabsRow = container.createDiv({ cls: "lenta-sidebar-tabs" });
     const tabFolders = tabsRow.createDiv({
@@ -6473,7 +6631,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     pushCurrentBtn.onclick = () => {
       const file = this.app.workspace.getActiveFile();
       if (!file) {
-        new import_obsidian9.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
+        new import_obsidian10.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
         return;
       }
       this.onOpenSyncModal();
@@ -6483,7 +6641,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       text: "+ New Note",
       attr: { "aria-label": "Open Quick Add Note modal" }
     });
-    (0, import_obsidian9.setIcon)(addBtn.createSpan(), "plus");
+    (0, import_obsidian10.setIcon)(addBtn.createSpan(), "plus");
     addBtn.onclick = () => this.onOpenQuickAdd();
   }
   renderFolders(container) {
@@ -6520,7 +6678,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         cls: "lenta-preview-toggle clickable-icon",
         attr: { "aria-label": isExpanded ? "Collapse preview" : "Show latest note preview" }
       });
-      (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+      (0, import_obsidian10.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
       toggleBtn.onclick = async (e) => {
         e.stopPropagation();
         if (isExpanded) {
@@ -6555,7 +6713,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
             titleEl.setText(`\u{1F4C4} ${note.title}`);
             if (note.description && note.description.trim()) {
               const mdEl = previewPane.createDiv({ cls: "lenta-preview-md-body" });
-              import_obsidian9.MarkdownRenderer.render(
+              import_obsidian10.MarkdownRenderer.render(
                 this.app,
                 note.description.slice(0, 400) + (note.description.length > 400 ? "\n\n*\u2026*" : ""),
                 mdEl,
@@ -6587,8 +6745,8 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
 };
 
 // src/ui/settings-tab.ts
-var import_obsidian10 = require("obsidian");
-var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
+var import_obsidian11 = require("obsidian");
+var LentaSettingTab = class extends import_obsidian11.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -6606,35 +6764,44 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
       "background: #1b1e1e",
       "box-shadow: 0 4px 14px rgba(0,0,0,0.3)"
     ].join(";");
-    const cardTitle = card.createEl("h3", { text: "\u{1F50C} Connections & Obsidian Containers" });
+    const cardTitle = card.createEl("h3", { text: "\u{1F4E6} Containers, Folders & Connections Workspaces" });
     cardTitle.style.cssText = "margin-top:0; margin-bottom:6px; color:#c9cd58; font-size:1.1em;";
     const activeContainer = this.plugin.settings.connectedContainerName || this.plugin.settings.activeContainerId || this.plugin.settings.containerKey;
     const authUser = this.plugin.settings.userEmail;
     const desc = card.createEl("p", { cls: "setting-item-description" });
-    desc.style.cssText = "margin-bottom: 12px; color: #aaa; font-size: 0.9em;";
-    desc.innerHTML = `Configure user authentication, select active Obsidian containers, connect by container key, and manage vault folder mappings in the dedicated Connections modal.<br/><br/><strong>Current Status:</strong> ${activeContainer ? `\u2705 Connected to <code>${activeContainer}</code>` : "\u26A0\uFE0F No container connected"} (${authUser ? `Auth: ${authUser}` : "Unauthenticated"})`;
-    const openBtn = card.createEl("button", {
+    desc.style.cssText = "margin-bottom: 14px; color: #aaa; font-size: 0.9em;";
+    desc.innerHTML = `Manage container selection, vault folder structures, user authentication, and server endpoints in dedicated workspace modals.<br/><br/><strong>Current Status:</strong> ${activeContainer ? `\u2705 Connected to <code>${activeContainer}</code>` : "\u26A0\uFE0F No container connected"} (${authUser ? `Auth: ${authUser}` : "Unauthenticated"})`;
+    const btnRow = card.createDiv();
+    btnRow.style.cssText = "display: flex; gap: 12px; flex-wrap: wrap;";
+    const openWorkspaceBtn = btnRow.createEl("button", {
       cls: "mod-cta lenta-btn-lemon",
-      text: "\u{1F50C} Open Connections Modal"
+      text: "\u{1F4E6} Containers & Folders Workspace"
     });
-    openBtn.style.cssText = "padding: 8px 16px; font-weight: 600; cursor: pointer;";
-    openBtn.onclick = () => {
+    openWorkspaceBtn.style.cssText = "padding: 8px 16px; font-weight: 600; cursor: pointer;";
+    openWorkspaceBtn.onclick = () => {
+      this.plugin.openContainersFoldersModal();
+    };
+    const openConnBtn = btnRow.createEl("button", {
+      text: "\u{1F50C} Server Connections & Auth"
+    });
+    openConnBtn.style.cssText = "padding: 8px 16px; font-weight: 600; cursor: pointer;";
+    openConnBtn.onclick = () => {
       this.plugin.openConnectionsModal();
     };
     containerEl.createEl("h3", { text: "\u2699\uFE0F Core Server & Sync Settings" });
-    new import_obsidian10.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
+    new import_obsidian11.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
       (text) => text.setPlaceholder("http://localhost:3001").setValue(this.plugin.settings.serverUrl).onChange(async (val) => {
         this.plugin.settings.serverUrl = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian10.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
+    new import_obsidian11.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
       (text) => text.setPlaceholder("e.g. tech-strategy").setValue(this.plugin.settings.defaultFeedSlug).onChange(async (val) => {
         this.plugin.settings.defaultFeedSlug = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian10.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
+    new import_obsidian11.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
       dropdown.addOption("create_backup_fork", "Create Backup (.local-backup.md)");
       dropdown.addOption("client_wins", "Keep Local (Client Wins)");
       dropdown.addOption("server_wins", "Keep Remote (Server Wins)");
@@ -6645,20 +6812,20 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian10.Setting(containerEl).setName("Auto-Sync on File Edit").setDesc("Automatically push changes to Lenta server when editing a tracked Markdown file.").addToggle(
+    new import_obsidian11.Setting(containerEl).setName("Auto-Sync on File Edit").setDesc("Automatically push changes to Lenta server when editing a tracked Markdown file.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.autoSyncOnEdit || false).onChange(async (val) => {
         this.plugin.settings.autoSyncOnEdit = val;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian10.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
+    new import_obsidian11.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
       (text) => text.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
     );
   }
 };
 
 // src/main.ts
-var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
+var WorkspaceLentaPlugin = class extends import_obsidian12.Plugin {
   constructor() {
     super(...arguments);
     // Auto-sync debounce: file path → timeout handle
@@ -6688,14 +6855,19 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         () => this.settings,
         () => this.openQuickAddModal(),
         () => this.openSyncModal(),
-        () => this.openConnectionsModal()
+        () => this.openConnectionsModal(),
+        () => this.openContainersFoldersModal()
       )
     );
+    const containersRibbonIcon = this.addRibbonIcon("box", "\u{1F34B} Lemon Lenta: Containers & Folders Manager", () => {
+      this.openContainersFoldersModal();
+    });
+    containersRibbonIcon.addClass("lenta-ribbon-btn");
     const syncRibbonIcon = this.addRibbonIcon("zap", "\u{1F34B} Lemon Lenta: Sync Hub", () => {
       this.openSyncModal();
     });
     syncRibbonIcon.addClass("lenta-ribbon-btn");
-    const connRibbonIcon = this.addRibbonIcon("link-2", "\u{1F34B} Lemon Lenta: Connections & Containers", () => {
+    const connRibbonIcon = this.addRibbonIcon("link-2", "\u{1F34B} Lemon Lenta: Connections & Auth", () => {
       this.openConnectionsModal();
     });
     connRibbonIcon.addClass("lenta-ribbon-btn");
@@ -6708,8 +6880,15 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     this.statusBarItemEl.addClass("mod-clickable");
     this.statusBarItemEl.onclick = () => this.openSyncModal();
     this.addCommand({
+      id: "lenta-open-containers-folders-modal",
+      name: "Open Containers & Folders Workspace Modal",
+      callback: () => {
+        this.openContainersFoldersModal();
+      }
+    });
+    this.addCommand({
       id: "lenta-open-connections-modal",
-      name: "Open Connections & Containers Modal",
+      name: "Open Connections & Auth Settings Modal",
       callback: () => {
         this.openConnectionsModal();
       }
@@ -6742,10 +6921,10 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         this.updateStatusBar("Syncing...");
         try {
           const stats = await this.syncEngine.pullChanges();
-          new import_obsidian11.Notice(`\u{1F34B} Pulled ${stats.pulledCount} notes (${stats.deletedCount} deleted).`);
+          new import_obsidian12.Notice(`\u{1F34B} Pulled ${stats.pulledCount} notes (${stats.deletedCount} deleted).`);
           this.updateStatusBar("Synced");
         } catch (err) {
-          new import_obsidian11.Notice(`Sync failed: ${err.message}`);
+          new import_obsidian12.Notice(`Sync failed: ${err.message}`);
           this.updateStatusBar("Error");
         }
       }
@@ -6756,16 +6935,16 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new import_obsidian11.Notice("No active markdown file open.");
+          new import_obsidian12.Notice("No active markdown file open.");
           return;
         }
         try {
           const res = await this.syncEngine.pushLocalNote(file);
           if (res.success) {
-            new import_obsidian11.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
+            new import_obsidian12.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
           }
         } catch (err) {
-          new import_obsidian11.Notice(`Push failed: ${err.message}`);
+          new import_obsidian12.Notice(`Push failed: ${err.message}`);
         }
       }
     });
@@ -6779,14 +6958,14 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     this.addSettingTab(new LentaSettingTab(this.app, this));
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
-        if (file instanceof import_obsidian11.TFile) {
+        if (file instanceof import_obsidian12.TFile) {
           await this.syncEngine.handleFileRename(file, oldPath);
         }
       })
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (!(file instanceof import_obsidian11.TFile) || file.extension !== "md")
+        if (!(file instanceof import_obsidian12.TFile) || file.extension !== "md")
           return;
         if (!this.settings.autoSyncOnEdit)
           return;
@@ -6814,7 +6993,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
           this.settings.containerKey = "";
           this.settings.connectedContainerName = "";
           await this.saveSettings();
-          new import_obsidian11.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
+          new import_obsidian12.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
         }
       })
     );
@@ -6856,7 +7035,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     const { scanChangedFiles: scanChangedFiles2 } = await Promise.resolve().then(() => (init_changed_files_scanner(), changed_files_scanner_exports));
     const changed = await scanChangedFiles2(this.app, this.settings);
     if (changed.length === 0) {
-      new import_obsidian11.Notice("\u{1F34B} No local changes since last sync.");
+      new import_obsidian12.Notice("\u{1F34B} No local changes since last sync.");
       return;
     }
     this.updateStatusBar(`Pushing ${changed.length} files...`);
@@ -6870,7 +7049,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         console.warn("Push failed for", item.relPath, err?.message);
       }
     }
-    new import_obsidian11.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
+    new import_obsidian12.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
     this.updateStatusBar("Synced \u2713");
     setTimeout(() => this.updateStatusBar("Ready"), 3e3);
   }
@@ -6917,7 +7096,17 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       this.app,
       this.apiClient,
       this.settings,
-      () => this.saveSettings()
+      () => this.saveSettings(),
+      () => this.openContainersFoldersModal()
+    ).open();
+  }
+  openContainersFoldersModal() {
+    new LentaContainersFoldersModal(
+      this.app,
+      this.apiClient,
+      this.settings,
+      () => this.saveSettings(),
+      () => this.openConnectionsModal()
     ).open();
   }
   updateStatusBar(text) {

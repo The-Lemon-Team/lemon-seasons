@@ -10,6 +10,7 @@ export class LentaSidebarView extends ItemView {
   private onOpenQuickAdd: () => void;
   private onOpenSyncModal: () => void;
   private onOpenConnectionsModal?: () => void;
+  private onOpenContainersFoldersModal?: () => void;
 
   private feeds: LentaFeedDto[] = [];
   private folders: LentaFolderDto[] = [];
@@ -33,7 +34,8 @@ export class LentaSidebarView extends ItemView {
     getSettings: () => LentaPluginSettings,
     onOpenQuickAdd: () => void,
     onOpenSyncModal: () => void,
-    onOpenConnectionsModal?: () => void
+    onOpenConnectionsModal?: () => void,
+    onOpenContainersFoldersModal?: () => void
   ) {
     super(leaf);
     this.apiClient = apiClient;
@@ -41,6 +43,7 @@ export class LentaSidebarView extends ItemView {
     this.onOpenQuickAdd = onOpenQuickAdd;
     this.onOpenSyncModal = onOpenSyncModal;
     this.onOpenConnectionsModal = onOpenConnectionsModal;
+    this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.mdComponent = new Component();
   }
 
@@ -113,8 +116,14 @@ export class LentaSidebarView extends ItemView {
     setIcon(syncBtn, 'zap');
     syncBtn.onclick = () => this.onOpenSyncModal();
 
+    if (this.onOpenContainersFoldersModal) {
+      const containerBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Containers & Folders Workspace' } });
+      setIcon(containerBtn, 'box');
+      containerBtn.onclick = () => this.onOpenContainersFoldersModal!();
+    }
+
     if (this.onOpenConnectionsModal) {
-      const connBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Connections & Containers' } });
+      const connBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Connections & Auth' } });
       setIcon(connBtn, 'link-2');
       connBtn.onclick = () => this.onOpenConnectionsModal!();
     }

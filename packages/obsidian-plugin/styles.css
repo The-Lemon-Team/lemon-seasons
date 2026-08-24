@@ -26,6 +26,7 @@
 .lenta-sync-modal-frame,
 .lenta-quick-add-modal,
 .lenta-connections-modal,
+.lenta-containers-folders-modal,
 .lenta-conflict-modal {
   min-width: 650px;
   max-width: 850px;

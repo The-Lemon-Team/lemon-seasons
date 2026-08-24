@@ -16,7 +16,7 @@ export class LentaSettingTab extends PluginSettingTab {
 
     containerEl.createEl('h2', { text: '🍋 Lemon Lenta Plugin Settings' });
 
-    // ── Connections & Containers Banner Card ────────────────────────────────
+    // ── Quick Workspaces & Modals Banner Card ────────────────────────────────
     const card = containerEl.createDiv({ cls: 'lenta-settings-connections-card' });
     card.style.cssText = [
       'padding: 16px 18px',
@@ -27,24 +27,35 @@ export class LentaSettingTab extends PluginSettingTab {
       'box-shadow: 0 4px 14px rgba(0,0,0,0.3)',
     ].join(';');
 
-    const cardTitle = card.createEl('h3', { text: '🔌 Connections & Obsidian Containers' });
+    const cardTitle = card.createEl('h3', { text: '📦 Containers, Folders & Connections Workspaces' });
     cardTitle.style.cssText = 'margin-top:0; margin-bottom:6px; color:#c9cd58; font-size:1.1em;';
 
     const activeContainer = this.plugin.settings.connectedContainerName || this.plugin.settings.activeContainerId || this.plugin.settings.containerKey;
     const authUser = this.plugin.settings.userEmail;
 
     const desc = card.createEl('p', { cls: 'setting-item-description' });
-    desc.style.cssText = 'margin-bottom: 12px; color: #aaa; font-size: 0.9em;';
-    desc.innerHTML = `Configure user authentication, select active Obsidian containers, connect by container key, and manage vault folder mappings in the dedicated Connections modal.<br/><br/>` +
+    desc.style.cssText = 'margin-bottom: 14px; color: #aaa; font-size: 0.9em;';
+    desc.innerHTML = `Manage container selection, vault folder structures, user authentication, and server endpoints in dedicated workspace modals.<br/><br/>` +
       `<strong>Current Status:</strong> ${activeContainer ? `✅ Connected to <code>${activeContainer}</code>` : '⚠️ No container connected'} ` +
       `(${authUser ? `Auth: ${authUser}` : 'Unauthenticated'})`;
 
-    const openBtn = card.createEl('button', {
+    const btnRow = card.createDiv();
+    btnRow.style.cssText = 'display: flex; gap: 12px; flex-wrap: wrap;';
+
+    const openWorkspaceBtn = btnRow.createEl('button', {
       cls: 'mod-cta lenta-btn-lemon',
-      text: '🔌 Open Connections Modal',
+      text: '📦 Containers & Folders Workspace',
     });
-    openBtn.style.cssText = 'padding: 8px 16px; font-weight: 600; cursor: pointer;';
-    openBtn.onclick = () => {
+    openWorkspaceBtn.style.cssText = 'padding: 8px 16px; font-weight: 600; cursor: pointer;';
+    openWorkspaceBtn.onclick = () => {
+      this.plugin.openContainersFoldersModal();
+    };
+
+    const openConnBtn = btnRow.createEl('button', {
+      text: '🔌 Server Connections & Auth',
+    });
+    openConnBtn.style.cssText = 'padding: 8px 16px; font-weight: 600; cursor: pointer;';
+    openConnBtn.onclick = () => {
       this.plugin.openConnectionsModal();
     };
 

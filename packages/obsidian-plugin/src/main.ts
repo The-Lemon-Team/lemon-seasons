@@ -6,6 +6,7 @@ import { LentaPluginSettings, DEFAULT_SETTINGS } from './types';
 import { LentaQuickAddModal } from './ui/quick-add-modal';
 import { LentaSyncModal } from './ui/sync-modal';
 import { LentaConnectionsModal } from './ui/connections-modal';
+import { LentaContainersFoldersModal } from './ui/containers-folders-modal';
 import { LentaSidebarView, VIEW_TYPE_LENTA_SIDEBAR } from './ui/sidebar-view';
 import { LentaSettingTab } from './ui/settings-tab';
 
@@ -46,17 +47,23 @@ export default class WorkspaceLentaPlugin extends Plugin {
           () => this.settings,
           () => this.openQuickAddModal(),
           () => this.openSyncModal(),
-          () => this.openConnectionsModal()
+          () => this.openConnectionsModal(),
+          () => this.openContainersFoldersModal()
         )
     );
 
     // 2. Ribbon Icons
+    const containersRibbonIcon = this.addRibbonIcon('box', '🍋 Lemon Lenta: Containers & Folders Manager', () => {
+      this.openContainersFoldersModal();
+    });
+    containersRibbonIcon.addClass('lenta-ribbon-btn');
+
     const syncRibbonIcon = this.addRibbonIcon('zap', '🍋 Lemon Lenta: Sync Hub', () => {
       this.openSyncModal();
     });
     syncRibbonIcon.addClass('lenta-ribbon-btn');
 
-    const connRibbonIcon = this.addRibbonIcon('link-2', '🍋 Lemon Lenta: Connections & Containers', () => {
+    const connRibbonIcon = this.addRibbonIcon('link-2', '🍋 Lemon Lenta: Connections & Auth', () => {
       this.openConnectionsModal();
     });
     connRibbonIcon.addClass('lenta-ribbon-btn');
@@ -74,8 +81,16 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
     // 4. Command Palette Commands
     this.addCommand({
+      id: 'lenta-open-containers-folders-modal',
+      name: 'Open Containers & Folders Workspace Modal',
+      callback: () => {
+        this.openContainersFoldersModal();
+      },
+    });
+
+    this.addCommand({
       id: 'lenta-open-connections-modal',
-      name: 'Open Connections & Containers Modal',
+      name: 'Open Connections & Auth Settings Modal',
       callback: () => {
         this.openConnectionsModal();
       },
@@ -318,7 +333,18 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.app,
       this.apiClient,
       this.settings,
-      () => this.saveSettings()
+      () => this.saveSettings(),
+      () => this.openContainersFoldersModal()
+    ).open();
+  }
+
+  openContainersFoldersModal() {
+    new LentaContainersFoldersModal(
+      this.app,
+      this.apiClient,
+      this.settings,
+      () => this.saveSettings(),
+      () => this.openConnectionsModal()
     ).open();
   }
 
