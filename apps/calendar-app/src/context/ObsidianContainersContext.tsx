@@ -14,6 +14,13 @@ interface ObsidianContainersContextType {
   containers: ObsidianContainer[];
   activeContainer: ObsidianContainer | null;
   setActiveContainerId: (id: string | null) => void;
+  selectedContainerIds: string[];
+  selectedContainers: ObsidianContainer[];
+  toggleSelectContainer: (id: string) => void;
+  selectAllContainers: () => void;
+  deselectAllContainers: () => void;
+  selectedContainersCount: number;
+  selectedContainersTotalNotes: number;
   addContainer: (input: {
     name: string;
     description?: string;
@@ -55,6 +62,7 @@ interface ObsidianContainersContextType {
 }
 
 const STORAGE_KEY = 'lemon_lenta_obsidian_containers_v1';
+const SELECTED_KEY = 'lemon_lenta_selected_container_ids_v1';
 
 const INITIAL_CONTAINERS: ObsidianContainer[] = [
   {
@@ -191,6 +199,15 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
   });
 
   const [activeContainerId, setActiveContainerId] = useState<string | null>(null);
+  const [selectedContainerIds, setSelectedContainerIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(SELECTED_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {}
+    return INITIAL_CONTAINERS.map((c) => c.id);
+  });
   const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
   const [syncDirection, setSyncDirection] = useState<'push' | 'pull' | null>(null);
 
@@ -212,7 +229,32 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     }
   }, [containers]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(SELECTED_KEY, JSON.stringify(selectedContainerIds));
+    } catch (e) {
+      console.error('Failed to save selected container IDs to localStorage', e);
+    }
+  }, [selectedContainerIds]);
+
   const activeContainer = containers.find((c) => c.id === activeContainerId) || null;
+  const selectedContainers = containers.filter((c) => selectedContainerIds.includes(c.id));
+  const selectedContainersCount = selectedContainers.length;
+  const selectedContainersTotalNotes = selectedContainers.reduce((sum, c) => sum + (c.notesCount || 0), 0);
+
+  const toggleSelectContainer = useCallback((id: string) => {
+    setSelectedContainerIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }, []);
+
+  const selectAllContainers = useCallback(() => {
+    setSelectedContainerIds(containers.map((c) => c.id));
+  }, [containers]);
+
+  const deselectAllContainers = useCallback(() => {
+    setSelectedContainerIds([]);
+  }, []);
 
   const addContainer = useCallback(
     (input: {
@@ -540,6 +582,13 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         containers,
         activeContainer,
         setActiveContainerId,
+        selectedContainerIds,
+        selectedContainers,
+        toggleSelectContainer,
+        selectAllContainers,
+        deselectAllContainers,
+        selectedContainersCount,
+        selectedContainersTotalNotes,
         addContainer,
         updateContainer,
         deleteContainer,

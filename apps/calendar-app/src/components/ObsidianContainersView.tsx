@@ -37,6 +37,12 @@ export const ObsidianContainersView: React.FC = () => {
   const { t } = useI18n();
   const {
     containers,
+    selectedContainerIds,
+    toggleSelectContainer,
+    selectAllContainers,
+    deselectAllContainers,
+    selectedContainersCount,
+    selectedContainersTotalNotes,
     addContainer,
     updateContainer,
     deleteContainer,
@@ -312,15 +318,21 @@ export const ObsidianContainersView: React.FC = () => {
 
       {/* 2. Top Stats Overview Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {/* Stat 1: Total Containers */}
+        {/* Stat 1: Total Containers & Selection Count */}
         <div className="p-3.5 rounded-xl bg-[#181a1a] border border-[#242828] flex items-center justify-between">
           <div>
             <span className="text-[10px] font-mono text-[#93927e] uppercase tracking-wider block">
-              Всего контейнеров
+              Выбрано / Всего
             </span>
-            <span className="text-xl font-sans font-bold text-[#f3e8ff]">
-              {containers.length}
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xl font-sans font-bold text-[#c9cd58]">
+                {selectedContainersCount}
+              </span>
+              <span className="text-xs text-[#666]">/</span>
+              <span className="text-sm font-sans font-semibold text-[#f3e8ff]">
+                {containers.length}
+              </span>
+            </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center text-[#d8b4fe]">
             <ObsidianLogo size={16} />
@@ -393,40 +405,61 @@ export const ObsidianContainersView: React.FC = () => {
           />
         </div>
 
-        {/* Right: Privacy filter tabs */}
-        <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-lg border border-[#242828]">
-          <button
-            onClick={() => setPrivacyFilter('all')}
-            className={`px-3 py-1 rounded-md text-xs font-mono transition-colors ${
-              privacyFilter === 'all'
-                ? 'bg-[#242828] text-[#e2e2e2] font-semibold'
-                : 'text-[#93927e] hover:text-white'
-            }`}
-          >
-            {t.filterAll} ({containers.length})
-          </button>
-          <button
-            onClick={() => setPrivacyFilter('private')}
-            className={`px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5 transition-colors ${
-              privacyFilter === 'private'
-                ? 'bg-[#a855f7]/20 text-[#d8b4fe] border border-[#a855f7]/40 font-semibold'
-                : 'text-[#93927e] hover:text-white'
-            }`}
-          >
-            <Lock className="w-3 h-3 text-[#a855f7]" />
-            <span>{t.filterPrivate} ({privateCount})</span>
-          </button>
-          <button
-            onClick={() => setPrivacyFilter('public')}
-            className={`px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5 transition-colors ${
-              privacyFilter === 'public'
-                ? 'bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 font-semibold'
-                : 'text-[#93927e] hover:text-white'
-            }`}
-          >
-            <Globe className="w-3 h-3 text-[#c9cd58]" />
-            <span>{t.filterPublic} ({publicCount})</span>
-          </button>
+        {/* Right: Selection & Privacy filter tabs */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Bulk Selection Buttons */}
+          <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-lg border border-[#242828]">
+            <button
+              onClick={selectAllContainers}
+              className="px-2.5 py-1 rounded-md text-xs font-mono text-[#c9cd58] hover:bg-[#c9cd58]/10 transition-colors font-semibold"
+            >
+              Выбрать все
+            </button>
+            <button
+              onClick={deselectAllContainers}
+              className="px-2.5 py-1 rounded-md text-xs font-mono text-[#93927e] hover:text-white hover:bg-[#242828] transition-colors"
+            >
+              Сбросить
+            </button>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40">
+              {selectedContainersCount} выбрано
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-lg border border-[#242828]">
+            <button
+              onClick={() => setPrivacyFilter('all')}
+              className={`px-3 py-1 rounded-md text-xs font-mono transition-colors ${
+                privacyFilter === 'all'
+                  ? 'bg-[#242828] text-[#e2e2e2] font-semibold'
+                  : 'text-[#93927e] hover:text-white'
+              }`}
+            >
+              {t.filterAll} ({containers.length})
+            </button>
+            <button
+              onClick={() => setPrivacyFilter('private')}
+              className={`px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5 transition-colors ${
+                privacyFilter === 'private'
+                  ? 'bg-[#a855f7]/20 text-[#d8b4fe] border border-[#a855f7]/40 font-semibold'
+                  : 'text-[#93927e] hover:text-white'
+              }`}
+            >
+              <Lock className="w-3 h-3 text-[#a855f7]" />
+              <span>{t.filterPrivate} ({privateCount})</span>
+            </button>
+            <button
+              onClick={() => setPrivacyFilter('public')}
+              className={`px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5 transition-colors ${
+                privacyFilter === 'public'
+                  ? 'bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 font-semibold'
+                  : 'text-[#93927e] hover:text-white'
+              }`}
+            >
+              <Globe className="w-3 h-3 text-[#c9cd58]" />
+              <span>{t.filterPublic} ({publicCount})</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -457,11 +490,15 @@ export const ObsidianContainersView: React.FC = () => {
             const isSyncing = isSyncingId === container.id;
             const isCopied = copiedTokenId === container.id;
 
+            const isSelected = selectedContainerIds.includes(container.id);
+
             return (
               <div
                 key={container.id}
                 className={`p-5 rounded-2xl bg-[#181a1a] border transition-all duration-200 flex flex-col justify-between relative overflow-hidden group ${
-                  isPrivate
+                  isSelected
+                    ? 'border-[#c9cd58] bg-[#1a1f1b] shadow-[0_0_25px_rgba(201,205,88,0.2)]'
+                    : isPrivate
                     ? 'border-[#a855f7]/40 hover:border-[#a855f7] hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]'
                     : 'border-[#c9cd58]/40 hover:border-[#c9cd58] hover:shadow-[0_0_25px_rgba(201,205,88,0.15)]'
                 }`}
@@ -473,8 +510,8 @@ export const ObsidianContainersView: React.FC = () => {
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 border"
                         style={{
-                          backgroundColor: isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
-                          borderColor: isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
+                          backgroundColor: isSelected ? 'rgba(201,205,88,0.25)' : isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
+                          borderColor: isSelected ? '#c9cd58' : isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
                         }}
                       >
                         <ObsidianLogo size={22} />
@@ -490,28 +527,33 @@ export const ObsidianContainersView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Privacy Toggle Button with impact check */}
-                    <button
-                      onClick={() => handleContainerPrivacyToggle(container.id)}
-                      title={`Нажмите, чтобы переключить приватность на ${isPrivate ? 'Public' : 'Private'}`}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all ${
-                        isPrivate
-                          ? 'bg-[#a855f7]/15 border-[#a855f7]/50 text-[#d8b4fe] hover:bg-[#a855f7]/25'
-                          : 'bg-[#c9cd58]/15 border-[#c9cd58]/50 text-[#e5e971] hover:bg-[#c9cd58]/25'
-                      }`}
-                    >
-                      {isPrivate ? (
-                        <>
-                          <Lock className="w-3.5 h-3.5 text-[#a855f7]" />
-                          <span>{t.privacyPrivate}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />
-                          <span>{t.privacyPublic}</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Selection Toggle Button */}
+                      <button
+                        onClick={() => toggleSelectContainer(container.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 border transition-all ${
+                          isSelected
+                            ? 'bg-[#c9cd58] text-[#121414] border-[#c9cd58] shadow-[0_0_12px_rgba(201,205,88,0.4)]'
+                            : 'bg-[#1e2020] text-[#93927e] border-[#333] hover:text-white hover:border-[#666]'
+                        }`}
+                      >
+                        {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                        <span>{isSelected ? 'Выбран ✓' : 'Выбрать'}</span>
+                      </button>
+
+                      {/* Privacy Toggle Button with impact check */}
+                      <button
+                        onClick={() => handleContainerPrivacyToggle(container.id)}
+                        title={`Нажмите, чтобы переключить приватность на ${isPrivate ? 'Public' : 'Private'}`}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all ${
+                          isPrivate
+                            ? 'bg-[#a855f7]/15 border-[#a855f7]/50 text-[#d8b4fe] hover:bg-[#a855f7]/25'
+                            : 'bg-[#c9cd58]/15 border-[#c9cd58]/50 text-[#e5e971] hover:bg-[#c9cd58]/25'
+                        }`}
+                      >
+                        {isPrivate ? <Lock className="w-3.5 h-3.5 text-[#a855f7]" /> : <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Description */}
