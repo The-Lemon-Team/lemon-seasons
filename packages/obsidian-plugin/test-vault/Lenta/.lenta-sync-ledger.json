@@ -1,0 +1,754 @@
+{
+  "lastSyncTimestamp": "2026-08-24T06:54:43.493Z",
+  "vaultRootFolder": "Lenta",
+  "entries": {
+    "548f5242-e40e-472f-9f14-7bc5be0297ec": {
+      "lentaId": "548f5242-e40e-472f-9f14-7bc5be0297ec",
+      "localPath": "Lenta/Films/Marvel/Phase5/Капитан Америка- Новый мир.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.471Z",
+      "lastLocalModifiedAt": 1787554483569,
+      "fieldsHash": {
+        "title": "Капитан Америка: Новый мир",
+        "description": "### Капитан Америка: Новый мир (Captain America: Brave New World)\n\nСэм Уилсон официально берет на себя мантию Капитана Америки и оказывается втянутым в глобальный международный заговор. Президент США Таддеус Росс предлагает Сэму восстановить статус Мстителей, но напряжение между мировыми державами из-за адамантия ставит мир на грань войны.\n\n#### Ключевые персонажи и события:\n- **Сэм Уилсон (Энтони Маки)** — новый символ надежды и дипломатии.\n- **Таддеус \"Громовержец\" Росс / Красный Халк (Харрисон Форд)**.\n- **Лидер / Сэмюэл Стернс (Тим Блейк Нельсон)** — скрытый манипулятор событий.\n- Введение металла адамантия в Киновселенную Marvel.\n\n> \"Ты можешь быть Капитаном Америкой, но ты не Стив Роджерс.\" — Президент Росс",
+        "type": "FILM_RELEASE",
+        "startDate": "2025-02-14T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase5",
+        "folders": "Films/Marvel,Films/Marvel/Phase5",
+        "taxonomy": "films.marvel.phase5",
+        "tags": "captainamerica,marvel,mcu,красныйхалк"
+      }
+    },
+    "956561b5-f297-4103-adee-4d4a6b8896c5": {
+      "lentaId": "956561b5-f297-4103-adee-4d4a6b8896c5",
+      "localPath": "Lenta/Films/Marvel/Series/Сорвиголова- Рожденный заново (Сезон 1).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.598Z",
+      "lastLocalModifiedAt": 1787554483602,
+      "fieldsHash": {
+        "title": "Сорвиголова: Рожденный заново (Сезон 1)",
+        "description": "### Сорвиголова: Рожденный заново (Daredevil: Born Again)\n\nДолгожданное возвращение Мэтта Мердока и Уилсона Фиска в телевизионном формате Marvel Television на Disney+. Фиск баллотируется в мэры Нью-Йорка, ведя войну с супергероями на улицах Адской Кухни.\n\n#### В главных ролях:\n- **Чарли Кокс** — Мэтт Мердок / Сорвиголова\n- **Винсент Д’Онофрио** — Уилсон Фиск / Кингпин\n- **Джон Бернтал** — Фрэнк Касл / Каратель\n- **Элден Хенсон & Дебора Энн Уолл** — Фогги Нельсон и Карен Пейдж\n\n> Уличный уровень Киновселенной Marvel возвращает взрослый рейтинг TV-MA и мрачный тон.",
+        "type": "PERIOD",
+        "startDate": "2025-03-04T00:00:00.000Z",
+        "endDate": "2025-04-22T00:00:00.000Z",
+        "primaryFolder": "Films/Marvel/Series",
+        "folders": "Films/Marvel,Films/Marvel/Series",
+        "taxonomy": "films.marvel.series",
+        "tags": "daredevil,disneyplus,punisher,сорвиголова"
+      }
+    },
+    "8b58be51-031b-4b81-b771-0c57eff08fa4": {
+      "lentaId": "8b58be51-031b-4b81-b771-0c57eff08fa4",
+      "localPath": "Lenta/Holidays/Russia/Official/Праздник Весны и Труда (1 Мая).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.089Z",
+      "lastLocalModifiedAt": 1787554483626,
+      "fieldsHash": {
+        "title": "Праздник Весны и Труда (1 Мая)",
+        "description": "### Праздник Весны и Труда\n\nТрадиционный российский весенний праздник, символизирующий уважение к труду, солидарность и расцвет природы. Выходной день в РФ.",
+        "type": "EVENT",
+        "startDate": "2026-05-01T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Official",
+        "folders": "Holidays/Russia,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.official",
+        "tags": "1мая,первомай,праздниктруда"
+      }
+    },
+    "4c0c26ed-e891-4360-9edf-f05c6cda592e": {
+      "lentaId": "4c0c26ed-e891-4360-9edf-f05c6cda592e",
+      "localPath": "Lenta/Holidays/Russia/Military/День Победы советского народа в Великой Отечественной войне.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.131Z",
+      "lastLocalModifiedAt": 1787554483652,
+      "fieldsHash": {
+        "title": "День Победы советского народа в Великой Отечественной войне",
+        "description": "### День Победы (9 Мая 1945 года)\n\nСвященный всенародный праздник и главный День воинской славы России (ФЗ № 32-ФЗ). Торжество победы над нацистской Германией.\n\n#### Всероссийские традиции:\n- Военный парад на Красной площади в Москве и городах-героях.\n- Общенародная акция памяти «Бессмертный полк».\n- Всероссийская Минута молчания в 18:55.\n- Праздничный салют Победы.\n\n> «Никто не забыт, ничто не забыто!»",
+        "type": "EVENT",
+        "startDate": "2026-05-09T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.military",
+        "tags": "9мая,бессмертныйполк,великаяотечественная,деньпобеды"
+      }
+    },
+    "2cd77adc-c2d4-41b2-abdb-5efa4e0ca3cb": {
+      "lentaId": "2cd77adc-c2d4-41b2-abdb-5efa4e0ca3cb",
+      "localPath": "Lenta/Holidays/Russia/Official/День России.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.183Z",
+      "lastLocalModifiedAt": 1787554483680,
+      "fieldsHash": {
+        "title": "День России",
+        "description": "### День России (12 июня)\n\nГлавный государственный праздник страны, знаменующий принятие Декларации о государственном суверенитете Российской Федерации. День вручения Государственных премий РФ в Кремле, праздничных концертов и фестивалей.",
+        "type": "EVENT",
+        "startDate": "2026-06-12T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Official",
+        "folders": "Holidays/Russia,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.official",
+        "tags": "12июня,деньроссии,родина"
+      }
+    },
+    "e9176078-1fda-4cf4-8087-6ad1a431d67d": {
+      "lentaId": "e9176078-1fda-4cf4-8087-6ad1a431d67d",
+      "localPath": "Lenta/Holidays/Russia/Military/День народного единства.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.220Z",
+      "lastLocalModifiedAt": 1787554483707,
+      "fieldsHash": {
+        "title": "День народного единства",
+        "description": "### День народного единства (4 ноября)\n\nГосударственный праздник и День воинской славы России. Установлен в память освобождения Москвы силами народного ополчения под предводительством Кузьмы Минина и Дмитрия Пожарского от польских интервентов в 1612 году, что положило конец Смутному времени.",
+        "type": "EVENT",
+        "startDate": "2026-11-04T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.military",
+        "tags": "4ноября,деньнародногоединства,мининипожарский"
+      }
+    },
+    "93131e77-4470-4cb7-8293-5621eaee536f": {
+      "lentaId": "93131e77-4470-4cb7-8293-5621eaee536f",
+      "localPath": "Lenta/Holidays/Russia/Military/День полного освобождения Ленинграда от фашистской блокады.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.252Z",
+      "lastLocalModifiedAt": 1787554483729,
+      "fieldsHash": {
+        "title": "День полного освобождения Ленинграда от фашистской блокады",
+        "description": "### 27 января 1944 года — Снятие блокады Ленинграда\n\nДень воинской славы России. В этот день в 1944 году советские войска полностью освободили город Ленинград от 872-дневной вражеской фашистской блокады. Символ беспримерного мужества, стойкости и силы духа защитников и жителей города на Неве.",
+        "type": "EVENT",
+        "startDate": "2026-01-27T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "блокадаленинграда,деньвоинскойславы,ленинград"
+      }
+    },
+    "ef32403f-b21b-4cb4-a1e2-76cdce869f47": {
+      "lentaId": "ef32403f-b21b-4cb4-a1e2-76cdce869f47",
+      "localPath": "Lenta/Holidays/Russia/Military/День победы в Сталинградской битве.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.281Z",
+      "lastLocalModifiedAt": 1787554483747,
+      "fieldsHash": {
+        "title": "День победы в Сталинградской битве",
+        "description": "### 2 февраля 1943 года — Разгром немецко-фашистских войск в Сталинграде\n\nДень воинской славы России. Окончание 200-дневной Сталинградской битвы, окружение и капитуляция 6-й армии фельдмаршала Паулюса. Коренной перелом во всей Второй мировой войне.",
+        "type": "EVENT",
+        "startDate": "2026-02-02T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "деньвоинскойславы,сталинград,сталинградскаябитва"
+      }
+    },
+    "0f05373e-24bb-4353-a6ae-093564edfc37": {
+      "lentaId": "0f05373e-24bb-4353-a6ae-093564edfc37",
+      "localPath": "Lenta/Holidays/Russia/Military/День Ледового побоища (Битва на Чудском озере).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.313Z",
+      "lastLocalModifiedAt": 1787554483766,
+      "fieldsHash": {
+        "title": "День Ледового побоища (Битва на Чудском озере)",
+        "description": "### 18 апреля (5 апреля по ст. ст. 1242 г.) — Ледовое побоище\n\nДень воинской славы России. Разгром рыцарей Ливонского ордена русскими дружинами под командованием святого благоверного великого князя Александра Невского на льду Чудского озера. Защита северо-западных рубежей Руси от экспансии крестоносцев.",
+        "type": "EVENT",
+        "startDate": "2026-04-18T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "александрневский,древняярусь,ледовоепобоище"
+      }
+    },
+    "cf4f9cc4-8ab5-49e0-bb3d-641cb3b98dc3": {
+      "lentaId": "cf4f9cc4-8ab5-49e0-bb3d-641cb3b98dc3",
+      "localPath": "Lenta/Films/Marvel/Phase5/Громовержцы-.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.674Z",
+      "lastLocalModifiedAt": 1787554483797,
+      "fieldsHash": {
+        "title": "Громовержцы*",
+        "description": "### Громовержцы* (Thunderbolts*)\n\nНеобычная команда антигероев и бывших наемников отправляется на секретную самоубийственную миссию под кураторством графини Валентины Аллегры де Фонтейн.\n\n#### Состав команды:\n- **Елена Белова (Флоренс Пью)** — Белая Вдова\n- **Баки Барнс (Себастиан Стэн)** — Зимний Солдат\n- **Алексей Шостаков (Дэвид Харбор)** — Красный Страж\n- **Джон Уокер (Уайатт Рассел)** — Агент США\n- **Призрак (Ханна Джон-Кэймен)** & **Таскмастер (Ольга Куриленко)**\n- **Боб / Часовой (Льюис Пуллман)** — могущественный Sentry\n\n> Звездочка в названии фильма скрывает важный сюжетный твист финала 5 Фазы MCU!",
+        "type": "FILM_RELEASE",
+        "startDate": "2025-05-02T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase5",
+        "folders": "Films/Marvel,Films/Marvel/Phase5",
+        "taxonomy": "films.marvel.phase5",
+        "tags": "buckybarnes,thunderbolts,yelenabelova,громовержцы"
+      }
+    },
+    "c6b8a54e-2e63-445c-ad97-28188432998e": {
+      "lentaId": "c6b8a54e-2e63-445c-ad97-28188432998e",
+      "localPath": "Lenta/Films/Marvel/Phase6/Фантастическая Четвёрка- Первые шаги.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.730Z",
+      "lastLocalModifiedAt": 1787554483832,
+      "fieldsHash": {
+        "title": "Фантастическая Четвёрка: Первые шаги",
+        "description": "### Фантастическая Четвёрка: Первые шаги (The Fantastic Four: First Steps)\n\nПервая семья Marvel вступает в MCU в ретро-футуристическом сеттинге 1960-х годов альтернативной вселенной. Герои сталкиваются с космической угрозой в лице Пожирателя Миров Галактуса и его вестника Серебряного Сёрфера.\n\n#### Состав Четвёрки:\n- **Педро Паскаль** — Рид Ричардс / Мистер Фантастик\n- **Ванесса Кирби** — Сью Шторм / Невидимая Леди\n- **Джозеф Куинн** — Джонни Шторм / Человек-Факел\n- **Эбон Мосс-Бакрак** — Бен Гримм / Существо\n- **Ральф Айнесон** — Галактус\n- **Джулия Гарнер** — Шалла-Бал / Серебряный Сёрфер\n\n> Официальный старт Шестой Фазы Киновселенной Marvel (Phase 6).",
+        "type": "FILM_RELEASE",
+        "startDate": "2025-07-25T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase6",
+        "folders": "Films/Marvel,Films/Marvel/Phase6",
+        "taxonomy": "films.marvel.phase6",
+        "tags": "fantasticfour,galactus,mcuphase6,фантастическаячетверка"
+      }
+    },
+    "2d33969c-04c3-49ab-9121-aa917c6b47b6": {
+      "lentaId": "2d33969c-04c3-49ab-9121-aa917c6b47b6",
+      "localPath": "Lenta/Films/Marvel/Phase6/Мстители- Судный день.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.790Z",
+      "lastLocalModifiedAt": 1787554483862,
+      "fieldsHash": {
+        "title": "Мстители: Судный день",
+        "description": "### Мстители: Судный день (Avengers: Doomsday)\n\nКульминация Саги Мультивселенной. Братья Энтони и Джо Руссо возвращаются к режиссуре самого масштабного кроссовера десятилетия. \n\n#### Главная сенсация:\n- **Роберт Дауни-младший** возвращается в киновселенную в роли величайшего злодея — **Виктора фон Дума / Доктора Дума**!\n- Сбор героев Земли, Фантастической Четверки, Людей Икс и героев из параллельных измерений.\n- Начало столкновения миров (Incursions), ведущее к коллапсу временных линий.\n\n> \"Новая маска. Тот же уровень величия.\" — Роберт Дауни-мл. на Comic-Con.",
+        "type": "FILM_RELEASE",
+        "startDate": "2026-05-01T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase6",
+        "folders": "Films/Marvel,Films/Marvel/Phase6",
+        "taxonomy": "films.marvel.phase6",
+        "tags": "avengers,doctordoom,doomsday,rdj,мстители"
+      }
+    },
+    "c2c6e73a-d683-4e6c-8029-4911bccfbb6c": {
+      "lentaId": "c2c6e73a-d683-4e6c-8029-4911bccfbb6c",
+      "localPath": "Lenta/Films/Marvel/Phase6/Человек-паук- Совершенно новый день (Человек-паук 4).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.852Z",
+      "lastLocalModifiedAt": 1787554483884,
+      "fieldsHash": {
+        "title": "Человек-паук: Совершенно новый день (Человек-паук 4)",
+        "description": "### Человек-паук 4 (Spider-Man: Brand New Day)\n\nТом Холланд возвращается к роли Питера Паркера в новой трилогии. После заклятия Доктора Стрэнджа мир забыл о существовании Питера, и юный герой вынужден балансировать между учебой в колледже, защитой улиц Нью-Йорка и новыми угрозами.\n\n- **Режиссер:** Дестин Дэниел Креттон (*Шан-Чи*)\n- **В главных ролях:** Том Холланд, Зендея\n- Взаимодействие с уличными героями Marvel (Сорвиголова) и подготовка к битве в *Secret Wars*.",
+        "type": "FILM_RELEASE",
+        "startDate": "2026-07-24T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase6",
+        "folders": "Films/Marvel,Films/Marvel/Phase6",
+        "taxonomy": "films.marvel.phase6",
+        "tags": "mcu,spiderman,tomholland,человекпаук"
+      }
+    },
+    "aaf17358-bdc6-4a3a-86fa-7939ef7716d4": {
+      "lentaId": "aaf17358-bdc6-4a3a-86fa-7939ef7716d4",
+      "localPath": "Lenta/Films/Marvel/Phase6/Мстители- Секретные войны.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.904Z",
+      "lastLocalModifiedAt": 1787554483922,
+      "fieldsHash": {
+        "title": "Мстители: Секретные войны",
+        "description": "### Мстители: Секретные войны (Avengers: Secret Wars)\n\nГрандиозный финал Саги Мультивселенной (The Multiverse Saga). Создание Мира Битв (Battleworld) и объединение абсолютно всех итераций супергероев Marvel за всю 25-летнюю историю кинематографа: MCU, вселенной Fox (Люди Икс), вселенных Сэма Рэйми и Марка Уэбба.\n\n> Фильм призван стать величайшим кроссовером в истории кино и мягким перезапуском Вселенной Marvel на следующее десятилетие.",
+        "type": "FILM_RELEASE",
+        "startDate": "2027-05-07T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Films/Marvel/Phase6",
+        "folders": "Films/Marvel,Films/Marvel/Phase6",
+        "taxonomy": "films.marvel.phase6",
+        "tags": "avengerssecretwars,battleworld,marvel,multiversesaga"
+      }
+    },
+    "4eda27cf-30a2-4b42-b4f4-da474dab78a5": {
+      "lentaId": "4eda27cf-30a2-4b42-b4f4-da474dab78a5",
+      "localPath": "Lenta/Holidays/Russia/Official/Новогодние каникулы и Рождество в России.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:55.958Z",
+      "lastLocalModifiedAt": 1787554483940,
+      "fieldsHash": {
+        "title": "Новогодние каникулы и Рождество в России",
+        "description": "### Новогодние каникулы в Российской Федерации\n\nОфициальный период нерабочих праздничных дней в России (ст. 112 Трудового кодекса РФ). \n\n- 1, 2, 3, 4, 5, 6 и 8 января — Новогодние каникулы.\n- 7 января — Рождество Христово.\n- Главные семейные торжества, подарки, подведение итогов года и запуск новых планов.",
+        "type": "PERIOD",
+        "startDate": "2026-01-01T00:00:00.000Z",
+        "endDate": "2026-01-08T23:59:59.000Z",
+        "primaryFolder": "Holidays/Russia/Official",
+        "folders": "Holidays/Russia,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.official",
+        "tags": "каникулы,новыйгод,россия"
+      }
+    },
+    "cc170b30-fd24-4357-ab8c-f3c2d4f8d80e": {
+      "lentaId": "cc170b30-fd24-4357-ab8c-f3c2d4f8d80e",
+      "localPath": "Lenta/Holidays/Russia/Military/День защитника Отечества.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.013Z",
+      "lastLocalModifiedAt": 1787554483967,
+      "fieldsHash": {
+        "title": "День защитника Отечества",
+        "description": "### День защитника Отечества (23 февраля)\n\nГосударственный праздник России и День воинской славы. День чествования всех поколений воинов, защищавших суверенитет и безопасность Отечества, а также дань уважения действующим военнослужащим и ветеранам Вооруженных Сил РФ.",
+        "type": "EVENT",
+        "startDate": "2026-02-23T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.military",
+        "tags": "23февраля,армияроссии,деньзащитникаотечества"
+      }
+    },
+    "822497d4-3493-42b0-901a-6d9a4d200132": {
+      "lentaId": "822497d4-3493-42b0-901a-6d9a4d200132",
+      "localPath": "Lenta/Holidays/Russia/Official/Международный женский день (8 Марта).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.053Z",
+      "lastLocalModifiedAt": 1787554483996,
+      "fieldsHash": {
+        "title": "Международный женский день (8 Марта)",
+        "description": "### Международный женский день\n\nГосударственный нерабочий праздничный день в России. Праздник весны, женской красоты, материнства и уважения к женщинам. Традиционно сопровождается дарением тюльпанов, мимоз и теплыми поздравлениями в семье и коллективах.",
+        "type": "EVENT",
+        "startDate": "2026-03-08T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Official",
+        "folders": "Holidays/Russia,Holidays/Russia/Official",
+        "taxonomy": "holidays.russia.official",
+        "tags": "8марта,весна,женскийдень"
+      }
+    },
+    "769e285e-5da0-4fce-9f02-8c18a8d2658b": {
+      "lentaId": "769e285e-5da0-4fce-9f02-8c18a8d2658b",
+      "localPath": "Lenta/Holidays/Russia/Military/День Военно-Морского Флота России (День ВМФ 2026).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.348Z",
+      "lastLocalModifiedAt": 1787554484021,
+      "fieldsHash": {
+        "title": "День Военно-Морского Флота России (День ВМФ 2026)",
+        "description": "### День Военно-Морского Флота Российской Федерации\n\nПрофессиональный праздник военных моряков и памятный день Вооруженных Сил РФ, отмечаемый в последнее воскресенье июля. Традиционный Главный военно-морской парад в Санкт-Петербурге и Кронштадте, парады кораблей в Севастополе, Владивостоке, Североморске, Балтийске и Каспийске.",
+        "type": "EVENT",
+        "startDate": "2026-07-26T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "андреевскийфлаг,деньвмф,флотроссии"
+      }
+    },
+    "0cd66ffe-5ffc-4d32-b772-0c2321405b1f": {
+      "lentaId": "0cd66ffe-5ffc-4d32-b772-0c2321405b1f",
+      "localPath": "Lenta/Holidays/Russia/Military/День Воздушно-десантных войск (День ВДВ).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.389Z",
+      "lastLocalModifiedAt": 1787554484050,
+      "fieldsHash": {
+        "title": "День Воздушно-десантных войск (День ВДВ)",
+        "description": "### 2 августа — День Воздушно-десантных войск (День ВДВ)\n\nПраздник «крылатой пехоты». Установлен в память первого парашютного десантирования 12 человек под Воронежем 2 августа 1930 года на учениях Московского военного округа. Девиз ВДВ: **«Никто, кроме нас!»**",
+        "type": "EVENT",
+        "startDate": "2026-08-02T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "вдв,деньвдв,десант,никтокроменас"
+      }
+    },
+    "4b552c9a-cf7d-49c9-9b18-ffd040a9ae0b": {
+      "lentaId": "4b552c9a-cf7d-49c9-9b18-ffd040a9ae0b",
+      "localPath": "Lenta/Holidays/Russia/Military/День Бородинского сражения.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.431Z",
+      "lastLocalModifiedAt": 1787554484074,
+      "fieldsHash": {
+        "title": "День Бородинского сражения",
+        "description": "### 8 сентября (26 августа по ст. ст. 1812 г.) — Бородинская битва\n\nДень воинской славы России. Крупнейшее генеральное сражение Отечественной войны 1812 года между русской армией под командованием генерала от инфантерии М.И. Голенищева-Кутузова и французской армией императора Наполеона I Бонапарта.",
+        "type": "EVENT",
+        "startDate": "2026-09-08T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "бородино,кутузов,отечественнаявойна1812"
+      }
+    },
+    "14fb7495-b2e4-4743-8d48-3d26c86b86b7": {
+      "lentaId": "14fb7495-b2e4-4743-8d48-3d26c86b86b7",
+      "localPath": "Lenta/Holidays/Russia/Military/День победы русских полков в Куликовской битве.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.467Z",
+      "lastLocalModifiedAt": 1787554484093,
+      "fieldsHash": {
+        "title": "День победы русских полков в Куликовской битве",
+        "description": "### 21 сентября (8 сентября по ст. ст. 1380 г.) — Куликовская битва\n\nДень воинской славы России. Разгром ордынских войск темника Мамая объединенными русскими полками под предводительством великого князя Московского и Владимирского Дмитрия Ивановича (Донского) на Куликовом поле у слияния Дона и Непрядвы. Важнейший шаг к возрождению единого Русского государства.",
+        "type": "EVENT",
+        "startDate": "2026-09-21T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "дмитрийдонской,куликовополе,куликовскаябитва"
+      }
+    },
+    "6a7bcf50-df4f-4094-9b28-077c5899fd51": {
+      "lentaId": "6a7bcf50-df4f-4094-9b28-077c5899fd51",
+      "localPath": "Lenta/Holidays/Russia/Military/День Ракетных войск стратегического назначения (РВСН).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.507Z",
+      "lastLocalModifiedAt": 1787554484114,
+      "fieldsHash": {
+        "title": "День Ракетных войск стратегического назначения (РВСН)",
+        "description": "### 17 декабря — День РВСН\n\nПамятный день Вооруженных Сил РФ. Главный компонент стратегических ядерных сил Российской Федерации, гарант глобального ядерного сдерживания и стратегической стабильности. Девиз: **«После нас — тишина»**.",
+        "type": "EVENT",
+        "startDate": "2026-12-17T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military",
+        "tags": "армияроссии,рвсн,ядерныйщит"
+      }
+    },
+    "3de02c51-029f-424c-88fe-db2e4c62e109": {
+      "lentaId": "3de02c51-029f-424c-88fe-db2e4c62e109",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Рождество Христово.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.556Z",
+      "lastLocalModifiedAt": 1787554484159,
+      "fieldsHash": {
+        "title": "Рождество Христово",
+        "description": "### Рождество Господа Бога и Спаса нашего Иисуса Христа\n\nОдин из главных двунадесятых праздников христианского мира, знаменующий рождение Спасителя в Вифлееме от Девы Марии.\n\n#### Традиции и значение:\n- **Сочельник (6 января):** Строгий пост «до первой звезды», вкушение сочива (кутьи).\n- **Святки (7–18 января):** Двенадцать святых дней радости и милосердия до Крещенского сочельника.\n- **Тропарь:** *«Рождество Твое, Христе Боже наш, возсия мирови свет разума...»*\n\n> Праздник духовного обновления, мира и надежды.",
+        "type": "EVENT",
+        "startDate": "2026-01-07T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.great_feasts",
+        "tags": "православие,рождество,святки,христианство"
+      }
+    },
+    "7946a894-4d05-4e6e-9d72-e1442aa092ea": {
+      "lentaId": "7946a894-4d05-4e6e-9d72-e1442aa092ea",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Крещение Господне (Святое Богоявление).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.619Z",
+      "lastLocalModifiedAt": 1787554484319,
+      "fieldsHash": {
+        "title": "Крещение Господне (Святое Богоявление)",
+        "description": "### Крещение Господа Бога и Спаса нашего Иисуса Христа\n\nПраздник Богоявления, установленный в память крещения Иисуса Христа в реке Иордан Иоанном Предтечей. В этот момент миру явилась Пресвятая Троица: Бог Отец гласом с небес, Бог Сын крещением, Бог Дух Святой в виде голубя.\n\n- Великое освящение воды (Агиасма).\n- Традиционные крещенские купания в иорданях.",
+        "type": "EVENT",
+        "startDate": "2026-01-19T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.great_feasts",
+        "tags": "богоявление,водосвятие,крещение,православие"
+      }
+    },
+    "c69295be-c9fb-45e2-903a-f2558b2316d3": {
+      "lentaId": "c69295be-c9fb-45e2-903a-f2558b2316d3",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Сретение Господне.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.669Z",
+      "lastLocalModifiedAt": 1787554484350,
+      "fieldsHash": {
+        "title": "Сретение Господне",
+        "description": "### Сретение Господа нашего Иисуса Христа\n\nВстреча человечества в лице старца Симеона и пророчицы Анны с Богомладенцем Иисусом на сороковой день после Его Рождества в Иерусалимском храме.\n\n- Символ встречи Ветхого и Нового Заветов.\n- Празднование Дня православной молодежи.",
+        "type": "EVENT",
+        "startDate": "2026-02-15T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.great_feasts",
+        "tags": "православие,сретение,церковь"
+      }
+    },
+    "cc7789c9-65f6-4d61-91dd-8acd797c33de": {
+      "lentaId": "cc7789c9-65f6-4d61-91dd-8acd797c33de",
+      "localPath": "Lenta/Holidays/Christian/Fasts/Великий пост 2026.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.707Z",
+      "lastLocalModifiedAt": 1787554484380,
+      "fieldsHash": {
+        "title": "Великий пост 2026",
+        "description": "### Святая Четыредесятница и Страстная Седмица 2026 года\n\nГлавный и самый строгий многодневный пост в православном календаре, готовящий верующих к празднованию Пасхи Христовой.\n\n#### Структура Великого поста:\n1. **Святая Четыредесятница (40 дней):** В память сорокадневного поста Христа в пустыне.\n2. **Лазарева суббота и Вербное воскресенье.**\n3. **Страстная седмица (6 дней):** Воспоминание спасительных страданий и крестной смерти Спасителя.\n\n> Период духовного очищения, молитвы, покаяния и дел милосердия.",
+        "type": "PERIOD",
+        "startDate": "2026-02-23T00:00:00.000Z",
+        "endDate": "2026-04-11T00:00:00.000Z",
+        "primaryFolder": "Holidays/Christian/Fasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Fasts",
+        "taxonomy": "holidays.christian.fasts",
+        "tags": "великийпост,духовность,пост,православие"
+      }
+    },
+    "fce77d94-70b6-4886-9f7b-c57c0a12f8f8": {
+      "lentaId": "fce77d94-70b6-4886-9f7b-c57c0a12f8f8",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Вход Господень в Иерусалим (Вербное воскресенье).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.760Z",
+      "lastLocalModifiedAt": 1787554484413,
+      "fieldsHash": {
+        "title": "Вход Господень в Иерусалим (Вербное воскресенье)",
+        "description": "### Вход Господень в Иерусалим\n\nДвунадесятый переходящий праздник, отмечаемый ровно за неделю до Пасхи. Воспоминание торжественного входа Иисуса Христа в Иерусалим накануне Его крестных страданий. В русской традиции ветви финиковых пальм заменяются цветущими ветвями вербы.",
+        "type": "EVENT",
+        "startDate": "2026-04-05T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.easter_cycle",
+        "tags": "вербноевоскресенье,пасхальныйцикл"
+      }
+    },
+    "cc362eaf-f327-4ebc-910b-3dfaaed67e69": {
+      "lentaId": "cc362eaf-f327-4ebc-910b-3dfaaed67e69",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Светлое Христово Воскресение — ПАСХА 2026.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.796Z",
+      "lastLocalModifiedAt": 1787554484433,
+      "fieldsHash": {
+        "title": "Светлое Христово Воскресение — ПАСХА 2026",
+        "description": "### Светлое Христово Воскресение (Пасха) 2026\n\n**«Христос воскресе из мертвых, смертию смерть поправ, и сущим во гробех живот даровав!»**\n\nГлавное событие церковного года, победа жизни над смертью и искупление грехов человечества.\n\n#### Пасхальные традиции:\n- Ночное торжественное Пасхальное богослужение и крестный ход.\n- Освящение куличей, творожных пасох и крашеных яиц.\n- Светлая седмица — неделя непрекращающейся колокольной радости.",
+        "type": "EVENT",
+        "startDate": "2026-04-12T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.easter_cycle",
+        "tags": "пасха,пасха2026,православие,христосвоскресе"
+      }
+    },
+    "e0d56b8a-fb7f-4a5a-9492-07a5d35b78da": {
+      "lentaId": "e0d56b8a-fb7f-4a5a-9492-07a5d35b78da",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Вознесение Господне 2026.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.848Z",
+      "lastLocalModifiedAt": 1787554484459,
+      "fieldsHash": {
+        "title": "Вознесение Господне 2026",
+        "description": "### Вознесение Господне\n\nДвунадесятый праздник, совершаемый на 40-й день после Пасхи. Воспоминание вознесения воскресшего Иисуса Христа во плоти на небо в присутствии апостолов на Елеонской горе.",
+        "type": "EVENT",
+        "startDate": "2026-05-21T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.easter_cycle",
+        "tags": "вознесение,пасхальныйцикл"
+      }
+    },
+    "64879190-9086-4f33-a3f7-45f4f2500a51": {
+      "lentaId": "64879190-9086-4f33-a3f7-45f4f2500a51",
+      "localPath": "Lenta/Holidays/Christian/Feasts/День Святой Троицы (Пятидесятница) 2026.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.872Z",
+      "lastLocalModifiedAt": 1787554484493,
+      "fieldsHash": {
+        "title": "День Святой Троицы (Пятидесятница) 2026",
+        "description": "### День Святой Троицы (Пятидесятница)\n\nДвунадесятый праздник, совершаемый на 50-й день после Пасхи. Сошествие Святого Духа на апостолов в Сионской горнице. День рождения Новозаветной Церкви Христовой. Храмы украшаются свежей зеленью, березовыми ветвями и цветами.",
+        "type": "EVENT",
+        "startDate": "2026-05-31T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.easter_cycle",
+        "tags": "пятидесятница,святойдух,троица"
+      }
+    },
+    "1fb21993-5b77-416f-b704-7e6c66b5b4d8": {
+      "lentaId": "1fb21993-5b77-416f-b704-7e6c66b5b4d8",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Преображение Господне (Яблочный Спас).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.899Z",
+      "lastLocalModifiedAt": 1787554484527,
+      "fieldsHash": {
+        "title": "Преображение Господне (Яблочный Спас)",
+        "description": "### Преображение Господа Бога и Спаса нашего Иисуса Христа\n\nЯвление Божественного величия и славы Спасителя перед тремя ближайшими учениками (Петром, Иаковом и Иоанном) на горе Фавор. По церковной традиции в этот день освящаются плоды нового урожая (яблоки, виноград).",
+        "type": "EVENT",
+        "startDate": "2026-08-19T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.great_feasts",
+        "tags": "православие,преображение,яблочныйспас"
+      }
+    },
+    "3a688929-3159-436b-87eb-2682335be0b2": {
+      "lentaId": "3a688929-3159-436b-87eb-2682335be0b2",
+      "localPath": "Lenta/Holidays/Christian/Feasts/Успение Пресвятой Богородицы.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.927Z",
+      "lastLocalModifiedAt": 1787554484560,
+      "fieldsHash": {
+        "title": "Успение Пресвятой Богородицы",
+        "description": "### Успение Пресвятой Владычицы нашей Богородицы и Приснодевы Марии\n\nОдин из самых почитаемых на Руси праздников («Богородичная Пасха»). Завершение земного пути Пресвятой Девы и Ее телесное вознесение на небо Сыном Божьим.",
+        "type": "EVENT",
+        "startDate": "2026-08-28T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Christian/Feasts",
+        "folders": "Holidays/Christian,Holidays/Christian/Feasts",
+        "taxonomy": "holidays.christian.great_feasts",
+        "tags": "богородица,православие,успение"
+      }
+    },
+    "2e6bddfe-7caa-4e4e-8751-00cbd11af55f": {
+      "lentaId": "2e6bddfe-7caa-4e4e-8751-00cbd11af55f",
+      "localPath": "Lenta/Politics/International/Всемирный экономический форум в Давосе (WEF 2026).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:56.963Z",
+      "lastLocalModifiedAt": 1787554484589,
+      "fieldsHash": {
+        "title": "Всемирный экономический форум в Давосе (WEF 2026)",
+        "description": "### Всемирный экономический форум (Давос, Швейцария)\n\nЕжегодная встреча глав государств, лидеров крупнейших транснациональных корпораций, экономистов и общественных деятелей.\n\n#### Ключевые темы повестки:\n- Глобальная трансформация рынков труда под влиянием AGI и квантовых вычислений.\n- Реструктуризация цепочек поставок и энергетический переход.\n- Макроэкономическая стабильность и новые финансовые архитектуры.",
+        "type": "PERIOD",
+        "startDate": "2026-01-19T00:00:00.000Z",
+        "endDate": "2026-01-23T23:59:59.000Z",
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "wef2026,давос,мироваяэкономика,саммит"
+      }
+    },
+    "b4fe4c55-0c97-4458-9946-70a076dc75c6": {
+      "lentaId": "b4fe4c55-0c97-4458-9946-70a076dc75c6",
+      "localPath": "Lenta/Politics/International/Истечение срока Договора СНВ-III (New START Treaty).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.017Z",
+      "lastLocalModifiedAt": 1787554484617,
+      "fieldsHash": {
+        "title": "Истечение срока Договора СНВ-III (New START Treaty)",
+        "description": "### Истечение срока Договора между РФ и США о сокращении стратегических наступательных вооружений\n\nКритическая дата в архитектуре глобальной ядерной безопасности и контроля над вооружениями. Договор СНВ-III, продленный в 2021 году на пятилетний срок, завершает свое действие 5 февраля 2026 года.\n\n- Вопрос выработки новой модели стратегической стабильности с учетом многополярного мира и новых военных технологий.\n- Международные переговоры и дипломатические консультации по формату будущего контроля над ядерными арсеналами.",
+        "type": "EVENT",
+        "startDate": "2026-02-05T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "безопасность,геополитика,снв3,ядерныйпаритет"
+      }
+    },
+    "6016b4b9-8097-4dbd-b4cb-0b55c8522580": {
+      "lentaId": "6016b4b9-8097-4dbd-b4cb-0b55c8522580",
+      "localPath": "Lenta/Politics/International/XVIII Саммит БРИКС 2026 (BRICS Leaders Summit).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.060Z",
+      "lastLocalModifiedAt": 1787554484647,
+      "fieldsHash": {
+        "title": "XVIII Саммит БРИКС 2026 (BRICS Leaders Summit)",
+        "description": "### Саммит лидеров государств-участников БРИКС\n\nВстреча лидеров стран межгосударственного объединения БРИКС в расширенном составе. \n\n#### Повестка дня:\n- Развитие независимой платежно-расчетной системы BRICS Pay и расчеты в национальных валютах.\n- Новые транспортно-логистические коридоры (Север — Юг).\n- Институционализация категорий стран-партнеров БРИКС.",
+        "type": "PERIOD",
+        "startDate": "2026-06-15T00:00:00.000Z",
+        "endDate": "2026-06-18T23:59:59.000Z",
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "brics2026,брикс,геополитика,многополярныймир"
+      }
+    },
+    "89421f7d-dc26-4693-8925-b5fae5de213b": {
+      "lentaId": "89421f7d-dc26-4693-8925-b5fae5de213b",
+      "localPath": "Lenta/Holidays/Russia/Military/День Бородинского сражения русской армии.md",
+      "lastServerUpdatedAt": "2026-08-23T14:04:46.972Z",
+      "lastLocalModifiedAt": 1787554484671,
+      "fieldsHash": {
+        "title": "День Бородинского сражения русской армии",
+        "description": "Опиши генеральное сражение Отечественной войны 1812 года, мужество батареи Раевского, стойкость кавалерии Платова и Уварова, и знаменитые слова Кутузова.",
+        "type": "EVENT",
+        "startDate": "2026-09-08T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Holidays/Russia/Military",
+        "folders": "Holidays/Russia/Military",
+        "taxonomy": "holidays.russia.military.borodino",
+        "tags": "отечественнаявойна1812года"
+      }
+    },
+    "d35d8940-4f1c-4695-ba74-06304487d903": {
+      "lentaId": "d35d8940-4f1c-4695-ba74-06304487d903",
+      "localPath": "Lenta/Politics/International/81-я сессия Генеральной Ассамблеи ООН (UNGA 81).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.112Z",
+      "lastLocalModifiedAt": 1787554484703,
+      "fieldsHash": {
+        "title": "81-я сессия Генеральной Ассамблеи ООН (UNGA 81)",
+        "description": "### 81-я сессия Генеральной Ассамблеи Организации Объединенных Наций\n\nГлавное ежегодное дипломатическое событие года в штаб-квартире ООН в Нью-Йорке. Неделя высокого уровня с участием глав государств и правительств всех 193 стран-членов ООН.\n\n- Общие политические дебаты лидеров мировых держав.\n- Резолюции по международной безопасности, урегулированию конфликтов и устойчивому развитию.",
+        "type": "PERIOD",
+        "startDate": "2026-09-15T00:00:00.000Z",
+        "endDate": "2026-09-28T23:59:59.000Z",
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "unga81,дипломатия,международныеотношения,оон"
+      }
+    },
+    "1d36eacb-f40b-4c4b-b581-95ca2ddc9bfe": {
+      "lentaId": "1d36eacb-f40b-4c4b-b581-95ca2ddc9bfe",
+      "localPath": "Lenta/Politics/Elections/Выборы в Государственную Думу РФ IX созыва (Единый день голосования 2026).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.159Z",
+      "lastLocalModifiedAt": 1787554484738,
+      "fieldsHash": {
+        "title": "Выборы в Государственную Думу РФ IX созыва (Единый день голосования 2026)",
+        "description": "### Выборы депутатов Государственной Думы Федерального Собрания Российской Федерации IX созыва\n\nГлавное внутриполитическое событие года в России. Избрание 450 депутатов нижней палаты парламента на пятилетний срок (2026–2031 гг.) по смешанной избирательной системе:\n\n- **225 депутатов** — по федеральному избирательному округу (партийным спискам).\n- **225 депутатов** — по одномандатным избирательным округам.\n- Формирование парламентской коалиции и состава комитетов нового созыва.",
+        "type": "EVENT",
+        "startDate": "2026-09-20T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Politics/Elections",
+        "folders": "Politics,Politics/Elections,Politics/Russia",
+        "taxonomy": "politics.elections",
+        "tags": "выборы2026,госдума2026,едг2026,политикароссии"
+      }
+    },
+    "8b5fb3ca-d0f5-4792-8f1d-a348478924a1": {
+      "lentaId": "8b5fb3ca-d0f5-4792-8f1d-a348478924a1",
+      "localPath": "Lenta/Politics/Elections/Промежуточные выборы в Конгресс США (US Midterm Elections 2026).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.215Z",
+      "lastLocalModifiedAt": 1787554484767,
+      "fieldsHash": {
+        "title": "Промежуточные выборы в Конгресс США (US Midterm Elections 2026)",
+        "description": "### Промежуточные выборы в США (US Midterm Elections)\n\nОбщенациональные выборы в законодательный орган США в середине президентского срока.\n\n#### Избирательная кампания:\n- Переизбрание всех **435 мест** в Палате представителей США.\n- Переизбрание **33 из 100 мест** в Сенате США (Сенаторы Класса II).\n- Выборы губернаторов в 36 штатах.\n- Определение баланса сил между Республиканской и Демократической партиями и контроль над обеими палатами Конгресса.",
+        "type": "EVENT",
+        "startDate": "2026-11-03T00:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Politics/Elections",
+        "folders": "Politics,Politics/Elections,Politics/USA",
+        "taxonomy": "politics.elections",
+        "tags": "usmidterms,выборысша,конгресс,сенат"
+      }
+    },
+    "f72fe005-579f-4518-a689-812a45aa8335": {
+      "lentaId": "f72fe005-579f-4518-a689-812a45aa8335",
+      "localPath": "Lenta/Politics/International/XXI Саммит лидеров стран G20 2026.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.266Z",
+      "lastLocalModifiedAt": 1787554484793,
+      "fieldsHash": {
+        "title": "XXI Саммит лидеров стран G20 2026",
+        "description": "### Саммит лидеров «Группы двадцати» (G20 Summit 2026)\n\nСаммит руководителей 19 ведущих экономик мира, Европейского союза и Африканского союза. Обсуждение глобальной финансовой архитектуры, инвестиций в инфраструктуру, энергетической безопасности и международной торговли.",
+        "type": "PERIOD",
+        "startDate": "2026-11-14T00:00:00.000Z",
+        "endDate": "2026-11-15T23:59:59.000Z",
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "g20,мироваяполитика,саммитg20"
+      }
+    },
+    "c7f96458-7e79-4902-9652-0af44f36dbae": {
+      "lentaId": "c7f96458-7e79-4902-9652-0af44f36dbae",
+      "localPath": "Lenta/Politics/International/Конференция ООН по климату COP31 (2026 UN Climate Change Conference).md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.306Z",
+      "lastLocalModifiedAt": 1787554484813,
+      "fieldsHash": {
+        "title": "Конференция ООН по климату COP31 (2026 UN Climate Change Conference)",
+        "description": "### 31-я Конференция сторон Рамочной конвенции ООН об изменении климата (COP31)\n\nКрупнейший экологический и геополитический форум мира по выполнению Парижского соглашения, сокращению углеродного следа и финансированию зеленых технологий.",
+        "type": "PERIOD",
+        "startDate": "2026-11-09T00:00:00.000Z",
+        "endDate": "2026-11-20T23:59:59.000Z",
+        "primaryFolder": "Politics/International",
+        "folders": "Politics,Politics/International",
+        "taxonomy": "politics.international",
+        "tags": "cop31,климат,оон,экология"
+      }
+    },
+    "16d6776f-91cf-44c4-b4ed-3a1ad6fc5f9c": {
+      "lentaId": "16d6776f-91cf-44c4-b4ed-3a1ad6fc5f9c",
+      "localPath": "Lenta/Strategy/Planning/Q4 Content Strategy Review.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.350Z",
+      "lastLocalModifiedAt": 1787554484850,
+      "fieldsHash": {
+        "title": "Q4 Content Strategy Review",
+        "description": "### Strategy Review & Goals\nEvaluating the performance metrics for Q3 and aligning editorial calendars for the upcoming holiday push.\n\n1. **Taxonomy Alignment:** Ensure taxonomy tags are strictly adhered to for cross-referencing across Obsidian and Admin CMS.\n2. **Performance Metrics:** Review read times, syndication reach, and sync latency.",
+        "type": "PERIOD",
+        "startDate": "2026-11-01T00:00:00.000Z",
+        "endDate": "2026-11-30T23:59:59.000Z",
+        "primaryFolder": "Strategy/Planning",
+        "folders": "Projects/Lenta,Strategy/Planning",
+        "taxonomy": "strategy.planning",
+        "tags": "q4,roadmap,strategy"
+      }
+    },
+    "b13b35fe-322c-4533-aacf-a11710e81b5e": {
+      "lentaId": "b13b35fe-322c-4533-aacf-a11710e81b5e",
+      "localPath": "Lenta/Design/Tokens/Design System V2 Tokens & Olive Gold Palette.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.403Z",
+      "lastLocalModifiedAt": 1787554484885,
+      "fieldsHash": {
+        "title": "Design System V2 Tokens & Olive Gold Palette",
+        "description": "### New Palette Configuration\n\n```json\n{\n  \"colors\": {\n    \"primary\": \"#c9cd58\",\n    \"surface\": \"#121414\",\n    \"secondary\": \"#c9c8a5\",\n    \"tertiary\": \"#a4d0bf\"\n  },\n  \"fonts\": {\n    \"ui\": \"Inter\",\n    \"metadata\": \"JetBrains Mono\"\n  }\n}\n```\n\nAll components now adhere to the 4px base unit grid and Level 1/Level 2 elevation borders.",
+        "type": "SINGLE",
+        "startDate": "2026-10-24T12:00:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Design/Tokens",
+        "folders": "Design/Tokens,Projects/Lenta",
+        "taxonomy": "design.tokens",
+        "tags": "designsystem,tokens,ui"
+      }
+    },
+    "8028d110-2794-4564-9537-f861f3692ca3": {
+      "lentaId": "8028d110-2794-4564-9537-f861f3692ca3",
+      "localPath": "Lenta/Operations/Infrastructure/Server Migration & Ingestion Pipeline Checklist.md",
+      "lastServerUpdatedAt": "2026-08-23T14:03:57.440Z",
+      "lastLocalModifiedAt": 1787554484901,
+      "fieldsHash": {
+        "title": "Server Migration & Ingestion Pipeline Checklist",
+        "description": "### Infrastructure Step-by-Step\n- [x] Multi-Provider calendar ingestion services initialized\n- [x] TMDB Marvel radar with high-res CDN posters\n- [x] Computus Orthodox Easter & Russian statutory holiday engines",
+        "type": "SINGLE",
+        "startDate": "2026-10-23T09:15:00.000Z",
+        "endDate": null,
+        "primaryFolder": "Operations/Infrastructure",
+        "folders": "Operations/Infrastructure",
+        "taxonomy": "devops.infrastructure",
+        "tags": "devops,postgres,sync"
+      }
+    }
+  }
+}

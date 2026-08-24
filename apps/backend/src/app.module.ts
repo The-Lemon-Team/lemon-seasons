@@ -9,6 +9,7 @@ import { FoldersModule } from './folders/folders.module';
 import { SyncModule } from './sync/sync.module';
 import { StorageModule } from './storage/storage.module';
 import { IngestionModule } from './ingestion/ingestion.module';
+import { KeysModule } from './keys/keys.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
     SyncModule,
     StorageModule,
     IngestionModule,
+    KeysModule,
   ],
 })
 export class AppModule {}

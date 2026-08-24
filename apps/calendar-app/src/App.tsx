@@ -17,10 +17,12 @@ import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { CreateNoteModal } from './components/CreateNoteModal';
 import { PrivateContainersModal } from './components/PrivateContainersModal';
+import { KeyManagementModal } from './components/KeyManagementModal';
 import { ObsidianContainersView } from './components/ObsidianContainersView';
 import { FolderManagerView } from './components/FolderManagerView';
 import { ObsidianContainersProvider } from './context/ObsidianContainersContext';
 import { FoldersProvider } from './context/FoldersContext';
+import { UserKeysProvider } from './context/UserKeysContext';
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -55,6 +57,7 @@ const CalendarAppInner: React.FC = () => {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [isPrivateContainersOpen, setIsPrivateContainersOpen] = useState(false);
+  const [isKeysModalOpen, setIsKeysModalOpen] = useState(false);
 
   // Queries
   const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes(filters);
@@ -89,6 +92,7 @@ const CalendarAppInner: React.FC = () => {
         onSetView={setView}
         onOpenQuickAdd={() => setIsCreateNoteOpen(true)}
         onOpenPrivateContainers={() => setIsPrivateContainersOpen(true)}
+        onOpenKeysModal={() => setIsKeysModalOpen(true)}
         onToggleFilters={() => setIsFilterOpen((prev) => !prev)}
         isFilterOpen={isFilterOpen}
         activeFilterCount={activeFilterCount}
@@ -236,7 +240,13 @@ const CalendarAppInner: React.FC = () => {
         onClose={() => setIsPrivateContainersOpen(false)}
       />
 
-      {/* 7. Auth Modal */}
+      {/* 7. Key Management Modal */}
+      <KeyManagementModal
+        isOpen={isKeysModalOpen}
+        onClose={() => setIsKeysModalOpen(false)}
+      />
+
+      {/* 8. Auth Modal */}
       <AuthModal />
     </div>
   );
@@ -246,11 +256,13 @@ export const App: React.FC = () => {
   return (
     <I18nProvider>
       <AuthProvider>
-        <ObsidianContainersProvider>
-          <FoldersProvider>
-            <CalendarAppInner />
-          </FoldersProvider>
-        </ObsidianContainersProvider>
+        <UserKeysProvider>
+          <ObsidianContainersProvider>
+            <FoldersProvider>
+              <CalendarAppInner />
+            </FoldersProvider>
+          </ObsidianContainersProvider>
+        </UserKeysProvider>
       </AuthProvider>
     </I18nProvider>
   );

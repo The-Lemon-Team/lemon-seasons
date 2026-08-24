@@ -92,6 +92,8 @@ export interface LentaContainerSummaryDto {
   currentCommit?: string;
   lastCommitMessage?: string;
   lastCommitDate?: string;
+  isPublic?: boolean;
+  visibility?: 'public' | 'private';
 }
 
 export interface FileDiffItemDto {
@@ -108,12 +110,19 @@ export interface FileDiffItemDto {
 }
 
 export interface LentaPluginSettings {
+  /** Base URL of the Project Lenta NestJS backend (port 3001 by default). */
   serverUrl: string;
+  /** Bearer token for authenticating with the Lenta backend. */
   authToken?: string;
   username?: string;
   userEmail?: string;
   isPrivateContainerConnected?: boolean;
   activeContainerId: string;
+  /** Key of the connected Obsidian container. */
+  containerKey: string;
+  /** Optional metadata of the connected container */
+  connectedContainerName?: string;
+  connectedContainerType?: 'git' | 'simple';
   vaultRootFolder: string;
   autoSyncIntervalMinutes: number;
   defaultFeedSlug: string;
@@ -121,6 +130,16 @@ export interface LentaPluginSettings {
   lastSyncedCommit: string;
   defaultConflictStrategy: ConflictStrategy;
   autoSyncOnEdit: boolean;
+
+  /** Base URL of the Obsidian Container Sync Server (port 3000 by default). */
+  containerServerUrl: string;
+  /**
+   * API key sent as `X-Api-Key` header to the container sync server.
+   * Must match the `API_KEY` env var set on the server.
+   * Leave empty when the server runs in open mode (no API_KEY set).
+   */
+  containerApiKey: string;
+  containerPrivacyFilter: 'all' | 'public' | 'private';
 }
 
 export const DEFAULT_SETTINGS: LentaPluginSettings = {
@@ -129,7 +148,10 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   username: '',
   userEmail: '',
   isPrivateContainerConnected: false,
-  activeContainerId: 'feed-all',
+  activeContainerId: '',
+  containerKey: '',
+  connectedContainerName: '',
+  connectedContainerType: 'git',
   vaultRootFolder: 'Lenta',
   autoSyncIntervalMinutes: 0,
   defaultFeedSlug: '',
@@ -137,5 +159,51 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   lastSyncedCommit: '',
   defaultConflictStrategy: 'create_backup_fork',
   autoSyncOnEdit: false,
+  containerServerUrl: 'http://localhost:3000',
+  containerApiKey: '',
+  containerPrivacyFilter: 'all',
 };
+
+export interface CommitSummaryDto {
+  hash: string;
+  shortHash: string;
+  author: string;
+  authorEmail?: string;
+  date: string;
+  relativeDate?: string;
+  message: string;
+  body?: string;
+  filesChanged?: number;
+  insertions?: number;
+  deletions?: number;
+}
+
+export interface CommitFileDiffDto {
+  path: string;
+  status: 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'unmodified';
+  patch?: string;
+  insertions?: number;
+  deletions?: number;
+}
+
+export interface CommitDetailDto extends CommitSummaryDto {
+  files: CommitFileDiffDto[];
+}
+
+export interface FileVersionDto {
+  commitHash: string;
+  shortHash: string;
+  path: string;
+  content: string;
+  author: string;
+  date: string;
+  message: string;
+  patch?: string;
+}
+
+export interface RestoreFileVersionRequestDto {
+  path: string;
+  commitHash: string;
+  message?: string;
+}
 

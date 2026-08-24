@@ -1,0 +1,6 @@
+# Ignore everything inside the vault except the .obsidian config
+# (Obsidian will generate workspace state files — we don't need those tracked)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/graph.json
+.obsidian/cache

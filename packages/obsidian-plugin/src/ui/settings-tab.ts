@@ -16,73 +16,40 @@ export class LentaSettingTab extends PluginSettingTab {
 
     containerEl.createEl('h2', { text: '🍋 Lemon Lenta Plugin Settings' });
 
-    // --- Authentication & Private Containers Section ---
-    containerEl.createEl('h3', { text: '🔐 Authentication & Private Vault Container' });
-    const authStatusEl = containerEl.createEl('div', {
-      cls: 'lenta-auth-status-box',
+    // ── Connections & Containers Banner Card ────────────────────────────────
+    const card = containerEl.createDiv({ cls: 'lenta-settings-connections-card' });
+    card.style.cssText = [
+      'padding: 16px 18px',
+      'margin-bottom: 24px',
+      'border-radius: 10px',
+      'border: 1px solid rgba(201, 205, 88, 0.4)',
+      'background: #1b1e1e',
+      'box-shadow: 0 4px 14px rgba(0,0,0,0.3)',
+    ].join(';');
+
+    const cardTitle = card.createEl('h3', { text: '🔌 Connections & Obsidian Containers' });
+    cardTitle.style.cssText = 'margin-top:0; margin-bottom:6px; color:#c9cd58; font-size:1.1em;';
+
+    const activeContainer = this.plugin.settings.connectedContainerName || this.plugin.settings.activeContainerId || this.plugin.settings.containerKey;
+    const authUser = this.plugin.settings.userEmail;
+
+    const desc = card.createEl('p', { cls: 'setting-item-description' });
+    desc.style.cssText = 'margin-bottom: 12px; color: #aaa; font-size: 0.9em;';
+    desc.innerHTML = `Configure user authentication, select active Obsidian containers, connect by container key, and manage vault folder mappings in the dedicated Connections modal.<br/><br/>` +
+      `<strong>Current Status:</strong> ${activeContainer ? `✅ Connected to <code>${activeContainer}</code>` : '⚠️ No container connected'} ` +
+      `(${authUser ? `Auth: ${authUser}` : 'Unauthenticated'})`;
+
+    const openBtn = card.createEl('button', {
+      cls: 'mod-cta lenta-btn-lemon',
+      text: '🔌 Open Connections Modal',
     });
-    authStatusEl.style.padding = '10px 14px';
-    authStatusEl.style.marginBottom = '14px';
-    authStatusEl.style.borderRadius = '6px';
-    authStatusEl.style.border = '1px solid #333';
-    authStatusEl.style.background = this.plugin.settings.authToken ? '#1a291e' : '#222';
-    authStatusEl.style.color = this.plugin.settings.authToken ? '#8ee29a' : '#bbb';
+    openBtn.style.cssText = 'padding: 8px 16px; font-weight: 600; cursor: pointer;';
+    openBtn.onclick = () => {
+      this.plugin.openConnectionsModal();
+    };
 
-    if (this.plugin.settings.authToken) {
-      authStatusEl.innerHTML = `<strong>Status:</strong> Connected with Private Privileges (${this.plugin.settings.userEmail || 'Member User'})`;
-    } else {
-      authStatusEl.innerHTML = `<strong>Status:</strong> Public Guest Mode (Unauthenticated). Enter your API token to connect your private container.`;
-    }
-
-    new Setting(containerEl)
-      .setName('Personal API Token / Access Key')
-      .setDesc('Bearer authentication token from your Project Lenta user profile to access private containers.')
-      .addText((text) =>
-        text
-          .setPlaceholder('eyJh...')
-          .setValue(this.plugin.settings.authToken || '')
-          .onChange(async (val) => {
-            this.plugin.settings.authToken = val.trim();
-            this.plugin.settings.isPrivateContainerConnected = Boolean(val.trim());
-            await this.plugin.saveSettings();
-          })
-      )
-      .addButton((button) =>
-        button
-          .setButtonText(this.plugin.settings.authToken ? 'Validate Session' : 'Sign In')
-          .setCta()
-          .onClick(async () => {
-            if (!this.plugin.settings.authToken) {
-              this.plugin.settings.authToken = 'lenta_jwt_demo_token_user_2026';
-              this.plugin.settings.userEmail = 'member@lemon.team';
-              this.plugin.settings.isPrivateContainerConnected = true;
-              await this.plugin.saveSettings();
-              this.display();
-              return;
-            }
-            const res = await this.plugin.apiClient.validateToken(this.plugin.settings.authToken);
-            if (res.success) {
-              this.plugin.settings.userEmail = res.user?.email || 'member@lemon.team';
-              this.plugin.settings.isPrivateContainerConnected = true;
-              await this.plugin.saveSettings();
-              this.display();
-            }
-          })
-      )
-      .addButton((button) =>
-        button
-          .setButtonText('Disconnect')
-          .onClick(async () => {
-            this.plugin.settings.authToken = '';
-            this.plugin.settings.userEmail = '';
-            this.plugin.settings.isPrivateContainerConnected = false;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-      );
-
-    // --- Server & Sync Configuration ---
-    containerEl.createEl('h3', { text: '⚙️ Server & Vault Configuration' });
+    // ── Core Server & Sync Settings Section ─────────────────────────────────
+    containerEl.createEl('h3', { text: '⚙️ Core Server & Sync Settings' });
 
     new Setting(containerEl)
       .setName('Lenta Server URL')
@@ -93,19 +60,6 @@ export class LentaSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.serverUrl)
           .onChange(async (val) => {
             this.plugin.settings.serverUrl = val.trim();
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName('Vault Root Directory')
-      .setDesc('Folder in your Obsidian vault where synced Lenta notes are stored.')
-      .addText((text) =>
-        text
-          .setPlaceholder('Lenta')
-          .setValue(this.plugin.settings.vaultRootFolder)
-          .onChange(async (val) => {
-            this.plugin.settings.vaultRootFolder = val.trim();
             await this.plugin.saveSettings();
           })
       );
@@ -139,6 +93,18 @@ export class LentaSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
+      .setName('Auto-Sync on File Edit')
+      .setDesc('Automatically push changes to Lenta server when editing a tracked Markdown file.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoSyncOnEdit || false)
+          .onChange(async (val) => {
+            this.plugin.settings.autoSyncOnEdit = val;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
       .setName('Last Synced Timestamp')
       .setDesc('ISO timestamp of the last delta synchronization.')
       .addText((text) =>
@@ -148,4 +114,3 @@ export class LentaSettingTab extends PluginSettingTab {
       );
   }
 }
-

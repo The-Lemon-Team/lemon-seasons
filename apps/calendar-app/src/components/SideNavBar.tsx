@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   LogOut,
   Sparkles,
+  Key,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,7 @@ interface SideNavBarProps {
   onSetView: (view: CalendarViewMode) => void;
   onOpenQuickAdd?: () => void;
   onOpenPrivateContainers?: () => void;
+  onOpenKeysModal?: () => void;
   onToggleFilters: () => void;
   isFilterOpen: boolean;
   activeFilterCount: number;
@@ -36,6 +38,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   onSetView,
   onOpenQuickAdd,
   onOpenPrivateContainers,
+  onOpenKeysModal,
   onToggleFilters,
   isFilterOpen,
   activeFilterCount,
@@ -234,13 +237,24 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={logout}
-              title={t.logout}
-              className="p-1.5 rounded hover:bg-[#242828] text-[#93927e] hover:text-[#fca5a5] transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={onOpenKeysModal}
+                title={t.keyManagementTitle}
+                className="p-1.5 rounded hover:bg-[#242828] text-[#c9cd58] hover:text-[#e5e971] transition-colors cursor-pointer"
+              >
+                <Key className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                title={t.logout}
+                className="p-1.5 rounded hover:bg-[#242828] text-[#93927e] hover:text-[#fca5a5] transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Quick Role Test Switcher Buttons */}

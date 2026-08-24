@@ -8,6 +8,7 @@ import {
   FileDiffItemDto,
 } from '../types';
 import { ConflictResolutionModal } from './conflict-modal';
+import { GitHistoryModal } from './git-history-modal';
 
 export class LentaSyncModal extends Modal {
   private apiClient: LentaApiClient;
@@ -102,23 +103,44 @@ export class LentaSyncModal extends Modal {
       text: 'Push & pull chronological notes between Project Lenta server and Obsidian vault.',
     });
 
-    // ── Container / Feed Selector ─────────────────────────────────────────
-    const containerSection = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
-    new Setting(containerSection)
-      .setName('Active Feed / Container Scope')
-      .setDesc('Choose which feed or dynamic preset to sync')
-      .addDropdown((dropdown) => {
-        for (const c of this.containers) {
-          dropdown.addOption(c.id, `${c.name} (${c.totalNotes} notes)`);
-        }
-        dropdown.setValue(this.activeContainerId);
-        dropdown.onChange(async (val) => {
-          this.activeContainerId = val;
-          this.settings.activeContainerId = val;
-          await this.onSaveSettings();
-          this.render();
-        });
+    // If no container key is connected, show Connect by Key prompt
+    if (!this.settings.containerKey) {
+      const connectBox = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
+      connectBox.createEl('h3', { text: '🔑 Connect Container by Key' });
+      connectBox.createEl('p', {
+        text: 'No container key connected. Enter your container key below to connect and sync with your container.',
+        cls: 'setting-item-description',
       });
+
+      new Setting(connectBox)
+        .setName('Container Key')
+        .setDesc('Enter secret key assigned to your Obsidian container.')
+        .addText((text) =>
+          text.setPlaceholder('e.g. cont-personal-vault').onChange((val) => {
+            this.settings.containerKey = val.trim();
+          })
+        )
+        .addButton((btn) =>
+          btn
+            .setButtonText('Connect Container')
+            .setCta()
+            .onClick(async () => {
+              if (!this.settings.containerKey) return;
+              await this.onSaveSettings();
+              await this.loadContainers();
+            })
+        );
+      return;
+    }
+
+    // ── Connected Container Section ─────────────────────────────────────────
+    const containerSection = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
+    const currentContainer = this.containers.find((c) => c.id === this.activeContainerId) || this.containers[0];
+    const containerName = currentContainer?.name || this.settings.connectedContainerName || 'Connected Container';
+
+    const infoBox = containerSection.createDiv({ cls: 'lenta-connected-key-badge' });
+    infoBox.style.cssText = 'padding: 8px 12px; background: #1a291e; border: 1px solid #333; border-radius: 6px; color: #8ee29a; font-size: 0.9em; margin-bottom: 10px;';
+    infoBox.innerHTML = `<strong>Connected Container:</strong> ${containerName} <span style="opacity:0.75; font-family: monospace;">(Key: ${this.settings.containerKey.slice(0, 14)}...)</span>`;
 
     // ── Primary Action Bar: Pull | Push Active ────────────────────────────
     const actionsBar = contentEl.createDiv({ cls: 'lenta-sync-actions-bar' });
@@ -210,6 +232,22 @@ export class LentaSyncModal extends Modal {
       this.isPushing = false;
       await this.loadChangedFiles();
     };
+
+    // ▸ Git History & Restore Button (Available for Git containers)
+    if (currentContainer?.type === 'git' || this.settings.connectedContainerType === 'git' || this.settings.containerKey) {
+      const historyBtn = actionsBar.createEl('button', {
+        text: '📜 Git History & Restore',
+        cls: 'lenta-action-btn',
+      });
+      historyBtn.onclick = () => {
+        new GitHistoryModal(
+          this.app,
+          this.apiClient,
+          this.activeContainerId || this.settings.containerKey || 'main-git-vault',
+          containerName
+        ).open();
+      };
+    }
 
     // ── Status Box ─────────────────────────────────────────────────────────
     if (this.statusMessage) {

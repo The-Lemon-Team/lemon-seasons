@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import { copyFileSync, existsSync } from "fs";
 
 const banner =
 `/*
@@ -10,6 +11,32 @@ Project Lenta (Lemon Calendarium) Obsidian Plugin
 `;
 
 const prod = (process.argv[2] === "production");
+
+// Dev mode: output directly into the test vault so Obsidian hot-reloads the plugin.
+const VAULT_PLUGIN_DIR = "test-vault/.obsidian/plugins/lemon-lenta-sync";
+const outfile = prod ? "main.js" : `${VAULT_PLUGIN_DIR}/main.js`;
+
+/** After each build, sync all output files into the test vault plugin folder. */
+const syncAssetsPlugin = {
+  name: "sync-assets",
+  setup(build) {
+    build.onEnd(() => {
+      try {
+        if (existsSync("main.js")) {
+          copyFileSync("main.js", `${VAULT_PLUGIN_DIR}/main.js`);
+        }
+        if (existsSync("manifest.json")) {
+          copyFileSync("manifest.json", `${VAULT_PLUGIN_DIR}/manifest.json`);
+        }
+        if (existsSync("styles.css")) {
+          copyFileSync("styles.css", `${VAULT_PLUGIN_DIR}/styles.css`);
+        }
+      } catch (err) {
+        console.error("Failed to sync assets to test-vault:", err);
+      }
+    });
+  },
+};
 
 const context = await esbuild.context({
   banner: {
@@ -38,7 +65,8 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: "main.js",
+  outfile,
+  plugins: [syncAssetsPlugin],
 });
 
 if (prod) {

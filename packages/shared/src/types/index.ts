@@ -364,12 +364,35 @@ export interface CalendarFilterState {
 // User & Privacy Access Types
 export type UserRole = 'guest' | 'user' | 'admin';
 
+export type KeyProvider = 'obsidian' | 'telegram' | 'github' | 'api' | (string & {});
+
+export interface KeyProviderMeta {
+  id: KeyProvider;
+  name: string;
+  icon: string;
+  description: string;
+  keyPrefix: string;
+  available: boolean;
+}
+
+export interface UserKey {
+  id: string;
+  userId: string;
+  name: string;
+  provider: KeyProvider;
+  key: string;
+  createdAt: string;
+  lastUsedAt?: string;
+  isRevoked?: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   avatar?: string;
+  keys?: UserKey[];
   createdAt: string;
 }
 

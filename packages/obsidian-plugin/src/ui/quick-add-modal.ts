@@ -102,72 +102,24 @@ export class LentaQuickAddModal extends Modal {
         });
       });
 
-    // 2. Feed Selector
+    // 2. Target Container Folder (replaces separate Feed dropdown, limited to 1 folder)
     new Setting(contentEl)
-      .setName('Feed')
-      .setDesc('Select target Lenta chronological feed')
+      .setName('Target Container Folder')
+      .setDesc('Select the container folder for note placement (Obsidian rule: limit 1 folder).')
       .addDropdown((dropdown) => {
-        for (const feed of this.feeds) {
-          dropdown.addOption(feed.id, `${feed.title} (${feed.slug})`);
+        const settings = this.getSettings();
+        const activeContainerName = settings.connectedContainerName || settings.activeContainerId || 'Main Container';
+        dropdown.addOption('root', `📁 / (Root: ${activeContainerName})`);
+        
+        for (const folder of this.folders) {
+          dropdown.addOption(folder.id, `📁 ${folder.path}`);
         }
-        dropdown.setValue(this.feedId);
+
+        dropdown.setValue(this.selectedFolderId || 'root');
         dropdown.onChange((val) => {
-          this.feedId = val;
+          this.selectedFolderId = val === 'root' ? '' : val;
         });
       });
-
-    // 3. Note Type
-    new Setting(contentEl)
-      .setName('Note Type')
-      .setDesc('Chronological category classification')
-      .addDropdown((dropdown) => {
-        const types: NoteType[] = ['EVENT', 'PERIOD', 'SINGLE', 'FILM_RELEASE', 'MENTION', 'DONE'];
-        for (const t of types) {
-          dropdown.addOption(t, t);
-        }
-        dropdown.setValue(this.type);
-        dropdown.onChange((val) => {
-          this.type = val as NoteType;
-        });
-      });
-
-    // 4. Start Date & End Date
-    new Setting(contentEl)
-      .setName('Start Date / Time')
-      .setDesc('ISO timestamp or datetime')
-      .addText((text) => {
-        text.inputEl.type = 'datetime-local';
-        text.setValue(this.startDate).onChange((val) => {
-          this.startDate = val;
-        });
-      });
-
-    new Setting(contentEl)
-      .setName('End Date / Time (Optional)')
-      .setDesc('End time for PERIOD and multi-day events')
-      .addText((text) => {
-        text.inputEl.type = 'datetime-local';
-        text.setValue(this.endDate).onChange((val) => {
-          this.endDate = val;
-        });
-      });
-
-    // 5. Folder
-    if (this.folders.length > 0) {
-      new Setting(contentEl)
-        .setName('Folder Placement')
-        .setDesc('Organize into Lenta hierarchy folder')
-        .addDropdown((dropdown) => {
-          dropdown.addOption('', '(No Folder / Root)');
-          for (const folder of this.folders) {
-            dropdown.addOption(folder.id, `📁 ${folder.path}`);
-          }
-          dropdown.setValue(this.selectedFolderId);
-          dropdown.onChange((val) => {
-            this.selectedFolderId = val;
-          });
-        });
-    }
 
     // 6. Taxonomy Tag
     if (this.taxonomyNodes.length > 0) {
@@ -230,9 +182,11 @@ export class LentaQuickAddModal extends Modal {
         new Notice('Please enter a note title.');
         return;
       }
+      if (!this.feedId && this.feeds.length > 0) {
+        this.feedId = this.feeds[0].id;
+      }
       if (!this.feedId) {
-        new Notice('Please select a feed.');
-        return;
+        this.feedId = 'feed-default';
       }
 
       submitBtn.disabled = true;

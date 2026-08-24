@@ -5,6 +5,7 @@ import { LentaFrontmatterUtil } from './services/lenta-frontmatter';
 import { LentaPluginSettings, DEFAULT_SETTINGS } from './types';
 import { LentaQuickAddModal } from './ui/quick-add-modal';
 import { LentaSyncModal } from './ui/sync-modal';
+import { LentaConnectionsModal } from './ui/connections-modal';
 import { LentaSidebarView, VIEW_TYPE_LENTA_SIDEBAR } from './ui/sidebar-view';
 import { LentaSettingTab } from './ui/settings-tab';
 
@@ -23,7 +24,10 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
     this.apiClient = new LentaApiClient(
       () => this.settings.serverUrl,
-      () => this.settings.authToken
+      () => this.settings.authToken,
+      () => this.settings.containerServerUrl,
+      () => this.settings.containerApiKey,
+      () => this.settings.containerKey
     );
     this.syncEngine = new LentaSyncEngine(
       this.app,
@@ -41,7 +45,8 @@ export default class WorkspaceLentaPlugin extends Plugin {
           this.apiClient,
           () => this.settings,
           () => this.openQuickAddModal(),
-          () => this.openSyncModal()
+          () => this.openSyncModal(),
+          () => this.openConnectionsModal()
         )
     );
 
@@ -50,6 +55,11 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.openSyncModal();
     });
     syncRibbonIcon.addClass('lenta-ribbon-btn');
+
+    const connRibbonIcon = this.addRibbonIcon('link-2', '🍋 Lemon Lenta: Connections & Containers', () => {
+      this.openConnectionsModal();
+    });
+    connRibbonIcon.addClass('lenta-ribbon-btn');
 
     const addRibbonIcon = this.addRibbonIcon('plus-circle', '🍋 Lemon Lenta: Quick Add Note', () => {
       this.openQuickAddModal();
@@ -63,6 +73,14 @@ export default class WorkspaceLentaPlugin extends Plugin {
     this.statusBarItemEl.onclick = () => this.openSyncModal();
 
     // 4. Command Palette Commands
+    this.addCommand({
+      id: 'lenta-open-connections-modal',
+      name: 'Open Connections & Containers Modal',
+      callback: () => {
+        this.openConnectionsModal();
+      },
+    });
+
     this.addCommand({
       id: 'lenta-open-sync-hub',
       name: 'Open Sync Hub & Changes Frame',
@@ -159,6 +177,32 @@ export default class WorkspaceLentaPlugin extends Plugin {
         }, this.AUTO_SYNC_DELAY_MS);
 
         this.autoSyncTimers.set(file.path, timer);
+      })
+    );
+
+    // 8. Track Vault Deletions: Disconnect Container on Container Folder Deletion
+    this.registerEvent(
+      this.app.vault.on('delete', async (file) => {
+        const activeContainer = this.settings.activeContainerId || this.settings.containerKey;
+        const containerName = this.settings.connectedContainerName;
+        const rootFolder = this.settings.vaultRootFolder || 'Lenta';
+
+        if (!activeContainer) return;
+
+        const containerFolderPath = `${rootFolder}/${containerName || activeContainer}`;
+        const matchPath = file.path;
+
+        if (
+          matchPath === containerFolderPath ||
+          matchPath === `${rootFolder}/${activeContainer}` ||
+          (matchPath.startsWith(rootFolder) && (matchPath.includes(activeContainer) || (containerName && matchPath.includes(containerName))))
+        ) {
+          this.settings.activeContainerId = '';
+          this.settings.containerKey = '';
+          this.settings.connectedContainerName = '';
+          await this.saveSettings();
+          new Notice(`🍋 Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
+        }
       })
     );
 
@@ -264,6 +308,15 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.app,
       this.apiClient,
       this.syncEngine,
+      this.settings,
+      () => this.saveSettings()
+    ).open();
+  }
+
+  openConnectionsModal() {
+    new LentaConnectionsModal(
+      this.app,
+      this.apiClient,
       this.settings,
       () => this.saveSettings()
     ).open();

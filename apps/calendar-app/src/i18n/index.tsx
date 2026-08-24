@@ -184,6 +184,7 @@ export interface Translations {
   privateContainers: string;
   privateContainersSubtitle: string;
   privateVaultNotice: string;
+
   tokenCopied: string;
   copyToken: string;
   generateNewToken: string;
@@ -195,6 +196,21 @@ export interface Translations {
   noteType: string;
   noteFeed: string;
   createNoteSuccess: string;
+
+  // Key Management & API Tokens
+  keyManagementTitle: string;
+  keyManagementSubtitle: string;
+  keyProvider: string;
+  keyNameLabel: string;
+  keyNamePlaceholder: string;
+  generateKeyBtn: string;
+  activeKeysTitle: string;
+  noKeysFound: string;
+  revokeKeyConfirm: string;
+  keyRevokedSuccess: string;
+  keyGeneratedNotice: string;
+  copiedToClipboard: string;
+
 
   // Obsidian Page & Connections
   obsidianHub: string;
@@ -460,6 +476,7 @@ export const ruTranslations: Translations = {
   privateContainers: 'Приватные контейнеры Obsidian',
   privateContainersSubtitle: 'Управление защищенными хранилищами заметок и API-токенами синхронизации',
   privateVaultNotice: 'Приватный режим активен. Ваши заметки в этих контейнерах изолированы и доступны только вам.',
+
   tokenCopied: 'Токен скопирован в буфер обмена!',
   copyToken: 'Скопировать токен',
   generateNewToken: 'Сгенерировать новый ключ',
@@ -471,6 +488,21 @@ export const ruTranslations: Translations = {
   noteType: 'Тип записи',
   noteFeed: 'Канал / Лента',
   createNoteSuccess: 'Заметка успешно сохранена!',
+
+  // Key Management & API Tokens
+  keyManagementTitle: 'Ключи доступа и интеграции',
+  keyManagementSubtitle: 'Генерация и управление персональными ключами для работы с приложением и сторонними сервисами',
+  keyProvider: 'Провайдер ключа',
+  keyNameLabel: 'Название / Назначение ключа',
+  keyNamePlaceholder: 'Например: Мой Obsidian Vault на ноутбуке',
+  generateKeyBtn: 'Сгенерировать новый ключ',
+  activeKeysTitle: 'Активные ключи доступа',
+  noKeysFound: 'У вас пока нет сгенерированных ключей доступа',
+  revokeKeyConfirm: 'Вы уверены, что хотите отозвать этот ключ? Все привязанные сервисы потеряют доступ.',
+  keyRevokedSuccess: 'Ключ успешно отозван',
+  keyGeneratedNotice: 'Скопируйте этот ключ прямо сейчас. В целях безопасности он больше не будет показан полностью.',
+  copiedToClipboard: 'Скопировано в буфер обмена!',
+
 
   // Obsidian Page & Connections
   obsidianHub: 'Контейнеры Obsidian',
@@ -737,6 +769,7 @@ export const enTranslations: Translations = {
   privateContainers: 'Private Obsidian Containers',
   privateContainersSubtitle: 'Manage secure Markdown vaults and personal API synchronization tokens',
   privateVaultNotice: 'Private container mode active. Notes in this vault are strictly isolated to your authenticated account.',
+
   tokenCopied: 'API Token copied to clipboard!',
   copyToken: 'Copy API Token',
   generateNewToken: 'Generate New Key',
@@ -748,6 +781,21 @@ export const enTranslations: Translations = {
   noteType: 'Entry Type',
   noteFeed: 'Channel / Feed',
   createNoteSuccess: 'Note created successfully!',
+
+  // Key Management & API Tokens
+  keyManagementTitle: 'API & Integration Keys',
+  keyManagementSubtitle: 'Generate and manage personal keys to connect with Lemon Calendarium apps and integrations',
+  keyProvider: 'Key Provider',
+  keyNameLabel: 'Key Name / Description',
+  keyNamePlaceholder: 'e.g. My Obsidian Vault Laptop',
+  generateKeyBtn: 'Generate New Key',
+  activeKeysTitle: 'Active Access Keys',
+  noKeysFound: 'No active access keys generated yet',
+  revokeKeyConfirm: 'Are you sure you want to revoke this key? Linked integrations will immediately lose access.',
+  keyRevokedSuccess: 'Key revoked successfully',
+  keyGeneratedNotice: 'Copy this key now. For security reasons, it will not be displayed in full again.',
+  copiedToClipboard: 'Copied to clipboard!',
+
 
   // Obsidian Page & Connections
   obsidianHub: 'Obsidian Containers',

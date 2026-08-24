@@ -124,10 +124,10 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
       <div
         onClick={() => onSelect(node.id)}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
-        className={`group flex items-center justify-between py-1.5 pr-2 rounded cursor-pointer transition-all ${
+        className={`group flex items-center justify-between h-8 pr-2 rounded cursor-pointer transition-all border-l-2 ${
           isSelected
-            ? 'bg-[#c9cd58]/20 text-[#e5e971] font-semibold border-l-2 border-[#c9cd58]'
-            : 'text-[#c9c7b2] hover:bg-[#252828] hover:text-white'
+            ? 'bg-[#c9cd58]/20 text-[#e5e971] font-semibold border-[#c9cd58]'
+            : 'text-[#c9c7b2] hover:bg-[#252828] hover:text-white border-transparent'
         }`}
       >
         <div className="flex items-center gap-1.5 overflow-hidden flex-1 min-w-0 pr-1">
@@ -176,12 +176,12 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
           </span>
 
           {/* Note Count Badge */}
-          <span className="text-[10px] font-mono bg-[#141616] text-[#93927e] px-1.5 py-0.2 rounded border border-[#2d3030]">
+          <span className="text-[10px] font-mono bg-[#141616] text-[#93927e] px-1.5 py-0.5 rounded border border-[#2d3030]">
             {node.notesCount}
           </span>
 
           {/* Hover Actions Menu */}
-          <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
+          <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150">
             {/* Add Subfolder */}
             <button
               type="button"

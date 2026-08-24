@@ -9,6 +9,7 @@ export class LentaSidebarView extends ItemView {
   private getSettings: () => LentaPluginSettings;
   private onOpenQuickAdd: () => void;
   private onOpenSyncModal: () => void;
+  private onOpenConnectionsModal?: () => void;
 
   private feeds: LentaFeedDto[] = [];
   private folders: LentaFolderDto[] = [];
@@ -31,13 +32,15 @@ export class LentaSidebarView extends ItemView {
     apiClient: LentaApiClient,
     getSettings: () => LentaPluginSettings,
     onOpenQuickAdd: () => void,
-    onOpenSyncModal: () => void
+    onOpenSyncModal: () => void,
+    onOpenConnectionsModal?: () => void
   ) {
     super(leaf);
     this.apiClient = apiClient;
     this.getSettings = getSettings;
     this.onOpenQuickAdd = onOpenQuickAdd;
     this.onOpenSyncModal = onOpenSyncModal;
+    this.onOpenConnectionsModal = onOpenConnectionsModal;
     this.mdComponent = new Component();
   }
 
@@ -93,6 +96,12 @@ export class LentaSidebarView extends ItemView {
     const header = container.createDiv({ cls: 'lenta-sidebar-header' });
     const titleRow = header.createDiv({ cls: 'lenta-sidebar-title' });
     titleRow.createEl('h4', { text: '🍋 Project Lenta' });
+    const settings = this.getSettings();
+    if (settings.containerKey) {
+      const badge = titleRow.createSpan({ cls: 'lenta-badge' });
+      badge.setText(`KEY: ${settings.containerKey.slice(0, 10)}…`);
+      badge.title = `Connected container key: ${settings.containerKey}`;
+    }
 
     const toolbar = header.createDiv({ cls: 'lenta-sidebar-toolbar' });
 
@@ -103,6 +112,12 @@ export class LentaSidebarView extends ItemView {
     const syncBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Sync Hub' } });
     setIcon(syncBtn, 'zap');
     syncBtn.onclick = () => this.onOpenSyncModal();
+
+    if (this.onOpenConnectionsModal) {
+      const connBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Connections & Containers' } });
+      setIcon(connBtn, 'link-2');
+      connBtn.onclick = () => this.onOpenConnectionsModal!();
+    }
 
     const refreshBtn = toolbar.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Refresh Data' } });
     setIcon(refreshBtn, 'refresh-cw');
