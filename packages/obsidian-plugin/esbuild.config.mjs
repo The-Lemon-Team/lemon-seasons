@@ -1,7 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
-import { copyFileSync, existsSync } from "fs";
+import { copyFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
+import { dirname } from "path";
 
 const banner =
 `/*
@@ -16,12 +17,15 @@ const prod = (process.argv[2] === "production");
 const VAULT_PLUGIN_DIR = "test-vault/.obsidian/plugins/lemon-lenta-sync";
 const outfile = prod ? "main.js" : `${VAULT_PLUGIN_DIR}/main.js`;
 
-/** After each build, sync all output files into the test vault plugin folder. */
+/** After each build, sync all output files into the test vault plugin folder and trigger hot-reload. */
 const syncAssetsPlugin = {
   name: "sync-assets",
   setup(build) {
     build.onEnd(() => {
       try {
+        if (!existsSync(VAULT_PLUGIN_DIR)) {
+          mkdirSync(VAULT_PLUGIN_DIR, { recursive: true });
+        }
         if (existsSync("main.js")) {
           copyFileSync("main.js", `${VAULT_PLUGIN_DIR}/main.js`);
         }
@@ -31,6 +35,9 @@ const syncAssetsPlugin = {
         if (existsSync("styles.css")) {
           copyFileSync("styles.css", `${VAULT_PLUGIN_DIR}/styles.css`);
         }
+        // Touch .hotreload file to trigger Obsidian Hot-Reload plugin
+        writeFileSync(`${VAULT_PLUGIN_DIR}/.hotreload`, `${Date.now()}`);
+        console.log(`[esbuild] Synced assets & touched .hotreload in ${VAULT_PLUGIN_DIR}`);
       } catch (err) {
         console.error("Failed to sync assets to test-vault:", err);
       }
@@ -73,5 +80,6 @@ if (prod) {
   await context.rebuild();
   process.exit(0);
 } else {
+  console.log("⚡ [esbuild] Starting Obsidian plugin development watcher mode...");
   await context.watch();
 }

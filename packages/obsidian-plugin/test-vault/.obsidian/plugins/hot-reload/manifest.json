@@ -1,0 +1,9 @@
+{
+  "id": "hot-reload",
+  "name": "Hot Reload",
+  "version": "0.1.11",
+  "minAppVersion": "0.15.0",
+  "description": "Automatically reload Obsidian plugins in development when their files change.",
+  "author": "pjabyx",
+  "isDesktopOnly": true
+}
