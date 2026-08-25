@@ -142,12 +142,22 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
     }
   };
 
+  const backdropMouseDownRef = React.useRef(false);
+
   return (
     <>
       {/* Optional subtle backdrop on mobile */}
       <div
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
-        onClick={onClose}
+        onMouseDown={(e) => {
+          backdropMouseDownRef.current = e.target === e.currentTarget;
+        }}
+        onClick={(e) => {
+          if (backdropMouseDownRef.current && e.target === e.currentTarget) {
+            onClose();
+          }
+          backdropMouseDownRef.current = false;
+        }}
       />
 
       <aside className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] lg:w-[460px] bg-[#161819] border-l border-[#242828] shadow-2xl flex flex-col animate-fade-in text-[#e2e2e2]">

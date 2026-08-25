@@ -10,6 +10,7 @@ import { SyncModule } from './sync/sync.module';
 import { StorageModule } from './storage/storage.module';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { KeysModule } from './keys/keys.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { KeysModule } from './keys/keys.module';
     StorageModule,
     IngestionModule,
     KeysModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

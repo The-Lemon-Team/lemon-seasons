@@ -4,6 +4,7 @@ import { useI18n } from '../i18n';
 import { useFeeds } from '../api/queries';
 import { X, Calendar, Tag, Plus, Check, FileText } from 'lucide-react';
 import dayjs from 'dayjs';
+import { Modal } from './Modal';
 
 interface CreateNoteModalProps {
   isOpen: boolean;
@@ -31,8 +32,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
     }
   }, [feeds, feedId]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -49,11 +48,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="relative w-full max-w-2xl bg-[#181a1a] border border-[#2d3030] rounded-xl shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      showDefaultHeader={false}
+      maxWidth="max-w-2xl"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-[#121414]/80">
           <div className="flex items-center gap-2.5">
@@ -231,7 +231,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
             </>
           )}
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };

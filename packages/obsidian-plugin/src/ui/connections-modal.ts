@@ -47,7 +47,8 @@ export class LentaConnectionsModal extends Modal {
       : this.settings.activeContainerId ? 1 : 0;
     
     if (selectedCount > 0) {
-      const badge = titleRow.createSpan({ cls: 'lenta-badge' });
+      const badgeRow = header.createDiv({ cls: 'lenta-badge-row' });
+      const badge = badgeRow.createSpan({ cls: 'lenta-badge' });
       badge.setText(`CONNECTED: ${selectedCount} Container${selectedCount > 1 ? 's' : ''} Selected`);
     }
 

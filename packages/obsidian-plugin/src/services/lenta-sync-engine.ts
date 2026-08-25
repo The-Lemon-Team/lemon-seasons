@@ -149,6 +149,35 @@ export class LentaSyncEngine {
   }
 
   /**
+   * Syncs files & structure for multiple active container IDs, then runs delta pull reconciliation.
+   */
+  async pullAllContainers(
+    containerIds: string[],
+    containerNameMap?: Map<string, string>
+  ): Promise<{
+    downloadedFiles: number;
+    pulledCount: number;
+    deletedCount: number;
+    conflicts: FileDiffItemDto[];
+  }> {
+    let downloadedFiles = 0;
+    for (const id of containerIds) {
+      try {
+        const name = containerNameMap?.get(id) || id;
+        const res = await this.syncContainerFiles(id, name);
+        downloadedFiles += res.downloadedFiles;
+      } catch (err) {
+        console.warn(`Failed to sync container ${id}:`, err);
+      }
+    }
+    const deltaRes = await this.pullChanges();
+    return {
+      downloadedFiles,
+      ...deltaRes,
+    };
+  }
+
+  /**
    * Pushes modified and new local markdown files from vault to Lenta server.
    * Intercepts local image attachments (![[image.png]]), uploads to /storage, and updates links.
    */
@@ -377,6 +406,92 @@ export class LentaSyncEngine {
       svg: 'image/svg+xml',
     };
     return map[ext.toLowerCase()] || 'application/octet-stream';
+  }
+
+  /**
+   * Downloads and syncs actual folder structure and files for a specific connected container into the local Obsidian vault.
+   */
+  async syncContainerFiles(containerId: string, containerName?: string): Promise<{ downloadedFiles: number; createdFolders: number }> {
+    const settings = this.getSettings();
+    const vault = this.app.vault;
+    const rootFolder = settings.vaultRootFolder || 'Lenta';
+
+    const safeFolderName = (containerName || containerId).replace(/[\\/:*?"<>|]/g, '_');
+    const containerFolderPath = normalizePath(`${rootFolder}/${safeFolderName}`);
+
+    await this.ensureFolder(containerFolderPath);
+
+    let downloadedFiles = 0;
+    let createdFolders = 0;
+
+    // 1. Try fetching files from Container Sync Server (/containers/:id/files)
+    let containerFiles: Array<{ path: string; content?: string; mtime?: number }> = [];
+    try {
+      containerFiles = await this.apiClient.getContainerFiles(containerId);
+    } catch (err) {
+      console.warn(`Could not fetch container files from container server for ${containerId}:`, err);
+    }
+
+    if (Array.isArray(containerFiles) && containerFiles.length > 0) {
+      for (const fileItem of containerFiles) {
+        if (!fileItem.path) continue;
+        const normalizedRelPath = normalizePath(fileItem.path).replace(/^\/+/, '');
+        const targetVaultPath = normalizePath(`${containerFolderPath}/${normalizedRelPath}`);
+
+        await this.ensureDirectoryForFile(targetVaultPath);
+
+        const content = fileItem.content || '';
+        const existingFile = vault.getAbstractFileByPath(targetVaultPath);
+
+        if (existingFile instanceof TFile) {
+          await vault.modify(existingFile, content);
+        } else {
+          await vault.create(targetVaultPath, content);
+        }
+        downloadedFiles++;
+      }
+      return { downloadedFiles, createdFolders };
+    }
+
+    // 2. Fallback / Feed Containers: Fetch notes from NestJS Lenta API for this container/feed
+    try {
+      let notes: LentaNoteDto[] = [];
+
+      if (containerId.startsWith('feed-') && containerId !== 'feed-all') {
+        const feedSlug = containerId.replace(/^feed-/, '');
+        const feeds = await this.apiClient.getFeeds().catch(() => []);
+        const matchedFeed = feeds.find((f) => f.slug === feedSlug || f.id === feedSlug);
+        if (matchedFeed) {
+          notes = await this.apiClient.getNotes({ feedId: matchedFeed.id });
+        }
+      }
+
+      if (notes.length === 0 && (!containerId.startsWith('feed-') || containerId === 'feed-all')) {
+        const fullSync = await this.apiClient.getSyncChanges();
+        notes = (fullSync.notes || []) as LentaNoteDto[];
+      }
+
+      for (const note of notes) {
+        const noteFileName = `${(note.title || 'Untitled Note').replace(/[\\/:*?"<>|]/g, '_')}.md`;
+        const noteVaultPath = normalizePath(`${containerFolderPath}/${noteFileName}`);
+
+        await this.ensureDirectoryForFile(noteVaultPath);
+
+        const markdownContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note as any);
+        const existingFile = vault.getAbstractFileByPath(noteVaultPath);
+
+        if (existingFile instanceof TFile) {
+          await vault.modify(existingFile, markdownContent);
+        } else {
+          await vault.create(noteVaultPath, markdownContent);
+        }
+        downloadedFiles++;
+      }
+    } catch (fallbackErr) {
+      console.warn(`Failed to pull notes for container ${containerId}:`, fallbackErr);
+    }
+
+    return { downloadedFiles, createdFolders };
   }
 
   private async ensureFolder(path: string): Promise<void> {

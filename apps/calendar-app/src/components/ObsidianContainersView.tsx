@@ -3,9 +3,10 @@ import { useObsidianContainers, ContainerPrivacyImpact } from '../context/Obsidi
 import { useFoldersContext } from '../context/FoldersContext';
 import { useI18n } from '../i18n';
 import { ObsidianLogo } from './ObsidianLogo';
+import { SingleContainerDetailView } from './SingleContainerDetailView';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
 import { Modal } from './Modal';
-import { ContainerPrivacy, ContainerObserveMode, FolderPrivacy } from '@lenta/shared';
+import { ContainerPrivacy, ContainerObserveMode, FolderPrivacy, CalendarFilterState } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -30,10 +31,28 @@ import {
   AlertTriangle,
   Upload,
   Download,
+  Filter,
+  Zap,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 
-export const ObsidianContainersView: React.FC = () => {
+interface ObsidianContainersViewProps {
+  filterState?: CalendarFilterState;
+  onToggleContainer?: (containerId: string) => void;
+  onSelectOnlyContainer?: (containerId: string) => void;
+  onClearContainers?: () => void;
+  selectedSingleContainerId?: string | null;
+  onSelectSingleContainer?: (containerId: string | null) => void;
+}
+
+export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
+  filterState,
+  onToggleContainer,
+  onSelectOnlyContainer,
+  onClearContainers,
+  selectedSingleContainerId: propSelectedSingleContainerId,
+  onSelectSingleContainer,
+}) => {
   const { t } = useI18n();
   const {
     containers,
@@ -65,6 +84,24 @@ export const ObsidianContainersView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [privacyFilter, setPrivacyFilter] = useState<'all' | 'private' | 'public'>('all');
 
+  // Single Container Details Workspace Navigation State
+  const [internalSelectedSingleContainerId, setInternalSelectedSingleContainerId] = useState<string | null>(null);
+
+  const selectedSingleContainerId =
+    propSelectedSingleContainerId !== undefined
+      ? propSelectedSingleContainerId
+      : internalSelectedSingleContainerId;
+
+  const setSelectedSingleContainerId = (id: string | null) => {
+    setInternalSelectedSingleContainerId(id);
+    if (onSelectSingleContainer) {
+      onSelectSingleContainer(id);
+    }
+  };
+
+  const [initialDetailTab, setInitialDetailTab] = useState<'history' | 'folders' | 'preview' | 'settings'>('history');
+  const [expandedAccordionId, setExpandedAccordionId] = useState<string | null>(null);
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
@@ -74,6 +111,8 @@ export const ObsidianContainersView: React.FC = () => {
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const [bindingError, setBindingError] = useState<string>('');
   const [expandedPreviewContainerId, setExpandedPreviewContainerId] = useState<string | null>(null);
+
+
 
 
 
@@ -182,13 +221,20 @@ export const ObsidianContainersView: React.FC = () => {
 
     const validFolders = newForm.folders
       .filter((f) => f.path.trim().length > 0)
-      .map((f) => ({
-        path: f.path.trim().replace(/^\/+|\/+$/g, ''),
-        name: f.name.trim() || f.path.trim().split('/').pop() || f.path.trim(),
-        isPrimary: f.isPrimary,
-        observeMode: f.observeMode,
-        filterTag: f.filterTag?.trim() || undefined,
-      }));
+      .map((f) => {
+        const cleanPath = f.path.trim().replace(/^\/+|\/+$/g, '');
+        const matchedFolder = folders.find(
+          (m) => m.path.toLowerCase() === cleanPath.toLowerCase()
+        );
+        return {
+          path: cleanPath,
+          name: f.name.trim() || matchedFolder?.name || cleanPath.split('/').pop() || cleanPath,
+          isPrimary: f.isPrimary,
+          observeMode: f.observeMode,
+          filterTag: f.filterTag?.trim() || undefined,
+          notesCount: (matchedFolder as any)?._count?.noteFolders ?? 0,
+        };
+      });
 
     addContainer({
       name: newForm.name.trim(),
@@ -256,6 +302,7 @@ export const ObsidianContainersView: React.FC = () => {
       observeMode: quickFolderInput.observeMode,
       filterTag: quickFolderInput.filterTag.trim() || undefined,
       privacy: folderPrivacy,
+      notesCount: (matchedFolder as any)?._count?.noteFolders ?? 0,
     });
 
     if (!result.success) {
@@ -272,6 +319,17 @@ export const ObsidianContainersView: React.FC = () => {
       filterTag: '',
     });
   };
+
+  // If a specific single container is selected for detailed work, render the dedicated workspace view
+  if (selectedSingleContainerId) {
+    return (
+      <SingleContainerDetailView
+        containerId={selectedSingleContainerId}
+        onBack={() => setSelectedSingleContainerId(null)}
+        initialTab={initialDetailTab}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#121414] text-[#e2e2e2] px-4 lg:px-8 py-6 selection:bg-[#8b5cf6]/30 selection:text-[#d8b4fe]">
@@ -484,456 +542,295 @@ export const ObsidianContainersView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pb-8">
+        <div className="flex flex-col space-y-3 pb-8">
           {filteredContainers.map((container) => {
             const isPrivate = container.privacy === 'private';
             const isSyncing = isSyncingId === container.id;
             const isCopied = copiedTokenId === container.id;
+            const pending = pendingChanges[container.id] ?? 0;
 
-            const isSelected = selectedContainerIds.includes(container.id);
+            const isSelected = filterState?.containers
+              ? filterState.containers.includes(container.id)
+              : selectedContainerIds.includes(container.id);
+
+            const handleToggleContainerFilter = (e: React.MouseEvent) => {
+              e.stopPropagation();
+              if (onToggleContainer) {
+                onToggleContainer(container.id);
+              }
+              toggleSelectContainer(container.id);
+            };
+
+            const isExpanded = expandedAccordionId === container.id;
 
             return (
               <div
                 key={container.id}
-                className={`p-5 rounded-2xl bg-[#181a1a] border transition-all duration-200 flex flex-col justify-between relative overflow-hidden group ${
+                onClick={() => setExpandedAccordionId(isExpanded ? null : container.id)}
+                className={`p-4 rounded-xl bg-[#181a1a] hover:bg-[#1e2020] border transition-all duration-200 flex flex-col justify-between gap-3 group cursor-pointer ${
                   isSelected
-                    ? 'border-[#c9cd58] bg-[#1a1f1b] shadow-[0_0_25px_rgba(201,205,88,0.2)]'
+                    ? 'border-[#a855f7] bg-[#1a1726] shadow-[0_0_20px_rgba(168,85,247,0.15)]'
                     : isPrivate
-                    ? 'border-[#a855f7]/40 hover:border-[#a855f7] hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]'
-                    : 'border-[#c9cd58]/40 hover:border-[#c9cd58] hover:shadow-[0_0_25px_rgba(201,205,88,0.15)]'
+                    ? 'border-[#a855f7]/30 hover:border-[#a855f7]/70'
+                    : 'border-[#c9cd58]/30 hover:border-[#c9cd58]/70'
                 }`}
               >
-                {/* Top Header */}
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
+                {/* Main List Item Header Row */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Left Side: Avatar + Details */}
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                    <div className="relative shrink-0">
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 border"
+                        className="w-11 h-11 rounded-xl flex items-center justify-center text-lg border transition-transform group-hover:scale-105"
                         style={{
-                          backgroundColor: isSelected ? 'rgba(201,205,88,0.25)' : isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
-                          borderColor: isSelected ? '#c9cd58' : isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
+                          backgroundColor: isSelected ? 'rgba(168,85,247,0.25)' : isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
+                          borderColor: isSelected ? '#a855f7' : isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
                         }}
                       >
                         <ObsidianLogo size={22} />
                       </div>
-                      <div>
-                        <h3 className="font-sans font-bold text-sm sm:text-base text-[#f3e8ff] flex items-center gap-2">
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-sans font-bold text-sm text-[#f3e8ff] group-hover:text-white transition-colors truncate flex items-center gap-1.5">
                           <span>{container.name}</span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5 text-[#a855f7]" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5 text-[#93927e] group-hover:text-white transition-colors" />
+                          )}
                         </h3>
-                        <p className="font-mono text-[11px] text-[#93927e] flex items-center gap-1.5 mt-0.5">
-                          <Folder className="w-3 h-3 text-[#c9c7b2]" />
-                          <span>{container.vaultPath}</span>
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      {/* Selection Toggle Button */}
-                      <button
-                        onClick={() => toggleSelectContainer(container.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 border transition-all ${
-                          isSelected
-                            ? 'bg-[#c9cd58] text-[#121414] border-[#c9cd58] shadow-[0_0_12px_rgba(201,205,88,0.4)]'
-                            : 'bg-[#1e2020] text-[#93927e] border-[#333] hover:text-white hover:border-[#666]'
-                        }`}
-                      >
-                        {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                        <span>{isSelected ? 'Выбран ✓' : 'Выбрать'}</span>
-                      </button>
-
-                      {/* Privacy Toggle Button with impact check */}
-                      <button
-                        onClick={() => handleContainerPrivacyToggle(container.id)}
-                        title={`Нажмите, чтобы переключить приватность на ${isPrivate ? 'Public' : 'Private'}`}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all ${
-                          isPrivate
-                            ? 'bg-[#a855f7]/15 border-[#a855f7]/50 text-[#d8b4fe] hover:bg-[#a855f7]/25'
-                            : 'bg-[#c9cd58]/15 border-[#c9cd58]/50 text-[#e5e971] hover:bg-[#c9cd58]/25'
-                        }`}
-                      >
-                        {isPrivate ? <Lock className="w-3.5 h-3.5 text-[#a855f7]" /> : <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {container.description && (
-                    <p className="text-xs text-[#c9c7b2] mb-4 leading-relaxed bg-[#121414]/50 p-2.5 rounded-lg border border-[#242828]">
-                      {container.description}
-                    </p>
-                  )}
-
-                  {/* Bound Folders Section */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#93927e] flex items-center gap-1.5">
-                        <FolderGit2 className="w-3.5 h-3.5 text-[#a855f7]" />
-                        <span>{t.boundFoldersTitle} ({container.boundFolders.length})</span>
-                      </span>
-
-                      <button
-                        onClick={() => {
-                          setBindingFolderContainerId(container.id);
-                          setQuickFolderInput({
-                            path: '',
-                            name: '',
-                            observeMode: 'recursive',
-                            filterTag: '',
-                          });
-                        }}
-                        className="text-[10px] font-mono font-semibold text-[#a855f7] hover:text-[#d8b4fe] hover:underline flex items-center gap-1"
-                      >
-                        <FolderPlus className="w-3 h-3" />
-                        <span>+ {t.addFolderBinding}</span>
-                      </button>
-                    </div>
-
-                    {/* Folders Chips / List */}
-                    <div className="flex flex-col gap-1.5">
-                      {container.boundFolders.map((bf) => (
-                        <div
-                          key={bf.id}
-                          className="px-3 py-2 rounded-lg bg-[#121414] border border-[#242828] flex items-center justify-between text-xs group/folder hover:border-[#383a3a] transition-colors"
+                        {/* Privacy Pill */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleContainerPrivacyToggle(container.id);
+                          }}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 border shrink-0 transition-colors ${
+                            isPrivate
+                              ? 'bg-[#a855f7]/15 border-[#a855f7]/40 text-[#d8b4fe] hover:bg-[#a855f7]/30'
+                              : 'bg-[#c9cd58]/15 border-[#c9cd58]/40 text-[#e5e971] hover:bg-[#c9cd58]/30'
+                          }`}
                         >
-                          <div className="flex items-center gap-2.5 overflow-hidden">
-                            <Folder className={`w-3.5 h-3.5 shrink-0 ${bf.isPrimary ? 'text-[#e5e971]' : 'text-[#a855f7]'}`} />
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <span className="font-mono text-xs text-[#e2e2e2] truncate font-medium">
-                                {bf.path}
-                              </span>
-                              {/* Privacy Badge on Bound Folder */}
-                              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-0.5 font-bold shrink-0 ${
-                                bf.privacy === 'private' ? 'bg-[#a855f7]/20 text-[#d8b4fe]' : 'bg-[#c9cd58]/20 text-[#e5e971]'
-                              }`}>
-                                {bf.privacy === 'private' ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
-                                <span>{bf.privacy === 'private' ? 'Приватная' : 'Публичная'}</span>
-                              </span>
-                              {bf.isPrimary && (
-                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 font-bold shrink-0">
-                                  Primary
-                                </span>
-                              )}
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#1e2020] text-[#93927e] border border-[#242828] shrink-0">
-                                {bf.observeMode === 'recursive'
-                                  ? 'Рекурсивно'
-                                  : bf.observeMode === 'filtered'
-                                  ? `Тег: ${bf.filterTag || 'all'}`
-                                  : 'Прямые файлы'}
-                              </span>
-                            </div>
-                          </div>
+                          {isPrivate ? <Lock className="w-3 h-3 text-[#a855f7]" /> : <Globe className="w-3 h-3 text-[#c9cd58]" />}
+                          <span>{isPrivate ? 'Private' : 'Public'}</span>
+                        </button>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] font-mono text-[#93927e]">
-                              {bf.notesCount || 0} заметок
-                            </span>
-                            {container.boundFolders.length > 1 && (
-                              <button
-                                onClick={() => removeBoundFolder(container.id, bf.id)}
-                                title="Отвязать папку"
-                                className="p-1 rounded text-[#555] hover:text-[#f87171] hover:bg-[#242828] transition-colors opacity-0 group-hover/folder:opacity-100"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Inline Quick Folder Binding Form */}
-                    {bindingFolderContainerId === container.id && (
-                      <div className="mt-2.5 p-3.5 rounded-lg bg-[#141616] border border-[#a855f7]/50 flex flex-col gap-2.5 animate-in fade-in duration-150">
-                        <div className="flex items-center justify-between text-xs font-mono font-semibold text-[#d8b4fe]">
-                          <span>Привязка папки для наблюдения</span>
-                          <button
-                            onClick={() => {
-                              setBindingFolderContainerId(null);
-                              setBindingError('');
-                            }}
-                            className="p-0.5 rounded text-[#93927e] hover:text-white"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        {/* Privacy Containment Rule Indicator */}
-                        <div className={`p-2 rounded text-[11px] font-mono flex items-center gap-1.5 ${
-                          container.privacy === 'public'
-                            ? 'bg-[#c9cd58]/10 text-[#e5e971] border border-[#c9cd58]/30'
-                            : 'bg-[#a855f7]/10 text-[#d8b4fe] border border-[#a855f7]/30'
-                        }`}>
-                          <Info className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {container.privacy === 'public'
-                              ? 'Публичный контейнер: можно привязать ТОЛЬКО публичные папки.'
-                              : 'Приватный контейнер: можно привязать как приватные, так и публичные папки.'}
+                        {/* Pending Changes Indicator */}
+                        {pending > 0 && !isSyncing && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 shrink-0">
+                            {pending} local change{pending > 1 ? 's' : ''}
                           </span>
-                        </div>
-
-                        {bindingError && (
-                          <div className="p-2 rounded bg-[#ef4444]/20 border border-[#ef4444]/40 text-[#fca5a5] text-[11px] font-mono flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#ef4444]" />
-                            <span>{bindingError}</span>
-                          </div>
                         )}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Путь к папке: 02_Projects/Lenta"
-                            value={quickFolderInput.path}
-                            onChange={(e) => {
-                              setQuickFolderInput((prev) => ({ ...prev, path: e.target.value }));
-                              setBindingError('');
-                            }}
-                            className="bg-[#121414] border border-[#242828] rounded text-xs font-mono px-2.5 py-1.5 text-[#e2e2e2] outline-none focus:border-[#a855f7]"
-                          />
-                          <select
-                            value={quickFolderInput.observeMode}
-                            onChange={(e) =>
-                              setQuickFolderInput((prev) => ({
-                                ...prev,
-                                observeMode: e.target.value as ContainerObserveMode,
-                              }))
-                            }
-                            className="bg-[#121414] border border-[#242828] rounded text-xs font-mono px-2.5 py-1.5 text-[#e2e2e2] outline-none focus:border-[#a855f7]"
-                          >
-                            <option value="recursive">Рекурсивно (все подпапки)</option>
-                            <option value="all">Только прямые файлы</option>
-                            <option value="filtered">Фильтрация по тегу</option>
-                          </select>
-                        </div>
-
-                        {/* Quick Pick from Existing Folders */}
-                        <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
-                          <span className="text-[#93927e]">Существующие папки:</span>
-                          {folders
-                            .filter((f) => container.privacy === 'private' || f.privacy === 'public')
-                            .slice(0, 5)
-                            .map((f) => (
-                              <button
-                                key={f.id}
-                                type="button"
-                                onClick={() => {
-                                  setQuickFolderInput((prev) => ({
-                                    ...prev,
-                                    path: f.path,
-                                    name: f.name,
-                                  }));
-                                  setBindingError('');
-                                }}
-                                className="px-1.5 py-0.5 rounded bg-[#1e2020] hover:bg-[#282a2a] text-[#c9c7b2] hover:text-[#e5e971] border border-[#2d3030]"
-                              >
-                                {f.privacy === 'private' ? '🔒 ' : '🌐 '}
-                                {f.path}
-                              </button>
-                            ))}
-                        </div>
-
-                        {quickFolderInput.observeMode === 'filtered' && (
-                          <input
-                            type="text"
-                            placeholder="Тег фильтра: topic.project"
-                            value={quickFolderInput.filterTag}
-                            onChange={(e) =>
-                              setQuickFolderInput((prev) => ({
-                                ...prev,
-                                filterTag: e.target.value,
-                              }))
-                            }
-                            className="bg-[#121414] border border-[#242828] rounded text-xs font-mono px-2.5 py-1.5 text-[#e2e2e2] outline-none focus:border-[#a855f7]"
-                          />
-                        )}
-
-                        <div className="flex items-center justify-end gap-2 mt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBindingFolderContainerId(null);
-                              setBindingError('');
-                            }}
-                            className="px-2.5 py-1 rounded bg-[#1e2020] text-xs font-mono text-[#93927e] hover:text-white"
-                          >
-                            {t.cancel}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuickFolderSubmit(container.id)}
-                            className="px-3 py-1 rounded bg-[#a855f7] hover:bg-[#b76eff] text-white text-xs font-mono font-semibold"
-                          >
-                            {t.addFolderBinding}
-                          </button>
-                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* API Token Box */}
-                  <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] flex flex-col gap-1.5 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-[#93927e] uppercase tracking-wider">
-                        Ключ контейнера (Obsidian Plugin Specified Key)
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(t.regenerateTokenConfirm || 'Сгенерировать новый ключ?')) {
-                            regenerateToken(container.id);
-                          }
-                        }}
-                        title="Сгенерировать новый ключ"
-                        className="text-[10px] font-mono text-[#93927e] hover:text-[#e5e971] flex items-center gap-1"
-                      >
-                        <RefreshCw className="w-2.5 h-2.5" />
-                        <span>Обновить</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={container.token}
-                        className="flex-1 bg-[#181a1a] border border-[#242828] font-mono text-[11px] px-2.5 py-1.5 text-[#c9c7b2] rounded outline-none select-all truncate"
-                      />
-                      <button
-                        onClick={() => handleCopyToken(container.id, container.token)}
-                        className={`px-3 py-1.5 rounded font-mono text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
-                          isCopied
-                            ? 'bg-[#22c55e] text-white'
-                            : 'bg-[#1e2020] border border-[#333] hover:border-[#a855f7] text-[#e2e2e2]'
-                        }`}
-                      >
-                        {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{isCopied ? t.tokenCopied : t.copyToken}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pending Changes Strip */}
-                {(() => {
-                  const pending = pendingChanges[container.id] ?? 0;
-                  const isPushing = isSyncing && syncDirection === 'push';
-                  const isPulling = isSyncing && syncDirection === 'pull';
-                  return pending > 0 && !isSyncing ? (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#c9cd58]/10 border border-[#c9cd58]/30 text-[#e5e971] text-[11px] font-mono mb-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#c9cd58] animate-pulse" />
-                      <span>{pending} local change{pending > 1 ? 's' : ''} since last sync</span>
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Markdown Note Preview Toggle */}
-                <button
-                  onClick={() =>
-                    setExpandedPreviewContainerId(
-                      expandedPreviewContainerId === container.id ? null : container.id
-                    )
-                  }
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#121414] border border-[#242828] hover:border-[#383a3a] text-[11px] font-mono text-[#93927e] hover:text-[#c9c7b2] transition-all mb-3 group"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-[#a855f7]" />
-                    <span>Latest Note Preview</span>
-                  </span>
-                  {expandedPreviewContainerId === container.id ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  )}
-                </button>
-
-                {/* Expandable Markdown Preview Card */}
-                {expandedPreviewContainerId === container.id && (() => {
-                  const mockNotes = [
-                    { title: 'Release Planning v2.1', description: '## Overview\n\nThis release focuses on **sync performance** and stability improvements.\n\n- ✅ Field-level LWW merge\n- 🔄 Auto-push on save\n- 📥 Pull delta changes', type: 'EVENT' },
-                    { title: 'AI Research Notes', description: '## Key Findings\n\nRecent studies on **transformer architectures** show promising results for long-context reasoning.\n\n> "The attention mechanism remains the core driver of capability scaling"\n\n### References\n- Vaswani et al. 2017\n- GPT-4 Technical Report', type: 'SINGLE' },
-                    { title: 'Cinema Release Queue', description: '## Upcoming Premieres\n\n| Title | Date | Rating |\n|---|---|---|\n| Dune: Part Three | 2026-09-15 | ⭐⭐⭐⭐ |\n| Avengers: Endgame II | 2026-11-01 | TBD |', type: 'FILM_RELEASE' },
-                  ];
-                  const idx = containers.findIndex(c => c.id === container.id) % mockNotes.length;
-                  const note = mockNotes[idx];
-                  return (
-                    <div className="mb-3 p-4 rounded-xl bg-[#0f1111] border border-[#2a2d2d] text-[#c9c7b2]">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#a855f7]/15 text-[#d8b4fe] border border-[#a855f7]/30">
-                          {note.type}
+                      {/* Sub-line: Vault Path & Metadata Chips */}
+                      <div className="flex items-center gap-3 text-[11px] font-mono text-[#93927e] flex-wrap">
+                        <span className="flex items-center gap-1 truncate text-[#c9c7b2]">
+                          <Folder className="w-3 h-3 text-[#a855f7]" />
+                          <span>{container.vaultPath}</span>
                         </span>
-                        <span className="text-xs font-semibold text-[#e2e2e2]">{note.title}</span>
-                      </div>
-                      <div className="prose prose-invert prose-xs max-w-none text-[12px] leading-relaxed [&_h2]:text-[#e5e971] [&_h2]:text-[13px] [&_h2]:font-bold [&_h2]:mb-1 [&_h3]:text-[#c9c7b2] [&_h3]:text-[12px] [&_strong]:text-[#f3e8ff] [&_table]:text-[11px] [&_blockquote]:border-l-[#a855f7] [&_blockquote]:text-[#93927e] [&_li]:text-[#c9c7b2]">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {note.description}
-                        </ReactMarkdown>
+
+                        <span>•</span>
+
+                        <span className="flex items-center gap-1 text-[#c9c7b2]">
+                          <FolderGit2 className="w-3 h-3 text-[#c9cd58]" />
+                          <span>{container.boundFolders.length} папки</span>
+                        </span>
+
+                        <span>•</span>
+
+                        <span className="flex items-center gap-1 text-[#c9c7b2]">
+                          <FileText className="w-3.5 h-3.5 text-[#3b82f6]" />
+                          <span>{container.notesCount || 0} заметок</span>
+                        </span>
+
+                        {container.lastSyncedAt && (
+                          <>
+                            <span>•</span>
+                            <span className="text-[#93927e]">
+                              Синхр: {dayjs(container.lastSyncedAt).format('HH:mm, DD.MM')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
-                  );
-                })()}
-
-                {/* Footer Controls */}
-                <div className="pt-3 border-t border-[#242828] flex items-center justify-between text-xs font-mono text-[#93927e]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                    <span>
-                      {container.lastSyncedAt
-                        ? `Синхр: ${dayjs(container.lastSyncedAt).format('HH:mm, DD.MM')}`
-                        : 'Готов к синхронизации'}
-                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Push Button */}
+                  {/* Right Side: Quick Action Toolbar + Details Button */}
+                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                    {/* Quick Sync / Push */}
                     <button
-                      onClick={() => pushContainer(container.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pushContainer(container.id);
+                      }}
                       disabled={isSyncing}
-                      title="Push local changes to server"
-                      className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      title="Push local changes"
+                      className={`px-2.5 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                         isSyncing && syncDirection === 'push'
-                          ? 'bg-[#c9cd58]/25 text-[#e5e971] cursor-wait'
-                          : isSyncing
-                          ? 'opacity-40 cursor-not-allowed bg-[#1e2020] text-[#93927e]'
-                          : 'bg-[#1e2020] hover:bg-[#c9cd58]/15 border border-[#333] hover:border-[#c9cd58]/60 text-[#e2e2e2] hover:text-[#e5e971]'
+                          ? 'bg-[#c9cd58]/25 text-[#e5e971] border-[#c9cd58]/40'
+                          : 'bg-[#121414] hover:bg-[#c9cd58]/15 border-[#242828] hover:border-[#c9cd58]/60 text-[#e2e2e2] hover:text-[#e5e971]'
                       }`}
                     >
                       <Upload className={`w-3.5 h-3.5 ${isSyncing && syncDirection === 'push' ? 'animate-bounce text-[#e5e971]' : ''}`} />
-                      <span>{isSyncing && syncDirection === 'push' ? 'Pushing...' : 'Push'}</span>
-                      {(pendingChanges[container.id] ?? 0) > 0 && !isSyncing && (
-                        <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[9px] font-bold flex items-center justify-center">
-                          {pendingChanges[container.id]}
-                        </span>
-                      )}
+                      <span>Push</span>
                     </button>
 
-                    {/* Pull Button */}
+                    {/* Quick Pull */}
                     <button
-                      onClick={() => pullContainer(container.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pullContainer(container.id);
+                      }}
                       disabled={isSyncing}
-                      title="Pull latest notes from server"
-                      className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      title="Pull latest notes"
+                      className={`px-2.5 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                         isSyncing && syncDirection === 'pull'
-                          ? 'bg-[#a855f7]/25 text-[#d8b4fe] cursor-wait'
-                          : isSyncing
-                          ? 'opacity-40 cursor-not-allowed bg-[#1e2020] text-[#93927e]'
-                          : 'bg-[#1e2020] hover:bg-[#a855f7]/15 border border-[#333] hover:border-[#a855f7]/60 text-[#e2e2e2] hover:text-[#d8b4fe]'
+                          ? 'bg-[#a855f7]/25 text-[#d8b4fe] border-[#a855f7]/40'
+                          : 'bg-[#121414] hover:bg-[#a855f7]/15 border-[#242828] hover:border-[#a855f7]/60 text-[#e2e2e2] hover:text-[#d8b4fe]'
                       }`}
                     >
                       <Download className={`w-3.5 h-3.5 ${isSyncing && syncDirection === 'pull' ? 'animate-bounce text-[#d8b4fe]' : ''}`} />
-                      <span>{isSyncing && syncDirection === 'pull' ? 'Pulling...' : 'Pull'}</span>
+                      <span>Pull</span>
                     </button>
 
+                    {/* Calendar Filter Toggle */}
                     <button
-                      onClick={() => {
-                        if (window.confirm(t.deleteContainerConfirm || 'Удалить этот контейнер?')) {
-                          deleteContainer(container.id);
-                        }
-                      }}
-                      title={t.deleteContainer}
-                      className="p-1.5 rounded-md bg-[#1e2020] hover:bg-[#2a1a1a] border border-[#242828] hover:border-[#ef4444] text-[#93927e] hover:text-[#f87171] transition-colors"
+                      type="button"
+                      onClick={handleToggleContainerFilter}
+                      title={isSelected ? 'Сбросить фильтр' : 'Фильтровать календарь по контейнеру'}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        isSelected
+                          ? 'bg-[#a855f7] text-white border-[#a855f7] shadow-[0_0_10px_rgba(168,85,247,0.4)]'
+                          : 'bg-[#121414] text-[#93927e] border-[#242828] hover:text-white hover:border-[#666]'
+                      }`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      {isSelected ? <Check className="w-3.5 h-3.5" /> : <Filter className="w-3.5 h-3.5" />}
+                    </button>
+
+                    {/* Copy Token Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyToken(container.id, container.token);
+                      }}
+                      title="Скопировать токен контейнера"
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        isCopied
+                          ? 'bg-[#22c55e] text-white border-[#22c55e]'
+                          : 'bg-[#121414] text-[#93927e] border-[#242828] hover:text-white hover:border-[#a855f7]'
+                      }`}
+                    >
+                      {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+
+                    {/* Primary Details CTA Button (Redirects to Container Page) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSingleContainerId(container.id);
+                        setInitialDetailTab('history');
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#a855f7]/15 hover:bg-[#a855f7] text-[#d8b4fe] hover:text-white border border-[#a855f7]/40 font-mono font-bold text-xs transition-all flex items-center gap-1.5 group/btn shadow-[0_0_12px_rgba(168,85,247,0.15)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] ml-1"
+                    >
+                      <span>Детали</span>
+                      <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
                     </button>
                   </div>
                 </div>
+
+                {/* Expanded Accordion Content Zone */}
+                {isExpanded && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-2 pt-3 border-t border-[#242828] space-y-3 animate-in fade-in duration-150 text-xs cursor-default"
+                  >
+                    {/* 1. Unpushed Local Changes Section */}
+                    <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] space-y-2">
+                      <div className="flex items-center justify-between font-mono text-[11px] font-bold text-[#e5e971]">
+                        <span className="flex items-center gap-1.5">
+                          <Upload className="w-3.5 h-3.5 text-[#c9cd58]" />
+                          <span>Локальные несинхронизированные изменения (Unpushed)</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-[#c9cd58]/15 text-[#e5e971] border border-[#c9cd58]/30 text-[10px]">
+                          {pending > 0 ? `${pending} файла в очереди` : 'Все изменения запушены'}
+                        </span>
+                      </div>
+
+                      {pending > 0 ? (
+                        <div className="space-y-1 font-mono text-[11px]">
+                          <div className="flex items-center justify-between text-[#d8b4fe] bg-[#1a1726] p-2 rounded border border-[#a855f7]/30">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse" />
+                              <span>● Изменено: Note Q4 Content Strategy Review.md</span>
+                            </span>
+                            <span className="text-[10px] text-[#93927e]">не запушено</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] font-mono text-[#93927e]">
+                          ✓ Нет локальных изменений, ожидающих отправки на сервер.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 2. Compact Note ChangeLog Stream */}
+                    <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] space-y-2">
+                      <div className="flex items-center justify-between font-mono text-[11px] font-bold text-[#c9c7b2]">
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-[#3b82f6]" />
+                          <span>Лента изменений (Last Changes)</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSingleContainerId(container.id);
+                            setInitialDetailTab('history');
+                          }}
+                          className="text-[10px] text-[#a855f7] hover:text-[#d8b4fe] hover:underline font-semibold flex items-center gap-1"
+                        >
+                          <span>Полная история (Time Machine)</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
+                          <span className="flex items-center gap-2 text-[#22c55e]">
+                            <span className="font-bold">+</span>
+                            <span className="text-[#e2e2e2]">Добавлено Note Новости Мира, ООН.</span>
+                          </span>
+                          <span className="text-[#93927e] text-[10px]">25.08.26</span>
+                        </div>
+
+                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
+                          <span className="flex items-center gap-2 text-[#22c55e]">
+                            <span className="font-bold">+</span>
+                            <span className="text-[#e2e2e2]">Добавлено Note Новости Мира, Выборы в Конгресс США.</span>
+                          </span>
+                          <span className="text-[#93927e] text-[10px]">25.08.26</span>
+                        </div>
+
+                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
+                          <span className="flex items-center gap-2 text-[#e5e971]">
+                            <span className="font-bold">~</span>
+                            <span className="text-[#e2e2e2]">Обновлена заметка План релизов v2.1</span>
+                          </span>
+                          <span className="text-[#93927e] text-[10px]">24.08.26</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

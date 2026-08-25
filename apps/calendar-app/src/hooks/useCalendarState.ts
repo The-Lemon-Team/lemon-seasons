@@ -10,6 +10,7 @@ function getDefaultFilterState(): CalendarFilterState {
     end: bounds.end,
     view: 'timeline',
     feed: undefined,
+    containers: [],
     tags: [],
     hashtags: [],
     types: [],
@@ -17,21 +18,63 @@ function getDefaultFilterState(): CalendarFilterState {
   };
 }
 
-export function parseUrlSearch(searchString: string): CalendarFilterState {
+export function getPathForView(view: CalendarViewMode): string {
+  switch (view) {
+    case 'month':
+      return '/calendar';
+    case 'gantt':
+      return '/gantts';
+    case 'feeds':
+      return '/feeds';
+    case 'folders':
+      return '/folders';
+    case 'obsidian':
+      return '/obsidian';
+    case 'timeline':
+    default:
+      return '/';
+  }
+}
+
+export function getViewFromPath(pathname: string = window.location.pathname, viewQueryParam?: string | null): CalendarViewMode {
+  const path = (pathname || '/').toLowerCase().replace(/\/+$/, '');
+  if (path.endsWith('/calendar')) return 'month';
+  if (path.endsWith('/gantt') || path.endsWith('/gantts') || path.endsWith('/gannts')) return 'gantt';
+  if (path.endsWith('/feeds')) return 'feeds';
+  if (path.endsWith('/folders')) return 'folders';
+  if (path.endsWith('/obsidian')) return 'obsidian';
+
+  if (viewQueryParam) {
+    if (
+      viewQueryParam === 'gantt' ||
+      viewQueryParam === 'month' ||
+      viewQueryParam === 'timeline' ||
+      viewQueryParam === 'feeds' ||
+      viewQueryParam === 'obsidian' ||
+      viewQueryParam === 'folders'
+    ) {
+      return viewQueryParam as CalendarViewMode;
+    }
+  }
+
+  return 'timeline';
+}
+
+export function parseUrlSearch(pathname: string = window.location.pathname, searchString: string = window.location.search): CalendarFilterState {
   const defaults = getDefaultFilterState();
   const params = new URLSearchParams(searchString);
 
   const start = params.get('start') || defaults.start;
   const end = params.get('end') || defaults.end;
   const viewRaw = params.get('view');
-  const view: CalendarViewMode =
-    viewRaw === 'gantt' || viewRaw === 'month' || viewRaw === 'timeline' || viewRaw === 'feeds' || viewRaw === 'obsidian'
-      ? viewRaw
-      : 'timeline';
-
+  const view: CalendarViewMode = getViewFromPath(pathname, viewRaw);
 
   const feedParam = params.get('feed') || params.get('feeds');
   const feed = feedParam ? feedParam.split(',')[0].trim() || undefined : undefined;
+
+  const containers = params.get('containers')
+    ? params.get('containers')!.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
 
   const tags = params.get('tags')
     ? params.get('tags')!.split(',').map((s) => s.trim()).filter(Boolean)
@@ -52,6 +95,7 @@ export function parseUrlSearch(searchString: string): CalendarFilterState {
     end,
     view,
     feed,
+    containers,
     tags,
     hashtags,
     types,
@@ -64,8 +108,8 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
 
   if (state.start) params.set('start', state.start);
   if (state.end) params.set('end', state.end);
-  if (state.view && state.view !== 'timeline') params.set('view', state.view);
   if (state.feed) params.set('feed', state.feed);
+  if (state.containers && state.containers.length > 0) params.set('containers', state.containers.join(','));
   if (state.tags && state.tags.length > 0) params.set('tags', state.tags.join(','));
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
@@ -77,13 +121,13 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
 
 export function useCalendarState() {
   const [filterState, setFilterState] = useState<CalendarFilterState>(() =>
-    parseUrlSearch(window.location.search)
+    parseUrlSearch(window.location.pathname, window.location.search)
   );
 
   // Sync with browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      setFilterState(parseUrlSearch(window.location.search));
+      setFilterState(parseUrlSearch(window.location.pathname, window.location.search));
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -94,9 +138,11 @@ export function useCalendarState() {
   const updateFilter = useCallback((updater: Partial<CalendarFilterState> | ((prev: CalendarFilterState) => CalendarFilterState)) => {
     setFilterState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+      const path = getPathForView(next.view);
       const search = serializeFilterToUrl(next);
-      const newUrl = `${window.location.pathname}${search}${window.location.hash}`;
-      if (newUrl !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      const newUrl = `${path}${search}${window.location.hash}`;
+      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (newUrl !== currentUrl) {
         window.history.pushState(null, '', newUrl);
       }
       return next;
@@ -136,6 +182,29 @@ export function useCalendarState() {
 
   const clearFeed = useCallback(() => {
     updateFilter({ feed: undefined });
+  }, [updateFilter]);
+
+  const toggleContainer = useCallback((containerId: string) => {
+    updateFilter((prev) => {
+      const current = prev.containers || [];
+      const exists = current.includes(containerId);
+      const containers = exists
+        ? current.filter((id: string) => id !== containerId)
+        : [...current, containerId];
+      return { ...prev, containers };
+    });
+  }, [updateFilter]);
+
+  const selectOnlyContainer = useCallback((containerId: string) => {
+    updateFilter({ containers: [containerId] });
+  }, [updateFilter]);
+
+  const setAllContainers = useCallback((containers: string[]) => {
+    updateFilter({ containers });
+  }, [updateFilter]);
+
+  const clearContainers = useCallback(() => {
+    updateFilter({ containers: [] });
   }, [updateFilter]);
 
   const toggleTag = useCallback((tagPath: string) => {
@@ -210,8 +279,9 @@ export function useCalendarState() {
       const target = cur.subtract(1, 'month');
       const bounds = getMonthBounds(target.year(), target.month());
       const next = { ...prev, start: bounds.start, end: bounds.end };
+      const path = getPathForView(next.view);
       const search = serializeFilterToUrl(next);
-      window.history.pushState(null, '', `${window.location.pathname}${search}${window.location.hash}`);
+      window.history.pushState(null, '', `${path}${search}${window.location.hash}`);
       return next;
     });
   }, []);
@@ -222,8 +292,9 @@ export function useCalendarState() {
       const target = cur.add(1, 'month');
       const bounds = getMonthBounds(target.year(), target.month());
       const next = { ...prev, start: bounds.start, end: bounds.end };
+      const path = getPathForView(next.view);
       const search = serializeFilterToUrl(next);
-      window.history.pushState(null, '', `${window.location.pathname}${search}${window.location.hash}`);
+      window.history.pushState(null, '', `${path}${search}${window.location.hash}`);
       return next;
     });
   }, []);
@@ -237,6 +308,7 @@ export function useCalendarState() {
   const resetFilters = useCallback(() => {
     updateFilter({
       feed: undefined,
+      containers: [],
       tags: [],
       hashtags: [],
       types: [],
@@ -257,6 +329,10 @@ export function useCalendarState() {
     selectOnlyFeed,
     clearFeed,
     clearFeeds: clearFeed,
+    toggleContainer,
+    selectOnlyContainer,
+    setAllContainers,
+    clearContainers,
     toggleTag,
     selectOnlyTag,
     setAllTags,

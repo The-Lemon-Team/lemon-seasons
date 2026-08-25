@@ -48,6 +48,7 @@ interface ObsidianContainersContextType {
       observeMode?: 'all' | 'filtered' | 'recursive';
       filterTag?: string;
       privacy?: FolderPrivacy;
+      notesCount?: number;
     }
   ) => { success: boolean; error?: string };
   removeBoundFolder: (containerId: string, folderId: string) => void;
@@ -269,6 +270,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         observeMode?: 'all' | 'filtered' | 'recursive';
         filterTag?: string;
         privacy?: FolderPrivacy;
+        notesCount?: number;
       }>;
     }): ObsidianContainer => {
       const id = `cont-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -291,7 +293,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         isPrimary: bf.isPrimary ?? idx === 0,
         observeMode: bf.observeMode || 'recursive',
         filterTag: bf.filterTag,
-        notesCount: Math.floor(Math.random() * 15) + 2,
+        notesCount: (bf as any).notesCount ?? 0,
         status: 'active',
         privacy: bf.privacy || (input.privacy === 'private' ? 'private' : 'public'),
       }));
@@ -401,6 +403,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         observeMode?: 'all' | 'filtered' | 'recursive';
         filterTag?: string;
         privacy?: FolderPrivacy;
+        notesCount?: number;
       }
     ): { success: boolean; error?: string } => {
       const container = containers.find((c) => c.id === containerId);
@@ -424,7 +427,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         isPrimary: folder.isPrimary ?? container.boundFolders.length === 0,
         observeMode: folder.observeMode || 'recursive',
         filterTag: folder.filterTag,
-        notesCount: Math.floor(Math.random() * 10) + 1,
+        notesCount: folder.notesCount ?? 0,
         status: 'active',
         privacy: folder.privacy || (container.privacy === 'private' ? 'private' : 'public'),
       };

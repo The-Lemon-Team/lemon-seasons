@@ -4438,9 +4438,9 @@ var changed_files_scanner_exports = {};
 __export(changed_files_scanner_exports, {
   scanChangedFiles: () => scanChangedFiles
 });
-async function scanChangedFiles(app, settings2) {
-  const rootFolder = settings2.vaultRootFolder || "Lenta";
-  const lastSync = settings2.lastSyncedAt ? new Date(settings2.lastSyncedAt).getTime() : 0;
+async function scanChangedFiles(app, settings) {
+  const rootFolder = settings.vaultRootFolder || "Lenta";
+  const lastSync = settings.lastSyncedAt ? new Date(settings.lastSyncedAt).getTime() : 0;
   const allFiles = app.vault.getMarkdownFiles();
   const changed = [];
   for (const file of allFiles) {
@@ -4520,6 +4520,8 @@ var LentaApiClient = class {
       return { success: false, error: "Specified container key cannot be empty" };
     }
     const cleanKey = key.trim();
+    const isPrivate = cleanKey.includes("priv") || cleanKey.startsWith("lenta_obs_");
+    const defaultName = isPrivate ? `\u{1F512} User Vault Container (${cleanKey.slice(0, 16)})` : `\u{1F34B} Obsidian Container (${cleanKey.slice(0, 16)})`;
     try {
       const container = await this.containerRequest({
         url: `${this.containerBaseUrl}/containers/by-key/${encodeURIComponent(cleanKey)}`,
@@ -4528,14 +4530,18 @@ var LentaApiClient = class {
           "X-Container-Key": cleanKey
         }
       });
+      const containerId = container.id && container.id !== "main-git-vault" && container.id !== "simple-notes" ? container.id : cleanKey.startsWith("cont-") || cleanKey.startsWith("lenta_obs_") ? cleanKey : `cont-${cleanKey}`;
+      const containerName = container.name && container.name !== "Main Git Vault" && container.name !== "Simple Notes Vault" ? container.name : defaultName;
       return {
         success: true,
         container: {
-          id: container.id,
-          name: container.name,
+          id: containerId,
+          name: containerName,
           type: container.type || "git",
           scope: { type: "all" },
-          totalNotes: container.totalFiles ?? container.totalNotes ?? 0
+          totalNotes: container.totalFiles ?? container.totalNotes ?? 0,
+          isPublic: !isPrivate,
+          visibility: isPrivate ? "private" : "public"
         }
       };
     } catch (err) {
@@ -4552,19 +4558,23 @@ var LentaApiClient = class {
               name: `\u{1F4F0} Feed: ${matchedFeed.title}`,
               type: "git",
               scope: { type: "feed", feedSlug: matchedFeed.slug },
-              totalNotes: matchedFeed._count?.notes || 0
+              totalNotes: matchedFeed._count?.notes || 0,
+              isPublic: true,
+              visibility: "public"
             }
           };
         }
-        const containerId = cleanKey.startsWith("cont-") || cleanKey.startsWith("feed-") ? cleanKey : `cont-${cleanKey}`;
+        const containerId = cleanKey.startsWith("cont-") || cleanKey.startsWith("lenta_obs_") ? cleanKey : `cont-${cleanKey}`;
         return {
           success: true,
           container: {
             id: containerId,
-            name: `\u{1F34B} Obsidian Container (${cleanKey.slice(0, 14)})`,
+            name: defaultName,
             type: "git",
             scope: { type: "all" },
-            totalNotes: 0
+            totalNotes: 0,
+            isPublic: !isPrivate,
+            visibility: isPrivate ? "private" : "public"
           }
         };
       } catch (fallbackErr) {
@@ -4586,6 +4596,17 @@ var LentaApiClient = class {
         role: "user"
       }
     };
+  }
+  async getUserKeys() {
+    try {
+      const res = await this.request({
+        url: `${this.baseUrl}/keys`,
+        method: "GET"
+      });
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   }
   // --- Lenta Core Endpoints ---
   async getFeeds() {
@@ -4621,10 +4642,17 @@ var LentaApiClient = class {
     if (params?.tagPath)
       query.set("tagPath", params.tagPath);
     const queryString = query.toString() ? `?${query.toString()}` : "";
-    return this.request({
+    const res = await this.request({
       url: `${this.baseUrl}/notes${queryString}`,
       method: "GET"
     });
+    if (Array.isArray(res)) {
+      return res;
+    }
+    if (res && Array.isArray(res.items)) {
+      return res.items;
+    }
+    return [];
   }
   async getSyncChanges(since) {
     const query = since ? `?since=${encodeURIComponent(since)}` : "";
@@ -4711,60 +4739,118 @@ Content-Type: ${mimeType}\r
   }
   async listContainers(options) {
     const specifiedKey = typeof options === "string" ? options : options?.specifiedKey;
-    const fetchAll = typeof options === "object" ? Boolean(options?.fetchAll) : false;
-    const key = specifiedKey || (!fetchAll ? this.containerKey : void 0);
-    if (key) {
-      const res = await this.connectContainerByKey(key);
-      if (res.success && res.container) {
-        return [res.container];
+    const containerMap = /* @__PURE__ */ new Map();
+    const resolvePrivacy = (id, name, isPublicProp, visibilityProp) => {
+      if (visibilityProp === "private" || isPublicProp === false) {
+        return { isPublic: false, visibility: "private" };
       }
-    }
+      if (visibilityProp === "public" || isPublicProp === true) {
+        return { isPublic: true, visibility: "public" };
+      }
+      const lowerId = (id || "").toLowerCase();
+      const lowerName = (name || "").toLowerCase();
+      const isPrivateKw = lowerId.includes("myspace") || lowerId.includes("private") || lowerId.includes("personal") || lowerId.includes("secret") || lowerName.includes("myspace") || lowerName.includes("private") || lowerName.includes("personal") || lowerName.includes("secret");
+      return isPrivateKw ? { isPublic: false, visibility: "private" } : { isPublic: true, visibility: "public" };
+    };
     try {
       const raw = await this.containerRequest(
         { url: `${this.containerBaseUrl}/containers`, method: "GET" }
       );
-      if (Array.isArray(raw) && raw.length > 0) {
-        return raw.map((c) => {
-          const isPublic = c.isPublic ?? (c.id.startsWith("feed-") || c.id.includes("public"));
-          return {
+      if (Array.isArray(raw)) {
+        for (const c of raw) {
+          const priv = resolvePrivacy(c.id, c.name, c.isPublic, c.visibility);
+          containerMap.set(c.id, {
             id: c.id,
             name: c.name,
             type: c.type || "git",
             scope: { type: "all" },
             totalNotes: c.totalFiles ?? c.totalNotes ?? 0,
-            isPublic,
-            visibility: isPublic ? "public" : "private"
-          };
-        });
+            isPublic: priv.isPublic,
+            visibility: priv.visibility
+          });
+        }
       }
     } catch (err) {
       console.warn("Could not fetch containers from sync server, using fallback feeds:", err);
     }
-    const feeds = await this.getFeeds().catch(() => []);
-    const containers = [
-      {
-        id: "feed-all",
-        name: "\u{1F34B} All Feeds (Master Vault)",
-        type: "git",
-        scope: { type: "all" },
-        totalNotes: feeds.reduce((sum, f) => sum + (f._count?.notes || 0), 0),
-        isPublic: true,
-        visibility: "public"
+    try {
+      const feeds = await this.getFeeds().catch(() => []);
+      if (!containerMap.has("feed-all")) {
+        containerMap.set("feed-all", {
+          id: "feed-all",
+          name: "\u{1F34B} All Feeds (Master Vault)",
+          type: "git",
+          scope: { type: "all" },
+          totalNotes: feeds.reduce((sum, f) => sum + (f._count?.notes || 0), 0),
+          isPublic: true,
+          visibility: "public"
+        });
       }
-    ];
-    for (const feed of feeds) {
-      containers.push({
-        id: `feed-${feed.slug}`,
-        name: `\u{1F4F0} Feed: ${feed.title}`,
-        type: "git",
-        scope: { type: "feed", feedSlug: feed.slug },
-        totalNotes: feed._count?.notes || 0,
-        isPublic: true,
-        visibility: "public"
+      for (const feed of feeds) {
+        const feedId = `feed-${feed.slug}`;
+        if (!containerMap.has(feedId)) {
+          containerMap.set(feedId, {
+            id: feedId,
+            name: `\u{1F4F0} Feed: ${feed.title}`,
+            type: "git",
+            scope: { type: "feed", feedSlug: feed.slug },
+            totalNotes: feed._count?.notes || 0,
+            isPublic: true,
+            visibility: "public"
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch feeds for container synthesis:", err);
+    }
+    const keysToResolve = /* @__PURE__ */ new Set();
+    if (specifiedKey) {
+      keysToResolve.add(specifiedKey);
+    }
+    if (this.containerKey) {
+      this.containerKey.split(",").forEach((k) => {
+        if (k.trim())
+          keysToResolve.add(k.trim());
       });
     }
-    if (this.authToken) {
-      containers.push({
+    if (this.containerApiKey) {
+      this.containerApiKey.split(",").forEach((k) => {
+        if (k.trim())
+          keysToResolve.add(k.trim());
+      });
+    }
+    if (this.authToken && (this.authToken.startsWith("lenta_obs_") || this.authToken.startsWith("cont-"))) {
+      keysToResolve.add(this.authToken.trim());
+    }
+    try {
+      const userKeys = await this.getUserKeys();
+      for (const uk of userKeys) {
+        if (!uk.isRevoked && uk.key) {
+          keysToResolve.add(uk.key.trim());
+        }
+      }
+    } catch {
+    }
+    for (const key of keysToResolve) {
+      let found = false;
+      for (const [existingId, container] of containerMap.entries()) {
+        if (existingId === key || container.id.includes(key) || container.name.toLowerCase().includes(key.toLowerCase())) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        try {
+          const res = await this.connectContainerByKey(key);
+          if (res.success && res.container) {
+            containerMap.set(res.container.id, res.container);
+          }
+        } catch {
+        }
+      }
+    }
+    if (this.authToken && !containerMap.has("cont-private-user-vault")) {
+      containerMap.set("cont-private-user-vault", {
         id: "cont-private-user-vault",
         name: "\u{1F510} Private Vault Container (User)",
         type: "git",
@@ -4774,7 +4860,7 @@ Content-Type: ${mimeType}\r
         visibility: "private"
       });
     }
-    return containers;
+    return Array.from(containerMap.values());
   }
   // --- Git History & Time Machine Endpoints ---
   async getContainerCommits(containerId, limit = 50) {
@@ -4792,6 +4878,18 @@ Content-Type: ${mimeType}\r
   async getFileVersion(containerId, path, commitHash) {
     return this.containerRequest({
       url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/file-version?path=${encodeURIComponent(path)}&commit=${encodeURIComponent(commitHash)}`,
+      method: "GET"
+    });
+  }
+  async getContainerFiles(containerId) {
+    return this.containerRequest({
+      url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/files`,
+      method: "GET"
+    });
+  }
+  async getContainerTree(containerId) {
+    return this.containerRequest({
+      url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/tree`,
       method: "GET"
     });
   }
@@ -5073,15 +5171,15 @@ var LentaSyncEngine = class {
    * using field-level Last-Write-Wins (LWW) resolution.
    */
   async pullChanges() {
-    const settings2 = this.getSettings();
+    const settings = this.getSettings();
     await this.ledgerManager.loadLedger();
-    const lastSync = this.ledgerManager.lastSyncTimestamp || settings2.lastSyncedAt || void 0;
+    const lastSync = this.ledgerManager.lastSyncTimestamp || settings.lastSyncedAt || void 0;
     const result = await this.apiClient.getSyncChanges(lastSync);
     const conflicts = [];
     let pulledCount = 0;
     let deletedCount = 0;
     const vault = this.app.vault;
-    const rootFolder = settings2.vaultRootFolder || "Lenta";
+    const rootFolder = settings.vaultRootFolder || "Lenta";
     await this.ensureFolder(rootFolder);
     for (const note of result.notes) {
       const ledgerEntry = this.ledgerManager.getEntry(note.id);
@@ -5106,7 +5204,7 @@ var LentaSyncEngine = class {
             note,
             existingFile.stat.mtime
           );
-          if (mergeResult.isConflict && settings2.defaultConflictStrategy === "manual_merge") {
+          if (mergeResult.isConflict && settings.defaultConflictStrategy === "manual_merge") {
             conflicts.push({
               path: filePath,
               status: "conflict",
@@ -5152,13 +5250,33 @@ var LentaSyncEngine = class {
       }
     }
     this.ledgerManager.lastSyncTimestamp = result.syncedAt;
-    settings2.lastSyncedAt = result.syncedAt;
+    settings.lastSyncedAt = result.syncedAt;
     await this.ledgerManager.saveLedger();
     await this.saveSettings();
     return {
       pulledCount,
       deletedCount,
       conflicts
+    };
+  }
+  /**
+   * Syncs files & structure for multiple active container IDs, then runs delta pull reconciliation.
+   */
+  async pullAllContainers(containerIds, containerNameMap) {
+    let downloadedFiles = 0;
+    for (const id of containerIds) {
+      try {
+        const name = containerNameMap?.get(id) || id;
+        const res = await this.syncContainerFiles(id, name);
+        downloadedFiles += res.downloadedFiles;
+      } catch (err) {
+        console.warn(`Failed to sync container ${id}:`, err);
+      }
+    }
+    const deltaRes = await this.pullChanges();
+    return {
+      downloadedFiles,
+      ...deltaRes
     };
   }
   /**
@@ -5341,6 +5459,74 @@ var LentaSyncEngine = class {
     };
     return map[ext.toLowerCase()] || "application/octet-stream";
   }
+  /**
+   * Downloads and syncs actual folder structure and files for a specific connected container into the local Obsidian vault.
+   */
+  async syncContainerFiles(containerId, containerName) {
+    const settings = this.getSettings();
+    const vault = this.app.vault;
+    const rootFolder = settings.vaultRootFolder || "Lenta";
+    const safeFolderName = (containerName || containerId).replace(/[\\/:*?"<>|]/g, "_");
+    const containerFolderPath = (0, import_obsidian3.normalizePath)(`${rootFolder}/${safeFolderName}`);
+    await this.ensureFolder(containerFolderPath);
+    let downloadedFiles = 0;
+    let createdFolders = 0;
+    let containerFiles = [];
+    try {
+      containerFiles = await this.apiClient.getContainerFiles(containerId);
+    } catch (err) {
+      console.warn(`Could not fetch container files from container server for ${containerId}:`, err);
+    }
+    if (Array.isArray(containerFiles) && containerFiles.length > 0) {
+      for (const fileItem of containerFiles) {
+        if (!fileItem.path)
+          continue;
+        const normalizedRelPath = (0, import_obsidian3.normalizePath)(fileItem.path).replace(/^\/+/, "");
+        const targetVaultPath = (0, import_obsidian3.normalizePath)(`${containerFolderPath}/${normalizedRelPath}`);
+        await this.ensureDirectoryForFile(targetVaultPath);
+        const content = fileItem.content || "";
+        const existingFile = vault.getAbstractFileByPath(targetVaultPath);
+        if (existingFile instanceof import_obsidian3.TFile) {
+          await vault.modify(existingFile, content);
+        } else {
+          await vault.create(targetVaultPath, content);
+        }
+        downloadedFiles++;
+      }
+      return { downloadedFiles, createdFolders };
+    }
+    try {
+      let notes = [];
+      if (containerId.startsWith("feed-") && containerId !== "feed-all") {
+        const feedSlug = containerId.replace(/^feed-/, "");
+        const feeds = await this.apiClient.getFeeds().catch(() => []);
+        const matchedFeed = feeds.find((f) => f.slug === feedSlug || f.id === feedSlug);
+        if (matchedFeed) {
+          notes = await this.apiClient.getNotes({ feedId: matchedFeed.id });
+        }
+      }
+      if (notes.length === 0 && (!containerId.startsWith("feed-") || containerId === "feed-all")) {
+        const fullSync = await this.apiClient.getSyncChanges();
+        notes = fullSync.notes || [];
+      }
+      for (const note of notes) {
+        const noteFileName = `${(note.title || "Untitled Note").replace(/[\\/:*?"<>|]/g, "_")}.md`;
+        const noteVaultPath = (0, import_obsidian3.normalizePath)(`${containerFolderPath}/${noteFileName}`);
+        await this.ensureDirectoryForFile(noteVaultPath);
+        const markdownContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
+        const existingFile = vault.getAbstractFileByPath(noteVaultPath);
+        if (existingFile instanceof import_obsidian3.TFile) {
+          await vault.modify(existingFile, markdownContent);
+        } else {
+          await vault.create(noteVaultPath, markdownContent);
+        }
+        downloadedFiles++;
+      }
+    } catch (fallbackErr) {
+      console.warn(`Failed to pull notes for container ${containerId}:`, fallbackErr);
+    }
+    return { downloadedFiles, createdFolders };
+  }
   async ensureFolder(path) {
     const norm = (0, import_obsidian3.normalizePath)(path);
     const existing = this.app.vault.getAbstractFileByPath(norm);
@@ -5464,8 +5650,8 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
       });
     });
     new import_obsidian4.Setting(contentEl).setName("Target Container Folder").setDesc("Select the container folder for note placement (Obsidian rule: limit 1 folder).").addDropdown((dropdown) => {
-      const settings2 = this.getSettings();
-      const activeContainerName = settings2.connectedContainerName || settings2.activeContainerId || "Main Container";
+      const settings = this.getSettings();
+      const activeContainerName = settings.connectedContainerName || settings.activeContainerId || "Main Container";
       dropdown.addOption("root", `\u{1F4C1} / (Root: ${activeContainerName})`);
       for (const folder of this.folders) {
         dropdown.addOption(folder.id, `\u{1F4C1} ${folder.path}`);
@@ -5714,7 +5900,8 @@ var GitHistoryModal = class extends import_obsidian6.Modal {
     const header = contentEl.createDiv({ cls: "lenta-history-header" });
     const titleRow = header.createDiv({ cls: "lenta-history-title-row" });
     titleRow.createEl("h2", { text: "\u{1F4DC} Git Version History & Time Machine" });
-    const badge = titleRow.createSpan({ cls: "lenta-badge" });
+    const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+    const badge = badgeRow.createSpan({ cls: "lenta-badge" });
     badge.setText(this.containerName.toUpperCase());
     header.createEl("p", {
       cls: "lenta-history-desc",
@@ -5795,10 +5982,12 @@ var GitHistoryModal = class extends import_obsidian6.Modal {
 
 // src/ui/sync-modal.ts
 var LentaSyncModal = class extends import_obsidian7.Modal {
-  constructor(app, apiClient, syncEngine, settings2, onSaveSettings) {
+  constructor(app, apiClient, syncEngine, settings, onSaveSettings) {
     super(app);
     this.containers = [];
     this.activeContainerId = "";
+    this.selectedContainerFilter = "all";
+    // 'all' or specific containerId
     this.isLoading = false;
     this.isPushing = false;
     this.isPulling = false;
@@ -5810,9 +5999,9 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
     this.pushingFilePath = null;
     this.apiClient = apiClient;
     this.syncEngine = syncEngine;
-    this.settings = settings2;
+    this.settings = settings;
     this.onSaveSettings = onSaveSettings;
-    this.activeContainerId = settings2.activeContainerId || "feed-all";
+    this.activeContainerId = settings.activeContainerId || settings.activeContainerIds?.[0] || "feed-all";
   }
   async onOpen() {
     this.modalEl.addClass("lenta-sync-modal-frame");
@@ -5822,15 +6011,23 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
   onClose() {
     this.contentEl.empty();
   }
+  getActiveContainerIds() {
+    if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
+      return this.settings.activeContainerIds;
+    }
+    if (this.settings.activeContainerId) {
+      return [this.settings.activeContainerId];
+    }
+    return [];
+  }
   async loadContainers() {
     this.isLoading = true;
     this.render();
     try {
-      this.containers = await this.apiClient.listContainers();
-      if (!this.containers.find((c) => c.id === this.activeContainerId) && this.containers.length > 0) {
-        this.activeContainerId = this.containers[0].id;
-        this.settings.activeContainerId = this.activeContainerId;
-        await this.onSaveSettings();
+      this.containers = await this.apiClient.listContainers({ fetchAll: true }).catch(() => []);
+      const activeIds = this.getActiveContainerIds();
+      if (activeIds.length > 0 && !activeIds.includes(this.activeContainerId)) {
+        this.activeContainerId = activeIds[0];
       }
     } catch (err) {
       this.statusMessage = `Connection error: ${err.message}`;
@@ -5854,16 +6051,25 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
   render() {
     const { contentEl } = this;
     contentEl.empty();
+    const activeContainerIds = this.getActiveContainerIds();
+    const isMultiContainer = activeContainerIds.length > 1;
     const header = contentEl.createDiv({ cls: "lenta-sync-header" });
     const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
     titleRow.createEl("h2", { text: "\u{1F34B} Lemon Lenta \u2014 Sync Hub" });
-    const badge = titleRow.createSpan({ cls: "lenta-badge" });
-    badge.setText(this.isLoading ? "CONNECTING..." : "ONLINE");
+    const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+    const badge = badgeRow.createSpan({ cls: "lenta-badge" });
+    if (this.isLoading) {
+      badge.setText("CONNECTING...");
+    } else if (activeContainerIds.length > 0) {
+      badge.setText(`CONNECTED: ${activeContainerIds.length} Container${activeContainerIds.length > 1 ? "s" : ""}`);
+    } else {
+      badge.setText("ONLINE");
+    }
     header.createEl("p", {
       cls: "lenta-sync-desc",
-      text: "Push & pull chronological notes between Project Lenta server and Obsidian vault."
+      text: "Push & pull chronological notes between Project Lenta server and Obsidian vault across connected containers."
     });
-    if (!this.settings.containerKey) {
+    if (!this.settings.containerKey && activeContainerIds.length === 0) {
       const connectBox = contentEl.createDiv({ cls: "lenta-sync-container-box" });
       connectBox.createEl("h3", { text: "\u{1F511} Connect Container by Key" });
       connectBox.createEl("p", {
@@ -5885,29 +6091,78 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
       return;
     }
     const containerSection = contentEl.createDiv({ cls: "lenta-sync-container-box" });
-    const currentContainer = this.containers.find((c) => c.id === this.activeContainerId) || this.containers[0];
-    const containerName = currentContainer?.name || this.settings.connectedContainerName || "Connected Container";
-    const infoBox = containerSection.createDiv({ cls: "lenta-connected-key-badge" });
-    infoBox.style.cssText = "padding: 8px 12px; background: #1a291e; border: 1px solid #333; border-radius: 6px; color: #8ee29a; font-size: 0.9em; margin-bottom: 10px;";
-    infoBox.innerHTML = `<strong>Connected Container:</strong> ${containerName} <span style="opacity:0.75; font-family: monospace;">(Key: ${this.settings.containerKey.slice(0, 14)}...)</span>`;
+    containerSection.style.cssText = "margin-bottom: 16px; padding: 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border);";
+    const sectionTitleRow = containerSection.createDiv({ cls: "lenta-sync-container-header" });
+    sectionTitleRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;";
+    sectionTitleRow.createEl("h4", {
+      text: isMultiContainer ? `\u{1F4E6} Connected Containers Workspace (${activeContainerIds.length})` : "\u{1F4E6} Connected Container",
+      cls: "lenta-container-section-title"
+    });
+    const selectorWrap = containerSection.createDiv({ cls: "lenta-sync-container-selector" });
+    selectorWrap.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;";
+    const allPill = selectorWrap.createEl("button", {
+      text: `\u{1F310} All Active (${activeContainerIds.length})`,
+      cls: `lenta-pill-btn ${this.selectedContainerFilter === "all" ? "active" : ""}`
+    });
+    allPill.style.cssText = `padding: 4px 10px; border-radius: 6px; border: 1px solid #444; font-size: 0.85em; cursor: pointer; ${this.selectedContainerFilter === "all" ? "background: #2d5a3f; color: #8ee29a; border-color: #8ee29a; font-weight: bold;" : "background: #1a1d1d; color: #ccc;"}`;
+    allPill.onclick = () => {
+      this.selectedContainerFilter = "all";
+      this.render();
+    };
+    const containerNameMap = /* @__PURE__ */ new Map();
+    for (const cId of activeContainerIds) {
+      const matched = this.containers.find((c) => c.id === cId);
+      const name = matched?.name || cId;
+      containerNameMap.set(cId, name);
+      const isSelected = this.selectedContainerFilter === cId;
+      const typeTag = matched?.type === "git" ? "\u{1F4DC} Git" : "\u{1F4C1}";
+      const pill = selectorWrap.createEl("button", {
+        text: `${typeTag} ${name}`,
+        cls: `lenta-pill-btn ${isSelected ? "active" : ""}`
+      });
+      pill.style.cssText = `padding: 4px 10px; border-radius: 6px; border: 1px solid #444; font-size: 0.85em; cursor: pointer; ${isSelected ? "background: #2d5a3f; color: #8ee29a; border-color: #8ee29a; font-weight: bold;" : "background: #1a1d1d; color: #ccc;"}`;
+      pill.onclick = () => {
+        this.selectedContainerFilter = cId;
+        this.activeContainerId = cId;
+        this.render();
+      };
+    }
+    const activeInfo = containerSection.createDiv({ cls: "lenta-connected-key-badge" });
+    activeInfo.style.cssText = "padding: 8px 12px; background: #1a291e; border: 1px solid #333; border-radius: 6px; color: #8ee29a; font-size: 0.85em;";
+    if (this.selectedContainerFilter === "all") {
+      const namesList = activeContainerIds.map((id) => containerNameMap.get(id) || id).join(", ");
+      activeInfo.innerHTML = `<strong>Scope:</strong> All Connected Containers <span style="opacity:0.8; font-family: monospace;">[${namesList}]</span>`;
+    } else {
+      const activeName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
+      const matched = this.containers.find((c) => c.id === this.selectedContainerFilter);
+      const typeStr = matched?.type ? ` (${matched.type.toUpperCase()})` : "";
+      activeInfo.innerHTML = `<strong>Scope:</strong> ${activeName}${typeStr} <span style="opacity:0.75; font-family: monospace;">(ID: ${this.selectedContainerFilter})</span>`;
+    }
     const actionsBar = contentEl.createDiv({ cls: "lenta-sync-actions-bar" });
+    actionsBar.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;";
+    const pullBtnText = this.isPulling ? "\u23F3 Pulling..." : this.selectedContainerFilter === "all" ? `\u{1F4E5} Pull All (${activeContainerIds.length})` : `\u{1F4E5} Pull "${containerNameMap.get(this.selectedContainerFilter) || "Container"}"`;
     const pullBtn = actionsBar.createEl("button", {
-      text: this.isPulling ? "\u23F3 Pulling..." : "\u{1F4E5} Pull from Server",
+      text: pullBtnText,
       cls: "mod-cta lenta-btn-lemon"
     });
     pullBtn.disabled = this.isLoading || this.isPulling || this.isPushing;
     pullBtn.onclick = async () => {
       this.isPulling = true;
-      this.statusMessage = "\u23F3 Fetching delta changes from Lenta server...";
+      this.statusMessage = "\u23F3 Fetching changes and syncing files...";
       this.render();
       try {
-        const stats = await this.syncEngine.pullChanges();
-        this.lastPullStats = stats;
-        this.statusMessage = `\u2705 Pull complete: ${stats.pulledCount} notes updated, ${stats.deletedCount} soft-deleted.`;
-        if (stats.conflicts.length > 0) {
-          new import_obsidian7.Notice(`\u26A0\uFE0F ${stats.conflicts.length} conflict(s) detected.`);
+        if (this.selectedContainerFilter === "all") {
+          const stats = await this.syncEngine.pullAllContainers(activeContainerIds, containerNameMap);
+          this.lastPullStats = stats;
+          this.statusMessage = `\u2705 Multi-container pull complete: ${stats.pulledCount} notes updated across ${activeContainerIds.length} container(s).`;
+          new import_obsidian7.Notice(`\u{1F34B} Multi-container pull complete (${stats.pulledCount} notes, ${stats.downloadedFiles || 0} files).`);
         } else {
-          new import_obsidian7.Notice(`\u{1F34B} Pulled ${stats.pulledCount} notes successfully!`);
+          const targetName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
+          const syncRes = await this.syncEngine.syncContainerFiles(this.selectedContainerFilter, targetName);
+          const stats = await this.syncEngine.pullChanges();
+          this.lastPullStats = { ...stats, downloadedFiles: syncRes.downloadedFiles };
+          this.statusMessage = `\u2705 Pull complete for "${targetName}": ${stats.pulledCount} notes updated.`;
+          new import_obsidian7.Notice(`\u{1F34B} Pulled ${stats.pulledCount} notes for container "${targetName}".`);
         }
         await this.loadChangedFiles();
       } catch (err) {
@@ -5947,17 +6202,24 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
         this.render();
       }
     };
+    const filteredChangedFiles = this.changedFiles.filter((item) => {
+      if (this.selectedContainerFilter === "all")
+        return true;
+      const targetName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
+      const rootFolder = this.settings.vaultRootFolder || "Lenta";
+      return item.relPath.includes(`${rootFolder}/${targetName}`) || item.relPath.includes(this.selectedContainerFilter);
+    });
     const pushAllBtn = actionsBar.createEl("button", {
-      text: this.changedFiles.length > 0 ? `\u26A1 Push All (${this.changedFiles.length})` : "Push All Changed",
+      text: filteredChangedFiles.length > 0 ? `\u26A1 Push (${filteredChangedFiles.length})` : "Push Changed",
       cls: "lenta-action-btn"
     });
-    pushAllBtn.disabled = this.changedFiles.length === 0 || this.isPushing || this.isPulling;
+    pushAllBtn.disabled = filteredChangedFiles.length === 0 || this.isPushing || this.isPulling;
     pushAllBtn.onclick = async () => {
       this.isPushing = true;
-      this.statusMessage = `\u23F3 Pushing ${this.changedFiles.length} changed files...`;
+      this.statusMessage = `\u23F3 Pushing ${filteredChangedFiles.length} changed files...`;
       this.render();
       let pushed = 0;
-      for (const item of this.changedFiles) {
+      for (const item of filteredChangedFiles) {
         try {
           const res = await this.syncEngine.pushLocalNote(item.file);
           if (res.success)
@@ -5965,23 +6227,24 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
         } catch {
         }
       }
-      this.statusMessage = `\u2705 Bulk push complete: ${pushed}/${this.changedFiles.length} notes pushed.`;
-      new import_obsidian7.Notice(`\u{1F34B} Pushed ${pushed}/${this.changedFiles.length} modified notes.`);
+      this.statusMessage = `\u2705 Bulk push complete: ${pushed}/${filteredChangedFiles.length} notes pushed.`;
+      new import_obsidian7.Notice(`\u{1F34B} Pushed ${pushed}/${filteredChangedFiles.length} modified notes.`);
       this.isPushing = false;
       await this.loadChangedFiles();
     };
-    if (currentContainer?.type === "git" || this.settings.connectedContainerType === "git" || this.settings.containerKey) {
+    const gitContainers = this.containers.filter(
+      (c) => c.type === "git" && (activeContainerIds.length === 0 || activeContainerIds.includes(c.id))
+    );
+    if (gitContainers.length > 0 || this.settings.connectedContainerType === "git" || this.settings.containerKey) {
       const historyBtn = actionsBar.createEl("button", {
         text: "\u{1F4DC} Git History & Restore",
         cls: "lenta-action-btn"
       });
       historyBtn.onclick = () => {
-        new GitHistoryModal(
-          this.app,
-          this.apiClient,
-          this.activeContainerId || this.settings.containerKey || "main-git-vault",
-          containerName
-        ).open();
+        const targetContainer = gitContainers.find((c) => c.id === this.selectedContainerFilter) || gitContainers[0];
+        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || "main-git-vault";
+        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || "Git Vault";
+        new GitHistoryModal(this.app, this.apiClient, gitContainerId, gitContainerName).open();
       };
     }
     if (this.statusMessage) {
@@ -6008,8 +6271,9 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
     const changesSection = contentEl.createDiv({ cls: "lenta-changes-section" });
     const changesHeader = changesSection.createDiv({ cls: "lenta-changes-header" });
     const syncedAtLabel = this.settings.lastSyncedAt ? `since ${new Date(this.settings.lastSyncedAt).toLocaleString()}` : "all time";
+    const filterScopeText = this.selectedContainerFilter !== "all" ? ` in ${containerNameMap.get(this.selectedContainerFilter) || "selected container"}` : "";
     changesHeader.createEl("h3", {
-      text: this.isLoadingChanges ? "\u{1F50D} Scanning local changes..." : this.changedFiles.length > 0 ? `\u{1F4DD} ${this.changedFiles.length} local change${this.changedFiles.length > 1 ? "s" : ""} (${syncedAtLabel})` : `\u2705 No local changes ${syncedAtLabel}`,
+      text: this.isLoadingChanges ? "\u{1F50D} Scanning local changes..." : filteredChangedFiles.length > 0 ? `\u{1F4DD} ${filteredChangedFiles.length} local change${filteredChangedFiles.length > 1 ? "s" : ""}${filterScopeText} (${syncedAtLabel})` : `\u2705 No local changes${filterScopeText} (${syncedAtLabel})`,
       cls: "lenta-changes-title"
     });
     const refreshBtn = changesHeader.createEl("button", {
@@ -6017,13 +6281,25 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
       cls: "lenta-changes-refresh-btn"
     });
     refreshBtn.onclick = () => this.loadChangedFiles();
-    if (!this.isLoadingChanges && this.changedFiles.length > 0) {
+    if (!this.isLoadingChanges && filteredChangedFiles.length > 0) {
       const changesList = changesSection.createDiv({ cls: "lenta-changes-list" });
-      for (const item of this.changedFiles) {
+      for (const item of filteredChangedFiles) {
         const row = changesList.createDiv({ cls: "lenta-change-row" });
+        let containerTag = "";
+        for (const [cId, cName] of containerNameMap.entries()) {
+          if (item.relPath.includes(cName) || item.relPath.includes(cId)) {
+            containerTag = cName;
+            break;
+          }
+        }
         const infoDiv = row.createDiv({ cls: "lenta-change-info" });
         infoDiv.createSpan({ text: "\u{1F4C4} ", cls: "lenta-change-icon" });
         infoDiv.createSpan({ text: item.title, cls: "lenta-change-title" });
+        if (containerTag) {
+          const tagSpan = infoDiv.createSpan({ cls: "lenta-container-badge-pill" });
+          tagSpan.style.cssText = "margin-left: 8px; padding: 2px 6px; background: #1f3323; border: 1px solid #335c3b; border-radius: 4px; color: #8ee29a; font-size: 0.75em;";
+          tagSpan.setText(`\u{1F4E6} ${containerTag}`);
+        }
         const meta = infoDiv.createDiv({ cls: "lenta-change-meta" });
         meta.createSpan({ text: item.relPath, cls: "lenta-change-path" });
         meta.createSpan({
@@ -6077,11 +6353,11 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
 // src/ui/connections-modal.ts
 var import_obsidian8 = require("obsidian");
 var LentaConnectionsModal = class extends import_obsidian8.Modal {
-  constructor(app, apiClient, settings2, onSaveSettings, onOpenContainersFoldersModal) {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenContainersFoldersModal) {
     super(app);
     this.isLoading = false;
     this.apiClient = apiClient;
-    this.settings = settings2;
+    this.settings = settings;
     this.onSaveSettings = onSaveSettings;
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
   }
@@ -6100,7 +6376,8 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
     titleRow.createEl("h2", { text: "\u{1F50C} Lenta Server & API Connections" });
     const selectedCount = Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0 ? this.settings.activeContainerIds.length : this.settings.activeContainerId ? 1 : 0;
     if (selectedCount > 0) {
-      const badge = titleRow.createSpan({ cls: "lenta-badge" });
+      const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+      const badge = badgeRow.createSpan({ cls: "lenta-badge" });
       badge.setText(`CONNECTED: ${selectedCount} Container${selectedCount > 1 ? "s" : ""} Selected`);
     }
     header.createEl("p", {
@@ -6228,21 +6505,91 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
 // src/ui/containers-folders-modal.ts
 var import_obsidian9 = require("obsidian");
 var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
-  constructor(app, apiClient, settings2, onSaveSettings, onOpenConnectionsModal) {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenConnectionsModal, syncEngine) {
     super(app);
     this.containers = [];
     this.folders = [];
-    this.selectedIds = /* @__PURE__ */ new Set();
+    this.savedSelectedIds = /* @__PURE__ */ new Set();
+    this.stagedSelectedIds = /* @__PURE__ */ new Set();
     this.isLoading = false;
+    this.isConnecting = false;
+    this.activeSyncingContainerId = null;
+    this.completedSyncContainerIds = /* @__PURE__ */ new Set();
     this.searchQuery = "";
     this.privacyFilter = "all";
     this.customKeyInput = "";
+    this.toggleStagedSelection = (containerId) => {
+      const listEl = this.contentEl.querySelector("#lenta-containers-compact-list");
+      const savedListScrollTop = listEl ? listEl.scrollTop : 0;
+      const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+      if (this.stagedSelectedIds.has(containerId)) {
+        this.stagedSelectedIds.delete(containerId);
+      } else {
+        this.stagedSelectedIds.add(containerId);
+      }
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
+      if (listEl) {
+        listEl.scrollTop = savedListScrollTop;
+      }
+      if (this.contentEl) {
+        this.contentEl.scrollTop = savedContentScrollTop;
+      }
+    };
+    this.applyConnectionAndUpdateFiles = async () => {
+      if (this.isConnecting)
+        return;
+      this.isConnecting = true;
+      this.activeSyncingContainerId = null;
+      this.completedSyncContainerIds.clear();
+      this.render();
+      try {
+        await this.persistSelection();
+        this.savedSelectedIds = new Set(this.stagedSelectedIds);
+        let totalDownloaded = 0;
+        const rootFolder = this.settings.vaultRootFolder || "Lenta";
+        if (this.syncEngine && this.stagedSelectedIds.size > 0) {
+          new import_obsidian9.Notice(`\u23F3 Downloading structure & files for ${this.stagedSelectedIds.size} connected container(s)...`);
+          for (const containerId of Array.from(this.stagedSelectedIds)) {
+            this.activeSyncingContainerId = containerId;
+            this.renderContainersList();
+            this.renderHeaderAndMappingInfo();
+            const matched = this.containers.find((c) => c.id === containerId);
+            const name = matched ? matched.name : containerId;
+            const result = await this.syncEngine.syncContainerFiles(containerId, name);
+            totalDownloaded += result.downloadedFiles;
+            this.completedSyncContainerIds.add(containerId);
+            this.renderContainersList();
+            this.renderHeaderAndMappingInfo();
+          }
+          this.activeSyncingContainerId = null;
+          this.renderContainersList();
+          this.renderHeaderAndMappingInfo();
+          await this.syncEngine.pullChanges().catch((err) => {
+            console.warn("Sync engine pull error:", err);
+          });
+        }
+        const connectedCount = this.savedSelectedIds.size;
+        new import_obsidian9.Notice(
+          `\u{1F34B} Connected & updated! ${totalDownloaded} file(s) saved into "${rootFolder}" (${connectedCount} container(s) active)`
+        );
+      } catch (err) {
+        new import_obsidian9.Notice(`Failed to update container connection: ${err.message}`);
+      } finally {
+        this.isConnecting = false;
+        this.activeSyncingContainerId = null;
+        this.completedSyncContainerIds.clear();
+        this.render();
+      }
+    };
     this.apiClient = apiClient;
-    this.settings = settings2;
+    this.settings = settings;
     this.onSaveSettings = onSaveSettings;
     this.onOpenConnectionsModal = onOpenConnectionsModal;
-    const initialList = Array.isArray(settings2.activeContainerIds) && settings2.activeContainerIds.length > 0 ? settings2.activeContainerIds : settings2.activeContainerId ? [settings2.activeContainerId] : [];
-    this.selectedIds = new Set(initialList);
+    this.syncEngine = syncEngine;
+    const initialList = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds : settings.activeContainerId ? [settings.activeContainerId] : [];
+    this.savedSelectedIds = new Set(initialList);
+    this.stagedSelectedIds = new Set(initialList);
   }
   async onOpen() {
     this.modalEl.addClass("lenta-containers-folders-modal");
@@ -6261,11 +6608,14 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
       ]);
       this.containers = containers;
       this.folders = folders;
+      let list = [];
       if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
-        this.selectedIds = new Set(this.settings.activeContainerIds);
+        list = this.settings.activeContainerIds;
       } else if (this.settings.activeContainerId) {
-        this.selectedIds = /* @__PURE__ */ new Set([this.settings.activeContainerId]);
+        list = [this.settings.activeContainerId];
       }
+      this.savedSelectedIds = new Set(list);
+      this.stagedSelectedIds = new Set(list);
     } catch (err) {
       console.warn("Failed to load containers or folders:", err);
     } finally {
@@ -6274,7 +6624,7 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
     }
   }
   async persistSelection() {
-    const list = Array.from(this.selectedIds);
+    const list = Array.from(this.stagedSelectedIds);
     this.settings.activeContainerIds = list;
     this.settings.activeContainerId = list[0] || "";
     if (list.length > 0) {
@@ -6290,31 +6640,27 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
     }
     await this.onSaveSettings();
   }
+  getHasStagedChanges() {
+    if (this.savedSelectedIds.size !== this.stagedSelectedIds.size)
+      return true;
+    for (const id of this.stagedSelectedIds) {
+      if (!this.savedSelectedIds.has(id))
+        return true;
+    }
+    return false;
+  }
   render() {
     const { contentEl } = this;
     contentEl.empty();
-    const count = this.selectedIds.size;
-    let totalNotesSelected = 0;
-    for (const c of this.containers) {
-      if (this.selectedIds.has(c.id) && typeof c.totalNotes === "number") {
-        totalNotesSelected += c.totalNotes;
-      }
-    }
     const header = contentEl.createDiv({ cls: "lenta-modal-header" });
     const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
     titleRow.createEl("h2", { text: "\u{1F4E6} Containers & Folders Workspace" });
-    if (count > 0) {
-      const badge = titleRow.createSpan({ cls: "lenta-badge" });
-      badge.setText(`CONNECTED: ${count} Container${count > 1 ? "s" : ""} Selected (${totalNotesSelected} Notes)`);
-    } else {
-      const badge = titleRow.createSpan({ cls: "lenta-badge" });
-      badge.style.borderColor = "#d97706";
-      badge.style.color = "#f59e0b";
-      badge.setText("NO CONTAINERS SELECTED");
-    }
+    const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+    badgeRow.id = "lenta-modal-header-badge-row";
+    this.renderHeaderBadge(badgeRow);
     header.createEl("p", {
       cls: "lenta-modal-subtitle",
-      text: "Browse and select multiple obsidian containers for active vault work, track note counts, and manage folder structures."
+      text: "Step 1: Select or deselect containers. Step 2: Click Connect & Update Files to apply changes to your vault."
     });
     const toolbar = contentEl.createDiv({ cls: "lenta-containers-toolbar" });
     toolbar.style.cssText = [
@@ -6335,50 +6681,76 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
       placeholder: "\u{1F50D} Search containers...",
       value: this.searchQuery
     });
-    searchInput.style.cssText = "width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;";
+    searchInput.disabled = this.isConnecting;
+    searchInput.style.cssText = `width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff; ${this.isConnecting ? "opacity: 0.6; cursor: not-allowed;" : ""}`;
     searchInput.oninput = (e) => {
+      if (this.isConnecting)
+        return;
       this.searchQuery = e.target.value;
-      this.renderContainersGrid();
+      this.renderContainersList();
     };
-    const filterWrap = toolbar.createDiv();
-    const filterSelect = filterWrap.createEl("select");
-    filterSelect.style.cssText = "padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;";
-    filterSelect.innerHTML = `
-      <option value="all" ${this.privacyFilter === "all" ? "selected" : ""}>\u{1F310} All Containers</option>
-      <option value="public" ${this.privacyFilter === "public" ? "selected" : ""}>\u{1F4F0} Public Only</option>
-      <option value="private" ${this.privacyFilter === "private" ? "selected" : ""}>\u{1F510} Private Only</option>
-    `;
-    filterSelect.onchange = (e) => {
-      this.privacyFilter = e.target.value;
-      this.renderContainersGrid();
-    };
+    const filterWrap = toolbar.createDiv({ cls: "lenta-privacy-filter-tabs" });
+    const isContainerPublic = (c) => c.isPublic === true || c.isPublic !== false && c.visibility !== "private";
+    const publicContainersCount = this.containers.filter((c) => isContainerPublic(c)).length;
+    const privateContainersCount = this.containers.filter((c) => !isContainerPublic(c)).length;
+    const allContainersCount = this.containers.length;
+    const filterOptions = [
+      { id: "all", label: "All", icon: "\u{1F310}", count: allContainersCount },
+      { id: "public", label: "Public", icon: "\u{1F4F0}", count: publicContainersCount },
+      { id: "private", label: "Private", icon: "\u{1F510}", count: privateContainersCount }
+    ];
+    for (const opt of filterOptions) {
+      const isSelected = this.privacyFilter === opt.id;
+      const tabBtn = filterWrap.createEl("button", {
+        cls: `lenta-privacy-tab ${isSelected ? "is-active" : ""}`
+      });
+      tabBtn.disabled = this.isConnecting;
+      tabBtn.innerHTML = `<span>${opt.icon} ${opt.label}</span> <span class="lenta-privacy-tab-count">${opt.count}</span>`;
+      tabBtn.onclick = () => {
+        if (this.isConnecting)
+          return;
+        this.privacyFilter = opt.id;
+        this.render();
+      };
+    }
     const selectAllBtn = toolbar.createEl("button", {
       text: "Select All"
     });
-    selectAllBtn.style.cssText = "padding: 6px 12px; font-size: 0.85em; font-weight: 600;";
-    selectAllBtn.onclick = async () => {
+    selectAllBtn.disabled = this.isConnecting;
+    selectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    selectAllBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
       const filtered = this.getFilteredContainers();
       for (const c of filtered) {
-        this.selectedIds.add(c.id);
+        this.stagedSelectedIds.add(c.id);
       }
-      await this.persistSelection();
-      this.render();
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
     };
     const deselectAllBtn = toolbar.createEl("button", {
       text: "Clear All"
     });
-    deselectAllBtn.style.cssText = "padding: 6px 12px; font-size: 0.85em; font-weight: 600;";
-    deselectAllBtn.onclick = async () => {
-      this.selectedIds.clear();
-      await this.persistSelection();
-      this.render();
+    deselectAllBtn.disabled = this.isConnecting;
+    deselectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    deselectAllBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
+      this.stagedSelectedIds.clear();
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
     };
     const refreshBtn = toolbar.createEl("button", {
       cls: "mod-cta lenta-btn-lemon",
       text: "\u{1F504} Refresh List"
     });
-    refreshBtn.style.cssText = "padding: 6px 14px; font-weight: 600; font-size: 0.85em;";
-    refreshBtn.onclick = () => this.loadData();
+    refreshBtn.disabled = this.isConnecting;
+    refreshBtn.style.cssText = `padding: 6px 14px; font-weight: 600; font-size: 0.85em; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    refreshBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
+      this.loadData();
+    };
     if (this.onOpenConnectionsModal) {
       const connBtn = toolbar.createEl("button", {
         text: "\u{1F50C} Server Settings"
@@ -6393,16 +6765,20 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
       contentEl.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers and folder structures..." });
       return;
     }
-    const gridContainer = contentEl.createDiv({ cls: "lenta-containers-grid-section" });
-    const gridHeaderRow = gridContainer.createDiv({ cls: "lenta-grid-header-row" });
-    gridHeaderRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
-    gridHeaderRow.createEl("h3", { text: "\u{1F4E6} Select Containers to Connect", href: "#" });
-    const countSummary = gridHeaderRow.createSpan({ cls: "lenta-count-pill" });
+    const listSection = contentEl.createDiv({ cls: "lenta-containers-list-section" });
+    const listHeaderRow = listSection.createDiv({ cls: "lenta-list-header-row" });
+    listHeaderRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
+    listHeaderRow.createEl("h3", { text: "Step 1: Select Containers to Connect or Disconnect" });
+    const countSummary = listHeaderRow.createSpan({ cls: "lenta-count-pill" });
+    countSummary.id = "lenta-staged-count-summary";
     countSummary.style.cssText = "font-weight: 600; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: var(--lenta-lemon-glow); color: var(--lenta-lemon);";
-    countSummary.setText(`${count} of ${this.containers.length} containers selected`);
-    const gridEl = gridContainer.createDiv({ cls: "lenta-containers-grid" });
-    gridEl.id = "lenta-containers-grid-list";
-    this.renderContainersGrid(gridEl);
+    countSummary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
+    const listEl = listSection.createDiv({ cls: "lenta-containers-compact-list" });
+    listEl.id = "lenta-containers-compact-list";
+    this.renderContainersList(listEl);
+    const actionBar = listSection.createDiv({ cls: "lenta-connect-action-bar" });
+    actionBar.id = "lenta-connect-action-bar";
+    this.renderConnectActionBar(actionBar);
     const keySection = contentEl.createDiv({ cls: "lenta-key-section" });
     keySection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
     new import_obsidian9.Setting(keySection).setName("Connect Container by Custom Key").setDesc("Add a custom container key or feed key to your selected containers list.").addText(
@@ -6417,8 +6793,8 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
         }
         const res = await this.apiClient.connectContainerByKey(this.customKeyInput);
         if (res.success && res.container) {
-          this.selectedIds.add(res.container.id);
-          await this.persistSelection();
+          this.stagedSelectedIds.add(res.container.id);
+          await this.applyConnectionAndUpdateFiles();
           new import_obsidian9.Notice(`Added container: ${res.container.name}`);
           await this.loadData();
         } else {
@@ -6437,6 +6813,7 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
       })
     );
     const folderMappingEl = folderSection.createDiv({ cls: "lenta-folder-mapping-box" });
+    folderMappingEl.id = "lenta-folder-mapping-box";
     this.renderFolderMappingInfo(folderMappingEl);
     folderSection.createEl("h4", { text: "Remote Lenta Server Folders" });
     if (this.folders.length === 0) {
@@ -6453,10 +6830,90 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
       }
     }
   }
+  renderHeaderBadge(container) {
+    container.empty();
+    const count = this.savedSelectedIds.size;
+    let totalNotesSelected = 0;
+    for (const c of this.containers) {
+      if (this.savedSelectedIds.has(c.id) && typeof c.totalNotes === "number") {
+        totalNotesSelected += c.totalNotes;
+      }
+    }
+    if (count > 0) {
+      const badge = container.createSpan({ cls: "lenta-badge" });
+      badge.setText(`ACTIVE CONNECTED: ${count} Container${count > 1 ? "s" : ""} (${totalNotesSelected} Notes)`);
+    } else {
+      const badge = container.createSpan({ cls: "lenta-badge" });
+      badge.style.borderColor = "#d97706";
+      badge.style.color = "#f59e0b";
+      badge.setText("NO CONTAINERS CONNECTED");
+    }
+  }
+  renderConnectActionBar(container) {
+    container.empty();
+    container.style.cssText = [
+      "display: flex",
+      "justify-content: space-between",
+      "align-items: center",
+      "gap: 12px",
+      "margin-top: 12px",
+      "padding: 12px 16px",
+      "background: var(--background-secondary)",
+      "border-radius: 8px",
+      "border: 1px solid var(--lenta-lemon-glow)"
+    ].join(";");
+    const hasChanges = this.getHasStagedChanges();
+    const stagedCount = this.stagedSelectedIds.size;
+    const infoWrap = container.createDiv({ cls: "lenta-connect-info" });
+    const infoTitle = infoWrap.createEl("div", { cls: "lenta-connect-step-title" });
+    infoTitle.style.cssText = "font-weight: 700; font-size: 0.9em; color: var(--lenta-lemon);";
+    infoTitle.setText("Step 2: Connect & Update Files");
+    const infoDesc = infoWrap.createEl("div", { cls: "lenta-connect-step-desc" });
+    infoDesc.style.cssText = "font-size: 0.8em; color: var(--text-muted); margin-top: 2px;";
+    if (hasChanges) {
+      const added = Array.from(this.stagedSelectedIds).filter((id) => !this.savedSelectedIds.has(id)).length;
+      const removed = Array.from(this.savedSelectedIds).filter((id) => !this.stagedSelectedIds.has(id)).length;
+      infoDesc.setText(`Pending changes: ${added > 0 ? `+${added} connect ` : ""}${removed > 0 ? `-${removed} disconnect` : ""}. Click Connect to update vault files.`);
+    } else {
+      infoDesc.setText(`${stagedCount} container${stagedCount === 1 ? "" : "s"} connected for active vault work.`);
+    }
+    const connectBtn = container.createEl("button", {
+      cls: "mod-cta lenta-btn-lemon lenta-connect-main-btn",
+      text: this.isConnecting ? "\u23F3 Connecting & Updating Files..." : hasChanges ? "\u{1F50C} Connect & Update Files" : "\u{1F50C} Re-Connect & Refresh Files"
+    });
+    connectBtn.disabled = this.isConnecting;
+    connectBtn.style.cssText = "padding: 8px 18px; font-weight: 700; font-size: 0.9em; cursor: pointer; white-space: nowrap;";
+    connectBtn.onclick = async () => {
+      await this.applyConnectionAndUpdateFiles();
+    };
+  }
+  renderHeaderAndMappingInfo() {
+    const summary = this.contentEl.querySelector("#lenta-staged-count-summary");
+    if (summary) {
+      if (this.isConnecting) {
+        if (this.activeSyncingContainerId) {
+          const count = this.completedSyncContainerIds.size + 1;
+          summary.setText(`\u23F3 Loading container ${count} of ${this.stagedSelectedIds.size}...`);
+        } else {
+          summary.setText("\u23F3 Connecting & loading files...");
+        }
+      } else {
+        summary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
+      }
+    }
+    const actionBar = this.contentEl.querySelector("#lenta-connect-action-bar");
+    if (actionBar) {
+      this.renderConnectActionBar(actionBar);
+    }
+    const mappingEl = this.contentEl.querySelector("#lenta-folder-mapping-box");
+    if (mappingEl) {
+      this.renderFolderMappingInfo(mappingEl);
+    }
+  }
   getFilteredContainers() {
     return this.containers.filter((c) => {
       const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const isPublic = c.isPublic !== false;
+      const isPublic = c.isPublic === true || c.isPublic !== false && c.visibility !== "private";
       const matchPrivacy = this.privacyFilter === "all" || this.privacyFilter === "public" && isPublic || this.privacyFilter === "private" && !isPublic;
       return matchSearch && matchPrivacy;
     });
@@ -6464,7 +6921,7 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
   renderFolderMappingInfo(container) {
     container.empty();
     const rootFolder = this.settings.vaultRootFolder || "Lenta";
-    const selectedList = Array.from(this.selectedIds);
+    const selectedList = Array.from(this.stagedSelectedIds);
     container.style.cssText = [
       "padding: 12px 14px",
       "margin-bottom: 14px",
@@ -6484,88 +6941,131 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
     const pathsHtml = selectedList.map((id) => {
       const matched = this.containers.find((c) => c.id === id);
       const name = matched ? matched.name : id;
-      return `<div style="margin-top:2px;">\u2022 <code>${rootFolder}/${name}</code></div>`;
+      const isSaved = this.savedSelectedIds.has(id);
+      return `<div style="margin-top:2px;">\u2022 <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ""}</div>`;
     }).join("");
     container.innerHTML = `
-      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Active Connected Vault Directory Mappings (${selectedList.length}):</div>
+      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Vault Directory Mappings Preview (${selectedList.length}):</div>
       ${pathsHtml}
-      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault.</div>
+      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault when you click Connect.</div>
     `;
   }
-  renderContainersGrid(targetEl) {
-    const gridEl = targetEl || this.contentEl.querySelector("#lenta-containers-grid-list");
-    if (!gridEl)
+  renderContainersList(targetEl) {
+    const listEl = targetEl || this.contentEl.querySelector("#lenta-containers-compact-list");
+    if (!listEl)
       return;
-    gridEl.empty();
+    const savedListScrollTop = listEl.scrollTop;
+    const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+    listEl.empty();
+    if (this.isConnecting) {
+      listEl.addClass("is-locked");
+      listEl.addClass("is-loading-all");
+    } else {
+      listEl.removeClass("is-locked");
+      listEl.removeClass("is-loading-all");
+    }
     const filtered = this.getFilteredContainers();
     if (filtered.length === 0) {
-      gridEl.createDiv({ cls: "lenta-empty-state", text: "No containers match your search or filter." });
+      listEl.createDiv({ cls: "lenta-empty-state", text: "No containers match your search or filter." });
+      if (this.contentEl)
+        this.contentEl.scrollTop = savedContentScrollTop;
       return;
     }
-    gridEl.style.cssText = [
-      "display: grid",
-      "grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))",
-      "gap: 14px",
-      "margin-top: 10px"
-    ].join(";");
     for (const c of filtered) {
-      const isSelected = this.selectedIds.has(c.id);
-      const card = gridEl.createDiv({ cls: `lenta-container-card ${isSelected ? "selected" : ""}` });
-      card.style.cssText = [
-        "padding: 14px",
-        "border-radius: 8px",
-        "border: 1px solid " + (isSelected ? "var(--lenta-lemon)" : "var(--background-modifier-border)"),
-        "background: " + (isSelected ? "#1c241d" : "var(--background-secondary)"),
-        "display: flex",
-        "flex-direction: column",
-        "justify-content: space-between",
-        "gap: 10px",
-        "transition: all 0.15s ease",
-        "cursor: pointer"
-      ].join(";");
-      const topRow = card.createDiv({ cls: "lenta-card-top" });
-      const titleRow = topRow.createDiv({ cls: "lenta-card-title-row" });
-      titleRow.style.cssText = "display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;";
-      const title = titleRow.createEl("h4", { text: c.name });
-      title.style.cssText = "margin: 0; font-size: 0.98em; color: var(--text-normal); font-weight: 600;";
-      const checkBadge = titleRow.createSpan({ cls: "lenta-check-badge" });
-      checkBadge.style.cssText = `font-size: 0.85em; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${isSelected ? "var(--lenta-lemon)" : "#333"}; color: ${isSelected ? "#121414" : "#888"};`;
-      checkBadge.setText(isSelected ? "\u2713 SELECTED" : "+ ADD");
-      const tagsRow = topRow.createDiv({ cls: "lenta-card-tags" });
-      tagsRow.style.cssText = "display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;";
-      const typeTag = tagsRow.createSpan({ cls: "lenta-badge" });
-      typeTag.setText((c.type || "git").toUpperCase());
-      const privacyTag = tagsRow.createSpan({ cls: "lenta-badge" });
-      const isPub = c.isPublic !== false;
-      privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
-      privacyTag.style.borderColor = isPub ? "rgba(74, 222, 128, 0.4)" : "rgba(248, 113, 113, 0.4)";
-      privacyTag.style.color = isPub ? "#4ade80" : "#f87171";
-      if (typeof c.totalNotes === "number") {
-        const notesTag = topRow.createDiv({ cls: "lenta-card-notes" });
-        notesTag.style.cssText = "font-size: 0.82em; color: var(--text-muted);";
-        notesTag.setText(`\u{1F4C4} ${c.totalNotes} notes`);
+      const isStaged = this.stagedSelectedIds.has(c.id);
+      const isSaved = this.savedSelectedIds.has(c.id);
+      let rowClass = "lenta-container-row";
+      if (this.isConnecting) {
+        rowClass += " is-locked";
       }
-      const actionBtn = card.createEl("button", {
-        cls: isSelected ? "mod-cta lenta-btn-lemon" : "lenta-action-btn",
-        text: isSelected ? "\u2713 Selected" : "+ Select Container"
+      if (c.id === this.activeSyncingContainerId) {
+        rowClass += " is-syncing";
+      } else if (this.completedSyncContainerIds.has(c.id)) {
+        rowClass += " is-sync-done";
+      }
+      if (isStaged) {
+        rowClass += " is-selected";
+      }
+      if (isStaged && !isSaved) {
+        rowClass += " is-pending-connect";
+      } else if (!isStaged && isSaved) {
+        rowClass += " is-pending-disconnect";
+      }
+      const row = listEl.createDiv({ cls: rowClass });
+      const leftCol = row.createDiv({ cls: "lenta-container-row-left" });
+      const checkbox = leftCol.createEl("input", {
+        type: "checkbox",
+        cls: "lenta-container-checkbox"
       });
-      actionBtn.style.cssText = "width: 100%; margin-top: 4px; padding: 6px 12px; font-weight: 600; cursor: pointer;";
-      const toggleSelection = async () => {
-        if (this.selectedIds.has(c.id)) {
-          this.selectedIds.delete(c.id);
-        } else {
-          this.selectedIds.add(c.id);
-        }
-        await this.persistSelection();
-        this.render();
-      };
-      actionBtn.onclick = (e) => {
+      checkbox.checked = isStaged;
+      checkbox.disabled = this.isConnecting;
+      checkbox.onclick = (e) => {
         e.stopPropagation();
-        toggleSelection();
+        if (this.isConnecting)
+          return;
+        this.toggleStagedSelection(c.id);
       };
-      card.onclick = () => {
-        toggleSelection();
+      leftCol.createSpan({ cls: "lenta-container-icon", text: "\u{1F4E6}" });
+      const titleWrap = leftCol.createDiv({ cls: "lenta-container-title-wrap" });
+      titleWrap.createSpan({ cls: "lenta-container-title", text: c.name });
+      titleWrap.createSpan({ cls: "lenta-container-id", text: c.id });
+      const rightCol = row.createDiv({ cls: "lenta-container-row-right" });
+      const typeTag = rightCol.createSpan({ cls: "lenta-badge" });
+      typeTag.setText((c.type || "git").toUpperCase());
+      const isPub = c.isPublic === true || c.isPublic !== false && c.visibility !== "private";
+      const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? "is-public" : "is-private"}` });
+      privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
+      if (typeof c.totalNotes === "number") {
+        const notesTag = rightCol.createSpan({ cls: "lenta-count-pill" });
+        notesTag.setText(`\u{1F4C4} ${c.totalNotes}`);
+      }
+      let btnText = isStaged ? "\u2713 Selected" : "+ Select";
+      let btnClass = `lenta-select-btn ${isStaged ? "is-selected" : ""}`;
+      if (this.isConnecting) {
+        if (c.id === this.activeSyncingContainerId) {
+          btnText = "\u23F3 Loading...";
+          btnClass = "lenta-select-btn is-loading is-syncing";
+        } else if (this.completedSyncContainerIds.has(c.id)) {
+          btnText = "\u2713 Updated";
+          btnClass = "lenta-select-btn is-completed";
+        } else if (isStaged) {
+          btnText = "\u23F3 Pending...";
+          btnClass = "lenta-select-btn is-pending-sync";
+        }
+      } else {
+        if (isStaged && !isSaved) {
+          btnText = "+ Connect";
+          btnClass += " is-staged-add";
+        } else if (!isStaged && isSaved) {
+          btnText = "\u2715 Disconnect";
+          btnClass += " is-staged-remove";
+        } else if (isStaged && isSaved) {
+          btnText = "\u2713 Connected";
+        }
+      }
+      const selectBtn = rightCol.createEl("button", {
+        cls: btnClass,
+        text: btnText
+      });
+      selectBtn.disabled = this.isConnecting;
+      selectBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (this.isConnecting)
+          return;
+        this.toggleStagedSelection(c.id);
       };
+      row.onclick = (e) => {
+        if (this.isConnecting)
+          return;
+        const targetTag = e.target.tagName.toUpperCase();
+        if (targetTag !== "INPUT" && targetTag !== "BUTTON") {
+          this.toggleStagedSelection(c.id);
+        }
+      };
+    }
+    listEl.scrollTop = savedListScrollTop;
+    if (this.contentEl) {
+      this.contentEl.scrollTop = savedContentScrollTop;
     }
   }
 };
@@ -6636,6 +7136,7 @@ var LentaSidebarView = class extends import_obsidian10.ItemView {
     const header = container.createDiv({ cls: "lenta-sidebar-header" });
     const titleRow = header.createDiv({ cls: "lenta-sidebar-title" });
     titleRow.createEl("h4", { text: "\u{1F34B} Project Lenta" });
+    const settings = this.getSettings();
     const selectedCount = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds.length : settings.activeContainerId ? 1 : 0;
     if (selectedCount > 0) {
       const badge = titleRow.createSpan({ cls: "lenta-badge" });
@@ -7186,7 +7687,8 @@ var WorkspaceLentaPlugin = class extends import_obsidian12.Plugin {
       this.apiClient,
       this.settings,
       () => this.saveSettings(),
-      () => this.openConnectionsModal()
+      () => this.openConnectionsModal(),
+      this.syncEngine
     ).open();
   }
   updateStatusBar(text) {

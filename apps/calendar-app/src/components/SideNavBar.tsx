@@ -83,11 +83,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Timeline View */}
         <button
           onClick={() => onSetView('timeline')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            currentView === 'timeline'
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'timeline'
               ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <Home className="w-4 h-4" />
           <span>{t.timeline}</span>
@@ -96,11 +95,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Calendar Month View */}
         <button
           onClick={() => onSetView('month')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            currentView === 'month'
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'month'
               ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <Calendar className="w-4 h-4" />
           <span>{t.calendar}</span>
@@ -109,11 +107,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Gantt Swimlane View */}
         <button
           onClick={() => onSetView('gantt')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            currentView === 'gantt'
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'gantt'
               ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <GanttChartSquare className="w-4 h-4" />
           <span>{t.gantt}</span>
@@ -122,11 +119,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Feeds & Channels Hub View */}
         <button
           onClick={() => onSetView('feeds')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            currentView === 'feeds'
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'feeds'
               ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <Radio className="w-4 h-4 text-[#c9cd58]" />
           <span>{t.feeds}</span>
@@ -135,21 +131,19 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Folder Manager View */}
         <button
           onClick={() => onSetView('folders')}
-          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${
-            currentView === 'folders'
+          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${currentView === 'folders'
               ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold shadow-glow-lemon'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             <FolderTree className="w-4 h-4 text-[#c9cd58]" />
             <span>{t.folders}</span>
           </div>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
-            currentView === 'folders'
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${currentView === 'folders'
               ? 'bg-[#c9cd58] text-[#121414]'
               : 'bg-[#c9cd58]/15 text-[#e5e971]'
-          }`}>
+            }`}>
             {folders.length}
           </span>
         </button>
@@ -157,11 +151,10 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {/* Obsidian Containers View */}
         <button
           onClick={() => onSetView('obsidian')}
-          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${
-            currentView === 'obsidian'
+          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${currentView === 'obsidian'
               ? 'bg-[#a855f7]/20 text-[#d8b4fe] border-l-4 border-[#a855f7] font-semibold shadow-[0_0_15px_rgba(168,85,247,0.15)]'
               : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             <ObsidianLogo size={16} glow={currentView === 'obsidian'} />
@@ -169,35 +162,35 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               {t.obsidianHub}
             </span>
           </div>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
-            currentView === 'obsidian'
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${currentView === 'obsidian'
               ? 'bg-[#a855f7] text-white'
               : 'bg-[#a855f7]/15 text-[#d8b4fe]'
-          }`}>
+            }`}>
             {containers.length}
           </span>
         </button>
 
 
-        {/* Feeds & Filter Toggle */}
-        <button
-          onClick={onToggleFilters}
-          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${
-            isFilterOpen || activeFilterCount > 0
-              ? 'bg-[#444747]/40 text-[#e5e971]'
-              : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <SlidersHorizontal className="w-4 h-4 text-[#c9cd58]" />
-            <span>{t.feedsAndTags}</span>
-          </div>
-          {activeFilterCount > 0 && (
-            <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+        {/* Calendar Filter Sidebar Toggle (Only on Calendar pages) */}
+        {['timeline', 'month', 'gantt'].includes(currentView) && (
+          <button
+            onClick={onToggleFilters}
+            className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${isFilterOpen || activeFilterCount > 0
+                ? 'bg-[#444747]/40 text-[#e5e971]'
+                : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <SlidersHorizontal className="w-4 h-4 text-[#c9cd58]" />
+              <span>{t.filters}</span>
+            </div>
+            {activeFilterCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* ADMIN ONLY: Link to Admin CMS */}
         {isAdmin && (
@@ -258,7 +251,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           </div>
 
           {/* Quick Role Test Switcher Buttons */}
-          <div className="flex items-center justify-between gap-1 text-[10px] font-mono">
+          <div className="flex items-center justify-between gap-1 text-[10px] font-mono private-switch">
             <button
               onClick={() => switchDemoRole('guest')}
               className="flex-1 py-1 rounded bg-[#141616] hover:bg-[#242828] text-[#93927e] hover:text-white text-center transition-colors"
@@ -268,18 +261,16 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             </button>
             <button
               onClick={() => switchDemoRole('user')}
-              className={`flex-1 py-1 rounded text-center transition-colors ${
-                role === 'user' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'bg-[#141616] hover:bg-[#242828] text-[#93927e]'
-              }`}
+              className={`flex-1 py-1 rounded text-center transition-colors ${role === 'user' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'bg-[#141616] hover:bg-[#242828] text-[#93927e]'
+                }`}
               title="Переключиться на участника"
             >
               Участник
             </button>
             <button
               onClick={() => switchDemoRole('admin')}
-              className={`flex-1 py-1 rounded text-center transition-colors ${
-                role === 'admin' ? 'bg-[#ef4444]/20 text-[#fca5a5] font-bold' : 'bg-[#141616] hover:bg-[#242828] text-[#93927e]'
-              }`}
+              className={`flex-1 py-1 rounded text-center transition-colors ${role === 'admin' ? 'bg-[#ef4444]/20 text-[#fca5a5] font-bold' : 'bg-[#141616] hover:bg-[#242828] text-[#93927e]'
+                }`}
               title="Переключиться на админа"
             >
               Админ

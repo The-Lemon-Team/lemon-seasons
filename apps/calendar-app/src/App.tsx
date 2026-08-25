@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { Note } from '@lenta/shared';
+import React, { useState, useMemo } from 'react';
+import { Note, CalendarViewMode } from '@lenta/shared';
 import { I18nProvider } from './i18n';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useCalendarState } from './hooks/useCalendarState';
 import { useTimeSliceNotes } from './api/queries';
 import { SideNavBar } from './components/SideNavBar';
 import { Navbar } from './components/Navbar';
-import { StatsBar } from './components/StatsBar';
 import { FilterSidebar } from './components/FilterSidebar';
 import { TimelineView } from './components/TimelineView';
 import { MonthGridView } from './components/MonthGridView';
@@ -20,12 +19,14 @@ import { PrivateContainersModal } from './components/PrivateContainersModal';
 import { KeyManagementModal } from './components/KeyManagementModal';
 import { ObsidianContainersView } from './components/ObsidianContainersView';
 import { FolderManagerView } from './components/FolderManagerView';
-import { ObsidianContainersProvider } from './context/ObsidianContainersContext';
+import { useObsidianContainers, ObsidianContainersProvider } from './context/ObsidianContainersContext';
 import { FoldersProvider } from './context/FoldersContext';
 import { UserKeysProvider } from './context/UserKeysContext';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { containers: obsidianContainers = [] } = useObsidianContainers();
   const {
     filters,
     setStartDate,
@@ -35,6 +36,9 @@ const CalendarAppInner: React.FC = () => {
     toggleFeed,
     selectOnlyFeed,
     clearFeeds,
+    toggleContainer,
+    selectOnlyContainer,
+    clearContainers,
     toggleTag,
     selectOnlyTag,
     setAllTags,
@@ -59,19 +63,67 @@ const CalendarAppInner: React.FC = () => {
   const [isPrivateContainersOpen, setIsPrivateContainersOpen] = useState(false);
   const [isKeysModalOpen, setIsKeysModalOpen] = useState(false);
 
+  const [selectedSingleContainerId, setSelectedSingleContainerId] = useState<string | null>(null);
+
+  const isCalendarView = ['timeline', 'month', 'gantt'].includes(filters.view);
+
+  const handleSetView = (newView: CalendarViewMode) => {
+    setSelectedSingleContainerId(null);
+    if (!['timeline', 'month', 'gantt'].includes(newView)) {
+      setIsFilterOpen(false);
+    }
+    setView(newView);
+  };
+
+  // Scoped query filters: Calendar filters (tags, hashtags, types, containers) strictly apply to Calendar pages only
+  const effectiveQueryFilters = useMemo(() => {
+    if (isCalendarView) {
+      return filters;
+    }
+    if (filters.view === 'feeds') {
+      return {
+        start: filters.start,
+        end: filters.end,
+        view: filters.view,
+        feed: filters.feed,
+        search: filters.search,
+        containers: [],
+        tags: [],
+        hashtags: [],
+        types: [],
+      };
+    }
+    return {
+      start: filters.start,
+      end: filters.end,
+      view: filters.view,
+      search: filters.search,
+      feed: undefined,
+      containers: [],
+      tags: [],
+      hashtags: [],
+      types: [],
+    };
+  }, [isCalendarView, filters]);
+
   // Queries
-  const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes(filters);
+  const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes({
+    ...effectiveQueryFilters,
+    containersList: obsidianContainers,
+  });
 
   const notes = notesData?.items || [];
   const totalNotes = notesData?.total || 0;
 
-  // Active filter count for badge
-  const activeFilterCount =
-    (filters.feed ? 1 : 0) +
-    filters.tags.length +
-    filters.hashtags.length +
-    filters.types.length +
-    (filters.search ? 1 : 0);
+  // Active filter count for badge (strictly for Calendar pages)
+  const activeFilterCount = isCalendarView
+    ? (filters.feed ? 1 : 0) +
+      (filters.containers?.length || 0) +
+      filters.tags.length +
+      filters.hashtags.length +
+      filters.types.length +
+      (filters.search ? 1 : 0)
+    : 0;
 
   // Tier 1: Public Users (Not Logged In) -> Presentation Landing Page with Interactive Widget
   if (!isAuthenticated) {
@@ -89,7 +141,7 @@ const CalendarAppInner: React.FC = () => {
       {/* 1. Left SideNavBar */}
       <SideNavBar
         currentView={filters.view}
-        onSetView={setView}
+        onSetView={handleSetView}
         onOpenQuickAdd={() => setIsCreateNoteOpen(true)}
         onOpenPrivateContainers={() => setIsPrivateContainersOpen(true)}
         onOpenKeysModal={() => setIsKeysModalOpen(true)}
@@ -107,7 +159,7 @@ const CalendarAppInner: React.FC = () => {
           search={filters.search}
           isFilterOpen={isFilterOpen}
           activeFilterCount={activeFilterCount}
-          onSetView={setView}
+          onSetView={handleSetView}
           onSearchChange={setSearch}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
@@ -115,112 +167,119 @@ const CalendarAppInner: React.FC = () => {
           onToggleFilter={() => setIsFilterOpen((prev) => !prev)}
         />
 
-        {/* Dynamic Stats Overview Bar */}
-        <StatsBar
-          notes={notes}
-          isLoading={isNotesLoading}
-          total={totalNotes}
-        />
-
         {/* View Content Canvas */}
         <main className="flex-1 flex overflow-hidden relative min-h-0">
-          {filters.view === 'timeline' && (
-            <TimelineView
-              notes={notes}
-              isLoading={isNotesLoading}
-              onSelectNote={setSelectedNote}
-              filterState={filters}
-              onToggleFeed={toggleFeed}
-              onSelectOnlyFeed={selectOnlyFeed}
-              onClearFeeds={clearFeeds}
-              onOpenFeedsHub={() => setView('feeds')}
-              onToggleType={toggleType}
-              onSelectOnlyType={selectOnlyType}
-              onClearTypes={clearTypes}
-              onToggleTag={toggleTag}
-              onSelectOnlyTag={selectOnlyTag}
-              onClearTags={clearTags}
-              onResetFilters={resetFilters}
-            />
-          )}
+          <ErrorBoundary fallbackTitle="View Failed to Render">
+            {filters.view === 'timeline' && (
+              <TimelineView
+                notes={notes}
+                isLoading={isNotesLoading}
+                onSelectNote={setSelectedNote}
+                filterState={filters}
+                onToggleFeed={toggleFeed}
+                onSelectOnlyFeed={selectOnlyFeed}
+                onClearFeeds={clearFeeds}
+                onOpenFeedsHub={() => handleSetView('feeds')}
+                onToggleType={toggleType}
+                onSelectOnlyType={selectOnlyType}
+                onClearTypes={clearTypes}
+                onToggleTag={toggleTag}
+                onSelectOnlyTag={selectOnlyTag}
+                onClearTags={clearTags}
+                onResetFilters={resetFilters}
+              />
+            )}
 
-          {filters.view === 'month' && (
-            <MonthGridView
-              notes={notes}
-              startDate={filters.start}
-              filterState={filters}
-              onSelectNote={setSelectedNote}
-              onSelectDay={(dateKey) => {
-                setStartDate(dateKey);
-                setView('timeline');
-              }}
-              onToggleFeed={toggleFeed}
-              onSelectOnlyFeed={selectOnlyFeed}
-              onClearFeeds={clearFeeds}
-              onOpenFeedsHub={() => setView('feeds')}
-              onToggleType={toggleType}
-              onSelectOnlyType={selectOnlyType}
-              onClearTypes={clearTypes}
-              onToggleTag={toggleTag}
-              onSelectOnlyTag={selectOnlyTag}
-              onClearTags={clearTags}
-              onToggleHashtag={toggleHashtag}
-              onResetFilters={resetFilters}
-              onOpenFilterDrawer={() => setIsFilterOpen(true)}
-            />
-          )}
+            {filters.view === 'month' && (
+              <MonthGridView
+                notes={notes}
+                startDate={filters.start}
+                filterState={filters}
+                onSelectNote={setSelectedNote}
+                onSelectDay={(dateKey) => {
+                  setStartDate(dateKey);
+                  handleSetView('timeline');
+                }}
+                onToggleFeed={toggleFeed}
+                onSelectOnlyFeed={selectOnlyFeed}
+                onClearFeeds={clearFeeds}
+                onOpenFeedsHub={() => handleSetView('feeds')}
+                onToggleType={toggleType}
+                onSelectOnlyType={selectOnlyType}
+                onClearTypes={clearTypes}
+                onToggleTag={toggleTag}
+                onSelectOnlyTag={selectOnlyTag}
+                onClearTags={clearTags}
+                onToggleHashtag={toggleHashtag}
+                onResetFilters={resetFilters}
+                onOpenFilterDrawer={() => setIsFilterOpen(true)}
+              />
+            )}
 
-          {filters.view === 'gantt' && (
-            <GanttView
-              notes={notes}
-              startDate={filters.start}
-              endDate={filters.end}
-              isLoading={isNotesLoading}
-              onSelectNote={setSelectedNote}
-            />
-          )}
+            {filters.view === 'gantt' && (
+              <GanttView
+                notes={notes}
+                startDate={filters.start}
+                endDate={filters.end}
+                isLoading={isNotesLoading}
+                onSelectNote={setSelectedNote}
+              />
+            )}
 
-          {filters.view === 'feeds' && (
-            <FeedsHubView
-              notes={notes}
-              isLoading={isNotesLoading}
-              selectedFeed={filters.feed}
-              onSelectFeed={selectFeed}
-              onToggleFeed={toggleFeed}
-              onSelectOnlyFeed={selectOnlyFeed}
-              onClearFeed={clearFeeds}
-              onClearFeeds={clearFeeds}
-              onSelectNote={setSelectedNote}
-              onNavigateToTimeline={() => setView('timeline')}
-              onNavigateToCalendar={() => setView('month')}
-            />
-          )}
+            {filters.view === 'feeds' && (
+              <FeedsHubView
+                notes={notes}
+                isLoading={isNotesLoading}
+                selectedFeed={filters.feed}
+                onSelectFeed={selectFeed}
+                onToggleFeed={toggleFeed}
+                onSelectOnlyFeed={selectOnlyFeed}
+                onClearFeed={clearFeeds}
+                onClearFeeds={clearFeeds}
+                onSelectNote={setSelectedNote}
+                onNavigateToTimeline={() => handleSetView('timeline')}
+                onNavigateToCalendar={() => handleSetView('month')}
+              />
+            )}
 
-          {filters.view === 'folders' && (
-            <FolderManagerView />
-          )}
+            {filters.view === 'folders' && (
+              <FolderManagerView />
+            )}
 
-          {filters.view === 'obsidian' && (
-            <ObsidianContainersView />
-          )}
+            {filters.view === 'obsidian' && (
+              <ObsidianContainersView
+                filterState={filters}
+                onToggleContainer={toggleContainer}
+                onSelectOnlyContainer={selectOnlyContainer}
+                onClearContainers={clearContainers}
+                selectedSingleContainerId={selectedSingleContainerId}
+                onSelectSingleContainer={setSelectedSingleContainerId}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 
-      {/* 3. Filter Sidebar Drawer */}
-      <FilterSidebar
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        filterState={filters}
-        onSelectFeed={selectFeed}
-        onToggleFeed={toggleFeed}
-        onSelectOnlyFeed={selectOnlyFeed}
-        onClearFeed={clearFeeds}
-        onClearFeeds={clearFeeds}
-        onToggleTag={toggleTag}
-        onToggleHashtag={toggleHashtag}
-        onToggleType={toggleType}
-        onResetFilters={resetFilters}
-      />
+      {/* 3. Filter Sidebar Drawer (Calendar views only) */}
+      {isCalendarView && (
+        <FilterSidebar
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          filterState={filters}
+          onSelectFeed={selectFeed}
+          onToggleFeed={toggleFeed}
+          onSelectOnlyFeed={selectOnlyFeed}
+          onClearFeed={clearFeeds}
+          onClearFeeds={clearFeeds}
+          onToggleContainer={toggleContainer}
+          onSelectOnlyContainer={selectOnlyContainer}
+          onClearContainers={clearContainers}
+          onToggleTag={toggleTag}
+          onToggleHashtag={toggleHashtag}
+          onToggleType={toggleType}
+          onResetFilters={resetFilters}
+        />
+      )}
 
       {/* 4. Editorial Note Detail Reader Modal */}
       <NoteDetailModal

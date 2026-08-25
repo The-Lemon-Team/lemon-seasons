@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -32,6 +32,8 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   showDefaultHeader = true,
 }) => {
+  const mouseDownTargetRef = useRef<EventTarget | null>(null);
+
   useEffect(() => {
     if (!isOpen || !closeOnEsc) return;
 
@@ -49,10 +51,19 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    mouseDownTargetRef.current = e.target;
+  };
+
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (closeOnOverlayClick && e.target === e.currentTarget) {
+    if (
+      closeOnOverlayClick &&
+      e.target === e.currentTarget &&
+      mouseDownTargetRef.current === e.currentTarget
+    ) {
       onClose();
     }
+    mouseDownTargetRef.current = null;
   };
 
   const hasHeader = showDefaultHeader && (title || showCloseButton || icon || subtitle);
@@ -60,6 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      onMouseDown={handleOverlayMouseDown}
       onClick={handleOverlayClick}
     >
       <div

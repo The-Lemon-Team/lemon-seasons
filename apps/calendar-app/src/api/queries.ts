@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { calendarApi } from './client';
-import { NoteType, QueryNotesParams } from '@lenta/shared';
+import { NoteType, QueryNotesParams, ObsidianContainer } from '@lenta/shared';
 
 export interface TimeSliceFilter {
   start: string;
   end: string;
   feed?: string;
+  containers?: string[];
+  containersList?: ObsidianContainer[];
   tags?: string[];
   hashtags?: string[];
   types?: NoteType[];
@@ -136,6 +138,36 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
       // Client-side feed filter refinement
       if (filter.feed) {
         items = items.filter((n) => n.feed?.slug === filter.feed);
+      }
+
+      // Container filter refinement
+      if (filter.containers && filter.containers.length > 0 && filter.containersList && filter.containersList.length > 0) {
+        const selectedContainerObjects = filter.containersList.filter((c) => filter.containers!.includes(c.id));
+        const boundPaths = selectedContainerObjects
+          .flatMap((c) => [
+            c.vaultPath,
+            ...c.boundFolders.map((bf) => bf.path),
+          ])
+          .filter(Boolean)
+          .map((p) => p.toLowerCase());
+
+        if (boundPaths.length > 0) {
+          items = items.filter((n) => {
+            if (n.folders && n.folders.length > 0) {
+              return n.folders.some((f) => {
+                const fp = (f.folder?.path || f.folder?.name || '').toLowerCase();
+                return boundPaths.some((bp) => fp === bp || fp.startsWith(bp + '/') || bp.startsWith(fp + '/'));
+              });
+            }
+            if (n.tags && n.tags.length > 0) {
+              return n.tags.some((t) => {
+                const tp = (t.path || t.name || '').toLowerCase();
+                return boundPaths.some((bp) => tp === bp || tp.includes(bp) || bp.includes(tp));
+              });
+            }
+            return false;
+          });
+        }
       }
 
       if (filter.tags && filter.tags.length > 0) {

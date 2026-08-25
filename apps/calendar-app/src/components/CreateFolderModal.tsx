@@ -19,6 +19,7 @@ import {
   CircleDollarSign,
   Palette,
 } from 'lucide-react';
+import { Modal } from './Modal';
 
 interface CreateFolderModalProps {
   isOpen: boolean;
@@ -78,8 +79,6 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
     }
   }, [isOpen, parentPath, defaultPrivacy]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPath = path.trim().replace(/^\/+|\/+$/g, '');
@@ -112,8 +111,13 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#181a1a] border border-[#383a3a] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      showDefaultHeader={false}
+      maxWidth="max-w-lg"
+    >
+      <div className="flex flex-col">
         {/* Modal Header */}
         <div className="p-4 border-b border-[#242828] flex items-center justify-between bg-[#1f2121]">
           <div className="flex items-center gap-2.5">
@@ -310,6 +314,6 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };

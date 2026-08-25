@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { X, Lock, Key, Copy, Check, ShieldCheck, Folder, RefreshCw, ExternalLink } from 'lucide-react';
+import { Modal } from './Modal';
 
 interface PrivateContainersModalProps {
   isOpen: boolean;
@@ -17,8 +18,6 @@ export const PrivateContainersModal: React.FC<PrivateContainersModalProps> = ({
 
   const [token, setToken] = useState('lenta_jwt_demo_token_user_2026');
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(token);
@@ -52,11 +51,12 @@ export const PrivateContainersModal: React.FC<PrivateContainersModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="relative w-full max-w-2xl bg-[#181a1a] border border-[#2d3030] rounded-xl shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      showDefaultHeader={false}
+      maxWidth="max-w-2xl"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-[#121414]/80">
           <div className="flex items-center gap-2.5">
@@ -191,7 +191,6 @@ export const PrivateContainersModal: React.FC<PrivateContainersModalProps> = ({
             {t.close}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

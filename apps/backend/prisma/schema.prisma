@@ -40,6 +40,10 @@ model Note {
 
   @@index([startDate, endDate])
   @@index([updatedAt])
+  @@index([feedId])
+  @@index([feedId, deletedAt])
+  @@index([deletedAt])
+  @@index([type])
 }
 
 model Folder {
@@ -55,6 +59,7 @@ model Folder {
 
   @@index([path])
   @@index([updatedAt])
+  @@index([deletedAt])
 }
 
 model NoteFolder {
@@ -84,6 +89,7 @@ model Hashtag {
 
   @@index([name])
   @@index([updatedAt])
+  @@index([deletedAt])
 }
 
 model NoteImage {
@@ -133,6 +139,9 @@ model TaxonomyNode {
   notes       Note[]
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+
+  @@index([path])
+  @@index([deletedAt])
 }
 
 enum NoteType {

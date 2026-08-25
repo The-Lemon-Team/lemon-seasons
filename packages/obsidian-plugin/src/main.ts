@@ -344,7 +344,8 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.apiClient,
       this.settings,
       () => this.saveSettings(),
-      () => this.openConnectionsModal()
+      () => this.openConnectionsModal(),
+      this.syncEngine
     ).open();
   }
 

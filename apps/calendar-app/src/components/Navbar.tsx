@@ -7,6 +7,7 @@ import {
   Search,
   SlidersHorizontal,
   Calendar as CalendarIcon,
+  Home as HomeIcon,
   ListFilter,
   GanttChartSquare,
   Radio,
@@ -116,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : 'text-[#c9c7b2] hover:text-white hover:bg-[#333535]'
             }`}
           >
-            <ListFilter className="w-3.5 h-3.5" />
+            <HomeIcon className="w-3.5 h-3.5" />
             <span>{t.timeline}</span>
           </button>
 
@@ -231,23 +232,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>{lang.toUpperCase()}</span>
         </button>
 
-        {/* Filter Sidebar Toggle Button */}
-        <button
-          onClick={onToggleFilter}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono border transition-colors relative ${
-            isFilterOpen || activeFilterCount > 0
-              ? 'bg-[#c9cd58]/10 text-[#e5e971] border-[#c9cd58]'
-              : 'bg-[#1e2020] text-[#c9c7b2] border-[#242828] hover:text-white hover:border-[#484837]'
-          }`}
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">{t.filters}</span>
-          {activeFilterCount > 0 && (
-            <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+        {/* Filter Sidebar Toggle Button (Only on Calendar pages) */}
+        {['timeline', 'month', 'gantt'].includes(view) && (
+          <button
+            onClick={onToggleFilter}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono border transition-colors relative ${
+              isFilterOpen || activeFilterCount > 0
+                ? 'bg-[#c9cd58]/10 text-[#e5e971] border-[#c9cd58]'
+                : 'bg-[#1e2020] text-[#c9c7b2] border-[#242828] hover:text-white hover:border-[#484837]'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{t.filters}</span>
+            {activeFilterCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </header>
   );

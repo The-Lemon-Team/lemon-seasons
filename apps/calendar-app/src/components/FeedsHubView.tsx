@@ -7,6 +7,9 @@ import {
   Check,
   Play,
   ChevronRight,
+  Filter,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useFeeds } from '../api/queries';
@@ -44,7 +47,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   onNavigateToTimeline,
   onNavigateToCalendar,
 }) => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -135,43 +138,144 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
         onNavigateToCalendar={onNavigateToCalendar}
       />
 
-      {/* 2. Controls & Channel Presets Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Preset Channel Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-          {FEED_PRESET_OPTIONS.map((preset) => {
-            const isActive = preset.slug === activeFeedSlug || (!preset.slug && !activeFeedSlug);
+      {/* 2. Separated Feeds Filter Container Element (Single Feed Selection) */}
+      <div className="bg-[#181a1c] border border-[#2e3234] rounded-2xl p-5 shadow-xl space-y-4 relative overflow-hidden">
+        {/* Container Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#292c2e] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#c9cd58]/15 border border-[#c9cd58]/40 flex items-center justify-center text-[#e5e971]">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-sm text-white tracking-wide">
+                  {lang === 'ru' ? 'Контейнер фильтрации лент' : 'Feed Selection Filter Container'}
+                </h2>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#c9cd58]/15 text-[#e5e971] border border-[#c9cd58]/30">
+                  {lang === 'ru' ? '1 лента в момент' : 'Single feed active'}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-neutral-400">
+                {isAllSelected
+                  ? (lang === 'ru' ? 'Отображение всех каналов (Omni-stream)' : 'Showing all channels (Omni-stream)')
+                  : `${lang === 'ru' ? 'Выбрана лента' : 'Selected feed'}: ${activeTheme?.title || activeFeedSlug}`}
+              </p>
+            </div>
+          </div>
 
-            return (
-              <button
-                key={preset.id}
-                onClick={() => handleSelect(preset.slug)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all border ${
-                  isActive
-                    ? 'bg-[#c9cd58]/20 border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
-                    : 'bg-[#181a1a] border-[#242828] text-neutral-400 hover:text-white hover:bg-[#222424]'
-                }`}
-              >
-                <span>{preset.emoji}</span>
-                <span>{preset.id === 'all' ? t.presetAll : preset.name}</span>
-                {isActive && <Check className="w-3 h-3 text-[#c9cd58]" />}
-              </button>
-            );
-          })}
+          {!isAllSelected && (
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#222527] hover:bg-[#2e3234] border border-[#383c3e] text-xs font-mono text-neutral-300 hover:text-white transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <span>{lang === 'ru' ? 'Показать все каналы' : 'Show All Channels'}</span>
+            </button>
+          )}
         </div>
 
-        {/* Search Bar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-64">
+        {/* Preset Category Chips & Search Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Preset Channel Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+            {FEED_PRESET_OPTIONS.map((preset) => {
+              const isActive = preset.slug === activeFeedSlug || (!preset.slug && !activeFeedSlug);
+
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => handleSelect(preset.slug)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all border ${
+                    isActive
+                      ? 'bg-[#c9cd58]/20 border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
+                      : 'bg-[#121414] border-[#242828] text-neutral-400 hover:text-white hover:bg-[#202222]'
+                  }`}
+                >
+                  <span>{preset.emoji}</span>
+                  <span>{preset.id === 'all' ? t.presetAll : preset.name}</span>
+                  {isActive && <Check className="w-3 h-3 text-[#c9cd58]" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Filter */}
+          <div className="relative w-full md:w-64">
             <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchFeeds}
-              className="w-full bg-[#181a1a] border border-[#242828] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-[#c9cd58]/60"
+              className="w-full bg-[#121414] border border-[#26292b] rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-[#c9cd58]/60"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Single Feed Selector (Radio Cards) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-1">
+          {/* Omni Stream Option */}
+          <button
+            onClick={() => handleSelect(undefined)}
+            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono transition-all text-left ${
+              isAllSelected
+                ? 'bg-[#1e2220] border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
+                : 'bg-[#121414]/70 border-[#242828] text-neutral-400 hover:text-white hover:bg-[#1a1d1e]'
+            }`}
+          >
+            <div className="flex items-center gap-2 truncate">
+              <span className="text-base">📡</span>
+              <span className="truncate">{t.allChannels}</span>
+            </div>
+            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+              isAllSelected ? 'border-[#c9cd58] bg-[#c9cd58]' : 'border-[#444]'
+            }`}>
+              {isAllSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#121414]" />}
+            </div>
+          </button>
+
+          {/* Individual Feeds */}
+          {allFeeds.map((feed) => {
+            const isSelected = activeFeedSlug === feed.slug;
+            const theme = getFeedTheme(feed.slug, feed.title);
+            const count = (notesByFeed[feed.slug] || []).length;
+
+            return (
+              <button
+                key={feed.id}
+                onClick={() => handleSelect(feed.slug)}
+                className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono transition-all text-left ${
+                  isSelected
+                    ? 'bg-[#1e2220] border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
+                    : 'bg-[#121414]/70 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1d1e]'
+                }`}
+              >
+                <div className="flex items-center gap-2 truncate min-w-0">
+                  <span className="text-base shrink-0">{theme.emoji}</span>
+                  <div className="truncate">
+                    <span className="truncate block font-medium">{feed.title}</span>
+                    <span className="text-[10px] text-neutral-500 font-mono block">
+                      {count} {lang === 'ru' ? 'зап.' : 'notes'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ml-1 ${
+                  isSelected ? 'border-[#c9cd58] bg-[#c9cd58]' : 'border-[#444]'
+                }`}>
+                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#121414]" />}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

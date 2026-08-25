@@ -124,7 +124,8 @@ export class GitHistoryModal extends Modal {
     const titleRow = header.createDiv({ cls: 'lenta-history-title-row' });
     titleRow.createEl('h2', { text: '📜 Git Version History & Time Machine' });
 
-    const badge = titleRow.createSpan({ cls: 'lenta-badge' });
+    const badgeRow = header.createDiv({ cls: 'lenta-badge-row' });
+    const badge = badgeRow.createSpan({ cls: 'lenta-badge' });
     badge.setText(this.containerName.toUpperCase());
 
     header.createEl('p', {

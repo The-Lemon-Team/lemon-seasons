@@ -25,33 +25,49 @@ export class NotesService {
       return [];
     }
 
+    const cleanItems = Array.from(
+      new Set(tagIdentifiers.filter((item): item is string => Boolean(item && item.trim()))),
+    );
+    if (cleanItems.length === 0) return [];
+
+    const formattedPaths = cleanItems.map((i) => i.toLowerCase().trim());
+
+    // Batch query existing taxonomy nodes by ID or path
+    const existingNodes = await this.prisma.taxonomyNode.findMany({
+      where: {
+        OR: [
+          { id: { in: cleanItems } },
+          { path: { in: formattedPaths } },
+        ],
+        deletedAt: null,
+      },
+    });
+
+    const foundMap = new Map<string, string>();
+    for (const node of existingNodes) {
+      foundMap.set(node.id, node.id);
+      foundMap.set(node.path, node.id);
+    }
+
     const resolvedIds: string[] = [];
 
-    for (const item of tagIdentifiers) {
-      if (!item) continue;
-      // If it looks like a uuid (has hyphens and standard uuid length), try finding by ID
-      const node = await this.prisma.taxonomyNode.findFirst({
-        where: {
-          OR: [
-            { id: item },
-            { path: item.toLowerCase().trim() },
-          ],
-          deletedAt: null,
-        },
-      });
-      if (node) {
-        resolvedIds.push(node.id);
+    for (const item of cleanItems) {
+      const lower = item.toLowerCase().trim();
+      const existingId = foundMap.get(item) || foundMap.get(lower);
+      if (existingId) {
+        resolvedIds.push(existingId);
       } else {
         // If it's a path that doesn't exist yet, auto-create it
-        const path = item.toLowerCase().trim();
-        const parts = path.split('.');
+        const parts = lower.split('.');
         const name = parts[parts.length - 1];
         const newNode = await this.prisma.taxonomyNode.create({
           data: {
             name: name.charAt(0).toUpperCase() + name.slice(1),
-            path,
+            path: lower,
           },
         });
+        foundMap.set(newNode.id, newNode.id);
+        foundMap.set(newNode.path, newNode.id);
         resolvedIds.push(newNode.id);
       }
     }

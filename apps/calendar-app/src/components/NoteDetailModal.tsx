@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Note, NoteTypeColors } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { Modal } from './Modal';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -23,21 +24,6 @@ interface NoteDetailModalProps {
 
 export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose }) => {
   const { t, getTypeLabel } = useI18n();
-
-  useEffect(() => {
-    if (!note) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [note, onClose]);
 
   if (!note) return null;
 
@@ -53,14 +39,13 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const mainImage = note.images?.find((img) => img.isMain) || note.images?.[0];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+    <Modal
+      isOpen={Boolean(note)}
+      onClose={onClose}
+      showDefaultHeader={false}
+      maxWidth="max-w-3xl"
+      containerClassName="bg-[#1b1e1e] border-[#323636]"
     >
-      <div
-        className="bg-[#1b1e1e] border border-[#323636] rounded-lg max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative"
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Modal Top Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-[#121414]/60">
           <div className="flex items-center gap-3">
@@ -245,8 +230,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           <span>ID: {note.id}</span>
           <span>{t.updated}: {dayjs(note.updatedAt).format('YYYY-MM-DD HH:mm')}</span>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

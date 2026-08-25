@@ -323,7 +323,7 @@ export const ruTranslations: Translations = {
   nextMonth: 'Следующий месяц',
 
   // Views
-  timeline: 'Лента',
+  timeline: 'Главная',
   calendar: 'Календарь',
   gantt: 'Гант',
   feeds: 'Ленты',
@@ -616,7 +616,7 @@ export const enTranslations: Translations = {
   nextMonth: 'Next Month',
 
   // Views
-  timeline: 'Timeline',
+  timeline: 'Home',
   calendar: 'Calendar',
   gantt: 'Gantt',
   feeds: 'Feeds',

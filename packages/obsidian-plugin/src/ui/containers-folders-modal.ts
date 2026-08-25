@@ -1,5 +1,6 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
 import { LentaApiClient } from '../services/lenta-api-client';
+import { LentaSyncEngine } from '../services/lenta-sync-engine';
 import { LentaPluginSettings, LentaContainerSummaryDto, LentaFolderDto } from '../types';
 
 export class LentaContainersFoldersModal extends Modal {
@@ -7,11 +8,16 @@ export class LentaContainersFoldersModal extends Modal {
   private settings: LentaPluginSettings;
   private onSaveSettings: () => Promise<void>;
   private onOpenConnectionsModal?: () => void;
+  private syncEngine?: LentaSyncEngine;
 
   private containers: LentaContainerSummaryDto[] = [];
   private folders: LentaFolderDto[] = [];
-  private selectedIds: Set<string> = new Set();
+  private savedSelectedIds: Set<string> = new Set();
+  private stagedSelectedIds: Set<string> = new Set();
   private isLoading = false;
+  private isConnecting = false;
+  private activeSyncingContainerId: string | null = null;
+  private completedSyncContainerIds: Set<string> = new Set();
   private searchQuery = '';
   private privacyFilter: 'all' | 'public' | 'private' = 'all';
   private customKeyInput = '';
@@ -21,19 +27,22 @@ export class LentaContainersFoldersModal extends Modal {
     apiClient: LentaApiClient,
     settings: LentaPluginSettings,
     onSaveSettings: () => Promise<void>,
-    onOpenConnectionsModal?: () => void
+    onOpenConnectionsModal?: () => void,
+    syncEngine?: LentaSyncEngine
   ) {
     super(app);
     this.apiClient = apiClient;
     this.settings = settings;
     this.onSaveSettings = onSaveSettings;
     this.onOpenConnectionsModal = onOpenConnectionsModal;
+    this.syncEngine = syncEngine;
 
-    // Initialize selectedIds from settings
+    // Initialize selection states from settings
     const initialList = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0
       ? settings.activeContainerIds
       : settings.activeContainerId ? [settings.activeContainerId] : [];
-    this.selectedIds = new Set(initialList);
+    this.savedSelectedIds = new Set(initialList);
+    this.stagedSelectedIds = new Set(initialList);
   }
 
   async onOpen() {
@@ -57,12 +66,14 @@ export class LentaContainersFoldersModal extends Modal {
       this.containers = containers;
       this.folders = folders;
 
-      // Sync activeContainerIds in settings if set
+      let list: string[] = [];
       if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
-        this.selectedIds = new Set(this.settings.activeContainerIds);
+        list = this.settings.activeContainerIds;
       } else if (this.settings.activeContainerId) {
-        this.selectedIds = new Set([this.settings.activeContainerId]);
+        list = [this.settings.activeContainerId];
       }
+      this.savedSelectedIds = new Set(list);
+      this.stagedSelectedIds = new Set(list);
     } catch (err) {
       console.warn('Failed to load containers or folders:', err);
     } finally {
@@ -72,7 +83,7 @@ export class LentaContainersFoldersModal extends Modal {
   }
 
   private async persistSelection() {
-    const list = Array.from(this.selectedIds);
+    const list = Array.from(this.stagedSelectedIds);
     this.settings.activeContainerIds = list;
     this.settings.activeContainerId = list[0] || '';
     
@@ -92,37 +103,107 @@ export class LentaContainersFoldersModal extends Modal {
     await this.onSaveSettings();
   }
 
+  private getHasStagedChanges(): boolean {
+    if (this.savedSelectedIds.size !== this.stagedSelectedIds.size) return true;
+    for (const id of this.stagedSelectedIds) {
+      if (!this.savedSelectedIds.has(id)) return true;
+    }
+    return false;
+  }
+
+  private toggleStagedSelection = (containerId: string) => {
+    const listEl = this.contentEl.querySelector('#lenta-containers-compact-list') as HTMLElement;
+    const savedListScrollTop = listEl ? listEl.scrollTop : 0;
+    const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+
+    if (this.stagedSelectedIds.has(containerId)) {
+      this.stagedSelectedIds.delete(containerId);
+    } else {
+      this.stagedSelectedIds.add(containerId);
+    }
+    this.renderContainersList();
+    this.renderHeaderAndMappingInfo();
+
+    if (listEl) {
+      listEl.scrollTop = savedListScrollTop;
+    }
+    if (this.contentEl) {
+      this.contentEl.scrollTop = savedContentScrollTop;
+    }
+  };
+
+  private applyConnectionAndUpdateFiles = async () => {
+    if (this.isConnecting) return;
+    this.isConnecting = true;
+    this.activeSyncingContainerId = null;
+    this.completedSyncContainerIds.clear();
+    this.render();
+
+    try {
+      await this.persistSelection();
+      this.savedSelectedIds = new Set(this.stagedSelectedIds);
+
+      let totalDownloaded = 0;
+      const rootFolder = this.settings.vaultRootFolder || 'Lenta';
+
+      if (this.syncEngine && this.stagedSelectedIds.size > 0) {
+        new Notice(`⏳ Downloading structure & files for ${this.stagedSelectedIds.size} connected container(s)...`);
+
+        for (const containerId of Array.from(this.stagedSelectedIds)) {
+          this.activeSyncingContainerId = containerId;
+          this.renderContainersList();
+          this.renderHeaderAndMappingInfo();
+
+          const matched = this.containers.find((c) => c.id === containerId);
+          const name = matched ? matched.name : containerId;
+          const result = await this.syncEngine.syncContainerFiles(containerId, name);
+          totalDownloaded += result.downloadedFiles;
+
+          this.completedSyncContainerIds.add(containerId);
+          this.renderContainersList();
+          this.renderHeaderAndMappingInfo();
+        }
+
+        this.activeSyncingContainerId = null;
+        this.renderContainersList();
+        this.renderHeaderAndMappingInfo();
+
+        // Reconcile field-level Last-Write-Wins (LWW) changes
+        await this.syncEngine.pullChanges().catch((err) => {
+          console.warn('Sync engine pull error:', err);
+        });
+      }
+
+      const connectedCount = this.savedSelectedIds.size;
+      new Notice(
+        `🍋 Connected & updated! ${totalDownloaded} file(s) saved into "${rootFolder}" (${connectedCount} container(s) active)`
+      );
+    } catch (err: any) {
+      new Notice(`Failed to update container connection: ${err.message}`);
+    } finally {
+      this.isConnecting = false;
+      this.activeSyncingContainerId = null;
+      this.completedSyncContainerIds.clear();
+      this.render();
+    }
+  };
+
   private render() {
     const { contentEl } = this;
     contentEl.empty();
-
-    // Calculate selection statistics
-    const count = this.selectedIds.size;
-    let totalNotesSelected = 0;
-    for (const c of this.containers) {
-      if (this.selectedIds.has(c.id) && typeof c.totalNotes === 'number') {
-        totalNotesSelected += c.totalNotes;
-      }
-    }
 
     // ── Header ─────────────────────────────────────────────────────────────
     const header = contentEl.createDiv({ cls: 'lenta-modal-header' });
     const titleRow = header.createDiv({ cls: 'lenta-sync-title-row' });
     titleRow.createEl('h2', { text: '📦 Containers & Folders Workspace' });
 
-    if (count > 0) {
-      const badge = titleRow.createSpan({ cls: 'lenta-badge' });
-      badge.setText(`CONNECTED: ${count} Container${count > 1 ? 's' : ''} Selected (${totalNotesSelected} Notes)`);
-    } else {
-      const badge = titleRow.createSpan({ cls: 'lenta-badge' });
-      badge.style.borderColor = '#d97706';
-      badge.style.color = '#f59e0b';
-      badge.setText('NO CONTAINERS SELECTED');
-    }
+    const badgeRow = header.createDiv({ cls: 'lenta-badge-row' });
+    badgeRow.id = 'lenta-modal-header-badge-row';
+    this.renderHeaderBadge(badgeRow);
 
     header.createEl('p', {
       cls: 'lenta-modal-subtitle',
-      text: 'Browse and select multiple obsidian containers for active vault work, track note counts, and manage folder structures.',
+      text: 'Step 1: Select or deselect containers. Step 2: Click Connect & Update Files to apply changes to your vault.',
     });
 
     // ── Toolbar Controls Bar ───────────────────────────────────────────────
@@ -147,57 +228,83 @@ export class LentaContainersFoldersModal extends Modal {
       placeholder: '🔍 Search containers...',
       value: this.searchQuery,
     });
-    searchInput.style.cssText = 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;';
+    searchInput.disabled = this.isConnecting;
+    searchInput.style.cssText = `width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff; ${this.isConnecting ? 'opacity: 0.6; cursor: not-allowed;' : ''}`;
     searchInput.oninput = (e) => {
+      if (this.isConnecting) return;
       this.searchQuery = (e.target as HTMLInputElement).value;
-      this.renderContainersGrid();
+      this.renderContainersList();
     };
 
-    // Privacy Filter
-    const filterWrap = toolbar.createDiv();
-    const filterSelect = filterWrap.createEl('select');
-    filterSelect.style.cssText = 'padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff;';
-    filterSelect.innerHTML = `
-      <option value="all" ${this.privacyFilter === 'all' ? 'selected' : ''}>🌐 All Containers</option>
-      <option value="public" ${this.privacyFilter === 'public' ? 'selected' : ''}>📰 Public Only</option>
-      <option value="private" ${this.privacyFilter === 'private' ? 'selected' : ''}>🔐 Private Only</option>
-    `;
-    filterSelect.onchange = (e) => {
-      this.privacyFilter = (e.target as HTMLSelectElement).value as any;
-      this.renderContainersGrid();
-    };
+    // Privacy Filter Segmented Tabs
+    const filterWrap = toolbar.createDiv({ cls: 'lenta-privacy-filter-tabs' });
+
+    const isContainerPublic = (c: LentaContainerSummaryDto) => c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
+    const publicContainersCount = this.containers.filter((c) => isContainerPublic(c)).length;
+    const privateContainersCount = this.containers.filter((c) => !isContainerPublic(c)).length;
+    const allContainersCount = this.containers.length;
+
+    const filterOptions: Array<{ id: 'all' | 'public' | 'private'; label: string; icon: string; count: number }> = [
+      { id: 'all', label: 'All', icon: '🌐', count: allContainersCount },
+      { id: 'public', label: 'Public', icon: '📰', count: publicContainersCount },
+      { id: 'private', label: 'Private', icon: '🔐', count: privateContainersCount },
+    ];
+
+    for (const opt of filterOptions) {
+      const isSelected = this.privacyFilter === opt.id;
+      const tabBtn = filterWrap.createEl('button', {
+        cls: `lenta-privacy-tab ${isSelected ? 'is-active' : ''}`,
+      });
+      tabBtn.disabled = this.isConnecting;
+
+      tabBtn.innerHTML = `<span>${opt.icon} ${opt.label}</span> <span class="lenta-privacy-tab-count">${opt.count}</span>`;
+
+      tabBtn.onclick = () => {
+        if (this.isConnecting) return;
+        this.privacyFilter = opt.id;
+        this.render();
+      };
+    }
 
     // Bulk Select / Deselect All
     const selectAllBtn = toolbar.createEl('button', {
       text: 'Select All',
     });
-    selectAllBtn.style.cssText = 'padding: 6px 12px; font-size: 0.85em; font-weight: 600;';
-    selectAllBtn.onclick = async () => {
+    selectAllBtn.disabled = this.isConnecting;
+    selectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? 'opacity: 0.5; cursor: not-allowed;' : ''}`;
+    selectAllBtn.onclick = () => {
+      if (this.isConnecting) return;
       const filtered = this.getFilteredContainers();
       for (const c of filtered) {
-        this.selectedIds.add(c.id);
+        this.stagedSelectedIds.add(c.id);
       }
-      await this.persistSelection();
-      this.render();
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
     };
 
     const deselectAllBtn = toolbar.createEl('button', {
       text: 'Clear All',
     });
-    deselectAllBtn.style.cssText = 'padding: 6px 12px; font-size: 0.85em; font-weight: 600;';
-    deselectAllBtn.onclick = async () => {
-      this.selectedIds.clear();
-      await this.persistSelection();
-      this.render();
+    deselectAllBtn.disabled = this.isConnecting;
+    deselectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? 'opacity: 0.5; cursor: not-allowed;' : ''}`;
+    deselectAllBtn.onclick = () => {
+      if (this.isConnecting) return;
+      this.stagedSelectedIds.clear();
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
     };
 
-    // Load All Containers Button
+    // Refresh Containers Button
     const refreshBtn = toolbar.createEl('button', {
       cls: 'mod-cta lenta-btn-lemon',
       text: '🔄 Refresh List',
     });
-    refreshBtn.style.cssText = 'padding: 6px 14px; font-weight: 600; font-size: 0.85em;';
-    refreshBtn.onclick = () => this.loadData();
+    refreshBtn.disabled = this.isConnecting;
+    refreshBtn.style.cssText = `padding: 6px 14px; font-weight: 600; font-size: 0.85em; ${this.isConnecting ? 'opacity: 0.5; cursor: not-allowed;' : ''}`;
+    refreshBtn.onclick = () => {
+      if (this.isConnecting) return;
+      this.loadData();
+    };
 
     // Open Connections Modal shortcut button if available
     if (this.onOpenConnectionsModal) {
@@ -217,19 +324,25 @@ export class LentaContainersFoldersModal extends Modal {
       return;
     }
 
-    // Container Cards Grid Container
-    const gridContainer = contentEl.createDiv({ cls: 'lenta-containers-grid-section' });
-    const gridHeaderRow = gridContainer.createDiv({ cls: 'lenta-grid-header-row' });
-    gridHeaderRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
+    // Container Selection Compact List Section
+    const listSection = contentEl.createDiv({ cls: 'lenta-containers-list-section' });
+    const listHeaderRow = listSection.createDiv({ cls: 'lenta-list-header-row' });
+    listHeaderRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
     
-    gridHeaderRow.createEl('h3', { text: '📦 Select Containers to Connect', href: '#' });
-    const countSummary = gridHeaderRow.createSpan({ cls: 'lenta-count-pill' });
+    listHeaderRow.createEl('h3', { text: 'Step 1: Select Containers to Connect or Disconnect' });
+    const countSummary = listHeaderRow.createSpan({ cls: 'lenta-count-pill' });
+    countSummary.id = 'lenta-staged-count-summary';
     countSummary.style.cssText = 'font-weight: 600; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: var(--lenta-lemon-glow); color: var(--lenta-lemon);';
-    countSummary.setText(`${count} of ${this.containers.length} containers selected`);
+    countSummary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
 
-    const gridEl = gridContainer.createDiv({ cls: 'lenta-containers-grid' });
-    gridEl.id = 'lenta-containers-grid-list';
-    this.renderContainersGrid(gridEl);
+    const listEl = listSection.createDiv({ cls: 'lenta-containers-compact-list' });
+    listEl.id = 'lenta-containers-compact-list';
+    this.renderContainersList(listEl);
+
+    // ── Step 2: Connect & Update Files Action Bar ───────────────────────────
+    const actionBar = listSection.createDiv({ cls: 'lenta-connect-action-bar' });
+    actionBar.id = 'lenta-connect-action-bar';
+    this.renderConnectActionBar(actionBar);
 
     // ── Direct Connect by Key ───────────────────────────────────────────────
     const keySection = contentEl.createDiv({ cls: 'lenta-key-section' });
@@ -257,8 +370,8 @@ export class LentaContainersFoldersModal extends Modal {
             }
             const res = await this.apiClient.connectContainerByKey(this.customKeyInput);
             if (res.success && res.container) {
-              this.selectedIds.add(res.container.id);
-              await this.persistSelection();
+              this.stagedSelectedIds.add(res.container.id);
+              await this.applyConnectionAndUpdateFiles();
               new Notice(`Added container: ${res.container.name}`);
               await this.loadData();
             } else {
@@ -288,6 +401,7 @@ export class LentaContainersFoldersModal extends Modal {
       );
 
     const folderMappingEl = folderSection.createDiv({ cls: 'lenta-folder-mapping-box' });
+    folderMappingEl.id = 'lenta-folder-mapping-box';
     this.renderFolderMappingInfo(folderMappingEl);
 
     // Remote Folders Overview
@@ -307,10 +421,102 @@ export class LentaContainersFoldersModal extends Modal {
     }
   }
 
+  private renderHeaderBadge(container: HTMLElement) {
+    container.empty();
+    const count = this.savedSelectedIds.size;
+    let totalNotesSelected = 0;
+    for (const c of this.containers) {
+      if (this.savedSelectedIds.has(c.id) && typeof c.totalNotes === 'number') {
+        totalNotesSelected += c.totalNotes;
+      }
+    }
+
+    if (count > 0) {
+      const badge = container.createSpan({ cls: 'lenta-badge' });
+      badge.setText(`ACTIVE CONNECTED: ${count} Container${count > 1 ? 's' : ''} (${totalNotesSelected} Notes)`);
+    } else {
+      const badge = container.createSpan({ cls: 'lenta-badge' });
+      badge.style.borderColor = '#d97706';
+      badge.style.color = '#f59e0b';
+      badge.setText('NO CONTAINERS CONNECTED');
+    }
+  }
+
+  private renderConnectActionBar(container: HTMLElement) {
+    container.empty();
+    container.style.cssText = [
+      'display: flex',
+      'justify-content: space-between',
+      'align-items: center',
+      'gap: 12px',
+      'margin-top: 12px',
+      'padding: 12px 16px',
+      'background: var(--background-secondary)',
+      'border-radius: 8px',
+      'border: 1px solid var(--lenta-lemon-glow)',
+    ].join(';');
+
+    const hasChanges = this.getHasStagedChanges();
+    const stagedCount = this.stagedSelectedIds.size;
+
+    const infoWrap = container.createDiv({ cls: 'lenta-connect-info' });
+    const infoTitle = infoWrap.createEl('div', { cls: 'lenta-connect-step-title' });
+    infoTitle.style.cssText = 'font-weight: 700; font-size: 0.9em; color: var(--lenta-lemon);';
+    infoTitle.setText('Step 2: Connect & Update Files');
+
+    const infoDesc = infoWrap.createEl('div', { cls: 'lenta-connect-step-desc' });
+    infoDesc.style.cssText = 'font-size: 0.8em; color: var(--text-muted); margin-top: 2px;';
+
+    if (hasChanges) {
+      const added = Array.from(this.stagedSelectedIds).filter((id) => !this.savedSelectedIds.has(id)).length;
+      const removed = Array.from(this.savedSelectedIds).filter((id) => !this.stagedSelectedIds.has(id)).length;
+      infoDesc.setText(`Pending changes: ${added > 0 ? `+${added} connect ` : ''}${removed > 0 ? `-${removed} disconnect` : ''}. Click Connect to update vault files.`);
+    } else {
+      infoDesc.setText(`${stagedCount} container${stagedCount === 1 ? '' : 's'} connected for active vault work.`);
+    }
+
+    const connectBtn = container.createEl('button', {
+      cls: 'mod-cta lenta-btn-lemon lenta-connect-main-btn',
+      text: this.isConnecting ? '⏳ Connecting & Updating Files...' : (hasChanges ? '🔌 Connect & Update Files' : '🔌 Re-Connect & Refresh Files'),
+    });
+    connectBtn.disabled = this.isConnecting;
+    connectBtn.style.cssText = 'padding: 8px 18px; font-weight: 700; font-size: 0.9em; cursor: pointer; white-space: nowrap;';
+
+    connectBtn.onclick = async () => {
+      await this.applyConnectionAndUpdateFiles();
+    };
+  }
+
+  private renderHeaderAndMappingInfo() {
+    const summary = this.contentEl.querySelector('#lenta-staged-count-summary');
+    if (summary) {
+      if (this.isConnecting) {
+        if (this.activeSyncingContainerId) {
+          const count = this.completedSyncContainerIds.size + 1;
+          summary.setText(`⏳ Loading container ${count} of ${this.stagedSelectedIds.size}...`);
+        } else {
+          summary.setText('⏳ Connecting & loading files...');
+        }
+      } else {
+        summary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
+      }
+    }
+
+    const actionBar = this.contentEl.querySelector('#lenta-connect-action-bar') as HTMLElement;
+    if (actionBar) {
+      this.renderConnectActionBar(actionBar);
+    }
+
+    const mappingEl = this.contentEl.querySelector('#lenta-folder-mapping-box') as HTMLElement;
+    if (mappingEl) {
+      this.renderFolderMappingInfo(mappingEl);
+    }
+  }
+
   private getFilteredContainers(): LentaContainerSummaryDto[] {
     return this.containers.filter((c) => {
       const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const isPublic = c.isPublic !== false;
+      const isPublic = c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
       const matchPrivacy = this.privacyFilter === 'all' || (this.privacyFilter === 'public' && isPublic) || (this.privacyFilter === 'private' && !isPublic);
       return matchSearch && matchPrivacy;
     });
@@ -319,7 +525,7 @@ export class LentaContainersFoldersModal extends Modal {
   private renderFolderMappingInfo(container: HTMLElement) {
     container.empty();
     const rootFolder = this.settings.vaultRootFolder || 'Lenta';
-    const selectedList = Array.from(this.selectedIds);
+    const selectedList = Array.from(this.stagedSelectedIds);
 
     container.style.cssText = [
       'padding: 12px 14px',
@@ -342,105 +548,151 @@ export class LentaContainersFoldersModal extends Modal {
     const pathsHtml = selectedList.map((id) => {
       const matched = this.containers.find((c) => c.id === id);
       const name = matched ? matched.name : id;
-      return `<div style="margin-top:2px;">• <code>${rootFolder}/${name}</code></div>`;
+      const isSaved = this.savedSelectedIds.has(id);
+      return `<div style="margin-top:2px;">• <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ''}</div>`;
     }).join('');
 
     container.innerHTML = `
-      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">📍 Active Connected Vault Directory Mappings (${selectedList.length}):</div>
+      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">📍 Vault Directory Mappings Preview (${selectedList.length}):</div>
       ${pathsHtml}
-      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault.</div>
+      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault when you click Connect.</div>
     `;
   }
 
-  private renderContainersGrid(targetEl?: HTMLElement) {
-    const gridEl = targetEl || this.contentEl.querySelector('#lenta-containers-grid-list');
-    if (!gridEl) return;
-    gridEl.empty();
+  private renderContainersList(targetEl?: HTMLElement) {
+    const listEl = targetEl || (this.contentEl.querySelector('#lenta-containers-compact-list') as HTMLElement);
+    if (!listEl) return;
+    const savedListScrollTop = listEl.scrollTop;
+    const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+
+    listEl.empty();
+
+    if (this.isConnecting) {
+      listEl.addClass('is-locked');
+      listEl.addClass('is-loading-all');
+    } else {
+      listEl.removeClass('is-locked');
+      listEl.removeClass('is-loading-all');
+    }
 
     const filtered = this.getFilteredContainers();
 
     if (filtered.length === 0) {
-      gridEl.createDiv({ cls: 'lenta-empty-state', text: 'No containers match your search or filter.' });
+      listEl.createDiv({ cls: 'lenta-empty-state', text: 'No containers match your search or filter.' });
+      if (this.contentEl) this.contentEl.scrollTop = savedContentScrollTop;
       return;
     }
 
-    gridEl.style.cssText = [
-      'display: grid',
-      'grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))',
-      'gap: 14px',
-      'margin-top: 10px',
-    ].join(';');
-
     for (const c of filtered) {
-      const isSelected = this.selectedIds.has(c.id);
-      const card = gridEl.createDiv({ cls: `lenta-container-card ${isSelected ? 'selected' : ''}` });
-      card.style.cssText = [
-        'padding: 14px',
-        'border-radius: 8px',
-        'border: 1px solid ' + (isSelected ? 'var(--lenta-lemon)' : 'var(--background-modifier-border)'),
-        'background: ' + (isSelected ? '#1c241d' : 'var(--background-secondary)'),
-        'display: flex',
-        'flex-direction: column',
-        'justify-content: space-between',
-        'gap: 10px',
-        'transition: all 0.15s ease',
-        'cursor: pointer',
-      ].join(';');
+      const isStaged = this.stagedSelectedIds.has(c.id);
+      const isSaved = this.savedSelectedIds.has(c.id);
 
-      const topRow = card.createDiv({ cls: 'lenta-card-top' });
-      const titleRow = topRow.createDiv({ cls: 'lenta-card-title-row' });
-      titleRow.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;';
-
-      const title = titleRow.createEl('h4', { text: c.name });
-      title.style.cssText = 'margin: 0; font-size: 0.98em; color: var(--text-normal); font-weight: 600;';
-
-      const checkBadge = titleRow.createSpan({ cls: 'lenta-check-badge' });
-      checkBadge.style.cssText = `font-size: 0.85em; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${isSelected ? 'var(--lenta-lemon)' : '#333'}; color: ${isSelected ? '#121414' : '#888'};`;
-      checkBadge.setText(isSelected ? '✓ SELECTED' : '+ ADD');
-
-      const tagsRow = topRow.createDiv({ cls: 'lenta-card-tags' });
-      tagsRow.style.cssText = 'display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;';
-
-      const typeTag = tagsRow.createSpan({ cls: 'lenta-badge' });
-      typeTag.setText((c.type || 'git').toUpperCase());
-
-      const privacyTag = tagsRow.createSpan({ cls: 'lenta-badge' });
-      const isPub = c.isPublic !== false;
-      privacyTag.setText(isPub ? 'PUBLIC' : 'PRIVATE');
-      privacyTag.style.borderColor = isPub ? 'rgba(74, 222, 128, 0.4)' : 'rgba(248, 113, 113, 0.4)';
-      privacyTag.style.color = isPub ? '#4ade80' : '#f87171';
-
-      if (typeof c.totalNotes === 'number') {
-        const notesTag = topRow.createDiv({ cls: 'lenta-card-notes' });
-        notesTag.style.cssText = 'font-size: 0.82em; color: var(--text-muted);';
-        notesTag.setText(`📄 ${c.totalNotes} notes`);
+      let rowClass = 'lenta-container-row';
+      if (this.isConnecting) {
+        rowClass += ' is-locked';
+      }
+      if (c.id === this.activeSyncingContainerId) {
+        rowClass += ' is-syncing';
+      } else if (this.completedSyncContainerIds.has(c.id)) {
+        rowClass += ' is-sync-done';
       }
 
-      // Action Button
-      const actionBtn = card.createEl('button', {
-        cls: isSelected ? 'mod-cta lenta-btn-lemon' : 'lenta-action-btn',
-        text: isSelected ? '✓ Selected' : '+ Select Container',
+      if (isStaged) {
+        rowClass += ' is-selected';
+      }
+      if (isStaged && !isSaved) {
+        rowClass += ' is-pending-connect';
+      } else if (!isStaged && isSaved) {
+        rowClass += ' is-pending-disconnect';
+      }
+
+      const row = listEl.createDiv({ cls: rowClass });
+
+      // Left Column: Checkbox + Icon + Title & ID
+      const leftCol = row.createDiv({ cls: 'lenta-container-row-left' });
+      
+      const checkbox = leftCol.createEl('input', {
+        type: 'checkbox',
+        cls: 'lenta-container-checkbox',
       });
-      actionBtn.style.cssText = 'width: 100%; margin-top: 4px; padding: 6px 12px; font-weight: 600; cursor: pointer;';
-
-      const toggleSelection = async () => {
-        if (this.selectedIds.has(c.id)) {
-          this.selectedIds.delete(c.id);
-        } else {
-          this.selectedIds.add(c.id);
-        }
-        await this.persistSelection();
-        this.render();
-      };
-
-      actionBtn.onclick = (e) => {
+      checkbox.checked = isStaged;
+      checkbox.disabled = this.isConnecting;
+      checkbox.onclick = (e) => {
         e.stopPropagation();
-        toggleSelection();
+        if (this.isConnecting) return;
+        this.toggleStagedSelection(c.id);
       };
 
-      card.onclick = () => {
-        toggleSelection();
+      leftCol.createSpan({ cls: 'lenta-container-icon', text: '📦' });
+
+      const titleWrap = leftCol.createDiv({ cls: 'lenta-container-title-wrap' });
+      titleWrap.createSpan({ cls: 'lenta-container-title', text: c.name });
+      titleWrap.createSpan({ cls: 'lenta-container-id', text: c.id });
+
+      // Right Column: Type, Privacy, Notes count, Select/Status Button
+      const rightCol = row.createDiv({ cls: 'lenta-container-row-right' });
+
+      const typeTag = rightCol.createSpan({ cls: 'lenta-badge' });
+      typeTag.setText((c.type || 'git').toUpperCase());
+
+      const isPub = c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
+      const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? 'is-public' : 'is-private'}` });
+      privacyTag.setText(isPub ? 'PUBLIC' : 'PRIVATE');
+
+      if (typeof c.totalNotes === 'number') {
+        const notesTag = rightCol.createSpan({ cls: 'lenta-count-pill' });
+        notesTag.setText(`📄 ${c.totalNotes}`);
+      }
+
+      let btnText = isStaged ? '✓ Selected' : '+ Select';
+      let btnClass = `lenta-select-btn ${isStaged ? 'is-selected' : ''}`;
+
+      if (this.isConnecting) {
+        if (c.id === this.activeSyncingContainerId) {
+          btnText = '⏳ Loading...';
+          btnClass = 'lenta-select-btn is-loading is-syncing';
+        } else if (this.completedSyncContainerIds.has(c.id)) {
+          btnText = '✓ Updated';
+          btnClass = 'lenta-select-btn is-completed';
+        } else if (isStaged) {
+          btnText = '⏳ Pending...';
+          btnClass = 'lenta-select-btn is-pending-sync';
+        }
+      } else {
+        if (isStaged && !isSaved) {
+          btnText = '+ Connect';
+          btnClass += ' is-staged-add';
+        } else if (!isStaged && isSaved) {
+          btnText = '✕ Disconnect';
+          btnClass += ' is-staged-remove';
+        } else if (isStaged && isSaved) {
+          btnText = '✓ Connected';
+        }
+      }
+
+      const selectBtn = rightCol.createEl('button', {
+        cls: btnClass,
+        text: btnText,
+      });
+      selectBtn.disabled = this.isConnecting;
+      selectBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (this.isConnecting) return;
+        this.toggleStagedSelection(c.id);
       };
+
+      row.onclick = (e) => {
+        if (this.isConnecting) return;
+        const targetTag = (e.target as HTMLElement).tagName.toUpperCase();
+        if (targetTag !== 'INPUT' && targetTag !== 'BUTTON') {
+          this.toggleStagedSelection(c.id);
+        }
+      };
+    }
+
+    listEl.scrollTop = savedListScrollTop;
+    if (this.contentEl) {
+      this.contentEl.scrollTop = savedContentScrollTop;
     }
   }
 }

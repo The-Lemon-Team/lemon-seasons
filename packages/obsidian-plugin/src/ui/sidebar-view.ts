@@ -99,6 +99,7 @@ export class LentaSidebarView extends ItemView {
     const header = container.createDiv({ cls: 'lenta-sidebar-header' });
     const titleRow = header.createDiv({ cls: 'lenta-sidebar-title' });
     titleRow.createEl('h4', { text: '🍋 Project Lenta' });
+    const settings = this.getSettings();
     const selectedCount = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0
       ? settings.activeContainerIds.length
       : settings.activeContainerId ? 1 : 0;
