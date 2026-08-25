@@ -78,6 +78,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
   };
 
+  const backdropMouseDownRef = React.useRef(false);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -93,16 +95,35 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <aside className="fixed inset-y-0 right-0 z-50 w-80 bg-[#16191b] border-l border-border/80 shadow-2xl flex flex-col animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <div className="flex items-center gap-2 text-white font-semibold text-sm">
-          <Filter className="w-4 h-4 text-[#c9cd58]" />
-          <span>{lang === 'ru' ? 'Фильтры календаря' : 'Calendar Filters'}</span>
-        </div>
+    <>
+      {/* Black transparent background substrate (backdrop) */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onMouseDown={(e) => {
+          backdropMouseDownRef.current = e.target === e.currentTarget;
+        }}
+        onClick={(e) => {
+          if (backdropMouseDownRef.current && e.target === e.currentTarget) {
+            onClose();
+          }
+          backdropMouseDownRef.current = false;
+        }}
+      />
+
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[440px] lg:w-[480px] bg-[#16191b] border-l border-border/80 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out transform ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2 text-white font-semibold text-sm">
+            <Filter className="w-4 h-4 text-[#c9cd58]" />
+            <span>{lang === 'ru' ? 'Фильтры календаря' : 'Calendar Filters'}</span>
+          </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onResetFilters}
@@ -541,5 +562,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         )}
       </div>
     </aside>
-  );
+  </>
+);
 };
