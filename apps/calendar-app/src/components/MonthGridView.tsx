@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Note,
   CalendarFilterState,
@@ -13,6 +13,7 @@ import { DaySidebar } from './DaySidebar';
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
+import { MiniCalendar } from './MiniCalendar';
 import dayjs from 'dayjs';
 import {
   Tag,
@@ -23,6 +24,9 @@ import {
   RotateCcw,
   X,
   Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 
@@ -32,6 +36,10 @@ interface MonthGridViewProps {
   filterState: CalendarFilterState;
   onSelectNote: (note: Note) => void;
   onSelectDay?: (dateKey: string) => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
+  onSelectMonth?: (year: number, monthIndex: number) => void;
+  onToday?: () => void;
   onToggleFeed: (feedSlug: string) => void;
   onSelectOnlyFeed?: (feedSlug: string) => void;
   onSetAllFeeds?: (feeds: string[]) => void;
@@ -54,6 +62,10 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   filterState,
   onSelectNote,
   onSelectDay,
+  onPrevMonth,
+  onNextMonth,
+  onSelectMonth,
+  onToday,
   onToggleFeed,
   onSelectOnlyFeed,
   onSetAllFeeds,
@@ -73,6 +85,21 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   const { data: allFeeds = [] } = useFeeds();
   const [hoveredDayKey, setHoveredDayKey] = useState<string | null>(null);
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+  const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false);
+  const monthPopoverRef = useRef<HTMLDivElement>(null);
+
+  // Close mini calendar on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (monthPopoverRef.current && !monthPopoverRef.current.contains(e.target as Node)) {
+        setIsMiniCalendarOpen(false);
+      }
+    };
+    if (isMiniCalendarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMiniCalendarOpen]);
 
   const currentMonth = dayjs(startDate);
   const startOfMonth = currentMonth.startOf('month');
@@ -166,23 +193,80 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
       <div className="bg-[#1a1c1c] border border-[#242828] rounded-xl p-3 flex flex-col gap-2.5 shadow-md flex-shrink-0">
         {/* Top Level: Month Title, Quick Stats & Jump to Filters Buttons */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#c9cd58]/10 border border-[#c9cd58]/30 flex items-center justify-center text-[#c9cd58]">
-              <CalendarIcon className="w-4 h-4" />
+          {/* Left: Month Navigation Title & Interactive Picker Zone */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Month Control Navigation Bar */}
+            <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-xl border border-[#242828] relative shadow-inner" ref={monthPopoverRef}>
+              {onPrevMonth && (
+                <button
+                  type="button"
+                  onClick={onPrevMonth}
+                  className="p-1.5 rounded-lg text-[#c9c7b2] hover:text-white hover:bg-[#242828] transition-colors"
+                  title={t.previousMonth}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Clickable Month Title with Dropdown Chevron */}
+              <button
+                type="button"
+                onClick={() => setIsMiniCalendarOpen((prev) => !prev)}
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg hover:bg-[#242828] text-white font-mono font-bold text-base uppercase tracking-wide transition-colors"
+                title="Нажмите, чтобы открыть мини-календарь и выбрать месяц"
+              >
+                <div className="w-6 h-6 rounded bg-[#c9cd58]/15 border border-[#c9cd58]/40 flex items-center justify-center text-[#c9cd58]">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                </div>
+                <span>{currentMonth.format('MMMM YYYY')}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#c9cd58] transition-transform ${isMiniCalendarOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {onNextMonth && (
+                <button
+                  type="button"
+                  onClick={onNextMonth}
+                  className="p-1.5 rounded-lg text-[#c9c7b2] hover:text-white hover:bg-[#242828] transition-colors"
+                  title={t.nextMonth}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Mini Calendar Popover Overlay */}
+              {isMiniCalendarOpen && (
+                <div className="absolute left-0 top-full mt-2 z-50 w-72 shadow-2xl">
+                  <MiniCalendar
+                    startDate={startDate}
+                    onSelectMonth={(year, monthIndex) => {
+                      if (onSelectMonth) onSelectMonth(year, monthIndex);
+                      setIsMiniCalendarOpen(false);
+                    }}
+                    onSelectDate={(dateKey) => {
+                      if (onSelectDay) onSelectDay(dateKey);
+                      setIsMiniCalendarOpen(false);
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white font-mono tracking-wide uppercase">
-                  {currentMonth.format('MMMM YYYY')}
-                </h2>
-                <span className="text-[11px] font-mono text-[#c9cd58] bg-[#c9cd58]/10 border border-[#c9cd58]/30 px-2 py-0.5 rounded-full font-medium">
-                  {t.eventsCount(notes.length)}
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-neutral-400">
-                {t.monthGridSubtitle}
-              </p>
-            </div>
+
+            {/* Quick Today Button */}
+            {onToday && (
+              <button
+                type="button"
+                onClick={onToday}
+                className="px-3 py-1.5 rounded-xl bg-[#121414] border border-[#242828] text-[#c9c7b2] hover:text-[#e5e971] hover:border-[#c9cd58] text-xs font-mono font-semibold transition-colors flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3 h-3 text-[#c9cd58]" />
+                <span>{t.today}</span>
+              </button>
+            )}
+
+            {/* Event Count Badge */}
+            <span className="text-[11px] font-mono text-[#c9cd58] bg-[#c9cd58]/10 border border-[#c9cd58]/30 px-2.5 py-1 rounded-full font-medium">
+              {t.eventsCount(notes.length)}
+            </span>
           </div>
 
           {/* Quick Filter Navigation Actions */}
@@ -190,7 +274,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             {/* Open Filter Drawer */}
             <button
               onClick={onOpenFilterDrawer}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+              className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
                 activeFilterCount > 0
                   ? 'bg-[#c9cd58]/15 border-[#c9cd58] text-[#e5e971] shadow-glow-lemon/20'
                   : 'bg-[#242828]/60 border-[#333535] text-[#c9c7b2] hover:text-white hover:bg-[#333535]'
@@ -200,7 +284,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               <SlidersHorizontal className="w-3.5 h-3.5 text-[#c9cd58]" />
               <span>{t.filters}</span>
               {activeFilterCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center shadow-md">
                   {activeFilterCount}
                 </span>
               )}

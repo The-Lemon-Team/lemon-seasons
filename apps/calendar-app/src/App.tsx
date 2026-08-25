@@ -55,6 +55,8 @@ const CalendarAppInner: React.FC = () => {
     prevMonth,
     nextMonth,
     setToday,
+    setMonthAndYear,
+    setMonthDate,
   } = useCalendarState();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -163,6 +165,8 @@ const CalendarAppInner: React.FC = () => {
           onSearchChange={setSearch}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
+          onSelectMonth={setMonthAndYear}
+          onSelectDate={setMonthDate}
           onToday={setToday}
           onToggleFilter={() => setIsFilterOpen((prev) => !prev)}
         />
@@ -200,6 +204,10 @@ const CalendarAppInner: React.FC = () => {
                   setStartDate(dateKey);
                   handleSetView('timeline');
                 }}
+                onPrevMonth={prevMonth}
+                onNextMonth={nextMonth}
+                onSelectMonth={setMonthAndYear}
+                onToday={setToday}
                 onToggleFeed={toggleFeed}
                 onSelectOnlyFeed={selectOnlyFeed}
                 onClearFeeds={clearFeeds}

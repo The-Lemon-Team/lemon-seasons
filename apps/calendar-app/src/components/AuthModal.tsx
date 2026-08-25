@@ -4,6 +4,7 @@ import { useI18n } from '../i18n';
 import { UserRole } from '@lenta/shared';
 import { Lock, Mail, User, ShieldCheck, UserCheck, Eye, ArrowRight, Sparkles } from 'lucide-react';
 import { Modal } from './Modal';
+import { LemonLogo } from './LemonLogo';
 
 export const AuthModal: React.FC = () => {
   const {
@@ -54,11 +55,7 @@ export const AuthModal: React.FC = () => {
       maxWidth="max-w-lg"
       title={tab === 'login' ? t.loginModalTitle : t.registerModalTitle}
       subtitle="Lemon Calendarium Access Tier"
-      icon={
-        <div className="w-8 h-8 rounded-lg bg-[#c9cd58]/20 border border-[#c9cd58]/40 flex items-center justify-center text-base">
-          🍋
-        </div>
-      }
+      icon={<LemonLogo size={32} />}
     >
       {/* Tab Selector */}
       <div className="flex border-b border-[#242828] bg-[#141616]">

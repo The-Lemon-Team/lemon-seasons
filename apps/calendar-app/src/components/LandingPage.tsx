@@ -8,6 +8,7 @@ import { MonthGridView } from './MonthGridView';
 import { GanttView } from './GanttView';
 import { NoteDetailModal } from './NoteDetailModal';
 import { ObsidianLogo } from './ObsidianLogo';
+import { LemonLogo } from './LemonLogo';
 import {
   ListFilter,
   Calendar as CalendarIcon,
@@ -77,9 +78,7 @@ export const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-40 w-full bg-[#121414]/90 backdrop-blur-md border-b border-[#242828] px-4 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#c9cd58]/30 to-[#484837]/20 border border-[#c9cd58]/60 flex items-center justify-center text-xl shadow-glow-lemon">
-            🍋
-          </div>
+          <LemonLogo size={36} />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-sans font-bold text-sm tracking-wider uppercase text-[#e5e971]">
@@ -89,22 +88,24 @@ export const LandingPage: React.FC = () => {
                 Public
               </span>
             </div>
-            <p className="text-[10px] font-mono text-[#93927e] uppercase tracking-widest hidden sm:block">
-              {t.brandTagline}
-            </p>
+            {t.brandTagline && (
+              <p className="text-[10px] font-mono text-[#93927e] uppercase tracking-widest hidden sm:block">
+                {t.brandTagline}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Right Header Actions */}
         <div className="flex items-center gap-2.5">
-          {/* Language Switcher */}
+          {/* Language Switcher (Disabled - RU only) */}
           <button
-            onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#1e2020] border border-[#242828] hover:border-[#c9cd58] text-[#c9c7b2] font-mono text-xs font-semibold transition-all"
-            title={lang === 'ru' ? 'English' : 'Русский'}
+            disabled
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#1e2020] border border-[#242828] text-[#93927e] opacity-60 cursor-not-allowed font-mono text-xs font-semibold transition-all"
+            title="Английский язык временно отключен / English is disabled"
           >
-            <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />
-            <span>{lang.toUpperCase()}</span>
+            <Globe className="w-3.5 h-3.5 text-[#93927e]" />
+            <span>RU</span>
           </button>
 
           {/* Quick Demo Switcher (Instant Member Login) */}
@@ -181,13 +182,6 @@ export const LandingPage: React.FC = () => {
           >
             <Sparkles className="w-4 h-4" />
             <span>Войти как Участник</span>
-          </button>
-          <button
-            onClick={() => switchDemoRole('admin')}
-            className="px-4 py-2.5 rounded-lg bg-[#1e2020] border border-[#ef4444]/40 hover:border-[#ef4444] text-[#fca5a5] font-mono font-medium text-xs transition-all flex items-center gap-2"
-          >
-            <Shield className="w-3.5 h-3.5 text-[#ef4444]" />
-            <span>Демо Администратор</span>
           </button>
         </div>
       </section>
@@ -626,7 +620,7 @@ export const LandingPage: React.FC = () => {
       <footer className="mt-auto border-t border-[#242828] bg-[#101212] px-4 lg:px-8 py-8 w-full">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#93927e]">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🍋</span>
+            <LemonLogo size={22} glow={false} />
             <span className="text-[#e5e971] font-bold">Lemon Calendarium / Project Lenta</span>
             <span>• © 2026 The Lemon Team</span>
           </div>

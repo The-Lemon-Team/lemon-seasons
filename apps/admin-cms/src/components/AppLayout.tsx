@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { QuickAddModal } from './QuickAddModal';
+import { LemonLogo } from './LemonLogo';
 import { useSyncChanges } from '../api/queries';
 import { useAdminI18n } from '../i18n';
 
@@ -36,11 +37,7 @@ export const AppLayout: React.FC = () => {
         {/* Brand Header */}
         <div className="px-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <img
-              alt="Lemon Seasons Logo"
-              className="w-9 h-9 rounded-full object-cover border border-outline-variant/60 shadow-sm"
-              src="/logo.png"
-            />
+            <LemonLogo size={36} />
             <div>
               <h2 className="font-sans font-bold text-[15px] text-primary leading-tight tracking-tight">
                 {t.adminTitle}
@@ -194,14 +191,14 @@ export const AppLayout: React.FC = () => {
               />
             </form>
 
-            {/* Language Switcher Button */}
+            {/* Language Switcher Button (Disabled - RU only) */}
             <button
-              onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-surface-container-high border border-outline-variant/40 hover:border-primary/60 text-primary transition-all cursor-pointer shadow-sm"
-              title="Переключить язык / Switch Language"
+              disabled
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-surface-container-high border border-outline-variant/40 text-on-surface-variant/50 opacity-60 cursor-not-allowed shadow-sm"
+              title="Английский язык временно отключен / English is disabled"
             >
               <span className="material-symbols-outlined text-[16px]">language</span>
-              <span>{lang.toUpperCase()}</span>
+              <span>RU</span>
             </button>
 
             <button
@@ -215,11 +212,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Profile Avatar */}
             <div className="flex items-center gap-2 pl-2 border-l border-white/10">
-              <img
-                className="w-8 h-8 rounded-full border border-outline-variant/60 object-cover"
-                src="/logo.png"
-                alt="Profile"
-              />
+              <LemonLogo size={30} glow={false} />
               <span className="font-mono text-xs text-on-surface-variant hidden md:inline">
                 admin
               </span>

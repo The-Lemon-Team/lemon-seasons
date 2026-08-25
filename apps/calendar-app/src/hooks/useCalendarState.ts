@@ -305,6 +305,17 @@ export function useCalendarState() {
     updateFilter({ start: bounds.start, end: bounds.end });
   }, [updateFilter]);
 
+  const setMonthAndYear = useCallback((year: number, monthIndex: number) => {
+    const bounds = getMonthBounds(year, monthIndex);
+    updateFilter({ start: bounds.start, end: bounds.end });
+  }, [updateFilter]);
+
+  const setMonthDate = useCallback((date: string | Date | dayjs.Dayjs) => {
+    const d = dayjs(date);
+    const bounds = getMonthBounds(d.year(), d.month());
+    updateFilter({ start: bounds.start, end: bounds.end });
+  }, [updateFilter]);
+
   const resetFilters = useCallback(() => {
     updateFilter({
       feed: undefined,
@@ -349,6 +360,8 @@ export function useCalendarState() {
     prevMonth,
     nextMonth,
     setToday,
+    setMonthAndYear,
+    setMonthDate,
     resetFilters,
   };
 }

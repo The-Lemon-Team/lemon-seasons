@@ -7,6 +7,7 @@ import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
 import { useAdminI18n } from '../i18n';
+import { LemonLogo } from './LemonLogo';
 
 interface QuickAddModalProps {
   open: boolean;
@@ -104,11 +105,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-surface-container-highest/50">
           <div className="flex items-center gap-3">
-            <img
-              alt="Lemon Seasons Logo"
-              className="w-7 h-7 object-contain rounded-full border border-white/10"
-              src="/logo.png"
-            />
+            <LemonLogo size={28} />
             <h2 className="font-sans font-semibold text-lg text-on-surface">
               {t.quickAddModalTitle}
             </h2>

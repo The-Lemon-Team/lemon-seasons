@@ -22,6 +22,7 @@ import {
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
+import { LemonLogo } from './LemonLogo';
 import { getFeedTheme } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
 
@@ -191,9 +192,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       {/* Main Content */}
       {notes.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[#c9c7b2]">
-          <div className="w-16 h-16 rounded bg-[#1e2020] border border-[#242828] flex items-center justify-center text-3xl mb-4 shadow-sm">
-            🍋
-          </div>
+          <LemonLogo size={64} className="mb-4" />
           <h3 className="text-base font-semibold text-white mb-1">{t.emptyTimeline}</h3>
           <p className="text-xs text-[#c9c7b2] max-w-sm mb-4">
             {t.emptyTimelineSub}

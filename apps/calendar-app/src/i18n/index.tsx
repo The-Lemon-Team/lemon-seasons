@@ -300,7 +300,7 @@ export interface Translations {
 export const ruTranslations: Translations = {
   // Brand & Common
   brand: 'Lemon Seasons',
-  brandTagline: 'Инструментальный комфорт',
+  brandTagline: '',
   brandSubtitle: 'Хронологический хаб',
   newEntry: 'Новая запись',
   today: 'Сегодня',
@@ -893,10 +893,7 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | null>(null);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLangState] = useState<Language>(() => {
-    const saved = localStorage.getItem('lenta_calendar_lang');
-    return saved === 'en' ? 'en' : 'ru'; // Default to Russian
-  });
+  const [lang, setLangState] = useState<Language>('ru');
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);

@@ -8,7 +8,6 @@ import {
   Radio,
   Plus,
   ExternalLink,
-  SlidersHorizontal,
   FolderLock,
   FolderTree,
   ShieldCheck,
@@ -21,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { useFoldersContext } from '../context/FoldersContext';
 import { ObsidianLogo } from './ObsidianLogo';
+import { LemonLogo } from './LemonLogo';
 
 interface SideNavBarProps {
   currentView: CalendarViewMode;
@@ -54,16 +54,16 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
       {/* Brand Header */}
       <div className="mb-5 flex flex-col gap-1 px-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9cd58]/40 to-[#535600]/20 border border-[#c9cd58]/60 flex items-center justify-center text-lg shadow-glow-lemon">
-            🍋
-          </div>
+          <LemonLogo size={34} />
           <div>
             <span className="font-sans font-bold text-sm text-[#e5e971] tracking-wider uppercase">
               {t.brand}
             </span>
-            <p className="text-[11px] font-mono text-[#c9c7b2] uppercase tracking-widest opacity-80">
-              {t.brandTagline}
-            </p>
+            {t.brandTagline && (
+              <p className="text-[11px] font-mono text-[#c9c7b2] uppercase tracking-widest opacity-80">
+                {t.brandTagline}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -171,26 +171,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         </button>
 
 
-        {/* Calendar Filter Sidebar Toggle (Only on Calendar pages) */}
-        {['timeline', 'month', 'gantt'].includes(currentView) && (
-          <button
-            onClick={onToggleFilters}
-            className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${isFilterOpen || activeFilterCount > 0
-              ? 'bg-[#444747]/40 text-[#e5e971]'
-              : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-              }`}
-          >
-            <div className="flex items-center gap-3">
-              <SlidersHorizontal className="w-4 h-4 text-[#c9cd58]" />
-              <span>{t.filters}</span>
-            </div>
-            {activeFilterCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-[#c9cd58] text-[#121414] text-[10px] font-bold flex items-center justify-center">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-        )}
+
 
         {/* ADMIN ONLY: Link to Admin CMS */}
         {isAdmin && (

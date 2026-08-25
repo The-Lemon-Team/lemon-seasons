@@ -507,10 +507,7 @@ interface AdminI18nContextType {
 const AdminI18nContext = createContext<AdminI18nContextType | null>(null);
 
 export const AdminI18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLangState] = useState<Language>(() => {
-    const saved = localStorage.getItem('lemon_admin_lang');
-    return saved === 'en' ? 'en' : 'ru'; // Default to Russian
-  });
+  const [lang, setLangState] = useState<Language>('ru');
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);
