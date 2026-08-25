@@ -77,8 +77,16 @@ export const LandingPage: React.FC = () => {
       {/* 1. Public Landing Top Navigation */}
       <header className="sticky top-0 z-40 w-full bg-[#121414]/90 backdrop-blur-md border-b border-[#242828] px-4 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center gap-3">
-          <LemonLogo size={36} />
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = '/';
+          }}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer group"
+          title="На главную"
+        >
+          <LemonLogo size={36} className="transition-transform group-hover:scale-105" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-sans font-bold text-sm tracking-wider uppercase text-[#e5e971]">
@@ -94,7 +102,7 @@ export const LandingPage: React.FC = () => {
               </p>
             )}
           </div>
-        </div>
+        </a>
 
         {/* Right Header Actions */}
         <div className="flex items-center gap-2.5">

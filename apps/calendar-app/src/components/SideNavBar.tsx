@@ -52,11 +52,19 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#1e2020] border-r border-[#242828] flex flex-col py-6 px-4 gap-2 z-40 hidden md:flex transition-all duration-200 ease-in-out">
       {/* Brand Header */}
-      <div className="mb-5 flex flex-col gap-1 px-2">
+      <a
+        href="/"
+        onClick={(e) => {
+          e.preventDefault();
+          onSetView('timeline');
+        }}
+        className="mb-5 flex flex-col gap-1 px-2 py-1.5 rounded-lg hover:bg-[#242828]/60 transition-all group cursor-pointer"
+        title={t.timeline || "Главная"}
+      >
         <div className="flex items-center gap-3">
-          <LemonLogo size={34} />
+          <LemonLogo size={34} className="transition-transform group-hover:scale-105" />
           <div>
-            <span className="font-sans font-bold text-sm text-[#e5e971] tracking-wider uppercase">
+            <span className="font-sans font-bold text-sm text-[#e5e971] tracking-wider uppercase group-hover:text-[#f2f58e] transition-colors">
               {t.brand}
             </span>
             {t.brandTagline && (
@@ -66,7 +74,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </a>
 
       {/* New Entry CTA (For Logged In Users) */}
       <button

@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { Note, NoteTypeColors } from '@lenta/shared';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Note, NoteTypeColors, truncateMarkdown } from '@lenta/shared';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Radio,
   Rss,
@@ -7,14 +9,25 @@ import {
   Check,
   Play,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Filter,
   RotateCcw,
   X,
+  Calendar as CalendarIcon,
+  Clock,
+  Tag,
+  ArrowUpRight,
+  Layers,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useFeeds } from '../api/queries';
 import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
 import { FeedsHubHeader } from './FeedsHubHeader';
+import { MiniCalendar } from './MiniCalendar';
 import { useI18n } from '../i18n';
 
 interface FeedsHubViewProps {
@@ -22,6 +35,8 @@ interface FeedsHubViewProps {
   isLoading: boolean;
   selectedFeed?: string;
   selectedFeeds?: string[]; // for backwards compatibility
+  startDate?: string;
+  endDate?: string;
   onSelectFeed?: (feedSlug?: string) => void;
   onToggleFeed?: (feedSlug: string) => void;
   onSelectOnlyFeed?: (feedSlug: string) => void;
@@ -31,6 +46,11 @@ interface FeedsHubViewProps {
   onSelectNote: (note: Note) => void;
   onNavigateToTimeline: () => void;
   onNavigateToCalendar: () => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
+  onSelectMonth?: (year: number, monthIndex: number) => void;
+  onSelectDate?: (dateKey: string) => void;
+  onToday?: () => void;
 }
 
 export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
@@ -38,6 +58,8 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   isLoading,
   selectedFeed: propSelectedFeed,
   selectedFeeds,
+  startDate,
+  endDate,
   onSelectFeed,
   onToggleFeed,
   onSelectOnlyFeed,
@@ -46,60 +68,104 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   onSelectNote,
   onNavigateToTimeline,
   onNavigateToCalendar,
+  onPrevMonth,
+  onNextMonth,
+  onSelectMonth,
+  onSelectDate,
+  onToday,
 }) => {
-  const { t, lang } = useI18n();
+  const { t, lang, getTypeLabel } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false);
+  const [expandedNoteIds, setExpandedNoteIds] = useState<Record<string, boolean>>({});
 
+  const monthPopoverRef = useRef<HTMLDivElement>(null);
   const { data: allFeeds = [] } = useFeeds();
 
   const activeFeedSlug = propSelectedFeed ?? (selectedFeeds && selectedFeeds.length > 0 ? selectedFeeds[0] : undefined);
   const isAllSelected = !activeFeedSlug;
+  const currentMonth = useMemo(() => dayjs(startDate || undefined), [startDate]);
 
-  // Group notes by feed slug
+  // Handle outside clicks to close MiniCalendar popover
+  useEffect(() => {
+    if (!isMiniCalendarOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (monthPopoverRef.current && !monthPopoverRef.current.contains(e.target as Node)) {
+        setIsMiniCalendarOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMiniCalendarOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMiniCalendarOpen]);
+
+  // Note counts per feed slug (from all fetched notes)
   const notesByFeed = useMemo(() => {
-    const map: Record<string, Note[]> = {};
+    const counts: Record<string, number> = {};
     for (const note of notes) {
       if (note.feed?.slug) {
-        if (!map[note.feed.slug]) map[note.feed.slug] = [];
-        map[note.feed.slug].push(note);
+        counts[note.feed.slug] = (counts[note.feed.slug] || 0) + 1;
       }
     }
-    // Sort notes in each feed newest first
-    for (const slug in map) {
-      map[slug].sort(
-        (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-      );
-    }
-    return map;
+    return counts;
   }, [notes]);
 
-  // Filtered feeds
-  const filteredFeeds = useMemo(() => {
-    return allFeeds.filter((feed) => {
-      const theme = getFeedTheme(feed.slug, feed.title);
-      // Category filter
-      if (selectedCategory !== 'all' && theme.category !== selectedCategory) {
-        return false;
-      }
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesTitle = feed.title.toLowerCase().includes(q);
-        const matchesSlug = feed.slug.toLowerCase().includes(q);
-        const matchesDesc = Boolean(feed.description?.toLowerCase().includes(q));
-        const matchesTagline = theme.tagline.toLowerCase().includes(q);
-        return matchesTitle || matchesSlug || matchesDesc || matchesTagline;
-      }
-      return true;
-    });
-  }, [allFeeds, selectedCategory, searchQuery]);
+  // Active Feed Details & Theme
+  const activeFeedObj = useMemo(() => {
+    if (!activeFeedSlug) return null;
+    return allFeeds.find((f) => f.slug === activeFeedSlug) || null;
+  }, [activeFeedSlug, allFeeds]);
 
   const activeTheme = useMemo(() => {
     if (!activeFeedSlug) return null;
-    const feed = allFeeds.find((f) => f.slug === activeFeedSlug);
-    return getFeedTheme(activeFeedSlug, feed?.title);
-  }, [activeFeedSlug, allFeeds]);
+    return getFeedTheme(activeFeedSlug, activeFeedObj?.title);
+  }, [activeFeedSlug, activeFeedObj]);
+
+  // Single Feed Stream Notes Filter
+  const streamNotes = useMemo(() => {
+    let result = [...notes];
+
+    // Filter by selected channel (feed)
+    if (activeFeedSlug) {
+      result = result.filter((note) => note.feed?.slug === activeFeedSlug);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((note) => {
+        const matchesTitle = note.title.toLowerCase().includes(q);
+        const matchesDesc = Boolean(note.description?.toLowerCase().includes(q));
+        const matchesFeed = Boolean(note.feed?.title.toLowerCase().includes(q));
+        const matchesTags = note.tags?.some((t) => t.name?.toLowerCase().includes(q) || t.path?.toLowerCase().includes(q));
+        const matchesHashtags = note.hashtags?.some((h) => h.name?.toLowerCase().includes(q));
+        return matchesTitle || matchesDesc || matchesFeed || matchesTags || matchesHashtags;
+      });
+    }
+
+    // Sort stream notes: newest date first
+    result.sort(
+      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+
+    return result;
+  }, [notes, activeFeedSlug, searchQuery]);
+
+  const toggleNoteExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedNoteIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleSelect = (slug?: string) => {
     if (!slug) {
@@ -130,7 +196,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       {/* 1. Hero Command Center Header */}
       <FeedsHubHeader
         totalChannels={allFeeds.length}
-        notesCount={notes.length}
+        notesCount={streamNotes.length}
         activeFeedSlug={activeFeedSlug}
         activeTheme={activeTheme}
         isAllSelected={isAllSelected}
@@ -138,27 +204,29 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
         onNavigateToCalendar={onNavigateToCalendar}
       />
 
-      {/* 2. Separated Feeds Filter Container Element (Single Feed Selection) */}
-      <div className="bg-[#181a1c] border border-[#2e3234] rounded-2xl p-5 shadow-xl space-y-4 relative overflow-hidden">
-        {/* Container Header */}
+      {/* 2. Control Hub: Channel Chooser & Calendar Date Filter Bar */}
+      <div className="bg-[#181a1c] border border-[#2e3234] rounded-2xl p-5 shadow-xl space-y-5 relative">
+        {/* Header Title & Channel Mode Indicator */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#292c2e] pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#c9cd58]/15 border border-[#c9cd58]/40 flex items-center justify-center text-[#e5e971]">
-              <Filter className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-sm text-white tracking-wide">
-                  {lang === 'ru' ? 'Контейнер фильтрации лент' : 'Feed Selection Filter Container'}
+                  {lang === 'ru' ? 'Выбор канала и фильтр периода' : 'Channel Selector & Date Filter'}
                 </h2>
                 <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#c9cd58]/15 text-[#e5e971] border border-[#c9cd58]/30">
-                  {lang === 'ru' ? '1 лента в момент' : 'Single feed active'}
+                  {isAllSelected
+                    ? (lang === 'ru' ? 'Все каналы' : 'All Channels')
+                    : (activeTheme?.title || activeFeedSlug)}
                 </span>
               </div>
               <p className="text-[11px] font-mono text-neutral-400">
-                {isAllSelected
-                  ? (lang === 'ru' ? 'Отображение всех каналов (Omni-stream)' : 'Showing all channels (Omni-stream)')
-                  : `${lang === 'ru' ? 'Выбрана лента' : 'Selected feed'}: ${activeTheme?.title || activeFeedSlug}`}
+                {lang === 'ru'
+                  ? 'Выберите канал для отображения единой ленты записей'
+                  : 'Select a channel to update the unified note stream'}
               </p>
             </div>
           </div>
@@ -174,39 +242,150 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
           )}
         </div>
 
-        {/* Preset Category Chips & Search Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Preset Channel Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-            {FEED_PRESET_OPTIONS.map((preset) => {
-              const isActive = preset.slug === activeFeedSlug || (!preset.slug && !activeFeedSlug);
+        {/* SECTION A: Channel Selector (Choose Feed) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-neutral-400 uppercase tracking-wider">
+            <span className="flex items-center gap-1.5 font-semibold text-[#e5e971]">
+              <Radio className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <span>{lang === 'ru' ? 'Каналы (Feeds)' : 'Channels (Feeds)'}</span>
+            </span>
+            <span className="text-[10px] text-neutral-500">
+              {allFeeds.length} {lang === 'ru' ? 'доступно' : 'available'}
+            </span>
+          </div>
+
+          {/* Scrollable Horizontal Channel Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 max-w-full no-scrollbar">
+            {/* Omni Stream Option ("All Channels") */}
+            <button
+              onClick={() => handleSelect(undefined)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono whitespace-nowrap transition-all border shrink-0 ${
+                isAllSelected
+                  ? 'bg-[#c9cd58]/20 border-[#c9cd58] text-[#e5e971] font-semibold shadow-md ring-1 ring-[#c9cd58]/40'
+                  : 'bg-[#121414] border-[#242828] text-neutral-400 hover:text-white hover:bg-[#202222]'
+              }`}
+            >
+              <span className="text-base">📡</span>
+              <span>{t.allChannels}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#121414] border border-[#2e3234] text-neutral-400 font-mono">
+                {notes.length}
+              </span>
+              {isAllSelected && <Check className="w-3.5 h-3.5 text-[#c9cd58] ml-1" />}
+            </button>
+
+            {/* Individual Feed Channels */}
+            {allFeeds.map((feed) => {
+              const isSelected = activeFeedSlug === feed.slug;
+              const theme = getFeedTheme(feed.slug, feed.title);
+              const count = notesByFeed[feed.slug] || 0;
 
               return (
                 <button
-                  key={preset.id}
-                  onClick={() => handleSelect(preset.slug)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all border ${
-                    isActive
-                      ? 'bg-[#c9cd58]/20 border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
-                      : 'bg-[#121414] border-[#242828] text-neutral-400 hover:text-white hover:bg-[#202222]'
+                  key={feed.id}
+                  onClick={() => handleSelect(feed.slug)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono whitespace-nowrap transition-all border shrink-0 ${
+                    isSelected
+                      ? 'bg-[#1e2220] border-[#c9cd58] text-[#e5e971] font-semibold shadow-md ring-1 ring-[#c9cd58]/40'
+                      : 'bg-[#121414] border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1d1e]'
                   }`}
                 >
-                  <span>{preset.emoji}</span>
-                  <span>{preset.id === 'all' ? t.presetAll : preset.name}</span>
-                  {isActive && <Check className="w-3 h-3 text-[#c9cd58]" />}
+                  <span className="text-base">{theme.emoji}</span>
+                  <span>{feed.title}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#161819] border border-[#2a2d2f] text-neutral-400 font-mono">
+                    {count}
+                  </span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#c9cd58] ml-1" />}
                 </button>
               );
             })}
           </div>
+        </div>
 
-          {/* Search Filter */}
+        {/* SECTION B: Date Filter Controls & Search */}
+        <div className="pt-2 border-t border-[#292c2e] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Calendar Month Navigation & Date Picker */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-mono text-neutral-400 font-semibold uppercase tracking-wider flex items-center gap-1 mr-1">
+              <CalendarIcon className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <span>{lang === 'ru' ? 'Период:' : 'Date:'}</span>
+            </span>
+
+            {/* Month Control Navigation Group */}
+            <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-xl border border-[#26292b] relative shadow-inner" ref={monthPopoverRef}>
+              {onPrevMonth && (
+                <button
+                  type="button"
+                  onClick={onPrevMonth}
+                  className="p-1.5 rounded-lg text-[#c9c7b2] hover:text-white hover:bg-[#242828] transition-colors"
+                  title={t.previousMonth}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Clickable Month Title with Dropdown Chevron */}
+              <button
+                type="button"
+                onClick={() => setIsMiniCalendarOpen((prev) => !prev)}
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg hover:bg-[#242828] text-white font-mono font-bold text-xs uppercase tracking-wide transition-colors"
+                title={lang === 'ru' ? 'Открыть календарь выбора месяца' : 'Open month picker calendar'}
+              >
+                <div className="w-5 h-5 rounded bg-[#c9cd58]/15 border border-[#c9cd58]/40 flex items-center justify-center text-[#c9cd58]">
+                  <CalendarIcon className="w-3 h-3" />
+                </div>
+                <span>{currentMonth.format('MMMM YYYY')}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#c9cd58] transition-transform ${isMiniCalendarOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {onNextMonth && (
+                <button
+                  type="button"
+                  onClick={onNextMonth}
+                  className="p-1.5 rounded-lg text-[#c9c7b2] hover:text-white hover:bg-[#242828] transition-colors"
+                  title={t.nextMonth}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Mini Calendar Popover Overlay */}
+              {isMiniCalendarOpen && (
+                <div className="absolute left-0 top-full mt-2 z-50 w-72 shadow-2xl">
+                  <MiniCalendar
+                    startDate={startDate || currentMonth.format('YYYY-MM-DD')}
+                    onSelectMonth={(year, monthIndex) => {
+                      if (onSelectMonth) onSelectMonth(year, monthIndex);
+                      setIsMiniCalendarOpen(false);
+                    }}
+                    onSelectDate={(dateKey) => {
+                      if (onSelectDate) onSelectDate(dateKey);
+                      setIsMiniCalendarOpen(false);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Quick 'Today' Button */}
+            {onToday && (
+              <button
+                type="button"
+                onClick={onToday}
+                className="px-2.5 py-1.5 rounded-xl bg-[#121414] hover:bg-[#242828] border border-[#26292b] text-xs font-mono text-neutral-300 hover:text-white transition-colors"
+              >
+                {t.today}
+              </button>
+            )}
+          </div>
+
+          {/* Search Input Field */}
           <div className="relative w-full md:w-64">
             <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t.searchFeeds}
+              placeholder={t.searchFeeds || 'Поиск по ленте...'}
               className="w-full bg-[#121414] border border-[#26292b] rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-[#c9cd58]/60"
             />
             {searchQuery && (
@@ -219,222 +398,267 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
             )}
           </div>
         </div>
-
-        {/* Single Feed Selector (Radio Cards) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-1">
-          {/* Omni Stream Option */}
-          <button
-            onClick={() => handleSelect(undefined)}
-            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono transition-all text-left ${
-              isAllSelected
-                ? 'bg-[#1e2220] border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
-                : 'bg-[#121414]/70 border-[#242828] text-neutral-400 hover:text-white hover:bg-[#1a1d1e]'
-            }`}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span className="text-base">📡</span>
-              <span className="truncate">{t.allChannels}</span>
-            </div>
-            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-              isAllSelected ? 'border-[#c9cd58] bg-[#c9cd58]' : 'border-[#444]'
-            }`}>
-              {isAllSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#121414]" />}
-            </div>
-          </button>
-
-          {/* Individual Feeds */}
-          {allFeeds.map((feed) => {
-            const isSelected = activeFeedSlug === feed.slug;
-            const theme = getFeedTheme(feed.slug, feed.title);
-            const count = (notesByFeed[feed.slug] || []).length;
-
-            return (
-              <button
-                key={feed.id}
-                onClick={() => handleSelect(feed.slug)}
-                className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-mono transition-all text-left ${
-                  isSelected
-                    ? 'bg-[#1e2220] border-[#c9cd58] text-[#e5e971] font-semibold shadow-sm ring-1 ring-[#c9cd58]/40'
-                    : 'bg-[#121414]/70 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1d1e]'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate min-w-0">
-                  <span className="text-base shrink-0">{theme.emoji}</span>
-                  <div className="truncate">
-                    <span className="truncate block font-medium">{feed.title}</span>
-                    <span className="text-[10px] text-neutral-500 font-mono block">
-                      {count} {lang === 'ru' ? 'зап.' : 'notes'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ml-1 ${
-                  isSelected ? 'border-[#c9cd58] bg-[#c9cd58]' : 'border-[#444]'
-                }`}>
-                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#121414]" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* 3. Feeds Deck Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredFeeds.map((feed) => {
-          const isSelected = activeFeedSlug === feed.slug;
-          const theme = getFeedTheme(feed.slug, feed.title);
-          const feedNotes = notesByFeed[feed.slug] || [];
-          const recentNotes = feedNotes.slice(0, 3);
+      {/* 3. Active Channel Info Banner (When single feed channel is active) */}
+      {!isAllSelected && activeTheme && (
+        <div
+          className="rounded-2xl border p-5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+          style={{
+            backgroundColor: '#16191a',
+            borderColor: `${activeTheme.accentColor}60`,
+          }}
+        >
+          <div
+            className="absolute top-0 left-0 bottom-0 w-2"
+            style={{ backgroundColor: activeTheme.accentColor }}
+          />
+
+          <div className="flex items-start gap-4 flex-1 min-w-0 pl-2">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 border shadow-md"
+              style={{
+                backgroundColor: activeTheme.bgLight,
+                borderColor: activeTheme.borderAccent,
+              }}
+            >
+              <span>{activeTheme.emoji}</span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-white truncate">
+                  {activeFeedObj?.title || activeTheme.title}
+                </h3>
+                <span className="text-[10px] font-mono text-[#c9cd58] px-2 py-0.5 bg-[#c9cd58]/10 rounded-md border border-[#c9cd58]/30">
+                  slug: {activeFeedSlug}
+                </span>
+              </div>
+              <p className="text-xs font-mono text-[#c9c7b2] mt-0.5">
+                {activeTheme.tagline}
+              </p>
+              {activeFeedObj?.description && (
+                <p className="text-xs text-neutral-300 leading-relaxed mt-1">
+                  {activeFeedObj.description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+            <div className="text-right font-mono text-xs">
+              <div className="text-white font-bold">{streamNotes.length} {lang === 'ru' ? 'записей' : 'notes'}</div>
+              <div className="text-[10px] text-neutral-400">{currentMonth.format('MMMM YYYY')}</div>
+            </div>
+            <button
+              onClick={handleClear}
+              className="px-3 py-1.5 rounded-xl bg-[#242828] hover:bg-[#323636] border border-[#3a3d3f] text-xs font-mono text-neutral-300 hover:text-white transition-colors"
+            >
+              {lang === 'ru' ? 'Сбросить канал' : 'Reset Channel'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Single Feed Stream (Notes List) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+          <div className="flex items-center gap-2">
+            <Rss className="w-4 h-4 text-[#c9cd58]" />
+            <span className="font-bold text-white uppercase tracking-wider">
+              {isAllSelected
+                ? (lang === 'ru' ? 'Единая лента (Все каналы)' : 'Unified Feed Stream (All Channels)')
+                : `${lang === 'ru' ? 'Лента канала' : 'Channel Feed Stream'}: ${activeTheme?.title || activeFeedSlug}`}
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-[#1e2020] border border-[#2e3234] text-[10px] text-[#c9cd58]">
+              {streamNotes.length} {lang === 'ru' ? 'записей' : 'notes'}
+            </span>
+          </div>
+
+          <span className="text-[10px] text-neutral-500">
+            {lang === 'ru' ? 'Сначала новые' : 'Newest first'}
+          </span>
+        </div>
+
+        {/* Loading Indicator */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center p-12 text-[#c9c7b2]">
+            <div className="w-8 h-8 border-2 border-[#c9cd58] border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-xs font-mono tracking-wider uppercase">{t.loading}</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && streamNotes.length === 0 && (
+          <div className="p-8 rounded-2xl bg-[#16191b] border border-[#26292b] text-center space-y-4 max-w-md mx-auto my-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#c9cd58]/15 border border-[#c9cd58]/40 flex items-center justify-center mx-auto text-[#c9cd58]">
+              <Rss className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">
+                {lang === 'ru' ? 'Записи не найдены' : 'No notes found'}
+              </h3>
+              <p className="text-xs text-neutral-400 font-mono mt-1 leading-relaxed">
+                {lang === 'ru'
+                  ? 'В выбранном канале или за указанный период (месяц) нет опубликованных записей.'
+                  : 'There are no published notes in the selected channel or date period.'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 pt-2">
+              {onToday && (
+                <button
+                  onClick={onToday}
+                  className="px-3 py-1.5 rounded-xl bg-[#242828] hover:bg-[#323636] text-xs font-mono text-neutral-200 transition-colors"
+                >
+                  {t.today}
+                </button>
+              )}
+              {!isAllSelected && (
+                <button
+                  onClick={handleClear}
+                  className="px-3 py-1.5 rounded-xl bg-[#c9cd58] hover:bg-[#d8dc63] text-xs font-mono font-bold text-[#121414] transition-colors"
+                >
+                  {lang === 'ru' ? 'Показать все каналы' : 'Show All Channels'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Stream Note Items */}
+        {!isLoading && streamNotes.map((note) => {
+          const noteColor = NoteTypeColors[note.type];
+          const feedTheme = getFeedTheme(note.feed?.slug, note.feed?.title);
+          const isExpanded = Boolean(expandedNoteIds[note.id]);
 
           return (
-            <div
-              key={feed.id}
-              className={`rounded-2xl bg-[#16191a] border transition-all duration-200 flex flex-col overflow-hidden shadow-lg relative group ${
-                isSelected
-                  ? 'border-[#c9cd58]/70 ring-1 ring-[#c9cd58]/40 shadow-glow-lemon/10'
-                  : 'border-[#242828] hover:border-[#383a3a] hover:bg-[#1a1c1d]'
-              }`}
+            <article
+              key={note.id}
+              onClick={() => onSelectNote(note)}
+              className="group rounded-2xl bg-[#16191a] border border-[#242828] hover:border-[#3a3e40] transition-all duration-200 overflow-hidden shadow-lg p-5 space-y-3 cursor-pointer hover:bg-[#1a1d1e] relative"
             >
-              {/* Card Accent Top Banner */}
+              {/* Top Accent Stripe */}
               <div
-                className="h-2 w-full transition-all"
-                style={{ backgroundColor: theme.accentColor }}
+                className="absolute top-0 left-0 right-0 h-1 transition-all"
+                style={{ backgroundColor: feedTheme.accentColor || noteColor.accent }}
               />
 
-              {/* Card Header */}
-              <div className="p-5 pb-3 flex-1 flex flex-col space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  {/* Channel Icon & Title */}
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 border shadow-sm"
-                      style={{
-                        backgroundColor: theme.bgLight,
-                        borderColor: theme.borderAccent,
-                      }}
-                    >
-                      <span>{theme.emoji}</span>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-sm text-white truncate group-hover:text-[#e5e971] transition-colors">
-                          {feed.title}
-                        </h3>
-                      </div>
-                      <p className="text-[11px] font-mono text-[#c9c7b2] opacity-80 line-clamp-1">
-                        {theme.tagline}
-                      </p>
-                      <span className="text-[10px] font-mono text-neutral-500">
-                        slug: {feed.slug}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Channel Active Status Pill */}
+              {/* Note Metadata Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Feed Channel Pill */}
                   <button
-                    onClick={() => handleSelect(feed.slug)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold flex items-center gap-1 transition-all border ${
-                      isSelected
-                        ? 'bg-[#c9cd58]/20 border-[#c9cd58] text-[#e5e971]'
-                        : 'bg-[#121414] border-[#242828] text-neutral-500 hover:text-neutral-300'
-                    }`}
-                    title={isSelected ? t.activeInCalendar : t.subscribe}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (note.feed?.slug) handleSelect(note.feed.slug);
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121414] border border-[#282b2d] hover:border-[#c9cd58] text-[#e5e971] text-[11px] font-semibold transition-colors"
+                    title={lang === 'ru' ? 'Фильтровать по этому каналу' : 'Filter by this channel'}
                   >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isSelected ? 'bg-[#c9cd58] animate-pulse' : 'bg-neutral-600'
-                      }`}
-                    />
-                    <span>{isSelected ? t.inCalendar : t.subscribe}</span>
+                    <span>{feedTheme.emoji}</span>
+                    <span>{note.feed?.title || 'General'}</span>
                   </button>
+
+                  {/* Note Type Pill */}
+                  <span
+                    className="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                    style={{
+                      backgroundColor: noteColor.bg,
+                      borderColor: noteColor.border,
+                      color: noteColor.accent,
+                    }}
+                  >
+                    {getTypeLabel(note.type)}
+                  </span>
                 </div>
 
-                {/* Description snippet */}
-                {feed.description && (
-                  <p className="text-xs text-neutral-300 line-clamp-2 leading-relaxed bg-[#121414]/50 p-2.5 rounded-xl border border-[#242828]/60">
-                    {feed.description}
-                  </p>
-                )}
+                {/* Date & Time */}
+                <div className="flex items-center gap-1.5 text-neutral-400 text-[11px]">
+                  <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                  <span>{dayjs(note.startDate).format('D MMMM YYYY, HH:mm')}</span>
+                </div>
+              </div>
 
-                {/* Live News Stream Ticker / Recent Notes */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
-                    <span className="flex items-center gap-1">
-                      <Rss className="w-3 h-3 text-[#c9cd58]" />
-                      <span>{t.latestUpdate} ({feedNotes.length})</span>
-                    </span>
-                    {feedNotes.length > 3 && (
-                      <span className="text-neutral-500">+{feedNotes.length - 3}</span>
-                    )}
-                  </div>
+              {/* Note Title */}
+              <h3 className="font-bold text-base text-white group-hover:text-[#e5e971] transition-colors leading-snug">
+                {note.title}
+              </h3>
 
-                  {recentNotes.length === 0 ? (
-                    <div className="py-3 text-center text-neutral-500 text-xs font-mono bg-[#121414]/30 rounded-lg">
-                      {t.emptyTimeline}
+              {/* Note Description / Markdown Preview */}
+              {note.description && (
+                <div className="text-xs text-neutral-300 leading-relaxed bg-[#121414]/60 p-3.5 rounded-xl border border-[#242828]/80 space-y-2">
+                  {isExpanded ? (
+                    <div className="prose prose-invert prose-xs max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {note.description}
+                      </ReactMarkdown>
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      {recentNotes.map((note) => {
-                        const noteColor = NoteTypeColors[note.type];
-                        return (
-                          <div
-                            key={note.id}
-                            onClick={() => onSelectNote(note)}
-                            className="group/item flex items-center justify-between gap-2 p-1.5 rounded-lg bg-[#121414]/70 hover:bg-[#202425] border border-[#242828]/50 hover:border-[#383a3a] cursor-pointer transition-all text-xs font-mono"
-                          >
-                            <div className="flex items-center gap-2 truncate flex-1">
-                              <span
-                                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: noteColor.accent }}
-                              />
-                              <span className="truncate text-neutral-300 group-hover/item:text-white">
-                                {note.title}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-neutral-500 flex-shrink-0">
-                              {dayjs(note.startDate).format('D MMM')}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <p className="line-clamp-3">
+                      {truncateMarkdown(note.description, 280)}
+                    </p>
+                  )}
+
+                  {note.description.length > 200 && (
+                    <button
+                      onClick={(e) => toggleNoteExpand(note.id, e)}
+                      className="flex items-center gap-1 text-[11px] font-mono font-semibold text-[#c9cd58] hover:underline pt-1"
+                    >
+                      <span>{isExpanded ? (lang === 'ru' ? 'Свернуть' : 'Collapse') : (lang === 'ru' ? 'Читать полностью' : 'Read more')}</span>
+                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
                   )}
                 </div>
-              </div>
+              )}
 
-              {/* Card Footer Quick Actions */}
-              <div className="p-3 bg-[#121414]/80 border-t border-[#242828] flex items-center justify-between gap-2">
-                <button
-                  onClick={() => {
-                    handleSelect(feed.slug);
-                    onNavigateToTimeline();
-                  }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-mono font-semibold bg-[#242828] hover:bg-[#c9cd58] text-neutral-200 hover:text-[#121414] transition-all shadow-sm"
-                  title={t.openInTimeline}
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>{t.openInTimeline}</span>
-                </button>
+              {/* Tags & Actions Footer */}
+              <div className="flex items-center justify-between gap-3 pt-1 text-xs font-mono border-t border-[#222527]">
+                {/* Tags */}
+                <div className="flex items-center gap-1.5 overflow-x-auto min-w-0">
+                  {note.tags && note.tags.length > 0 ? (
+                    note.tags.map((tag) => (
+                      <span
+                        key={tag.id || tag.path}
+                        className="px-2 py-0.5 rounded bg-[#121414] border border-[#26292b] text-[10px] text-neutral-400 flex items-center gap-1 shrink-0"
+                      >
+                        <Tag className="w-2.5 h-2.5 text-[#c9cd58]" />
+                        <span>{tag.name || tag.path}</span>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-neutral-600 italic">no tags</span>
+                  )}
+                  {note.hashtags && note.hashtags.map((h) => (
+                    <span
+                      key={h.id || h.name}
+                      className="px-2 py-0.5 rounded bg-[#121414] border border-[#26292b] text-[10px] text-[#e5e971] flex items-center gap-1 shrink-0"
+                    >
+                      <span>#{h.name}</span>
+                    </span>
+                  ))}
+                </div>
 
-                <button
-                  onClick={() => handleSelect(feed.slug)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
-                    isSelected
-                      ? 'bg-[#c9cd58]/20 border-[#c9cd58]/60 text-[#e5e971]'
-                      : 'bg-[#181a1a] border-[#242828] text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  {isSelected ? t.reset : t.subscribe}
-                </button>
+                {/* Quick Actions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectNote(note);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-neutral-300 hover:text-white px-2.5 py-1 rounded-lg bg-[#202324] hover:bg-[#2a2d2f] border border-[#2d3032] transition-colors"
+                  >
+                    <span>{lang === 'ru' ? 'Детали' : 'Details'}</span>
+                    <ArrowUpRight className="w-3 h-3 text-[#c9cd58]" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
 
-      {/* 4. Single-Feed Stream Dock / Bottom Bar */}
+      {/* 5. Single-Feed Bottom Dock Bar */}
       <div className="sticky bottom-0 bg-[#16191b]/95 backdrop-blur-xl border border-[#2e3232] rounded-2xl p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs z-30">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#c9cd58]/20 border border-[#c9cd58]/50 flex items-center justify-center text-[#e5e971]">
@@ -442,21 +666,17 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
           </div>
           <div>
             <div className="text-white font-semibold flex items-center gap-2">
-              <span>{t.activeInCalendar}:</span>
+              <span>{lang === 'ru' ? 'Активный канал:' : 'Active Channel:'}</span>
               <span className="text-[#e5e971]">
                 {isAllSelected
-                  ? t.allChannels
+                  ? (lang === 'ru' ? 'Все каналы' : 'All Channels')
                   : activeTheme?.title || activeFeedSlug}
               </span>
             </div>
-            <div className="text-[11px] text-neutral-400 flex items-center gap-1.5">
-              {isAllSelected ? (
-                <span>{t.hubSubtitle}</span>
-              ) : (
-                <span>
-                  {activeTheme?.title || activeFeedSlug}
-                </span>
-              )}
+            <div className="text-[11px] text-neutral-400 flex items-center gap-2">
+              <span>{currentMonth.format('MMMM YYYY')}</span>
+              <span>•</span>
+              <span>{streamNotes.length} {lang === 'ru' ? 'записей в ленте' : 'notes in stream'}</span>
             </div>
           </div>
         </div>
@@ -482,5 +702,3 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
     </div>
   );
 };
-
-

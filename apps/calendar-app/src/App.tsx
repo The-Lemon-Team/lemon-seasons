@@ -239,6 +239,8 @@ const CalendarAppInner: React.FC = () => {
                 notes={notes}
                 isLoading={isNotesLoading}
                 selectedFeed={filters.feed}
+                startDate={filters.start}
+                endDate={filters.end}
                 onSelectFeed={selectFeed}
                 onToggleFeed={toggleFeed}
                 onSelectOnlyFeed={selectOnlyFeed}
@@ -247,6 +249,11 @@ const CalendarAppInner: React.FC = () => {
                 onSelectNote={setSelectedNote}
                 onNavigateToTimeline={() => handleSetView('timeline')}
                 onNavigateToCalendar={() => handleSetView('month')}
+                onPrevMonth={prevMonth}
+                onNextMonth={nextMonth}
+                onSelectMonth={setMonthAndYear}
+                onSelectDate={setMonthDate}
+                onToday={setToday}
               />
             )}
 

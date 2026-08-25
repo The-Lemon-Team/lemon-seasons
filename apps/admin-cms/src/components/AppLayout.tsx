@@ -36,15 +36,19 @@ export const AppLayout: React.FC = () => {
       <aside className="bg-surface-container border-r border-white/5 h-full w-[240px] flex-shrink-0 flex flex-col py-6 z-50 select-none overflow-y-auto">
         {/* Brand Header */}
         <div className="px-6 mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <LemonLogo size={36} />
+          <NavLink
+            to="/"
+            className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity cursor-pointer group"
+            title={t.dashboard}
+          >
+            <LemonLogo size={36} className="transition-transform group-hover:scale-105" />
             <div>
               <h2 className="font-sans font-bold text-[15px] text-primary leading-tight tracking-tight">
                 {t.adminTitle}
               </h2>
               <p className="font-mono text-[11px] text-on-surface-variant/80">{t.adminTagline}</p>
             </div>
-          </div>
+          </NavLink>
 
           {/* Quick Add Button */}
           <button

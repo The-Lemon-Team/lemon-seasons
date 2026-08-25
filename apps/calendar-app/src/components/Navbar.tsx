@@ -30,6 +30,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   search,
   onSearchChange,
+  onSetView,
 }) => {
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
@@ -39,9 +40,17 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Left: Search Field & Mobile Brand */}
       <div className="flex items-center gap-3 flex-1 max-w-xs md:max-w-md">
         {/* Mobile Brand Icon */}
-        <div className="flex md:hidden items-center gap-2 mr-1 shrink-0">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            onSetView?.('timeline');
+          }}
+          className="flex md:hidden items-center gap-2 mr-1 shrink-0 hover:opacity-80 transition-opacity cursor-pointer"
+          title={t.timeline || "Главная"}
+        >
           <LemonLogo size={28} />
-        </div>
+        </a>
 
         {/* Search Field */}
         <div className="relative w-full">
