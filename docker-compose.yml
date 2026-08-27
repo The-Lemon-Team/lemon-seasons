@@ -64,6 +64,25 @@ services:
     depends_on:
       - backend
 
+  container-sync-server:
+    build:
+      context: ./packages/obsidian-containers
+      dockerfile: packages/server/Dockerfile
+    container_name: obsidian-sync-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - VAULT_STORAGE_PATH=/app/data/vault
+      - GIT_USER_NAME=Obsidian Sync Engine
+      - GIT_USER_EMAIL=sync@obsidian.local
+      - API_KEY=${CONTAINER_API_KEY:-}
+    volumes:
+      - obsidian_sync_data:/app/data
+
 volumes:
   postgres_data:
   backend_uploads:
+  obsidian_sync_data:

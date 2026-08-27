@@ -62,6 +62,9 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
     deselectAllContainers,
     selectedContainersCount,
     selectedContainersTotalNotes,
+    isServerConnected,
+    isServerLoading,
+    refetchContainers,
     addContainer,
     updateContainer,
     deleteContainer,
@@ -354,8 +357,37 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Action Buttons & Backend Connectivity Badge */}
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
+              isServerConnected
+                ? 'bg-[#10b981]/10 text-[#34d399] border-[#10b981]/30'
+                : 'bg-[#f59e0b]/10 text-[#fbbf24] border-[#f59e0b]/30'
+            }`}
+            title={
+              isServerConnected
+                ? 'Connected to obsidian-containers backend service (port 3000)'
+                : 'Backend container server offline on port 3000 (running in local storage fallback mode)'
+            }
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isServerConnected ? 'bg-[#34d399] animate-pulse' : 'bg-[#fbbf24]'
+              }`}
+            />
+            <span>{isServerConnected ? 'Server Connected (:3000)' : 'Local Fallback'}</span>
+          </div>
+
+          <button
+            onClick={() => refetchContainers()}
+            disabled={isServerLoading}
+            className="p-2 rounded-lg bg-[#1e2020] border border-[#242828] hover:border-[#a855f7]/60 text-[#c9c7b2] hover:text-[#d8b4fe] text-xs font-mono transition-all disabled:opacity-50"
+            title="Refetch containers from backend"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isServerLoading ? 'animate-spin text-[#a855f7]' : ''}`} />
+          </button>
+
           <button
             onClick={() => setIsGuideModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1e2020] border border-[#242828] hover:border-[#a855f7]/60 text-[#c9c7b2] hover:text-[#d8b4fe] text-xs font-mono transition-all"
@@ -376,18 +408,14 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
 
       {/* 2. Top Stats Overview Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {/* Stat 1: Total Containers & Selection Count */}
+        {/* Stat 1: Total Containers Count */}
         <div className="p-3.5 rounded-xl bg-[#181a1a] border border-[#242828] flex items-center justify-between">
           <div>
             <span className="text-[10px] font-mono text-[#93927e] uppercase tracking-wider block">
-              Выбрано / Всего
+              Всего Контейнеров
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-xl font-sans font-bold text-[#c9cd58]">
-                {selectedContainersCount}
-              </span>
-              <span className="text-xs text-[#666]">/</span>
-              <span className="text-sm font-sans font-semibold text-[#f3e8ff]">
                 {containers.length}
               </span>
             </div>
@@ -463,26 +491,8 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
           />
         </div>
 
-        {/* Right: Selection & Privacy filter tabs */}
+        {/* Right: Privacy filter tabs */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Bulk Selection Buttons */}
-          <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-lg border border-[#242828]">
-            <button
-              onClick={selectAllContainers}
-              className="px-2.5 py-1 rounded-md text-xs font-mono text-[#c9cd58] hover:bg-[#c9cd58]/10 transition-colors font-semibold"
-            >
-              Выбрать все
-            </button>
-            <button
-              onClick={deselectAllContainers}
-              className="px-2.5 py-1 rounded-md text-xs font-mono text-[#93927e] hover:text-white hover:bg-[#242828] transition-colors"
-            >
-              Сбросить
-            </button>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40">
-              {selectedContainersCount} выбрано
-            </span>
-          </div>
 
           <div className="flex items-center gap-1 bg-[#121414] p-1 rounded-lg border border-[#242828]">
             <button
@@ -553,14 +563,6 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
               ? filterState.containers.includes(container.id)
               : selectedContainerIds.includes(container.id);
 
-            const handleToggleContainerFilter = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              if (onToggleContainer) {
-                onToggleContainer(container.id);
-              }
-              toggleSelectContainer(container.id);
-            };
-
             const isExpanded = expandedAccordionId === container.id;
 
             return (
@@ -568,9 +570,7 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                 key={container.id}
                 onClick={() => setExpandedAccordionId(isExpanded ? null : container.id)}
                 className={`p-4 rounded-xl bg-[#181a1a] hover:bg-[#1e2020] border transition-all duration-200 flex flex-col justify-between gap-3 group cursor-pointer ${
-                  isSelected
-                    ? 'border-[#a855f7] bg-[#1a1726] shadow-[0_0_20px_rgba(168,85,247,0.15)]'
-                    : isPrivate
+                  isPrivate
                     ? 'border-[#a855f7]/30 hover:border-[#a855f7]/70'
                     : 'border-[#c9cd58]/30 hover:border-[#c9cd58]/70'
                 }`}
@@ -583,8 +583,8 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                       <div
                         className="w-11 h-11 rounded-xl flex items-center justify-center text-lg border transition-transform group-hover:scale-105"
                         style={{
-                          backgroundColor: isSelected ? 'rgba(168,85,247,0.25)' : isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
-                          borderColor: isSelected ? '#a855f7' : isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
+                          backgroundColor: isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(201,205,88,0.15)',
+                          borderColor: isPrivate ? 'rgba(168,85,247,0.4)' : 'rgba(201,205,88,0.4)',
                         }}
                       >
                         <ObsidianLogo size={22} />
@@ -698,20 +698,6 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                     >
                       <Download className={`w-3.5 h-3.5 ${isSyncing && syncDirection === 'pull' ? 'animate-bounce text-[#d8b4fe]' : ''}`} />
                       <span>Pull</span>
-                    </button>
-
-                    {/* Calendar Filter Toggle */}
-                    <button
-                      type="button"
-                      onClick={handleToggleContainerFilter}
-                      title={isSelected ? 'Сбросить фильтр' : 'Фильтровать календарь по контейнеру'}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        isSelected
-                          ? 'bg-[#a855f7] text-white border-[#a855f7] shadow-[0_0_10px_rgba(168,85,247,0.4)]'
-                          : 'bg-[#121414] text-[#93927e] border-[#242828] hover:text-white hover:border-[#666]'
-                      }`}
-                    >
-                      {isSelected ? <Check className="w-3.5 h-3.5" /> : <Filter className="w-3.5 h-3.5" />}
                     </button>
 
                     {/* Copy Token Button */}

@@ -20,20 +20,25 @@ model Feed {
 
 model Note {
   id          String    @id @default(uuid())
-  feedId      String
-  feed        Feed      @relation(fields: [feedId], references: [id])
+  feedId      String?
+  feed        Feed?     @relation(fields: [feedId], references: [id])
+  containerId String?
+  container   Container? @relation(fields: [containerId], references: [id], onDelete: Cascade)
+  filePath    String?
   title       String
   description String?   // Markdown
-  type        NoteType
-  startDate   DateTime
+  type        NoteType  @default(SINGLE)
+  startDate   DateTime  @default(now())
   endDate     DateTime?
   sourceLink  String?
   icon        String?
+  version     Int       @default(1)
   tags        TaxonomyNode[]
   hashtags    Hashtag[]
   images      NoteImage[]
   links       NoteLink[]
   folders     NoteFolder[]
+  versions    NoteVersion[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -41,6 +46,7 @@ model Note {
   @@index([startDate, endDate])
   @@index([updatedAt])
   @@index([feedId])
+  @@index([containerId])
   @@index([feedId, deletedAt])
   @@index([deletedAt])
   @@index([type])
@@ -153,14 +159,49 @@ enum NoteType {
   DONE
 }
 
+model Container {
+  id          String    @id @default(uuid())
+  name        String
+  type        String    @default("git")
+  description String?
+  isPublic    Boolean   @default(true)
+  visibility  String    @default("public")
+  ownerUserId String?
+  ownerUser   User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  notes       Note[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([ownerUserId])
+  @@index([visibility])
+}
+
+model NoteVersion {
+  id            String    @id @default(uuid())
+  noteId        String
+  note          Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  version       Int       @default(1)
+  content       String
+  commitHash    String?
+  authorName    String?
+  authorEmail   String?
+  commitMessage String?
+  createdAt     DateTime  @default(now())
+
+  @@index([noteId])
+  @@index([commitHash])
+}
+
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  name      String
-  role      String    @default("user")
-  keys      UserKey[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String      @id @default(uuid())
+  email      String      @unique
+  name       String
+  role       String      @default("user")
+  keys       UserKey[]
+  containers Container[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model UserKey {

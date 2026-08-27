@@ -39,6 +39,10 @@ const CalendarAppInner: React.FC = () => {
     toggleContainer,
     selectOnlyContainer,
     clearContainers,
+    toggleObsidianFolder,
+    selectOnlyObsidianFolder,
+    setObsidianFolders,
+    clearObsidianFolders,
     toggleTag,
     selectOnlyTag,
     setAllTags,
@@ -190,6 +194,13 @@ const CalendarAppInner: React.FC = () => {
                 onToggleTag={toggleTag}
                 onSelectOnlyTag={selectOnlyTag}
                 onClearTags={clearTags}
+                onToggleContainer={toggleContainer}
+                onSelectOnlyContainer={selectOnlyContainer}
+                onClearContainers={clearContainers}
+                onToggleObsidianFolder={toggleObsidianFolder}
+                onSelectOnlyObsidianFolder={selectOnlyObsidianFolder}
+                onSetObsidianFolders={setObsidianFolders}
+                onClearObsidianFolders={clearObsidianFolders}
                 onResetFilters={resetFilters}
               />
             )}
@@ -219,6 +230,13 @@ const CalendarAppInner: React.FC = () => {
                 onSelectOnlyTag={selectOnlyTag}
                 onClearTags={clearTags}
                 onToggleHashtag={toggleHashtag}
+                onToggleContainer={toggleContainer}
+                onSelectOnlyContainer={selectOnlyContainer}
+                onClearContainers={clearContainers}
+                onToggleObsidianFolder={toggleObsidianFolder}
+                onSelectOnlyObsidianFolder={selectOnlyObsidianFolder}
+                onSetObsidianFolders={setObsidianFolders}
+                onClearObsidianFolders={clearObsidianFolders}
                 onResetFilters={resetFilters}
                 onOpenFilterDrawer={() => setIsFilterOpen(true)}
               />

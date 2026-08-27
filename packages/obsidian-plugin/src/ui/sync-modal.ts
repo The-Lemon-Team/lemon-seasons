@@ -7,6 +7,7 @@ import {
   LentaContainerSummaryDto,
   FileDiffItemDto,
 } from '../types';
+import { isContainerPublic } from '../utils/container-privacy';
 import { ConflictResolutionModal } from './conflict-modal';
 import { GitHistoryModal } from './git-history-modal';
 
@@ -206,15 +207,43 @@ export class LentaSyncModal extends Modal {
 
     // Active container details line
     const activeInfo = containerSection.createDiv({ cls: 'lenta-connected-key-badge' });
-    activeInfo.style.cssText = 'padding: 8px 12px; background: #1a291e; border: 1px solid #333; border-radius: 6px; color: #8ee29a; font-size: 0.85em;';
+    activeInfo.style.cssText = 'padding: 10px 14px; background: #18221b; border: 1px solid #2d4533; border-radius: 6px; color: #8ee29a; font-size: 0.85em; margin-top: 8px;';
+    
+    const rootFolder = this.settings.vaultRootFolder || 'Lenta';
+
     if (this.selectedContainerFilter === 'all') {
       const namesList = activeContainerIds.map((id) => containerNameMap.get(id) || id).join(', ');
-      activeInfo.innerHTML = `<strong>Scope:</strong> All Connected Containers <span style="opacity:0.8; font-family: monospace;">[${namesList}]</span>`;
+      const totalUnpushed = this.changedFiles.length;
+      activeInfo.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <div><strong>Scope:</strong> All Connected Containers <span style="opacity:0.8; font-family: monospace;">[${namesList}]</span></div>
+          <div style="font-size:0.85em; color:${totalUnpushed > 0 ? '#fde047' : '#4ade80'}; font-weight:600;">
+            ${totalUnpushed > 0 ? `⚡ ${totalUnpushed} unpushed local notes` : '✅ In sync'}
+          </div>
+        </div>
+      `;
     } else {
       const activeName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
       const matched = this.containers.find((c) => c.id === this.selectedContainerFilter);
-      const typeStr = matched?.type ? ` (${matched.type.toUpperCase()})` : '';
-      activeInfo.innerHTML = `<strong>Scope:</strong> ${activeName}${typeStr} <span style="opacity:0.75; font-family: monospace;">(ID: ${this.selectedContainerFilter})</span>`;
+      const typeStr = matched?.type ? matched.type.toUpperCase() : 'GIT';
+      const isPub = matched ? isContainerPublic(matched) : true;
+      const containerVaultPath = `${rootFolder}/${activeName}`;
+      
+      const containerUnpushed = this.changedFiles.filter((f) => f.relPath.startsWith(containerVaultPath + '/') || f.relPath.includes(this.selectedContainerFilter)).length;
+
+      activeInfo.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <strong>Container:</strong> <span style="color:#fff; font-weight:700;">${activeName}</span> 
+            <span style="font-size:0.8em; padding:1px 6px; border-radius:4px; ${isPub ? 'background:#14532d; color:#4ade80;' : 'background:#78350f; color:#fde047;'} margin-left:6px;">${isPub ? 'PUBLIC' : 'PRIVATE'}</span>
+            <span style="font-size:0.8em; padding:1px 6px; border-radius:4px; background:#1e3a8a; color:#93c5fd; margin-left:4px;">${typeStr}</span>
+            <div style="font-size:0.82em; color:#a7f3d0; margin-top:3px;">📍 Vault Path: <code>${containerVaultPath}</code></div>
+          </div>
+          <div style="font-size:0.85em; color:${containerUnpushed > 0 ? '#fde047' : '#4ade80'}; font-weight:600;">
+            ${containerUnpushed > 0 ? `⚡ ${containerUnpushed} unpushed file(s)` : '✅ Vault in sync'}
+          </div>
+        </div>
+      `;
     }
 
     // ── Primary Action Bar ────────────────────────────────────────────────
@@ -341,7 +370,14 @@ export class LentaSyncModal extends Modal {
         const targetContainer = gitContainers.find((c) => c.id === this.selectedContainerFilter) || gitContainers[0];
         const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || 'main-git-vault';
         const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || 'Git Vault';
-        new GitHistoryModal(this.app, this.apiClient, gitContainerId, gitContainerName).open();
+        new GitHistoryModal(
+          this.app,
+          this.apiClient,
+          gitContainerId,
+          gitContainerName,
+          this.settings,
+          this.syncEngine
+        ).open();
       };
     }
 

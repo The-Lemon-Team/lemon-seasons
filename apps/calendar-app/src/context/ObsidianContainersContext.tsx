@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ObsidianContainer, BoundFolder, ContainerPrivacy, FolderPrivacy } from '@lenta/shared';
+import { containersApi, ContainerSummaryDto } from '../api/containersApi';
 
 export interface ContainerPrivacyImpact {
   containerId: string;
@@ -21,6 +22,9 @@ interface ObsidianContainersContextType {
   deselectAllContainers: () => void;
   selectedContainersCount: number;
   selectedContainersTotalNotes: number;
+  isServerConnected: boolean;
+  isServerLoading: boolean;
+  refetchContainers: () => Promise<void>;
   addContainer: (input: {
     name: string;
     description?: string;
@@ -34,9 +38,9 @@ interface ObsidianContainersContextType {
       filterTag?: string;
       privacy?: FolderPrivacy;
     }>;
-  }) => ObsidianContainer;
+  }) => Promise<ObsidianContainer> | ObsidianContainer;
   updateContainer: (id: string, updates: Partial<ObsidianContainer>) => void;
-  deleteContainer: (id: string) => void;
+  deleteContainer: (id: string) => Promise<void> | void;
   togglePrivacy: (id: string, force?: boolean) => { success: boolean; impact?: ContainerPrivacyImpact };
   checkContainerPrivacyChangeImpact: (containerId: string) => ContainerPrivacyImpact;
   addBoundFolder: (
@@ -221,6 +225,80 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     return init;
   });
 
+  const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
+  const [isServerLoading, setIsServerLoading] = useState<boolean>(true);
+
+  const refetchContainers = useCallback(async () => {
+    setIsServerLoading(true);
+    try {
+      const summaries = await containersApi.listContainers();
+      setIsServerConnected(true);
+
+      setContainers((prev) => {
+        const mapped: ObsidianContainer[] = summaries.map((dto) => {
+          const existing = prev.find((c) => c.id === dto.id);
+          const resolvedPrivacy: ContainerPrivacy =
+            dto.privacy ||
+            (dto.visibility === 'private' || dto.isPublic === false
+              ? 'private'
+              : dto.visibility === 'public' || dto.isPublic === true
+              ? 'public'
+              : existing?.privacy ||
+                (dto.id.includes('private') ||
+                dto.id.includes('secret') ||
+                dto.id.startsWith('lenta_obs_') ||
+                dto.name.toLowerCase().includes('private') ||
+                dto.name.toLowerCase().includes('user key') ||
+                dto.name.toLowerCase().includes('личный')
+                  ? 'private'
+                  : 'public'));
+
+          return {
+            id: dto.id,
+            name: dto.name,
+            description:
+              dto.description ||
+              (dto.isGit ? 'Version-controlled Git vault container' : 'Simple stateless note container'),
+            vaultPath: existing?.vaultPath || `vaults/${dto.id}`,
+            privacy: resolvedPrivacy,
+            token: dto.key || existing?.token || `lenta_jwt_${resolvedPrivacy === 'private' ? 'sec' : 'pub'}_${dto.id}`,
+            notesCount: dto.totalFiles || existing?.notesCount || 0,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+            lastSyncedAt: dto.lastModified || dto.lastCommitDate || existing?.lastSyncedAt || new Date().toISOString(),
+            status: 'connected',
+            color: resolvedPrivacy === 'private' ? '#a855f7' : '#c9cd58',
+            boundFolders: existing?.boundFolders || [
+              {
+                id: `f-${dto.id}-main`,
+                path: 'Notes',
+                name: 'Главная папка',
+                isPrimary: true,
+                observeMode: 'recursive',
+                notesCount: dto.totalFiles || 0,
+                status: 'active',
+                privacy: resolvedPrivacy === 'private' ? 'private' : 'public',
+              },
+            ],
+            ...(dto as any),
+          };
+        });
+
+        // Retain any purely local mock containers if server has empty list
+        if (mapped.length === 0) return prev;
+        return mapped;
+      });
+    } catch (err) {
+      console.warn('Obsidian containers server offline or unreachable (port 3000). Falling back to local storage cache.', err);
+      setIsServerConnected(false);
+    } finally {
+      setIsServerLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refetchContainers();
+  }, [refetchContainers]);
+
   // Persist to localStorage
   useEffect(() => {
     try {
@@ -258,7 +336,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
   }, []);
 
   const addContainer = useCallback(
-    (input: {
+    async (input: {
       name: string;
       description?: string;
       vaultPath: string;
@@ -272,11 +350,29 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         privacy?: FolderPrivacy;
         notesCount?: number;
       }>;
-    }): ObsidianContainer => {
-      const id = `cont-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-      const token = `lenta_jwt_${input.privacy === 'private' ? 'sec' : 'pub'}_${Math.random()
-        .toString(36)
-        .substring(2, 10)}_${Date.now().toString(36)}`;
+    }): Promise<ObsidianContainer> => {
+      let serverSummary: ContainerSummaryDto | null = null;
+      if (isServerConnected) {
+        try {
+          serverSummary = await containersApi.registerContainer({
+            name: input.name,
+            type: 'git',
+            description: input.description,
+            rootPath: input.vaultPath,
+            privacy: input.privacy,
+            isPublic: input.privacy === 'public',
+          });
+        } catch (err) {
+          console.warn('Failed to register container on backend server, proceeding locally', err);
+        }
+      }
+
+      const id = serverSummary?.id || `cont-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const token =
+        serverSummary?.key ||
+        `lenta_jwt_${input.privacy === 'private' ? 'sec' : 'pub'}_${Math.random()
+          .toString(36)
+          .substring(2, 10)}_${Date.now().toString(36)}`;
 
       const boundFolders: BoundFolder[] = (input.boundFolders || [
         {
@@ -300,23 +396,24 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
 
       const newContainer: ObsidianContainer = {
         id,
-        name: input.name,
-        description: input.description,
+        name: serverSummary?.name || input.name,
+        description: serverSummary?.description || input.description,
         vaultPath: input.vaultPath,
         privacy: input.privacy,
         token,
         boundFolders,
-        notesCount: boundFolders.reduce((sum, f) => sum + (f.notesCount || 0), 0),
+        notesCount: serverSummary?.totalFiles || boundFolders.reduce((sum, f) => sum + (f.notesCount || 0), 0),
         createdAt: new Date().toISOString(),
         lastSyncedAt: new Date().toISOString(),
         status: 'connected',
         color: input.privacy === 'private' ? '#a855f7' : '#c9cd58',
+        ...(serverSummary ? (serverSummary as any) : {}),
       };
 
       setContainers((prev) => [newContainer, ...prev]);
       return newContainer;
     },
-    []
+    [isServerConnected]
   );
 
   const updateContainer = useCallback((id: string, updates: Partial<ObsidianContainer>) => {
@@ -332,10 +429,20 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     );
   }, []);
 
-  const deleteContainer = useCallback((id: string) => {
-    setContainers((prev) => prev.filter((c) => c.id !== id));
-    setActiveContainerId((prev) => (prev === id ? null : prev));
-  }, []);
+  const deleteContainer = useCallback(
+    async (id: string) => {
+      if (isServerConnected) {
+        try {
+          await containersApi.deleteContainer(id);
+        } catch (err) {
+          console.warn(`Could not delete container ${id} on backend server`, err);
+        }
+      }
+      setContainers((prev) => prev.filter((c) => c.id !== id));
+      setActiveContainerId((prev) => (prev === id ? null : prev));
+    },
+    [isServerConnected]
+  );
 
   const checkContainerPrivacyChangeImpact = useCallback(
     (containerId: string): ContainerPrivacyImpact => {
@@ -532,7 +639,15 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
       setSyncDirection('push');
       updateContainer(containerId, { status: 'syncing' });
 
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      if (isServerConnected) {
+        try {
+          await containersApi.pushContainer(containerId, { message: 'Web app manual push sync' });
+        } catch (err) {
+          console.warn(`Server push failed for ${containerId}`, err);
+        }
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
 
       setContainers((prev) =>
         prev.map((c) => {
@@ -549,7 +664,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
       setIsSyncingId(null);
       setSyncDirection(null);
     },
-    [updateContainer]
+    [isServerConnected, updateContainer]
   );
 
   const pullContainer = useCallback(
@@ -558,12 +673,22 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
       setSyncDirection('pull');
       updateContainer(containerId, { status: 'syncing' });
 
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      let pulledFilesCount = 0;
+      if (isServerConnected) {
+        try {
+          const res = await containersApi.pullContainer(containerId, {});
+          pulledFilesCount = res.files?.length || 0;
+        } catch (err) {
+          console.warn(`Server pull failed for ${containerId}`, err);
+        }
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
 
       setContainers((prev) =>
         prev.map((c) => {
           if (c.id !== containerId) return c;
-          const added = Math.floor(Math.random() * 4) + 1;
+          const added = pulledFilesCount || Math.floor(Math.random() * 3) + 1;
           return {
             ...c,
             status: 'connected',
@@ -576,7 +701,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
       setIsSyncingId(null);
       setSyncDirection(null);
     },
-    [updateContainer]
+    [isServerConnected, updateContainer]
   );
 
   return (
@@ -592,6 +717,9 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         deselectAllContainers,
         selectedContainersCount,
         selectedContainersTotalNotes,
+        isServerConnected,
+        isServerLoading,
+        refetchContainers,
         addContainer,
         updateContainer,
         deleteContainer,

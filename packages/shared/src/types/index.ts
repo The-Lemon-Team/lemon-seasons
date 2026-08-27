@@ -356,6 +356,7 @@ export interface CalendarFilterState {
   view: CalendarViewMode;
   feed?: string;
   containers?: string[];
+  obsidianFolders?: string[];
   tags: string[];
   hashtags: string[];
   types: NoteType[];

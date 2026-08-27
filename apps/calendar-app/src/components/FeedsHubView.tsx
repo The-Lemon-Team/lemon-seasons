@@ -205,7 +205,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       />
 
       {/* 2. Control Hub: Channel Chooser & Calendar Date Filter Bar */}
-      <div className="bg-[#181a1c] border border-[#2e3234] rounded-2xl p-5 shadow-xl space-y-5 relative">
+      <div className="bg-[#181a1c] border border-[#2e3234] rounded-2xl p-5 shadow-xl space-y-5 relative shrink-0">
         {/* Header Title & Channel Mode Indicator */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#292c2e] pb-3">
           <div className="flex items-center gap-2.5">
@@ -403,7 +403,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       {/* 3. Active Channel Info Banner (When single feed channel is active) */}
       {!isAllSelected && activeTheme && (
         <div
-          className="rounded-2xl border p-5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+          className="rounded-2xl border p-5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start justify-between gap-4 shrink-0"
           style={{
             backgroundColor: '#16191a',
             borderColor: `${activeTheme.accentColor}60`,
@@ -425,20 +425,20 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
               <span>{activeTheme.emoji}</span>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white truncate">
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-base text-white">
                   {activeFeedObj?.title || activeTheme.title}
                 </h3>
-                <span className="text-[10px] font-mono text-[#c9cd58] px-2 py-0.5 bg-[#c9cd58]/10 rounded-md border border-[#c9cd58]/30">
+                <span className="text-[10px] font-mono text-[#c9cd58] px-2 py-0.5 bg-[#c9cd58]/10 rounded-md border border-[#c9cd58]/30 shrink-0">
                   slug: {activeFeedSlug}
                 </span>
               </div>
-              <p className="text-xs font-mono text-[#c9c7b2] mt-0.5">
+              <p className="text-xs font-mono text-[#c9c7b2]">
                 {activeTheme.tagline}
               </p>
               {activeFeedObj?.description && (
-                <p className="text-xs text-neutral-300 leading-relaxed mt-1">
+                <p className="text-xs text-neutral-300 leading-relaxed pt-0.5">
                   {activeFeedObj.description}
                 </p>
               )}
@@ -452,7 +452,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
             </div>
             <button
               onClick={handleClear}
-              className="px-3 py-1.5 rounded-xl bg-[#242828] hover:bg-[#323636] border border-[#3a3d3f] text-xs font-mono text-neutral-300 hover:text-white transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-[#242828] hover:bg-[#323636] border border-[#3a3d3f] text-xs font-mono text-neutral-300 hover:text-white transition-colors shrink-0"
             >
               {lang === 'ru' ? 'Сбросить канал' : 'Reset Channel'}
             </button>
@@ -461,7 +461,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       )}
 
       {/* 4. Single Feed Stream (Notes List) */}
-      <div className="space-y-4">
+      <div className="space-y-4 shrink-0">
         <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
           <div className="flex items-center gap-2">
             <Rss className="w-4 h-4 text-[#c9cd58]" />
@@ -659,7 +659,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       </div>
 
       {/* 5. Single-Feed Bottom Dock Bar */}
-      <div className="sticky bottom-0 bg-[#16191b]/95 backdrop-blur-xl border border-[#2e3232] rounded-2xl p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs z-30">
+      <div className="sticky bottom-0 bg-[#16191b]/95 backdrop-blur-xl border border-[#2e3232] rounded-2xl p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs z-30 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#c9cd58]/20 border border-[#c9cd58]/50 flex items-center justify-center text-[#e5e971]">
             <Radio className="w-4 h-4" />

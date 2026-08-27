@@ -22,6 +22,7 @@ import {
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
+import { ObsidianSelector } from './ObsidianSelector';
 import { LemonLogo } from './LemonLogo';
 import { getFeedTheme } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
@@ -42,6 +43,14 @@ interface TimelineViewProps {
   onToggleTag?: (tagPath: string) => void;
   onSelectOnlyTag?: (tagPath: string) => void;
   onClearTags?: () => void;
+  onToggleContainer?: (containerId: string) => void;
+  onSelectOnlyContainer?: (containerId: string) => void;
+  onSetAllContainers?: (containers: string[]) => void;
+  onClearContainers?: () => void;
+  onToggleObsidianFolder?: (folderKey: string) => void;
+  onSelectOnlyObsidianFolder?: (folderKey: string) => void;
+  onSetObsidianFolders?: (folders: string[]) => void;
+  onClearObsidianFolders?: () => void;
   onResetFilters?: () => void;
 }
 
@@ -69,6 +78,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onToggleTag,
   onSelectOnlyTag,
   onClearTags,
+  onToggleContainer,
+  onSelectOnlyContainer,
+  onSetAllContainers,
+  onClearContainers,
+  onToggleObsidianFolder,
+  onSelectOnlyObsidianFolder,
+  onSetObsidianFolders,
+  onClearObsidianFolders,
   onResetFilters,
 }) => {
   const { t, getTypeLabel } = useI18n();
@@ -171,10 +188,24 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 notes={notes}
               />
             )}
+
+            <ObsidianSelector
+              selectedContainers={filterState.containers}
+              selectedObsidianFolders={filterState.obsidianFolders}
+              onToggleContainer={onToggleContainer}
+              onSelectOnlyContainer={onSelectOnlyContainer}
+              onSetAllContainers={onSetAllContainers}
+              onClearContainers={onClearContainers}
+              onToggleObsidianFolder={onToggleObsidianFolder}
+              onSelectOnlyObsidianFolder={onSelectOnlyObsidianFolder}
+              onSetObsidianFolders={onSetObsidianFolders}
+              onClearObsidianFolders={onClearObsidianFolders}
+            />
           </div>
 
           {onResetFilters &&
             (filterState.feed ||
+              (filterState.containers && filterState.containers.length > 0) ||
               filterState.tags.length > 0 ||
               filterState.types.length > 0) && (
               <button

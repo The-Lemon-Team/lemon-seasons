@@ -7,8 +7,8 @@ export class KeysController {
   constructor(private readonly keysService: KeysService) {}
 
   @Get()
-  async getKeys(@Query('userId') userId: string = 'usr-member-001'): Promise<UserKey[]> {
-    return this.keysService.getKeysForUser(userId);
+  async getKeys(@Query('userId') userId?: string): Promise<UserKey[]> {
+    return this.keysService.getKeysForUser(userId || 'usr-member-001');
   }
 
   @Post()

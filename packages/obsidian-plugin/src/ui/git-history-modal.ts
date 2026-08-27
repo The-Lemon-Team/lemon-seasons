@@ -1,12 +1,29 @@
 import { App, Modal, Notice, normalizePath } from 'obsidian';
 import { LentaApiClient } from '../services/lenta-api-client';
-import { CommitSummaryDto, CommitDetailDto, CommitFileDiffDto } from '../types';
+import { LentaSyncEngine } from '../services/lenta-sync-engine';
+import { scanChangedFiles, ChangedLentaFile } from '../services/changed-files-scanner';
+import { renderContainerHeroCard } from './container-hero-card';
+import {
+  CommitSummaryDto,
+  CommitDetailDto,
+  CommitFileDiffDto,
+  LentaContainerSummaryDto,
+  LentaFolderDto,
+  LentaPluginSettings,
+  DEFAULT_SETTINGS,
+} from '../types';
+import { isContainerPublic } from '../utils/container-privacy';
 
 export class GitHistoryModal extends Modal {
   private apiClient: LentaApiClient;
   private containerId: string;
   private containerName: string;
+  private settings: LentaPluginSettings;
+  private syncEngine?: LentaSyncEngine;
 
+  private containerSummary: LentaContainerSummaryDto | null = null;
+  private folders: LentaFolderDto[] = [];
+  private changedFiles: ChangedLentaFile[] = [];
   private commits: CommitSummaryDto[] = [];
   private selectedCommitDetail: CommitDetailDto | null = null;
   private expandedCommitHash: string | null = null;
@@ -18,29 +35,65 @@ export class GitHistoryModal extends Modal {
     app: App,
     apiClient: LentaApiClient,
     containerId: string,
-    containerName?: string
+    containerName?: string,
+    settings?: LentaPluginSettings,
+    syncEngine?: LentaSyncEngine
   ) {
     super(app);
     this.apiClient = apiClient;
     this.containerId = containerId;
     this.containerName = containerName || containerId;
+    this.settings = settings || DEFAULT_SETTINGS;
+    this.syncEngine = syncEngine;
   }
 
   async onOpen() {
     this.modalEl.addClass('lenta-git-history-modal-frame');
-    await this.loadCommits();
+    await this.loadData();
   }
 
   onClose() {
     this.contentEl.empty();
   }
 
-  private async loadCommits() {
+  private async loadData() {
     this.isLoading = true;
     this.render();
 
     try {
-      this.commits = await this.apiClient.getContainerCommits(this.containerId, 50);
+      const [commits, containers, folders, changed] = await Promise.all([
+        this.apiClient.getContainerCommits(this.containerId, 50).catch(() => []),
+        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
+        this.apiClient.getFolders().catch(() => []),
+        scanChangedFiles(this.app, this.settings).catch(() => []),
+      ]);
+
+      this.commits = commits;
+      this.folders = folders;
+      this.changedFiles = changed;
+
+      // Find matching container summary or synthesize one
+      const matched = containers.find((c) => c.id === this.containerId);
+      if (matched) {
+        this.containerSummary = matched;
+      } else {
+        const isPub = isContainerPublic({ id: this.containerId, name: this.containerName });
+        const latestCommit = commits[0];
+        this.containerSummary = {
+          id: this.containerId,
+          name: this.containerName,
+          type: 'git',
+          scope: { type: 'all' },
+          totalNotes: 0,
+          currentCommit: latestCommit?.hash,
+          lastCommitMessage: latestCommit?.message,
+          lastCommitDate: latestCommit?.date,
+          isPublic: isPub,
+          visibility: isPub ? 'public' : 'private',
+          privacy: isPub ? 'public' : 'private',
+        };
+      }
+
       if (this.commits.length > 0 && !this.expandedCommitHash) {
         await this.loadCommitDetail(this.commits[0].hash);
       }
@@ -124,19 +177,52 @@ export class GitHistoryModal extends Modal {
     const titleRow = header.createDiv({ cls: 'lenta-history-title-row' });
     titleRow.createEl('h2', { text: '📜 Git Version History & Time Machine' });
 
-    const badgeRow = header.createDiv({ cls: 'lenta-badge-row' });
-    const badge = badgeRow.createSpan({ cls: 'lenta-badge' });
-    badge.setText(this.containerName.toUpperCase());
-
     header.createEl('p', {
       cls: 'lenta-history-desc',
-      text: 'Inspect past commits, view diffs of modified/deleted files, and revert or restore deleted files and folders.',
+      text: 'Inspect container privacy, mapped folders, pending changes, past commits, and revert or restore deleted files.',
     });
 
     if (this.isLoading) {
       const loader = contentEl.createDiv({ cls: 'lenta-sync-loading-state' });
-      loader.createEl('p', { text: 'Loading Git revision history...' });
+      loader.createEl('p', { text: 'Loading container details and Git revision history...' });
       return;
+    }
+
+    // ── Enriched Container Dashboard Hero Card ──────────────────────────────
+    if (this.containerSummary) {
+      const heroContainer = contentEl.createDiv({ cls: 'lenta-hero-container-wrap' });
+      renderContainerHeroCard(heroContainer, this.containerSummary, {
+        app: this.app,
+        settings: this.settings,
+        changedFiles: this.changedFiles,
+        folders: this.folders,
+        onRefresh: async () => {
+          await this.loadData();
+        },
+        onPushPending: async () => {
+          if (!this.syncEngine) {
+            new Notice('Sync Engine not available');
+            return;
+          }
+          const rootFolder = this.settings.vaultRootFolder || 'Lenta';
+          const containerVaultPath = `${rootFolder}/${this.containerSummary?.name || this.containerId}`;
+          const pending = this.changedFiles.filter((cf) =>
+            cf.relPath.startsWith(containerVaultPath + '/') || cf.relPath.includes(this.containerId)
+          );
+
+          let pushed = 0;
+          for (const item of pending) {
+            try {
+              const res = await this.syncEngine.pushLocalNote(item.file);
+              if (res.success) pushed++;
+            } catch {
+              // continue
+            }
+          }
+          new Notice(`🍋 Pushed ${pushed}/${pending.length} pending notes for ${this.containerName}!`);
+          await this.loadData();
+        },
+      });
     }
 
     if (this.statusMessage) {

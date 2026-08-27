@@ -2,6 +2,7 @@ import { App, Modal, Setting, Notice } from 'obsidian';
 import { LentaApiClient } from '../services/lenta-api-client';
 import { LentaSyncEngine } from '../services/lenta-sync-engine';
 import { LentaPluginSettings, LentaContainerSummaryDto, LentaFolderDto } from '../types';
+import { isContainerPublic } from '../utils/container-privacy';
 
 export class LentaContainersFoldersModal extends Modal {
   private apiClient: LentaApiClient;
@@ -19,7 +20,8 @@ export class LentaContainersFoldersModal extends Modal {
   private activeSyncingContainerId: string | null = null;
   private completedSyncContainerIds: Set<string> = new Set();
   private searchQuery = '';
-  private privacyFilter: 'all' | 'public' | 'private' = 'all';
+  private categoryTab: 'user' | 'feeds' = 'user';
+  private privacyFilter: 'public' | 'private' | 'all' = 'public';
   private customKeyInput = '';
 
   constructor(
@@ -206,6 +208,57 @@ export class LentaContainersFoldersModal extends Modal {
       text: 'Step 1: Select or deselect containers. Step 2: Click Connect & Update Files to apply changes to your vault.',
     });
 
+    // ── Primary Category Tabs (User Containers vs Feeds) ─────────────────────
+    const categoryBar = contentEl.createDiv({ cls: 'lenta-category-tabs-bar' });
+    categoryBar.style.cssText = [
+      'display: flex',
+      'gap: 10px',
+      'margin-bottom: 14px',
+      'border-bottom: 2px solid var(--background-modifier-border, #333)',
+      'padding-bottom: 2px',
+    ].join(';');
+
+    const isFeedContainer = (c: LentaContainerSummaryDto) => c.isFeed === true || c.id.startsWith('feed-') || c.scope?.type === 'feed';
+    const userContainersCount = this.containers.filter((c) => !isFeedContainer(c)).length;
+    const feedContainersCount = this.containers.filter((c) => isFeedContainer(c)).length;
+
+    const categoryOptions: Array<{ id: 'user' | 'feeds'; label: string; icon: string; count: number }> = [
+      { id: 'user', label: 'User Containers', icon: '👤', count: userContainersCount },
+      { id: 'feeds', label: 'Feeds', icon: '📰', count: feedContainersCount },
+    ];
+
+    for (const cat of categoryOptions) {
+      const isSelected = this.categoryTab === cat.id;
+      const catBtn = categoryBar.createEl('button', {
+        cls: `lenta-category-tab ${isSelected ? 'is-active' : ''}`,
+      });
+      catBtn.disabled = this.isConnecting;
+      catBtn.style.cssText = `
+        padding: 8px 16px;
+        font-weight: 700;
+        font-size: 0.9em;
+        border: none;
+        border-bottom: 3px solid ${isSelected ? 'var(--lenta-lemon, #c9cd58)' : 'transparent'};
+        background: ${isSelected ? 'var(--background-primary-alt, rgba(255, 255, 255, 0.05))' : 'transparent'};
+        color: ${isSelected ? 'var(--text-normal, #fff)' : 'var(--text-muted, #888)'};
+        cursor: ${this.isConnecting ? 'not-allowed' : 'pointer'};
+        border-radius: 6px 6px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      `;
+
+      catBtn.innerHTML = `<span>${cat.icon} ${cat.label}</span> <span class="lenta-count-pill" style="font-size:0.8em; padding:2px 7px; border-radius:10px; background:var(--background-secondary-alt);">${cat.count}</span>`;
+
+      catBtn.onclick = () => {
+        if (this.isConnecting) return;
+        this.categoryTab = cat.id;
+        this.privacyFilter = 'public'; // Default to Public privacy filter when switching tabs
+        this.render();
+      };
+    }
+
     // ── Toolbar Controls Bar ───────────────────────────────────────────────
     const toolbar = contentEl.createDiv({ cls: 'lenta-containers-toolbar' });
     toolbar.style.cssText = [
@@ -236,18 +289,22 @@ export class LentaContainersFoldersModal extends Modal {
       this.renderContainersList();
     };
 
-    // Privacy Filter Segmented Tabs
+    // Privacy Sub-Filter Segmented Tabs (evaluated within current categoryTab)
     const filterWrap = toolbar.createDiv({ cls: 'lenta-privacy-filter-tabs' });
 
-    const isContainerPublic = (c: LentaContainerSummaryDto) => c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
-    const publicContainersCount = this.containers.filter((c) => isContainerPublic(c)).length;
-    const privateContainersCount = this.containers.filter((c) => !isContainerPublic(c)).length;
-    const allContainersCount = this.containers.length;
+    const activeCategoryContainers = this.containers.filter((c) =>
+      this.categoryTab === 'user' ? !isFeedContainer(c) : isFeedContainer(c)
+    );
 
-    const filterOptions: Array<{ id: 'all' | 'public' | 'private'; label: string; icon: string; count: number }> = [
-      { id: 'all', label: 'All', icon: '🌐', count: allContainersCount },
+    const checkContainerPublic = (c: LentaContainerSummaryDto) => isContainerPublic(c);
+    const publicContainersCount = activeCategoryContainers.filter((c) => checkContainerPublic(c)).length;
+    const privateContainersCount = activeCategoryContainers.filter((c) => !checkContainerPublic(c)).length;
+    const allContainersCount = activeCategoryContainers.length;
+
+    const filterOptions: Array<{ id: 'public' | 'private' | 'all'; label: string; icon: string; count: number }> = [
       { id: 'public', label: 'Public', icon: '📰', count: publicContainersCount },
       { id: 'private', label: 'Private', icon: '🔐', count: privateContainersCount },
+      { id: 'all', label: 'All', icon: '🌐', count: allContainersCount },
     ];
 
     for (const opt of filterOptions) {
@@ -515,10 +572,13 @@ export class LentaContainersFoldersModal extends Modal {
 
   private getFilteredContainers(): LentaContainerSummaryDto[] {
     return this.containers.filter((c) => {
+      const isFeed = c.isFeed === true || c.id.startsWith('feed-') || c.scope?.type === 'feed';
+      const matchCategory = this.categoryTab === 'user' ? !isFeed : isFeed;
+
       const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const isPublic = c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
+      const isPublic = isContainerPublic(c);
       const matchPrivacy = this.privacyFilter === 'all' || (this.privacyFilter === 'public' && isPublic) || (this.privacyFilter === 'private' && !isPublic);
-      return matchSearch && matchPrivacy;
+      return matchCategory && matchSearch && matchPrivacy;
     });
   }
 
@@ -629,13 +689,13 @@ export class LentaContainersFoldersModal extends Modal {
       titleWrap.createSpan({ cls: 'lenta-container-title', text: c.name });
       titleWrap.createSpan({ cls: 'lenta-container-id', text: c.id });
 
-      // Right Column: Type, Privacy, Notes count, Select/Status Button
+      // Right Column: Type, Privacy badge, Notes count, Select/Status Button
       const rightCol = row.createDiv({ cls: 'lenta-container-row-right' });
 
       const typeTag = rightCol.createSpan({ cls: 'lenta-badge' });
       typeTag.setText((c.type || 'git').toUpperCase());
 
-      const isPub = c.isPublic === true || (c.isPublic !== false && c.visibility !== 'private');
+      const isPub = isContainerPublic(c);
       const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? 'is-public' : 'is-private'}` });
       privacyTag.setText(isPub ? 'PUBLIC' : 'PRIVATE');
 

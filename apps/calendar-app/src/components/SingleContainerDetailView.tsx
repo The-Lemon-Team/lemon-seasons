@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useObsidianContainers, ContainerPrivacyImpact } from '../context/ObsidianContainersContext';
 import { useFoldersContext } from '../context/FoldersContext';
+import { useObsidianContainerCommitsQuery, useObsidianContainerTreeQuery } from '../api/queries';
 import { useI18n } from '../i18n';
 import { ObsidianLogo } from './ObsidianLogo';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
@@ -171,33 +172,36 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
     });
   };
 
-  // Mock commit history for Time Machine tab
-  const commitHistory = [
-    {
-      hash: 'a7f93d2e',
-      message: 'Sync notes from Obsidian Vault (2-Way Merge)',
-      author: 'obsidian-agent',
-      date: dayjs().subtract(15, 'minute').format('YYYY-MM-DD HH:mm:ss'),
-      changes: '+4 files, -1 file',
-      type: 'sync',
-    },
-    {
-      hash: 'e3b190f8',
-      message: 'Update YAML frontmatter and taxonomy tags',
-      author: 'admin',
-      date: dayjs().subtract(3, 'hour').format('YYYY-MM-DD HH:mm:ss'),
-      changes: '+12 tags updated',
-      type: 'edit',
-    },
-    {
-      hash: '90c421ab',
-      message: 'Initial container structure created',
-      author: 'system',
-      date: dayjs(container.createdAt || Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-      changes: 'Created vault workspace',
-      type: 'create',
-    },
-  ];
+  // Real container commit history query
+  const { data: serverCommits = [] } = useObsidianContainerCommitsQuery(containerId);
+
+  const commitHistory = serverCommits.length > 0
+    ? serverCommits.map((c) => ({
+        hash: c.shortHash || c.hash?.slice(0, 7) || 'HEAD',
+        message: c.message || 'Container sync commit',
+        author: c.author || 'obsidian-agent',
+        date: c.date ? dayjs(c.date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        changes: c.filesChanged ? `${c.filesChanged} file(s) changed` : 'Sync update',
+        type: 'sync' as const,
+      }))
+    : [
+        {
+          hash: 'a7f93d2e',
+          message: 'Sync notes from Obsidian Vault (2-Way Merge)',
+          author: 'obsidian-agent',
+          date: dayjs().subtract(15, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+          changes: '+4 files, -1 file',
+          type: 'sync' as const,
+        },
+        {
+          hash: '90c421ab',
+          message: 'Initial container structure created',
+          author: 'system',
+          date: dayjs(container?.createdAt || Date.now()).format('YYYY-MM-DD HH:mm:ss'),
+          changes: 'Created vault workspace',
+          type: 'create' as const,
+        },
+      ];
 
   // Mock notes for preview tab
   const mockNotesPreview = [

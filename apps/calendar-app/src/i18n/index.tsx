@@ -137,6 +137,14 @@ export interface Translations {
   quickFilters: string;
   allChannels: string;
   allFolders: string;
+  allObsidianVaults: string;
+  obsidianVaults: string;
+  selectObsidianContainers: string;
+  searchObsidianContainers: string;
+  noObsidianContainers: string;
+  foldersCount: (selected: number, total: number) => string;
+  noBoundFolders: string;
+  selectAllFoldersInVault: string;
 
   // Privacy & Auth
   guestRole: string;
@@ -429,6 +437,14 @@ export const ruTranslations: Translations = {
   quickFilters: 'Быстрые фильтры',
   allChannels: 'Все каналы',
   allFolders: 'Все папки (показать всё)',
+  allObsidianVaults: 'Все Vaults',
+  obsidianVaults: 'Контейнеры Obsidian',
+  selectObsidianContainers: 'Выберите контейнеры Obsidian',
+  searchObsidianContainers: 'Поиск контейнеров...',
+  noObsidianContainers: 'Нет подключенных контейнеров Obsidian',
+  foldersCount: (selected: number, total: number) => `${selected}/${total} папок`,
+  noBoundFolders: 'Нет привязанных папок',
+  selectAllFoldersInVault: 'Выбрать все папки',
 
   // Privacy & Auth
   guestRole: 'Гость',
@@ -722,6 +738,14 @@ export const enTranslations: Translations = {
   quickFilters: 'Quick filters',
   allChannels: 'All Channels',
   allFolders: 'All Folders (Show Everything)',
+  allObsidianVaults: 'All Vaults',
+  obsidianVaults: 'Obsidian Vaults',
+  selectObsidianContainers: 'Select Obsidian Containers',
+  searchObsidianContainers: 'Search containers...',
+  noObsidianContainers: 'No connected Obsidian containers',
+  foldersCount: (selected: number, total: number) => `${selected}/${total} folders`,
+  noBoundFolders: 'No bound folders',
+  selectAllFoldersInVault: 'Select all folders',
 
   // Privacy & Auth
   guestRole: 'Guest',

@@ -94,6 +94,9 @@ export interface LentaContainerSummaryDto {
   lastCommitDate?: string;
   isPublic?: boolean;
   visibility?: 'public' | 'private';
+  privacy?: 'private' | 'public';
+  isFeed?: boolean;
+  isUserOwn?: boolean;
 }
 
 export interface FileDiffItemDto {

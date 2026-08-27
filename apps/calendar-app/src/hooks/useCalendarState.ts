@@ -11,6 +11,7 @@ function getDefaultFilterState(): CalendarFilterState {
     view: 'timeline',
     feed: undefined,
     containers: [],
+    obsidianFolders: [],
     tags: [],
     hashtags: [],
     types: [],
@@ -76,6 +77,10 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     ? params.get('containers')!.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const obsidianFolders = params.get('obsidianFolders')
+    ? params.get('obsidianFolders')!.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
   const tags = params.get('tags')
     ? params.get('tags')!.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
@@ -96,6 +101,7 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     view,
     feed,
     containers,
+    obsidianFolders,
     tags,
     hashtags,
     types,
@@ -110,6 +116,7 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.end) params.set('end', state.end);
   if (state.feed) params.set('feed', state.feed);
   if (state.containers && state.containers.length > 0) params.set('containers', state.containers.join(','));
+  if (state.obsidianFolders && state.obsidianFolders.length > 0) params.set('obsidianFolders', state.obsidianFolders.join(','));
   if (state.tags && state.tags.length > 0) params.set('tags', state.tags.join(','));
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
@@ -204,7 +211,30 @@ export function useCalendarState() {
   }, [updateFilter]);
 
   const clearContainers = useCallback(() => {
-    updateFilter({ containers: [] });
+    updateFilter({ containers: [], obsidianFolders: [] });
+  }, [updateFilter]);
+
+  const toggleObsidianFolder = useCallback((folderKey: string) => {
+    updateFilter((prev) => {
+      const current = prev.obsidianFolders || [];
+      const exists = current.includes(folderKey);
+      const obsidianFolders = exists
+        ? current.filter((f) => f !== folderKey)
+        : [...current, folderKey];
+      return { ...prev, obsidianFolders };
+    });
+  }, [updateFilter]);
+
+  const selectOnlyObsidianFolder = useCallback((folderKey: string) => {
+    updateFilter({ obsidianFolders: [folderKey] });
+  }, [updateFilter]);
+
+  const setObsidianFolders = useCallback((folders: string[]) => {
+    updateFilter({ obsidianFolders: folders });
+  }, [updateFilter]);
+
+  const clearObsidianFolders = useCallback(() => {
+    updateFilter({ obsidianFolders: [] });
   }, [updateFilter]);
 
   const toggleTag = useCallback((tagPath: string) => {
@@ -320,6 +350,7 @@ export function useCalendarState() {
     updateFilter({
       feed: undefined,
       containers: [],
+      obsidianFolders: [],
       tags: [],
       hashtags: [],
       types: [],
@@ -344,6 +375,10 @@ export function useCalendarState() {
     selectOnlyContainer,
     setAllContainers,
     clearContainers,
+    toggleObsidianFolder,
+    selectOnlyObsidianFolder,
+    setObsidianFolders,
+    clearObsidianFolders,
     toggleTag,
     selectOnlyTag,
     setAllTags,

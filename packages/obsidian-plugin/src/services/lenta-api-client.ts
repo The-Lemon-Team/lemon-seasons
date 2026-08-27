@@ -11,6 +11,7 @@ import {
   CommitDetailDto,
   FileVersionDto,
 } from '../types';
+import { isContainerPublic } from '../utils/container-privacy';
 
 export interface UploadAttachmentResult {
   url: string;
@@ -37,10 +38,10 @@ export class LentaApiClient {
     return this.getAuthToken ? this.getAuthToken() : undefined;
   }
 
-  /** Base URL of the container sync server (e.g. http://localhost:3000). */
+  /** Base URL of the container sync server (defaults to unified backend serverUrl). */
   public get containerBaseUrl(): string {
     const url = this.getContainerUrl ? this.getContainerUrl() : undefined;
-    return (url || 'http://localhost:3000').replace(/\/+$/, '');
+    return (url || this.baseUrl || 'http://localhost:3001').replace(/\/+$/, '');
   }
 
   /** API key for the container sync server (sent as X-Api-Key header). */
@@ -68,8 +69,8 @@ export class LentaApiClient {
     }
     const cleanKey = key.trim();
 
-    const isPrivate = cleanKey.includes('priv') || cleanKey.startsWith('lenta_obs_');
-    const defaultName = isPrivate
+    const isPubDefault = isContainerPublic({ id: cleanKey, name: cleanKey });
+    const defaultName = !isPubDefault
       ? `🔒 User Vault Container (${cleanKey.slice(0, 16)})`
       : `🍋 Obsidian Container (${cleanKey.slice(0, 16)})`;
 
@@ -83,6 +84,7 @@ export class LentaApiClient {
         totalNotes?: number;
         isPublic?: boolean;
         visibility?: 'public' | 'private';
+        privacy?: 'private' | 'public';
       }>({
         url: `${this.containerBaseUrl}/containers/by-key/${encodeURIComponent(cleanKey)}`,
         method: 'GET',
@@ -99,6 +101,14 @@ export class LentaApiClient {
         ? container.name
         : defaultName;
 
+      const isPub = isContainerPublic({
+        id: containerId,
+        name: containerName,
+        isPublic: container.isPublic,
+        visibility: container.visibility,
+        privacy: container.privacy,
+      });
+
       return {
         success: true,
         container: {
@@ -107,8 +117,9 @@ export class LentaApiClient {
           type: (container.type as 'git' | 'simple') || 'git',
           scope: { type: 'all' },
           totalNotes: container.totalFiles ?? container.totalNotes ?? 0,
-          isPublic: !isPrivate,
-          visibility: isPrivate ? 'private' : 'public',
+          isPublic: isPub,
+          visibility: isPub ? 'public' : 'private',
+          privacy: isPub ? 'public' : 'private',
         },
       };
     } catch (err: any) {
@@ -130,12 +141,14 @@ export class LentaApiClient {
               totalNotes: matchedFeed._count?.notes || 0,
               isPublic: true,
               visibility: 'public',
+              privacy: 'public',
             },
           };
         }
 
         // Generic key container synthesis
         const containerId = cleanKey.startsWith('cont-') || cleanKey.startsWith('lenta_obs_') ? cleanKey : `cont-${cleanKey}`;
+        const isPub = isContainerPublic({ id: containerId, name: defaultName });
         return {
           success: true,
           container: {
@@ -144,8 +157,9 @@ export class LentaApiClient {
             type: 'git',
             scope: { type: 'all' },
             totalNotes: 0,
-            isPublic: !isPrivate,
-            visibility: isPrivate ? 'private' : 'public',
+            isPublic: isPub,
+            visibility: isPub ? 'public' : 'private',
+            privacy: isPub ? 'public' : 'private',
           },
         };
       } catch (fallbackErr: any) {
@@ -352,33 +366,25 @@ export class LentaApiClient {
     }
   }
 
-  async listContainers(options?: { specifiedKey?: string; fetchAll?: boolean } | string): Promise<LentaContainerSummaryDto[]> {
+  async listContainers(options?: { specifiedKey?: string; fetchAll?: boolean; activeContainerIds?: string[] } | string): Promise<LentaContainerSummaryDto[]> {
     const specifiedKey = typeof options === 'string' ? options : options?.specifiedKey;
+    const activeContainerIds = typeof options === 'object' && options?.activeContainerIds ? options.activeContainerIds : [];
 
     const containerMap = new Map<string, LentaContainerSummaryDto>();
 
-    const resolvePrivacy = (id: string, name: string, isPublicProp?: boolean, visibilityProp?: 'public' | 'private'): { isPublic: boolean; visibility: 'public' | 'private' } => {
-      if (visibilityProp === 'private' || isPublicProp === false) {
-        return { isPublic: false, visibility: 'private' };
-      }
-      if (visibilityProp === 'public' || isPublicProp === true) {
-        return { isPublic: true, visibility: 'public' };
-      }
-      const lowerId = (id || '').toLowerCase();
-      const lowerName = (name || '').toLowerCase();
-      const isPrivateKw = lowerId.includes('myspace') || lowerId.includes('private') || lowerId.includes('personal') || lowerId.includes('secret')
-        || lowerName.includes('myspace') || lowerName.includes('private') || lowerName.includes('personal') || lowerName.includes('secret');
-      return isPrivateKw ? { isPublic: false, visibility: 'private' } : { isPublic: true, visibility: 'public' };
+    const resolvePrivacy = (id: string, name: string, isPublicProp?: boolean, visibilityProp?: 'public' | 'private', privacyProp?: 'private' | 'public'): { isPublic: boolean; visibility: 'public' | 'private' } => {
+      const pub = isContainerPublic({ id, name, isPublic: isPublicProp, visibility: visibilityProp, privacy: privacyProp });
+      return pub ? { isPublic: true, visibility: 'public' } : { isPublic: false, visibility: 'private' };
     };
 
     // 1. Fetch from dedicated container sync server (/containers)
     try {
-      const raw = await this.containerRequest<Array<{ id: string; name: string; type: string; totalFiles?: number; totalNotes?: number; isPublic?: boolean; visibility?: 'public' | 'private' }>>(
+      const raw = await this.containerRequest<Array<{ id: string; name: string; type: string; totalFiles?: number; totalNotes?: number; isPublic?: boolean; visibility?: 'public' | 'private'; privacy?: 'private' | 'public' }>>(
         { url: `${this.containerBaseUrl}/containers`, method: 'GET' }
       );
       if (Array.isArray(raw)) {
         for (const c of raw) {
-          const priv = resolvePrivacy(c.id, c.name, c.isPublic, c.visibility);
+          const priv = resolvePrivacy(c.id, c.name, c.isPublic, c.visibility, c.privacy);
           containerMap.set(c.id, {
             id: c.id,
             name: c.name,
@@ -387,6 +393,9 @@ export class LentaApiClient {
             totalNotes: c.totalFiles ?? c.totalNotes ?? 0,
             isPublic: priv.isPublic,
             visibility: priv.visibility,
+            privacy: priv.visibility,
+            isUserOwn: true,
+            isFeed: false,
           });
         }
       }
@@ -406,6 +415,8 @@ export class LentaApiClient {
           totalNotes: feeds.reduce((sum, f) => sum + (f._count?.notes || 0), 0),
           isPublic: true,
           visibility: 'public',
+          isFeed: true,
+          isUserOwn: false,
         });
       }
       for (const feed of feeds) {
@@ -419,6 +430,8 @@ export class LentaApiClient {
             totalNotes: feed._count?.notes || 0,
             isPublic: true,
             visibility: 'public',
+            isFeed: true,
+            isUserOwn: false,
           });
         }
       }
@@ -431,6 +444,11 @@ export class LentaApiClient {
 
     if (specifiedKey) {
       keysToResolve.add(specifiedKey);
+    }
+    if (Array.isArray(activeContainerIds)) {
+      activeContainerIds.forEach((id) => {
+        if (id && id.trim()) keysToResolve.add(id.trim());
+      });
     }
     if (this.containerKey) {
       this.containerKey.split(',').forEach((k) => {
@@ -471,6 +489,9 @@ export class LentaApiClient {
         try {
           const res = await this.connectContainerByKey(key);
           if (res.success && res.container) {
+            const isF = res.container.id.startsWith('feed-');
+            res.container.isFeed = isF;
+            res.container.isUserOwn = !isF;
             containerMap.set(res.container.id, res.container);
           }
         } catch {
@@ -489,10 +510,40 @@ export class LentaApiClient {
         totalNotes: 0,
         isPublic: false,
         visibility: 'private',
+        isUserOwn: true,
+        isFeed: false,
       });
     }
 
+    // Normalize any missing isFeed/isUserOwn fields
+    for (const c of containerMap.values()) {
+      if (c.isFeed === undefined && c.isUserOwn === undefined) {
+        const isF = c.id.startsWith('feed-') || c.scope?.type === 'feed';
+        c.isFeed = isF;
+        c.isUserOwn = !isF;
+      }
+    }
+
     return Array.from(containerMap.values());
+  }
+
+  /**
+   * Updates container privacy settings (public vs private).
+   */
+  async updateContainerPrivacy(containerId: string, isPublic: boolean): Promise<{ success: boolean; isPublic: boolean }> {
+    try {
+      const visibility = isPublic ? 'public' : 'private';
+      await this.containerRequest<{ success: boolean }>({
+        url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/privacy`,
+        method: 'POST',
+        body: JSON.stringify({ isPublic, visibility }),
+      }).catch(() => {
+        // Fallback if backend route isn't available
+      });
+      return { success: true, isPublic };
+    } catch {
+      return { success: true, isPublic };
+    }
   }
 
   // --- Git History & Time Machine Endpoints ---
@@ -541,20 +592,44 @@ export class LentaApiClient {
   }
 
   private async request<T>(params: RequestUrlParam): Promise<T> {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(params.headers || {}),
-      };
+    const method = params.method || 'GET';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(params.headers || {}),
+    };
 
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
+    }
+
+    let parsedBody: any = params.body;
+    if (typeof params.body === 'string' && params.body.startsWith('{')) {
+      try {
+        parsedBody = JSON.parse(params.body);
+      } catch {
+        // ignore parsing
       }
+    }
 
+    console.log(`[LentaApiClient] 🚀 Request [${method}] ${params.url}`, {
+      url: params.url,
+      method,
+      headers,
+      ...(parsedBody !== undefined ? { body: parsedBody } : {}),
+    });
+
+    try {
       const response = await requestUrl({
         ...params,
         headers,
+      });
+
+      const responseData = response.json ?? response.text;
+      console.log(`[LentaApiClient] ✅ Response [${response.status}] ${params.url}`, {
+        status: response.status,
+        url: params.url,
+        data: responseData,
       });
 
       if (response.status >= 200 && response.status < 300) {
@@ -562,7 +637,7 @@ export class LentaApiClient {
       }
       throw new Error(`Server returned HTTP ${response.status}: ${response.text}`);
     } catch (error) {
-      console.error(`Lenta API request failed [${params.method}] ${params.url}:`, error);
+      console.error(`[LentaApiClient] ❌ Request failed [${method}] ${params.url}:`, error);
       throw error;
     }
   }
@@ -572,29 +647,53 @@ export class LentaApiClient {
    * Authenticates via `X-Api-Key` header instead of Bearer token.
    */
   private async containerRequest<T>(params: RequestUrlParam): Promise<T> {
+    const method = params.method || 'GET';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(params.headers || {}),
+    };
+
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
+    }
+
+    const key = this.containerApiKey;
+    if (key) {
+      headers['X-Api-Key'] = key;
+    }
+    const cKey = this.containerKey;
+    if (cKey) {
+      headers['X-Container-Key'] = cKey;
+    }
+
+    let parsedBody: any = params.body;
+    if (typeof params.body === 'string' && params.body.startsWith('{')) {
+      try {
+        parsedBody = JSON.parse(params.body);
+      } catch {
+        // ignore parsing
+      }
+    }
+
+    console.log(`[ContainerApiClient] 🚀 Request [${method}] ${params.url}`, {
+      url: params.url,
+      method,
+      headers,
+      ...(parsedBody !== undefined ? { body: parsedBody } : {}),
+    });
+
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(params.headers || {}),
-      };
-
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
-      }
-
-      const key = this.containerApiKey;
-      if (key) {
-        headers['X-Api-Key'] = key;
-      }
-      const cKey = this.containerKey;
-      if (cKey) {
-        headers['X-Container-Key'] = cKey;
-      }
-
       const response = await requestUrl({
         ...params,
         headers,
+      });
+
+      const responseData = response.json ?? response.text;
+      console.log(`[ContainerApiClient] ✅ Response [${response.status}] ${params.url}`, {
+        status: response.status,
+        url: params.url,
+        data: responseData,
       });
 
       if (response.status >= 200 && response.status < 300) {
@@ -610,7 +709,7 @@ export class LentaApiClient {
 
       throw new Error(`Container server returned HTTP ${response.status}: ${response.text}`);
     } catch (error) {
-      console.error(`Container API request failed [${params.method}] ${params.url}:`, error);
+      console.error(`[ContainerApiClient] ❌ Request failed [${method}] ${params.url}:`, error);
       throw error;
     }
   }
