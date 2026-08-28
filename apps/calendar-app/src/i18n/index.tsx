@@ -203,6 +203,11 @@ export interface Translations {
   noteDate: string;
   noteType: string;
   noteFeed: string;
+  noteFolder: string;
+  noteFolderPlaceholder: string;
+  noteFolderRoot: string;
+  noteFolderCustom: string;
+  noteFolderBackToList: string;
   createNoteSuccess: string;
 
   // Key Management & API Tokens
@@ -503,6 +508,11 @@ export const ruTranslations: Translations = {
   noteDate: 'Дата начала',
   noteType: 'Тип записи',
   noteFeed: 'Канал / Лента',
+  noteFolder: 'Папка (опционально)',
+  noteFolderPlaceholder: 'Укажите путь (например: 01_Daily_Logs или Work/Projects)...',
+  noteFolderRoot: 'Без папки / Корень хранилища',
+  noteFolderCustom: '+ Указать свой путь...',
+  noteFolderBackToList: '← Список папок',
   createNoteSuccess: 'Заметка успешно сохранена!',
 
   // Key Management & API Tokens
@@ -804,6 +814,11 @@ export const enTranslations: Translations = {
   noteDate: 'Start Date',
   noteType: 'Entry Type',
   noteFeed: 'Channel / Feed',
+  noteFolder: 'Target Folder (optional)',
+  noteFolderPlaceholder: 'Type path (e.g. 01_Daily_Logs or Work/Projects)...',
+  noteFolderRoot: 'No folder / Vault Root',
+  noteFolderCustom: '+ Enter custom path...',
+  noteFolderBackToList: '← Folder list',
   createNoteSuccess: 'Note created successfully!',
 
   // Key Management & API Tokens

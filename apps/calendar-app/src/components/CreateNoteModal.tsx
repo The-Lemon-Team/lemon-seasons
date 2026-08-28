@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { NoteType } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds } from '../api/queries';
-import { X, Calendar, Tag, Plus, Check, FileText } from 'lucide-react';
+import { useFoldersContext } from '../context/FoldersContext';
+import { X, Calendar, Tag, Plus, Check, FileText, Folder } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
 
@@ -13,8 +14,16 @@ interface CreateNoteModalProps {
 }
 
 export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { data: feeds = [] } = useFeeds();
+
+  let folders: Array<{ id: string; name: string; path: string }> = [];
+  try {
+    const foldersCtx = useFoldersContext();
+    folders = foldersCtx.folders || [];
+  } catch {
+    folders = [];
+  }
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -22,6 +31,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
   const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState('');
   const [feedId, setFeedId] = useState('');
+  const [folderPath, setFolderPath] = useState('');
+  const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -42,6 +53,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
       setTitle('');
       setDescription('');
       setHashtagsInput('');
+      setFolderPath('');
+      setIsCustomFolder(false);
       onSuccess?.();
       onClose();
     }, 1000);
@@ -151,7 +164,77 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              {/* Grid 2: Start & End Date */}
+              {/* Grid 2: Folder & Hashtags */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-mono text-[#c9c7b2] flex items-center gap-1.5">
+                      <Folder className="w-3.5 h-3.5 text-[#c9cd58]" />
+                      {t.noteFolder}
+                    </label>
+                    {isCustomFolder && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomFolder(false);
+                          setFolderPath('');
+                        }}
+                        className="text-[10px] font-mono text-[#c9cd58] hover:underline cursor-pointer"
+                      >
+                        {t.noteFolderBackToList}
+                      </button>
+                    )}
+                  </div>
+
+                  {!isCustomFolder ? (
+                    <select
+                      value={folderPath}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomFolder(true);
+                          setFolderPath('');
+                        } else {
+                          setFolderPath(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                    >
+                      <option value="">{t.noteFolderRoot}</option>
+                      {folders.map((f) => (
+                        <option key={f.id} value={f.path}>
+                          📁 {f.name} ({f.path})
+                        </option>
+                      ))}
+                      <option value="__custom__">✏️ {t.noteFolderCustom}</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={folderPath}
+                      onChange={(e) => setFolderPath(e.target.value)}
+                      placeholder={t.noteFolderPlaceholder}
+                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#c9cd58]" />
+                    Хэштеги (через запятую или пробел)
+                  </label>
+                  <input
+                    type="text"
+                    value={hashtagsInput}
+                    onChange={(e) => setHashtagsInput(e.target.value)}
+                    placeholder="#стратегия, #релиз2026, #важное"
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Grid 3: Start & End Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
@@ -179,21 +262,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
                     className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
                   />
                 </div>
-              </div>
-
-              {/* Hashtags input */}
-              <div>
-                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-[#c9cd58]" />
-                  Хэштеги (через запятую или пробел)
-                </label>
-                <input
-                  type="text"
-                  value={hashtagsInput}
-                  onChange={(e) => setHashtagsInput(e.target.value)}
-                  placeholder="#стратегия, #релиз2026, #важное"
-                  className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
-                />
               </div>
 
               {/* Markdown Body */}
