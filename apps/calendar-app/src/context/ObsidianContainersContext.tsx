@@ -238,10 +238,9 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         const mapped: ObsidianContainer[] = summaries.map((dto) => {
           const existing = prev.find((c) => c.id === dto.id);
           const resolvedPrivacy: ContainerPrivacy =
-            dto.privacy ||
-            (dto.visibility === 'private' || dto.isPublic === false
+            dto.visibility === 'private'
               ? 'private'
-              : dto.visibility === 'public' || dto.isPublic === true
+              : dto.visibility === 'public'
               ? 'public'
               : existing?.privacy ||
                 (dto.id.includes('private') ||
@@ -251,20 +250,18 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
                 dto.name.toLowerCase().includes('user key') ||
                 dto.name.toLowerCase().includes('личный')
                   ? 'private'
-                  : 'public'));
+                  : 'public');
 
           return {
             id: dto.id,
             name: dto.name,
-            description:
-              dto.description ||
-              (dto.isGit ? 'Version-controlled Git vault container' : 'Simple stateless note container'),
+            description: dto.description || 'Obsidian note container',
             vaultPath: existing?.vaultPath || `vaults/${dto.id}`,
             privacy: resolvedPrivacy,
             token: dto.key || existing?.token || `lenta_jwt_${resolvedPrivacy === 'private' ? 'sec' : 'pub'}_${dto.id}`,
             notesCount: dto.totalFiles || existing?.notesCount || 0,
             createdAt: existing?.createdAt || new Date().toISOString(),
-            lastSyncedAt: dto.lastModified || dto.lastCommitDate || existing?.lastSyncedAt || new Date().toISOString(),
+            lastSyncedAt: dto.lastModified || existing?.lastSyncedAt || new Date().toISOString(),
             status: 'connected',
             color: resolvedPrivacy === 'private' ? '#a855f7' : '#c9cd58',
             boundFolders: existing?.boundFolders || [
@@ -288,7 +285,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         return mapped;
       });
     } catch (err) {
-      console.warn('Obsidian containers server offline or unreachable (port 3000). Falling back to local storage cache.', err);
+      console.warn('Obsidian containers server offline or unreachable (port 3001). Falling back to local storage cache.', err);
       setIsServerConnected(false);
     } finally {
       setIsServerLoading(false);
@@ -356,11 +353,10 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         try {
           serverSummary = await containersApi.registerContainer({
             name: input.name,
-            type: 'git',
+            type: 'obsidian',
             description: input.description,
             rootPath: input.vaultPath,
-            privacy: input.privacy,
-            isPublic: input.privacy === 'public',
+            visibility: input.privacy === 'private' ? 'private' : 'public',
           });
         } catch (err) {
           console.warn('Failed to register container on backend server, proceeding locally', err);

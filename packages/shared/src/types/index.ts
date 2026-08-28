@@ -444,6 +444,7 @@ export interface BoundFolder {
 export interface ObsidianContainer {
   id: string;
   name: string;
+  title?: string;
   description?: string;
   vaultPath: string;
   privacy: ContainerPrivacy;
@@ -459,6 +460,7 @@ export interface ObsidianContainer {
 export interface PrivateContainer {
   id: string;
   name: string;
+  title?: string;
   vaultPath: string;
   isPrivate: boolean;
   token: string;

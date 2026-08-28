@@ -98,7 +98,7 @@ export class GitHistoryModal extends Modal {
         await this.loadCommitDetail(this.commits[0].hash);
       }
     } catch (err: any) {
-      this.statusMessage = `Failed to load Git history: ${err.message}`;
+      this.statusMessage = `Failed to load revision history: ${err.message}`;
     } finally {
       this.isLoading = false;
       this.render();
@@ -175,7 +175,7 @@ export class GitHistoryModal extends Modal {
     // ── Header ──────────────────────────────────────────────────────────────
     const header = contentEl.createDiv({ cls: 'lenta-history-header' });
     const titleRow = header.createDiv({ cls: 'lenta-history-title-row' });
-    titleRow.createEl('h2', { text: '📜 Git Version History & Time Machine' });
+    titleRow.createEl('h2', { text: '📜 Version History & Time Machine' });
 
     header.createEl('p', {
       cls: 'lenta-history-desc',
@@ -184,7 +184,7 @@ export class GitHistoryModal extends Modal {
 
     if (this.isLoading) {
       const loader = contentEl.createDiv({ cls: 'lenta-sync-loading-state' });
-      loader.createEl('p', { text: 'Loading container details and Git revision history...' });
+      loader.createEl('p', { text: 'Loading container details and revision history...' });
       return;
     }
 
@@ -232,8 +232,8 @@ export class GitHistoryModal extends Modal {
 
     if (this.commits.length === 0) {
       const empty = contentEl.createDiv({ cls: 'lenta-sync-empty-state' });
-      empty.createEl('h3', { text: 'No Git Commits Found' });
-      empty.createEl('p', { text: 'Make modifications or push changes to create Git revisions.' });
+      empty.createEl('h3', { text: 'No Revisions Found' });
+      empty.createEl('p', { text: 'Make modifications or push changes to create snapshot revisions.' });
       return;
     }
 

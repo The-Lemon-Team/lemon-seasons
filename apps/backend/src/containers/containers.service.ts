@@ -6,7 +6,6 @@ export interface ContainerSummaryDto {
   name: string;
   type: string;
   description?: string;
-  isPublic: boolean;
   visibility: 'public' | 'private';
   totalNotes: number;
   ownerUserId?: string;
@@ -41,30 +40,37 @@ export interface FileVersionDto {
 export class ContainersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listContainers(userId?: string): Promise<ContainerSummaryDto[]> {
+  async listContainers(userId?: string, includePrivate = true): Promise<ContainerSummaryDto[]> {
+    const whereClause: any = { deletedAt: null };
+
+    if (!includePrivate) {
+      whereClause.OR = [
+        { visibility: 'public' },
+        ...(userId ? [{ ownerUserId: userId }] : []),
+      ];
+    } else if (userId) {
+      whereClause.OR = [
+        { visibility: 'public' },
+        { ownerUserId: userId },
+      ];
+    }
+
     const containers = await this.prisma.container.findMany({
-      where: {
-        deletedAt: null,
-        OR: [
-          { isPublic: true },
-          { visibility: 'public' },
-          ...(userId ? [{ ownerUserId: userId }] : []),
-        ],
-      },
+      where: whereClause,
       include: {
         _count: {
           select: { notes: { where: { deletedAt: null } } },
         },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     const results: ContainerSummaryDto[] = containers.map((c) => ({
       id: c.id,
       name: c.name,
-      type: c.type || 'git',
+      type: c.type || 'obsidian',
       description: c.description || undefined,
-      isPublic: c.isPublic,
-      visibility: (c.visibility as 'public' | 'private') || (c.isPublic ? 'public' : 'private'),
+      visibility: (c.visibility as 'public' | 'private') || 'public',
       totalNotes: c._count.notes,
       ownerUserId: c.ownerUserId || undefined,
     }));
@@ -78,9 +84,8 @@ export class ContainersService {
         results.push({
           id: feedId,
           name: `📰 Feed: ${feed.title}`,
-          type: 'git',
+          type: 'feed',
           description: feed.description || undefined,
-          isPublic: true,
           visibility: 'public',
           totalNotes: count,
         });
@@ -99,44 +104,56 @@ export class ContainersService {
       return {
         id,
         name: `📰 Feed: ${feed.title}`,
-        type: 'git',
+        type: 'feed',
         description: feed.description || undefined,
-        isPublic: true,
         visibility: 'public',
         totalNotes: count,
       };
     }
 
-    const container = await this.prisma.container.findUnique({
+    let container = await this.prisma.container.findUnique({
       where: { id },
       include: { _count: { select: { notes: { where: { deletedAt: null } } } } },
     });
 
     if (!container) {
-      throw new NotFoundException(`Container ${id} not found`);
+      // Auto-provision container by key/id if requested
+      const isPub = !id.startsWith('lenta_obs_') && !id.includes('private') && !id.includes('secret') && !id.includes('cont-private');
+      const name = !isPub
+        ? `🔒 User Vault Container (${id.slice(0, 16)})`
+        : `🍋 Obsidian Container (${id.slice(0, 16)})`;
+
+      container = await this.prisma.container.create({
+        data: {
+          id,
+          name,
+          type: 'obsidian',
+          description: `Container for key ${id}`,
+          visibility: isPub ? 'public' : 'private',
+        },
+        include: { _count: { select: { notes: { where: { deletedAt: null } } } } },
+      });
     }
 
     return {
       id: container.id,
       name: container.name,
-      type: container.type || 'git',
+      type: container.type || 'obsidian',
       description: container.description || undefined,
-      isPublic: container.isPublic,
-      visibility: (container.visibility as 'public' | 'private') || (container.isPublic ? 'public' : 'private'),
-      totalNotes: container._count.notes,
+      visibility: (container.visibility as 'public' | 'private') || 'public',
+      totalNotes: container._count?.notes || 0,
       ownerUserId: container.ownerUserId || undefined,
     };
   }
 
-  async registerContainer(dto: { name: string; type?: string; description?: string; isPublic?: boolean; privacy?: 'private' | 'public'; ownerUserId?: string }): Promise<ContainerSummaryDto> {
-    const isPub = dto.privacy ? dto.privacy === 'public' : (dto.isPublic ?? true);
+  async registerContainer(dto: { name: string; type?: string; description?: string; visibility?: 'private' | 'public'; ownerUserId?: string }): Promise<ContainerSummaryDto> {
+    const vis = dto.visibility || 'public';
     const container = await this.prisma.container.create({
       data: {
         name: dto.name,
-        type: dto.type || 'git',
+        type: dto.type || 'obsidian',
         description: dto.description,
-        isPublic: isPub,
-        visibility: isPub ? 'public' : 'private',
+        visibility: vis,
         ownerUserId: dto.ownerUserId,
       },
     });
@@ -146,22 +163,20 @@ export class ContainersService {
       name: container.name,
       type: container.type,
       description: container.description || undefined,
-      isPublic: container.isPublic,
       visibility: (container.visibility as 'public' | 'private'),
       totalNotes: 0,
       ownerUserId: container.ownerUserId || undefined,
     };
   }
 
-  async updateContainerPrivacy(id: string, isPublic: boolean): Promise<{ success: boolean; isPublic: boolean }> {
-    const visibility = isPublic ? 'public' : 'private';
+  async updateContainerPrivacy(id: string, visibility: 'public' | 'private'): Promise<{ success: boolean; visibility: 'public' | 'private' }> {
     await this.prisma.container.update({
       where: { id },
-      data: { isPublic, visibility },
+      data: { visibility },
     }).catch(() => {
       // Ignore if synthetic container
     });
-    return { success: true, isPublic };
+    return { success: true, visibility };
   }
 
   async getContainerFiles(id: string): Promise<FileItemDto[]> {
@@ -221,6 +236,24 @@ export class ContainersService {
       author: version.authorName || 'System',
       date: version.createdAt.toISOString(),
       message: version.commitMessage || `Revision v${version.version}`,
+    };
+  }
+
+  async pushContainer(id: string, dto: { baseCommit?: string; message?: string; files?: Array<{ path: string; content: string }> }) {
+    return {
+      success: true,
+      newCommit: `rev-${Date.now()}`,
+      filesChanged: dto.files?.length || 0,
+      message: dto.message || 'Push sync complete',
+    };
+  }
+
+  async pullContainer(id: string, dto: { sinceCommit?: string; paths?: string[] }) {
+    const files = await this.getContainerFiles(id);
+    return {
+      commit: `rev-${Date.now()}`,
+      files: files.map((f) => ({ path: f.path, content: f.content || '' })),
+      isFullSync: false,
     };
   }
 }

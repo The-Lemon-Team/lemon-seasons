@@ -186,11 +186,11 @@ export class LentaSyncModal extends Modal {
     const containerNameMap = new Map<string, string>();
     for (const cId of activeContainerIds) {
       const matched = this.containers.find((c) => c.id === cId);
-      const name = matched?.name || cId;
+      const name = matched ? getContainerDisplayTitle(matched) : cId;
       containerNameMap.set(cId, name);
 
       const isSelected = this.selectedContainerFilter === cId;
-      const typeTag = matched?.type === 'git' ? '📜 Git' : '📁';
+      const typeTag = matched?.type === 'git' ? '📜 Versioned' : '📁';
       const pill = selectorWrap.createEl('button', {
         text: `${typeTag} ${name}`,
         cls: `lenta-pill-btn ${isSelected ? 'active' : ''}`,
@@ -225,7 +225,7 @@ export class LentaSyncModal extends Modal {
     } else {
       const activeName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
       const matched = this.containers.find((c) => c.id === this.selectedContainerFilter);
-      const typeStr = matched?.type ? matched.type.toUpperCase() : 'GIT';
+      const typeStr = matched?.type ? (matched.type === 'git' ? 'VERSIONED' : matched.type.toUpperCase()) : 'VERSIONED';
       const isPub = matched ? isContainerPublic(matched) : true;
       const containerVaultPath = `${rootFolder}/${activeName}`;
       
@@ -357,19 +357,19 @@ export class LentaSyncModal extends Modal {
       await this.loadChangedFiles();
     };
 
-    // ▸ Git History & Restore Button (Multi-Git Container aware)
-    const gitContainers = this.containers.filter(
-      (c) => c.type === 'git' && (activeContainerIds.length === 0 || activeContainerIds.includes(c.id))
+    // ▸ Version History & Restore Button
+    const activeContainers = this.containers.filter(
+      (c) => activeContainerIds.length === 0 || activeContainerIds.includes(c.id)
     );
-    if (gitContainers.length > 0 || this.settings.connectedContainerType === 'git' || this.settings.containerKey) {
+    if (activeContainers.length > 0 || this.settings.containerKey) {
       const historyBtn = actionsBar.createEl('button', {
-        text: '📜 Git History & Restore',
+        text: '📜 Version History & Restore',
         cls: 'lenta-action-btn',
       });
       historyBtn.onclick = () => {
-        const targetContainer = gitContainers.find((c) => c.id === this.selectedContainerFilter) || gitContainers[0];
-        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || 'main-git-vault';
-        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || 'Git Vault';
+        const targetContainer = activeContainers.find((c) => c.id === this.selectedContainerFilter) || activeContainers[0];
+        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || 'main-vault';
+        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || 'Primary Vault';
         new GitHistoryModal(
           this.app,
           this.apiClient,

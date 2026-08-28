@@ -3,6 +3,7 @@ import { LentaApiClient } from '../services/lenta-api-client';
 import { LentaSyncEngine } from '../services/lenta-sync-engine';
 import { LentaPluginSettings, LentaContainerSummaryDto, LentaFolderDto } from '../types';
 import { isContainerPublic } from '../utils/container-privacy';
+import { getContainerDisplayTitle } from '../utils/container-title';
 
 export class LentaContainersFoldersModal extends Modal {
   private apiClient: LentaApiClient;
@@ -575,7 +576,13 @@ export class LentaContainersFoldersModal extends Modal {
       const isFeed = c.isFeed === true || c.id.startsWith('feed-') || c.scope?.type === 'feed';
       const matchCategory = this.categoryTab === 'user' ? !isFeed : isFeed;
 
-      const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const displayTitle = getContainerDisplayTitle(c);
+      const q = this.searchQuery.toLowerCase();
+      const matchSearch =
+        !this.searchQuery ||
+        displayTitle.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q);
       const isPublic = isContainerPublic(c);
       const matchPrivacy = this.privacyFilter === 'all' || (this.privacyFilter === 'public' && isPublic) || (this.privacyFilter === 'private' && !isPublic);
       return matchCategory && matchSearch && matchPrivacy;
@@ -607,7 +614,7 @@ export class LentaContainersFoldersModal extends Modal {
 
     const pathsHtml = selectedList.map((id) => {
       const matched = this.containers.find((c) => c.id === id);
-      const name = matched ? matched.name : id;
+      const name = matched ? getContainerDisplayTitle(matched) : id;
       const isSaved = this.savedSelectedIds.has(id);
       return `<div style="margin-top:2px;">• <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ''}</div>`;
     }).join('');
@@ -685,15 +692,22 @@ export class LentaContainersFoldersModal extends Modal {
 
       leftCol.createSpan({ cls: 'lenta-container-icon', text: '📦' });
 
+      const displayTitle = getContainerDisplayTitle(c);
       const titleWrap = leftCol.createDiv({ cls: 'lenta-container-title-wrap' });
-      titleWrap.createSpan({ cls: 'lenta-container-title', text: c.name });
-      titleWrap.createSpan({ cls: 'lenta-container-id', text: c.id });
+      const titleSpan = titleWrap.createSpan({ cls: 'lenta-container-title', text: displayTitle });
+      titleSpan.title = displayTitle;
+
+      if (c.id && displayTitle !== c.id) {
+        const shortId = c.id.length > 20 ? `${c.id.slice(0, 8)}…${c.id.slice(-4)}` : c.id;
+        const idSpan = titleWrap.createSpan({ cls: 'lenta-container-id', text: shortId });
+        idSpan.title = `Container ID: ${c.id}`;
+      }
 
       // Right Column: Type, Privacy badge, Notes count, Select/Status Button
       const rightCol = row.createDiv({ cls: 'lenta-container-row-right' });
 
       const typeTag = rightCol.createSpan({ cls: 'lenta-badge' });
-      typeTag.setText((c.type || 'git').toUpperCase());
+      typeTag.setText(c.type === 'git' ? 'VERSIONED' : (c.type || 'SIMPLE').toUpperCase());
 
       const isPub = isContainerPublic(c);
       const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? 'is-public' : 'is-private'}` });

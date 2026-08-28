@@ -9,14 +9,48 @@ async function main() {
   console.log('🌱 Starting Project Lenta database seed with AI & Ingestion Engines...');
 
   // Clean existing data
+  await prisma.userKey.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.noteVersion.deleteMany();
   await prisma.noteFolder.deleteMany();
   await prisma.folder.deleteMany();
   await prisma.noteLink.deleteMany();
   await prisma.noteImage.deleteMany();
   await prisma.note.deleteMany();
+  await prisma.container.deleteMany();
   await prisma.hashtag.deleteMany();
   await prisma.taxonomyNode.deleteMany();
   await prisma.feed.deleteMany();
+
+  // 0. Seed Accounts (Guest, User, Admin)
+  const guestUser = await prisma.user.create({
+    data: {
+      email: 'guest@lemon.team',
+      name: 'Гость (Guest)',
+      password: 'guest',
+      role: 'guest',
+    },
+  });
+
+  const memberUser = await prisma.user.create({
+    data: {
+      email: 'user@lemon.team',
+      name: 'Пользователь (User)',
+      password: 'user',
+      role: 'user',
+    },
+  });
+
+  const adminUser = await prisma.user.create({
+    data: {
+      email: 'admin@lemon.team',
+      name: 'Администратор (Admin)',
+      password: 'admin',
+      role: 'admin',
+    },
+  });
+
+  console.log('✅ Created 3 System Users (Guest, User, Admin)');
 
   // 1. Create Feeds
   const feedMcu = await prisma.feed.create({
@@ -85,6 +119,33 @@ async function main() {
 
   console.log('✅ Created 8 Feeds');
 
+  // 1.5 Seed Initial Vault Containers (Public & Private)
+  await prisma.container.upsert({
+    where: { id: 'main-vault' },
+    update: {},
+    create: {
+      id: 'main-vault',
+      name: '🍋 Primary Vault Container',
+      type: 'obsidian',
+      description: 'Primary shared Obsidian vault container for team notes and documentation.',
+      visibility: 'public',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-private-user-vault' },
+    update: {},
+    create: {
+      id: 'cont-private-user-vault',
+      name: '🔒 User Private Key Vault',
+      type: 'obsidian',
+      description: 'Encrypted private user vault container for personal notes.',
+      visibility: 'private',
+    },
+  });
+
+  console.log('✅ Created Initial Vault Containers');
+
   // 2. Helper functions for upserting Folder, Taxonomy, Hashtag, Image, Links
   const folderMap = new Map<string, string>();
   async function getOrCreateFolder(path: string, icon = 'folder'): Promise<string> {
@@ -123,6 +184,7 @@ async function main() {
 
   async function seedNoteItem(item: {
     feedId: string;
+    containerId?: string;
     title: string;
     description: string;
     type: NoteType;
@@ -144,6 +206,7 @@ async function main() {
     const note = await prisma.note.create({
       data: {
         feedId: item.feedId,
+        containerId: item.containerId,
         title: item.title,
         description: item.description,
         type: item.type,
@@ -332,6 +395,7 @@ async function main() {
   const techNotes = [
     {
       feedId: feedTech.id,
+      containerId: 'main-vault',
       title: 'Q4 Content Strategy Review',
       type: NoteType.PERIOD,
       startDate: '2026-11-01T00:00:00.000Z',
@@ -345,6 +409,7 @@ async function main() {
     },
     {
       feedId: feedDesign.id,
+      containerId: 'main-vault',
       title: 'Design System V2 Tokens & Olive Gold Palette',
       type: NoteType.SINGLE,
       startDate: '2026-10-24T12:00:00.000Z',
@@ -356,14 +421,15 @@ async function main() {
     },
     {
       feedId: feedDevOps.id,
-      title: 'Server Migration & Ingestion Pipeline Checklist',
+      containerId: 'cont-private-user-vault',
+      title: 'Server Migration & Private User Vault Sync Checklist',
       type: NoteType.SINGLE,
       startDate: '2026-10-23T09:15:00.000Z',
       icon: 'dns',
       taxonomyPath: 'devops.infrastructure',
       folders: ['Operations/Infrastructure'],
       hashtags: ['DevOps', 'Postgres', 'Sync'],
-      description: `### Infrastructure Step-by-Step\n- [x] Multi-Provider calendar ingestion services initialized\n- [x] TMDB Marvel radar with high-res CDN posters\n- [x] Computus Orthodox Easter & Russian statutory holiday engines`,
+      description: `### Private Vault Infrastructure Checklist\n- [x] PostgreSQL schema synchronized with Prisma ORM\n- [x] Multi-Container support for public & encrypted private vaults\n- [x] Obsidian Plugin sync engine with offline delta ledger`,
     },
   ];
 

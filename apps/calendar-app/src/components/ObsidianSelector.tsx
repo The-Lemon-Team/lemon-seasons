@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ObsidianContainer } from '@lenta/shared';
+import { ObsidianContainer, getContainerDisplayTitle } from '@lenta/shared';
 import {
   Search,
   Check,
@@ -227,10 +227,11 @@ export const ObsidianSelector: React.FC<ObsidianSelectorProps> = ({
       const match = allContainers.find((c) => c.id === selectedContainers[0]);
       if (match) {
         const { isPartial, selectedFolderKeys } = getContainerFolderState(match);
+        const title = getContainerDisplayTitle(match);
         if (isPartial) {
-          return `${match.name} (${selectedFolderKeys.length}/${match.boundFolders.length})`;
+          return `${title} (${selectedFolderKeys.length}/${match.boundFolders.length})`;
         }
-        return match.name;
+        return title;
       }
       return '1 Vault';
     }
@@ -419,7 +420,7 @@ export const ObsidianSelector: React.FC<ObsidianSelectorProps> = ({
                         {/* Title & Vault Path */}
                         <div className="min-w-0 flex-1 leading-tight">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-xs truncate">{container.name}</span>
+                            <span className="font-semibold text-xs truncate">{getContainerDisplayTitle(container)}</span>
                             {isPrivate ? (
                               <span
                                 className="px-1 py-0.5 rounded bg-[#a855f7]/20 text-[#d8b4fe] text-[9px] flex items-center gap-0.5 shrink-0"

@@ -4516,7 +4516,8 @@ var LentaApiClient = class {
   }
   /** Base URL of the container sync server (defaults to unified backend serverUrl). */
   get containerBaseUrl() {
-    const url = this.getContainerUrl ? this.getContainerUrl() : void 0;
+    const rawUrl = this.getContainerUrl ? this.getContainerUrl() : void 0;
+    const url = rawUrl && rawUrl.includes(":3000") ? rawUrl.replace(":3000", ":3001") : rawUrl;
     return (url || this.baseUrl || "http://localhost:3001").replace(/\/+$/, "");
   }
   /** API key for the container sync server (sent as X-Api-Key header). */
@@ -4547,7 +4548,7 @@ var LentaApiClient = class {
         }
       });
       const containerId = container.id && container.id !== "main-git-vault" && container.id !== "simple-notes" ? container.id : cleanKey.startsWith("cont-") || cleanKey.startsWith("lenta_obs_") ? cleanKey : `cont-${cleanKey}`;
-      const containerName = container.name && container.name !== "Main Git Vault" && container.name !== "Simple Notes Vault" ? container.name : defaultName;
+      const containerName = container.name && container.name !== "Main Git Vault" && container.name !== "Main Vault" && container.name !== "Simple Notes Vault" ? container.name : defaultName;
       const isPub = isContainerPublic({
         id: containerId,
         name: containerName,
@@ -5574,17 +5575,21 @@ var LentaSyncEngine = class {
     let downloadedFiles = 0;
     let createdFolders = 0;
     let containerFiles = [];
+    let fetchSuccess = false;
     try {
       containerFiles = await this.apiClient.getContainerFiles(containerId);
+      fetchSuccess = true;
     } catch (err) {
       console.warn(`Could not fetch container files from container server for ${containerId}:`, err);
     }
-    if (Array.isArray(containerFiles) && containerFiles.length > 0) {
+    if (fetchSuccess) {
+      const validPathsInContainer = /* @__PURE__ */ new Set();
       for (const fileItem of containerFiles) {
         if (!fileItem.path)
           continue;
         const normalizedRelPath = (0, import_obsidian3.normalizePath)(fileItem.path).replace(/^\/+/, "");
         const targetVaultPath = (0, import_obsidian3.normalizePath)(`${containerFolderPath}/${normalizedRelPath}`);
+        validPathsInContainer.add(targetVaultPath);
         await this.ensureDirectoryForFile(targetVaultPath);
         const content = fileItem.content || "";
         const existingFile = vault.getAbstractFileByPath(targetVaultPath);
@@ -5594,6 +5599,25 @@ var LentaSyncEngine = class {
           await vault.create(targetVaultPath, content);
         }
         downloadedFiles++;
+      }
+      const containerFolderObj = vault.getAbstractFileByPath(containerFolderPath);
+      if (containerFolderObj instanceof import_obsidian3.TFolder) {
+        const cleanExtraneous = async (folder) => {
+          const children = [...folder.children];
+          for (const child of children) {
+            if (child instanceof import_obsidian3.TFile) {
+              if (!validPathsInContainer.has(child.path)) {
+                await vault.delete(child, true);
+              }
+            } else if (child instanceof import_obsidian3.TFolder) {
+              await cleanExtraneous(child);
+              if (child.children.length === 0) {
+                await vault.delete(child, true);
+              }
+            }
+          }
+        };
+        await cleanExtraneous(containerFolderObj);
       }
       return { downloadedFiles, createdFolders };
     }
@@ -5609,7 +5633,12 @@ var LentaSyncEngine = class {
       }
       if (notes.length === 0 && (!containerId.startsWith("feed-") || containerId === "feed-all")) {
         const fullSync = await this.apiClient.getSyncChanges();
-        notes = fullSync.notes || [];
+        const allNotes = fullSync.notes || [];
+        if (containerId && containerId !== "all" && containerId !== "feed-all") {
+          notes = allNotes.filter((n) => n.containerId === containerId);
+        } else {
+          notes = allNotes;
+        }
       }
       for (const note of notes) {
         const noteFileName = `${(note.title || "Untitled Note").replace(/[\\/:*?"<>|]/g, "_")}.md`;
@@ -5667,15 +5696,15 @@ var DEFAULT_SETTINGS = {
   activeContainerIds: [],
   containerKey: "",
   connectedContainerName: "",
-  connectedContainerType: "git",
+  connectedContainerType: "obsidian",
   vaultRootFolder: "Lenta",
   autoSyncIntervalMinutes: 0,
   defaultFeedSlug: "",
   lastSyncedAt: "",
   lastSyncedCommit: "",
-  defaultConflictStrategy: "create_backup_fork",
+  defaultConflictStrategy: "overwrite_remote",
   autoSyncOnEdit: false,
-  containerServerUrl: "http://localhost:3000",
+  containerServerUrl: "http://localhost:3001",
   containerApiKey: "",
   containerPrivacyFilter: "all"
 };
@@ -5914,6 +5943,41 @@ var ConflictResolutionModal = class extends import_obsidian5.Modal {
 var import_obsidian6 = require("obsidian");
 init_changed_files_scanner();
 
+// src/utils/container-title.ts
+function getContainerDisplayTitle2(container) {
+  if (!container)
+    return "Untitled Container";
+  if (container.title && container.title.trim()) {
+    return container.title.trim();
+  }
+  const id = container.id || "";
+  if (container.name && container.name.trim() && container.name.trim() !== id) {
+    return container.name.trim();
+  }
+  if (container.description && container.description.trim() && container.description.trim() !== id) {
+    return container.description.trim();
+  }
+  if (id.startsWith("feed-")) {
+    const slug = id.replace("feed-", "");
+    return `Feed: ${slug.charAt(0).toUpperCase() + slug.slice(1)}`;
+  }
+  if (id.startsWith("cont-")) {
+    const clean = id.replace("cont-", "");
+    return `Vault Container (${clean.slice(0, 14)})`;
+  }
+  if (id.startsWith("lenta_obs_")) {
+    const clean = id.replace("lenta_obs_", "");
+    return `Obsidian Vault (${clean.slice(0, 14)})`;
+  }
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id) || id.length > 20) {
+    return `Obsidian Vault (${id.slice(0, 8)})`;
+  }
+  if (container.name && container.name.trim()) {
+    return container.name.trim();
+  }
+  return id || "Untitled Container";
+}
+
 // src/ui/container-hero-card.ts
 function formatRelativeTime(timestamp) {
   const timeMs = typeof timestamp === "string" ? new Date(timestamp).getTime() : timestamp;
@@ -5933,7 +5997,8 @@ function renderContainerHeroCard(targetEl, container, options) {
   const { settings, changedFiles = [], folders = [], onPushPending, onRefresh } = options;
   const isPublic = isContainerPublic(container);
   const rootFolder = settings.vaultRootFolder || "Lenta";
-  const containerVaultPath = `${rootFolder}/${container.name || container.id}`;
+  const displayTitle = getContainerDisplayTitle2(container);
+  const containerVaultPath = `${rootFolder}/${displayTitle}`;
   const containerPendingFiles = changedFiles.filter((cf) => {
     return cf.relPath.startsWith(containerVaultPath + "/") || cf.relPath.includes(container.id) || cf.relPath.includes(container.name);
   });
@@ -5955,9 +6020,11 @@ function renderContainerHeroCard(targetEl, container, options) {
   const icon = leftTitle.createSpan({ cls: "lenta-hero-icon", text: isPublic ? "\u{1F4E6}" : "\u{1F512}" });
   icon.style.cssText = "font-size: 1.5em;";
   const titleWrap = leftTitle.createDiv();
-  const h3 = titleWrap.createEl("h3", { text: container.name || container.id });
+  const h3 = titleWrap.createEl("h3", { text: displayTitle });
   h3.style.cssText = "margin: 0; font-weight: 700; font-size: 1.15em; color: #fff; display: flex; align-items: center; gap: 8px;";
-  const idSpan = titleWrap.createEl("span", { text: `ID: ${container.id}` });
+  const shortId = container.id.length > 20 ? `${container.id.slice(0, 8)}\u2026${container.id.slice(-4)}` : container.id;
+  const idSpan = titleWrap.createEl("span", { text: `ID: ${shortId}` });
+  idSpan.title = container.id;
   idSpan.style.cssText = "font-size: 0.78em; color: var(--text-muted, #888); font-family: var(--font-monospace, monospace);";
   const badgeWrap = titleRow.createDiv();
   badgeWrap.style.cssText = "display: flex; gap: 6px; align-items: center;";
@@ -5965,7 +6032,7 @@ function renderContainerHeroCard(targetEl, container, options) {
   privBadge.setText(isPublic ? "\u{1F310} PUBLIC" : "\u{1F510} PRIVATE");
   privBadge.style.cssText = `padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 0.75em; ${isPublic ? "background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);" : "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);"}`;
   const typeBadge = badgeWrap.createSpan({ cls: "lenta-badge" });
-  typeBadge.setText((container.type || "git").toUpperCase());
+  typeBadge.setText(container.type === "git" ? "VERSIONED" : (container.type || "SIMPLE").toUpperCase());
   typeBadge.style.cssText = "padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 0.75em; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);";
   const grid = card.createDiv({ cls: "lenta-hero-grid" });
   grid.style.cssText = [
@@ -6010,7 +6077,7 @@ function renderContainerHeroCard(targetEl, container, options) {
     <div style="font-size: 0.8em; line-height: 1.45; color: #ccc;">
       <div>\u2022 <strong>Tracked Notes:</strong> <strong style="color:#fff;">${container.totalNotes ?? 0} notes</strong></div>
       <div>\u2022 <strong>Root Folder:</strong> <code>${rootFolder}</code></div>
-      <div>\u2022 <strong>Container Mode:</strong> ${container.type === "git" ? "Git Time Machine" : "Simple File Sync"}</div>
+      <div>\u2022 <strong>Container Mode:</strong> ${container.type === "git" ? "Versioned Vault" : "Simple File Sync"}</div>
     </div>
   `;
   const commitShort = container.currentCommit ? container.currentCommit.slice(0, 7) : "head";
@@ -6019,7 +6086,7 @@ function renderContainerHeroCard(targetEl, container, options) {
   const p4 = grid.createDiv({ cls: "lenta-hero-pillar" });
   p4.innerHTML = `
     <div style="font-weight: 700; font-size: 0.82em; color: #c084fc; margin-bottom: 6px; display:flex; align-items:center; gap:5px;">
-      \u{1F4DC} GIT REVISION STATUS
+      \u{1F4DC} REVISION HISTORY STATUS
     </div>
     <div style="font-size: 0.8em; line-height: 1.45; color: #ccc;">
       <div>\u2022 <strong>Head Commit:</strong> <code style="color:#e9d5ff; background:rgba(192,132,252,0.15); padding:1px 5px; border-radius:4px;">${commitShort}</code> (${commitDateStr})</div>
@@ -6162,7 +6229,7 @@ var GitHistoryModal = class extends import_obsidian6.Modal {
         await this.loadCommitDetail(this.commits[0].hash);
       }
     } catch (err) {
-      this.statusMessage = `Failed to load Git history: ${err.message}`;
+      this.statusMessage = `Failed to load revision history: ${err.message}`;
     } finally {
       this.isLoading = false;
       this.render();
@@ -6222,14 +6289,14 @@ var GitHistoryModal = class extends import_obsidian6.Modal {
     contentEl.empty();
     const header = contentEl.createDiv({ cls: "lenta-history-header" });
     const titleRow = header.createDiv({ cls: "lenta-history-title-row" });
-    titleRow.createEl("h2", { text: "\u{1F4DC} Git Version History & Time Machine" });
+    titleRow.createEl("h2", { text: "\u{1F4DC} Version History & Time Machine" });
     header.createEl("p", {
       cls: "lenta-history-desc",
       text: "Inspect container privacy, mapped folders, pending changes, past commits, and revert or restore deleted files."
     });
     if (this.isLoading) {
       const loader = contentEl.createDiv({ cls: "lenta-sync-loading-state" });
-      loader.createEl("p", { text: "Loading container details and Git revision history..." });
+      loader.createEl("p", { text: "Loading container details and revision history..." });
       return;
     }
     if (this.containerSummary) {
@@ -6272,8 +6339,8 @@ var GitHistoryModal = class extends import_obsidian6.Modal {
     }
     if (this.commits.length === 0) {
       const empty = contentEl.createDiv({ cls: "lenta-sync-empty-state" });
-      empty.createEl("h3", { text: "No Git Commits Found" });
-      empty.createEl("p", { text: "Make modifications or push changes to create Git revisions." });
+      empty.createEl("h3", { text: "No Revisions Found" });
+      empty.createEl("p", { text: "Make modifications or push changes to create snapshot revisions." });
       return;
     }
     const mainBox = contentEl.createDiv({ cls: "lenta-history-main-box" });
@@ -6466,10 +6533,10 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
     const containerNameMap = /* @__PURE__ */ new Map();
     for (const cId of activeContainerIds) {
       const matched = this.containers.find((c) => c.id === cId);
-      const name = matched?.name || cId;
+      const name = matched ? getContainerDisplayTitle(matched) : cId;
       containerNameMap.set(cId, name);
       const isSelected = this.selectedContainerFilter === cId;
-      const typeTag = matched?.type === "git" ? "\u{1F4DC} Git" : "\u{1F4C1}";
+      const typeTag = matched?.type === "git" ? "\u{1F4DC} Versioned" : "\u{1F4C1}";
       const pill = selectorWrap.createEl("button", {
         text: `${typeTag} ${name}`,
         cls: `lenta-pill-btn ${isSelected ? "active" : ""}`
@@ -6498,7 +6565,7 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
     } else {
       const activeName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
       const matched = this.containers.find((c) => c.id === this.selectedContainerFilter);
-      const typeStr = matched?.type ? matched.type.toUpperCase() : "GIT";
+      const typeStr = matched?.type ? matched.type === "git" ? "VERSIONED" : matched.type.toUpperCase() : "VERSIONED";
       const isPub = matched ? isContainerPublic(matched) : true;
       const containerVaultPath = `${rootFolder}/${activeName}`;
       const containerUnpushed = this.changedFiles.filter((f) => f.relPath.startsWith(containerVaultPath + "/") || f.relPath.includes(this.selectedContainerFilter)).length;
@@ -6610,18 +6677,18 @@ var LentaSyncModal = class extends import_obsidian7.Modal {
       this.isPushing = false;
       await this.loadChangedFiles();
     };
-    const gitContainers = this.containers.filter(
-      (c) => c.type === "git" && (activeContainerIds.length === 0 || activeContainerIds.includes(c.id))
+    const activeContainers = this.containers.filter(
+      (c) => activeContainerIds.length === 0 || activeContainerIds.includes(c.id)
     );
-    if (gitContainers.length > 0 || this.settings.connectedContainerType === "git" || this.settings.containerKey) {
+    if (activeContainers.length > 0 || this.settings.containerKey) {
       const historyBtn = actionsBar.createEl("button", {
-        text: "\u{1F4DC} Git History & Restore",
+        text: "\u{1F4DC} Version History & Restore",
         cls: "lenta-action-btn"
       });
       historyBtn.onclick = () => {
-        const targetContainer = gitContainers.find((c) => c.id === this.selectedContainerFilter) || gitContainers[0];
-        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || "main-git-vault";
-        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || "Git Vault";
+        const targetContainer = activeContainers.find((c) => c.id === this.selectedContainerFilter) || activeContainers[0];
+        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || "main-vault";
+        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || "Primary Vault";
         new GitHistoryModal(
           this.app,
           this.apiClient,
@@ -6860,8 +6927,8 @@ var LentaConnectionsModal = class extends import_obsidian8.Modal {
         await this.onSaveSettings();
       })
     );
-    new import_obsidian8.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Sync Server (port 3000 by default).").addText(
-      (text) => text.setPlaceholder("http://localhost:3000").setValue(this.settings.containerServerUrl || "http://localhost:3000").onChange(async (val) => {
+    new import_obsidian8.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Backend (port 3001 by default).").addText(
+      (text) => text.setPlaceholder("http://localhost:3001").setValue(this.settings.containerServerUrl || "http://localhost:3001").onChange(async (val) => {
         this.settings.containerServerUrl = val.trim();
         await this.onSaveSettings();
       })
@@ -7348,7 +7415,9 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
     return this.containers.filter((c) => {
       const isFeed = c.isFeed === true || c.id.startsWith("feed-") || c.scope?.type === "feed";
       const matchCategory = this.categoryTab === "user" ? !isFeed : isFeed;
-      const matchSearch = !this.searchQuery || c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || c.id.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const displayTitle = getContainerDisplayTitle2(c);
+      const q = this.searchQuery.toLowerCase();
+      const matchSearch = !this.searchQuery || displayTitle.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
       const isPublic = isContainerPublic(c);
       const matchPrivacy = this.privacyFilter === "all" || this.privacyFilter === "public" && isPublic || this.privacyFilter === "private" && !isPublic;
       return matchCategory && matchSearch && matchPrivacy;
@@ -7376,7 +7445,7 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
     }
     const pathsHtml = selectedList.map((id) => {
       const matched = this.containers.find((c) => c.id === id);
-      const name = matched ? matched.name : id;
+      const name = matched ? getContainerDisplayTitle2(matched) : id;
       const isSaved = this.savedSelectedIds.has(id);
       return `<div style="margin-top:2px;">\u2022 <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ""}</div>`;
     }).join("");
@@ -7442,12 +7511,18 @@ var LentaContainersFoldersModal = class extends import_obsidian9.Modal {
         this.toggleStagedSelection(c.id);
       };
       leftCol.createSpan({ cls: "lenta-container-icon", text: "\u{1F4E6}" });
+      const displayTitle = getContainerDisplayTitle2(c);
       const titleWrap = leftCol.createDiv({ cls: "lenta-container-title-wrap" });
-      titleWrap.createSpan({ cls: "lenta-container-title", text: c.name });
-      titleWrap.createSpan({ cls: "lenta-container-id", text: c.id });
+      const titleSpan = titleWrap.createSpan({ cls: "lenta-container-title", text: displayTitle });
+      titleSpan.title = displayTitle;
+      if (c.id && displayTitle !== c.id) {
+        const shortId = c.id.length > 20 ? `${c.id.slice(0, 8)}\u2026${c.id.slice(-4)}` : c.id;
+        const idSpan = titleWrap.createSpan({ cls: "lenta-container-id", text: shortId });
+        idSpan.title = `Container ID: ${c.id}`;
+      }
       const rightCol = row.createDiv({ cls: "lenta-container-row-right" });
       const typeTag = rightCol.createSpan({ cls: "lenta-badge" });
-      typeTag.setText((c.type || "git").toUpperCase());
+      typeTag.setText(c.type === "git" ? "VERSIONED" : (c.type || "SIMPLE").toUpperCase());
       const isPub = isContainerPublic(c);
       const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? "is-public" : "is-private"}` });
       privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
@@ -8134,6 +8209,12 @@ var WorkspaceLentaPlugin = class extends import_obsidian12.Plugin {
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (this.settings.containerServerUrl === "http://localhost:3000") {
+      this.settings.containerServerUrl = "http://localhost:3001";
+    }
+    if (this.settings.connectedContainerType === "git") {
+      this.settings.connectedContainerType = "obsidian";
+    }
     if (!Array.isArray(this.settings.activeContainerIds)) {
       this.settings.activeContainerIds = [];
     }

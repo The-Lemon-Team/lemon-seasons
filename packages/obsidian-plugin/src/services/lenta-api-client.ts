@@ -40,7 +40,8 @@ export class LentaApiClient {
 
   /** Base URL of the container sync server (defaults to unified backend serverUrl). */
   public get containerBaseUrl(): string {
-    const url = this.getContainerUrl ? this.getContainerUrl() : undefined;
+    const rawUrl = this.getContainerUrl ? this.getContainerUrl() : undefined;
+    const url = rawUrl && rawUrl.includes(':3000') ? rawUrl.replace(':3000', ':3001') : rawUrl;
     return (url || this.baseUrl || 'http://localhost:3001').replace(/\/+$/, '');
   }
 
@@ -97,7 +98,7 @@ export class LentaApiClient {
         ? container.id
         : (cleanKey.startsWith('cont-') || cleanKey.startsWith('lenta_obs_') ? cleanKey : `cont-${cleanKey}`);
 
-      const containerName = container.name && container.name !== 'Main Git Vault' && container.name !== 'Simple Notes Vault'
+      const containerName = container.name && container.name !== 'Main Git Vault' && container.name !== 'Main Vault' && container.name !== 'Simple Notes Vault'
         ? container.name
         : defaultName;
 

@@ -181,11 +181,11 @@ export class LentaConnectionsModal extends Modal {
 
     new Setting(contentEl)
       .setName('Obsidian Container Sync Server URL')
-      .setDesc('Base address of the Container Sync Server (port 3000 by default).')
+      .setDesc('Base address of the Container Backend (port 3001 by default).')
       .addText((text) =>
         text
-          .setPlaceholder('http://localhost:3000')
-          .setValue(this.settings.containerServerUrl || 'http://localhost:3000')
+          .setPlaceholder('http://localhost:3001')
+          .setValue(this.settings.containerServerUrl || 'http://localhost:3001')
           .onChange(async (val) => {
             this.settings.containerServerUrl = val.trim();
             await this.onSaveSettings();

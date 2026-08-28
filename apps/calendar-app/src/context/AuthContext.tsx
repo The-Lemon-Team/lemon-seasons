@@ -18,20 +18,26 @@ interface AuthContextValue {
 
 const STORAGE_KEY = 'lemon_lenta_auth_session_v1';
 
-const DEMO_USERS: Record<Exclude<UserRole, 'guest'>, User> = {
+const SYSTEM_USERS = {
+  guest: {
+    id: 'usr-guest-000',
+    name: 'Гость (Guest)',
+    email: 'guest@lemon.team',
+    role: 'guest' as UserRole,
+  },
   user: {
     id: 'usr-member-001',
-    name: 'Елена Соколова',
-    email: 'member@lemon.team',
-    role: 'user',
+    name: 'Пользователь (User)',
+    email: 'user@lemon.team',
+    role: 'user' as UserRole,
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-10T10:00:00.000Z',
   },
   admin: {
     id: 'usr-admin-999',
-    name: 'Главный Администратор',
+    name: 'Администратор (Admin)',
     email: 'admin@lemon.team',
-    role: 'admin',
+    role: 'admin' as UserRole,
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
     createdAt: '2025-11-01T08:00:00.000Z',
   },
@@ -71,16 +77,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role === 'admin';
 
-  const login = async (email: string, _password?: string): Promise<boolean> => {
-    const trimmed = email.trim().toLowerCase();
-    if (trimmed.includes('admin')) {
-      setUser({ ...DEMO_USERS.admin, email: trimmed });
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPass = (password || '').trim().toLowerCase();
+
+    if (trimmedEmail.includes('admin') || trimmedPass === 'admin') {
+      setUser(SYSTEM_USERS.admin);
+    } else if (trimmedEmail.includes('guest') || trimmedPass === 'guest') {
+      setUser(null);
     } else {
       setUser({
-        id: `usr-${Date.now()}`,
-        name: trimmed.split('@')[0] || 'Пользователь',
-        email: trimmed,
+        id: SYSTEM_USERS.user.id,
+        name: trimmedEmail === 'user@lemon.team' ? SYSTEM_USERS.user.name : (trimmedEmail.split('@')[0] || 'Пользователь'),
+        email: trimmedEmail,
         role: 'user',
+        avatar: SYSTEM_USERS.user.avatar,
         createdAt: new Date().toISOString(),
       });
     }
@@ -109,9 +120,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (targetRole === 'guest') {
       setUser(null);
     } else if (targetRole === 'admin') {
-      setUser(DEMO_USERS.admin);
+      setUser(SYSTEM_USERS.admin);
     } else {
-      setUser(DEMO_USERS.user);
+      setUser(SYSTEM_USERS.user);
     }
     setIsAuthModalOpen(false);
   };

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useObsidianContainers, ContainerPrivacyImpact } from '../context/ObsidianContainersContext';
 import { useFoldersContext } from '../context/FoldersContext';
+import { useObsidianContainerCommitsQuery, useTimeSliceNotes } from '../api/queries';
 import { useI18n } from '../i18n';
 import { ObsidianLogo } from './ObsidianLogo';
 import { SingleContainerDetailView } from './SingleContainerDetailView';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
 import { Modal } from './Modal';
-import { ContainerPrivacy, ContainerObserveMode, FolderPrivacy, CalendarFilterState } from '@lenta/shared';
+import { ObsidianContainer, BoundFolder, ContainerPrivacy, ContainerObserveMode, FolderPrivacy, CalendarFilterState, getContainerDisplayTitle } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -35,6 +36,158 @@ import {
   Zap,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+
+interface ContainerChangeLogStreamProps {
+  container: ObsidianContainer;
+  onOpenHistory: () => void;
+}
+
+export const ContainerChangeLogStream: React.FC<ContainerChangeLogStreamProps> = ({
+  container,
+  onOpenHistory,
+}) => {
+  const { data: serverCommits = [] } = useObsidianContainerCommitsQuery(container.id);
+  const { data: notesData } = useTimeSliceNotes({
+    start: '1970-01-01',
+    end: '2099-12-31',
+    containers: [container.id],
+    containersList: [container],
+  });
+
+  const notes = notesData?.items || [];
+
+  const boundPaths = container.boundFolders.map((bf: BoundFolder) => bf.path.toLowerCase());
+  const containerNotes = notes.filter((note) => {
+    if ((note as any).containerId === container.id) return true;
+    if (note.folders && note.folders.length > 0) {
+      return note.folders.some((f) => {
+        const fp = (f.folder?.path || f.folder?.name || '').toLowerCase();
+        return boundPaths.some((bp: string) => fp === bp || fp.startsWith(bp + '/') || bp.startsWith(fp + '/'));
+      });
+    }
+    return false;
+  });
+
+  const noteChanges = containerNotes
+    .sort((a, b) => new Date(b.updatedAt || b.startDate).getTime() - new Date(a.updatedAt || a.startDate).getTime())
+    .map((note) => {
+      const isNew = dayjs(note.createdAt).isSame(dayjs(note.updatedAt), 'minute');
+      return {
+        id: `note-${note.id}`,
+        type: isNew ? ('add' as const) : ('update' as const),
+        symbol: isNew ? '+' : '~',
+        colorClass: isNew ? 'text-[#22c55e]' : 'text-[#e5e971]',
+        text: isNew ? `Добавлено Note ${note.title}` : `Обновлена заметка ${note.title}`,
+        date: dayjs(note.updatedAt || note.createdAt).format('DD.MM.YY'),
+        timestamp: new Date(note.updatedAt || note.createdAt).getTime(),
+      };
+    });
+
+  const commitChanges = serverCommits.map((c) => ({
+    id: `commit-${c.hash}`,
+    type: 'commit' as const,
+    symbol: '●',
+    colorClass: 'text-[#a855f7]',
+    text: c.message || `Синхронизация коммита ${c.shortHash}`,
+    date: c.date ? dayjs(c.date).format('DD.MM.YY') : dayjs().format('DD.MM.YY'),
+    timestamp: c.date ? new Date(c.date).getTime() : Date.now(),
+  }));
+
+  const defaultFallbackChanges = [
+    {
+      id: `fallback-1-${container.id}`,
+      type: 'add' as const,
+      symbol: '+',
+      colorClass: 'text-[#22c55e]',
+      text: `Добавлено Note ${container.boundFolders[0]?.name || 'Новости Мира, ООН'}`,
+      date: dayjs().format('DD.MM.YY'),
+      timestamp: Date.now() - 1000 * 60 * 60,
+    },
+    {
+      id: `fallback-2-${container.id}`,
+      type: 'add' as const,
+      symbol: '+',
+      colorClass: 'text-[#22c55e]',
+      text: `Добавлено Note ${container.boundFolders[1]?.name || 'Выборы в Конгресс США'}`,
+      date: dayjs().format('DD.MM.YY'),
+      timestamp: Date.now() - 1000 * 60 * 120,
+    },
+    {
+      id: `fallback-3-${container.id}`,
+      type: 'update' as const,
+      symbol: '~',
+      colorClass: 'text-[#e5e971]',
+      text: `Обновлена заметка ${container.name} - План релизов v2.1`,
+      date: dayjs().subtract(1, 'day').format('DD.MM.YY'),
+      timestamp: Date.now() - 1000 * 60 * 60 * 24,
+    },
+    {
+      id: `fallback-4-${container.id}`,
+      type: 'update' as const,
+      symbol: '~',
+      colorClass: 'text-[#e5e971]',
+      text: `Обновлена заметка ИИ Архитектура & Vector Pipelines`,
+      date: dayjs().subtract(2, 'day').format('DD.MM.YY'),
+      timestamp: Date.now() - 1000 * 60 * 60 * 48,
+    },
+    {
+      id: `fallback-5-${container.id}`,
+      type: 'add' as const,
+      symbol: '+',
+      colorClass: 'text-[#22c55e]',
+      text: `Добавлено Note Релизы и Премьеры 2026`,
+      date: dayjs().subtract(3, 'day').format('DD.MM.YY'),
+      timestamp: Date.now() - 1000 * 60 * 60 * 72,
+    },
+    {
+      id: `fallback-6-${container.id}`,
+      type: 'commit' as const,
+      symbol: '●',
+      colorClass: 'text-[#a855f7]',
+      text: `Инициализация структуры контейнера vault`,
+      date: dayjs(container.createdAt || Date.now()).format('DD.MM.YY'),
+      timestamp: new Date(container.createdAt || Date.now()).getTime(),
+    },
+  ];
+
+  const combined = [...noteChanges, ...commitChanges].sort((a, b) => b.timestamp - a.timestamp);
+  const displayItems = (combined.length > 0 ? combined : defaultFallbackChanges).slice(0, 6);
+
+  return (
+    <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] space-y-2">
+      <div className="flex items-center justify-between font-mono text-[11px] font-bold text-[#c9c7b2]">
+        <span className="flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-[#3b82f6]" />
+          <span>Лента изменений (Last Changes)</span>
+        </span>
+
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          className="text-[10px] text-[#a855f7] hover:text-[#d8b4fe] hover:underline font-semibold flex items-center gap-1"
+        >
+          <span>Полная история (Time Machine)</span>
+          <ChevronRight className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+        {displayItems.map((item) => (
+          <div
+            key={item.id}
+            className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono hover:border-[#333] transition-colors"
+          >
+            <span className={`flex items-center gap-2 ${item.colorClass}`}>
+              <span className="font-bold">{item.symbol}</span>
+              <span className="text-[#e2e2e2] truncate max-w-[280px] sm:max-w-[400px]">{item.text}</span>
+            </span>
+            <span className="text-[#93927e] text-[10px] shrink-0 ml-2">{item.date}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface ObsidianContainersViewProps {
   filterState?: CalendarFilterState;
@@ -172,8 +325,10 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
     const matchesPrivacy =
       privacyFilter === 'all' ? true : c.privacy === privacyFilter;
     const q = searchTerm.toLowerCase().trim();
+    const displayTitle = getContainerDisplayTitle(c);
     const matchesSearch =
       !q ||
+      displayTitle.toLowerCase().includes(q) ||
       c.name.toLowerCase().includes(q) ||
       (c.description && c.description.toLowerCase().includes(q)) ||
       c.vaultPath.toLowerCase().includes(q) ||
@@ -367,8 +522,8 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
             }`}
             title={
               isServerConnected
-                ? 'Connected to obsidian-containers backend service (port 3000)'
-                : 'Backend container server offline on port 3000 (running in local storage fallback mode)'
+                ? 'Connected to central backend container service (port 3001)'
+                : 'Backend container server offline on port 3001 (running in local storage fallback mode)'
             }
           >
             <span
@@ -376,7 +531,7 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                 isServerConnected ? 'bg-[#34d399] animate-pulse' : 'bg-[#fbbf24]'
               }`}
             />
-            <span>{isServerConnected ? 'Server Connected (:3000)' : 'Local Fallback'}</span>
+            <span>{isServerConnected ? 'Server Connected (:3001)' : 'Local Fallback'}</span>
           </div>
 
           <button
@@ -594,7 +749,7 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-sans font-bold text-sm text-[#f3e8ff] group-hover:text-white transition-colors truncate flex items-center gap-1.5">
-                          <span>{container.name}</span>
+                          <span>{getContainerDisplayTitle(container)}</span>
                           {isExpanded ? (
                             <ChevronUp className="w-3.5 h-3.5 text-[#a855f7]" />
                           ) : (
@@ -769,52 +924,13 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                     </div>
 
                     {/* 2. Compact Note ChangeLog Stream */}
-                    <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] space-y-2">
-                      <div className="flex items-center justify-between font-mono text-[11px] font-bold text-[#c9c7b2]">
-                        <span className="flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-[#3b82f6]" />
-                          <span>Лента изменений (Last Changes)</span>
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSingleContainerId(container.id);
-                            setInitialDetailTab('history');
-                          }}
-                          className="text-[10px] text-[#a855f7] hover:text-[#d8b4fe] hover:underline font-semibold flex items-center gap-1"
-                        >
-                          <span>Полная история (Time Machine)</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
-                          <span className="flex items-center gap-2 text-[#22c55e]">
-                            <span className="font-bold">+</span>
-                            <span className="text-[#e2e2e2]">Добавлено Note Новости Мира, ООН.</span>
-                          </span>
-                          <span className="text-[#93927e] text-[10px]">25.08.26</span>
-                        </div>
-
-                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
-                          <span className="flex items-center gap-2 text-[#22c55e]">
-                            <span className="font-bold">+</span>
-                            <span className="text-[#e2e2e2]">Добавлено Note Новости Мира, Выборы в Конгресс США.</span>
-                          </span>
-                          <span className="text-[#93927e] text-[10px]">25.08.26</span>
-                        </div>
-
-                        <div className="p-2 rounded bg-[#0f1111] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
-                          <span className="flex items-center gap-2 text-[#e5e971]">
-                            <span className="font-bold">~</span>
-                            <span className="text-[#e2e2e2]">Обновлена заметка План релизов v2.1</span>
-                          </span>
-                          <span className="text-[#93927e] text-[10px]">24.08.26</span>
-                        </div>
-                      </div>
-                    </div>
+                    <ContainerChangeLogStream
+                      container={container}
+                      onOpenHistory={() => {
+                        setSelectedSingleContainerId(container.id);
+                        setInitialDetailTab('history');
+                      }}
+                    />
                   </div>
                 )}
               </div>

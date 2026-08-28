@@ -14,8 +14,12 @@ export class ContainersController {
   constructor(private readonly containersService: ContainersService) {}
 
   @Get()
-  async listContainers(): Promise<ContainerSummaryDto[]> {
-    return this.containersService.listContainers();
+  async listContainers(
+    @Query('userId') userId?: string,
+    @Query('includePrivate') includePrivate?: string,
+  ): Promise<ContainerSummaryDto[]> {
+    const showPrivate = includePrivate === undefined ? true : (includePrivate === 'true' || includePrivate === '1');
+    return this.containersService.listContainers(userId, showPrivate);
   }
 
   @Get('by-key/:key')
@@ -32,7 +36,7 @@ export class ContainersController {
   }
 
   @Post('register')
-  async registerContainer(@Body() body: { name: string; type?: string; description?: string; isPublic?: boolean }): Promise<ContainerSummaryDto> {
+  async registerContainer(@Body() body: { name: string; type?: string; description?: string; visibility?: 'private' | 'public' }): Promise<ContainerSummaryDto> {
     return this.containersService.registerContainer(body);
   }
 
@@ -44,10 +48,10 @@ export class ContainersController {
   @Post(':id/privacy')
   async updateContainerPrivacy(
     @Param('id') id: string,
-    @Body() body: { isPublic?: boolean }
-  ): Promise<{ success: boolean; isPublic: boolean }> {
-    const isPublic = body.isPublic ?? true;
-    return this.containersService.updateContainerPrivacy(id, isPublic);
+    @Body() body: { visibility?: 'private' | 'public' }
+  ): Promise<{ success: boolean; visibility: 'private' | 'public' }> {
+    const visibility = body.visibility ?? 'public';
+    return this.containersService.updateContainerPrivacy(id, visibility);
   }
 
   @Get(':id/files')
@@ -74,5 +78,21 @@ export class ContainersController {
       throw new BadRequestException('Query parameters "path" and "commit" are required.');
     }
     return this.containersService.getFileVersion(id, filePath, commitHash);
+  }
+
+  @Post(':id/push')
+  async pushContainer(
+    @Param('id') id: string,
+    @Body() body: { baseCommit?: string; message?: string; files?: Array<{ path: string; content: string }> }
+  ) {
+    return this.containersService.pushContainer(id, body);
+  }
+
+  @Post(':id/pull')
+  async pullContainer(
+    @Param('id') id: string,
+    @Body() body: { sinceCommit?: string; paths?: string[] }
+  ) {
+    return this.containersService.pullContainer(id, body);
   }
 }

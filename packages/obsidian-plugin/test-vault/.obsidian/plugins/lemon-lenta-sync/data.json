@@ -1,24 +1,24 @@
 {
   "serverUrl": "http://localhost:3001",
-  "authToken": "lenta_obs_2f0a18a62c76bf89d2d5725ef338716a",
+  "authToken": "lenta_obs_d686c98b6b04e191af96ba38d4b04f57",
   "username": "",
   "userEmail": "member@lemon.team",
   "isPrivateContainerConnected": true,
-  "activeContainerId": "",
+  "activeContainerId": "a286af23-7fbe-4bd3-b567-53828216f3f2",
   "activeContainerIds": [
-    "cont-private-user-vault"
+    "a286af23-7fbe-4bd3-b567-53828216f3f2"
   ],
-  "containerKey": "",
-  "connectedContainerName": "",
-  "connectedContainerType": "git",
+  "containerKey": "a286af23-7fbe-4bd3-b567-53828216f3f2",
+  "connectedContainerName": "SecondContainer",
+  "connectedContainerType": "obsidian",
   "vaultRootFolder": "Lemon-Seasons",
   "autoSyncIntervalMinutes": 0,
   "defaultFeedSlug": "",
-  "lastSyncedAt": "2026-08-24T21:20:20.818Z",
+  "lastSyncedAt": "2026-08-28T13:13:33.312Z",
   "lastSyncedCommit": "",
   "defaultConflictStrategy": "create_backup_fork",
   "autoSyncOnEdit": false,
-  "containerServerUrl": "http://localhost:3000",
+  "containerServerUrl": "http://localhost:3001",
   "containerApiKey": "",
   "containerPrivacyFilter": "public"
 }

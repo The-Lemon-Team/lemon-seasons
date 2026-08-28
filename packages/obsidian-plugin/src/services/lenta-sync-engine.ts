@@ -426,17 +426,22 @@ export class LentaSyncEngine {
 
     // 1. Try fetching files from Container Sync Server (/containers/:id/files)
     let containerFiles: Array<{ path: string; content?: string; mtime?: number }> = [];
+    let fetchSuccess = false;
     try {
       containerFiles = await this.apiClient.getContainerFiles(containerId);
+      fetchSuccess = true;
     } catch (err) {
       console.warn(`Could not fetch container files from container server for ${containerId}:`, err);
     }
 
-    if (Array.isArray(containerFiles) && containerFiles.length > 0) {
+    if (fetchSuccess) {
+      const validPathsInContainer = new Set<string>();
+
       for (const fileItem of containerFiles) {
         if (!fileItem.path) continue;
         const normalizedRelPath = normalizePath(fileItem.path).replace(/^\/+/, '');
         const targetVaultPath = normalizePath(`${containerFolderPath}/${normalizedRelPath}`);
+        validPathsInContainer.add(targetVaultPath);
 
         await this.ensureDirectoryForFile(targetVaultPath);
 
@@ -450,6 +455,28 @@ export class LentaSyncEngine {
         }
         downloadedFiles++;
       }
+
+      // Clean up any extraneous files in containerFolderPath that are not in validPathsInContainer
+      const containerFolderObj = vault.getAbstractFileByPath(containerFolderPath);
+      if (containerFolderObj instanceof TFolder) {
+        const cleanExtraneous = async (folder: TFolder) => {
+          const children = [...folder.children];
+          for (const child of children) {
+            if (child instanceof TFile) {
+              if (!validPathsInContainer.has(child.path)) {
+                await vault.delete(child, true);
+              }
+            } else if (child instanceof TFolder) {
+              await cleanExtraneous(child);
+              if (child.children.length === 0) {
+                await vault.delete(child, true);
+              }
+            }
+          }
+        };
+        await cleanExtraneous(containerFolderObj);
+      }
+
       return { downloadedFiles, createdFolders };
     }
 
@@ -468,7 +495,12 @@ export class LentaSyncEngine {
 
       if (notes.length === 0 && (!containerId.startsWith('feed-') || containerId === 'feed-all')) {
         const fullSync = await this.apiClient.getSyncChanges();
-        notes = (fullSync.notes || []) as LentaNoteDto[];
+        const allNotes = (fullSync.notes || []) as LentaNoteDto[];
+        if (containerId && containerId !== 'all' && containerId !== 'feed-all') {
+          notes = allNotes.filter((n: any) => n.containerId === containerId);
+        } else {
+          notes = allNotes;
+        }
       }
 
       for (const note of notes) {

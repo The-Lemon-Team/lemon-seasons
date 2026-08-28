@@ -162,9 +162,8 @@ enum NoteType {
 model Container {
   id          String    @id @default(uuid())
   name        String
-  type        String    @default("git")
+  type        String    @default("obsidian")
   description String?
-  isPublic    Boolean   @default(true)
   visibility  String    @default("public")
   ownerUserId String?
   ownerUser   User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
@@ -197,6 +196,7 @@ model User {
   id         String      @id @default(uuid())
   email      String      @unique
   name       String
+  password   String?
   role       String      @default("user")
   keys       UserKey[]
   containers Container[]

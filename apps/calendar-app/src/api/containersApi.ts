@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const CONTAINERS_API_URL = import.meta.env.VITE_CONTAINERS_API_URL || 'http://localhost:3000';
+const CONTAINERS_API_URL = import.meta.env.VITE_CONTAINERS_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const containersApiClient = axios.create({
   baseURL: CONTAINERS_API_URL,
@@ -10,34 +10,27 @@ export const containersApiClient = axios.create({
   timeout: 5000,
 });
 
-export type ContainerType = 'simple' | 'git';
+export type ContainerType = 'obsidian' | 'feed' | string;
 
 export interface ContainerSummaryDto {
   id: string;
   name: string;
-  type: ContainerType;
+  type?: ContainerType;
   description?: string;
   key?: string;
-  totalFiles: number;
+  totalFiles?: number;
   totalSizeBytes?: number;
-  currentCommit?: string;
-  lastCommitMessage?: string;
-  lastCommitDate?: string;
   lastModified?: string;
-  isGit: boolean;
-  privacy?: 'private' | 'public';
   visibility?: 'private' | 'public';
-  isPublic?: boolean;
 }
 
 export interface RegisterContainerRequestDto {
   id?: string;
   name: string;
-  type: ContainerType;
+  type?: ContainerType;
   description?: string;
   rootPath?: string;
-  privacy?: 'private' | 'public';
-  isPublic?: boolean;
+  visibility?: 'private' | 'public';
 }
 
 export interface SyncStatusDto {
@@ -155,7 +148,7 @@ export const containersApi = {
     return res.data;
   },
 
-  // Commit History (Git Container Time Machine)
+  // Container Revision History (Time Machine)
   getContainerCommits: async (id: string, limit = 50): Promise<CommitSummaryDto[]> => {
     const res = await containersApiClient.get<CommitSummaryDto[]>(`/containers/${id}/commits`, {
       params: { limit },

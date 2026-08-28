@@ -357,6 +357,12 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (this.settings.containerServerUrl === 'http://localhost:3000') {
+      this.settings.containerServerUrl = 'http://localhost:3001';
+    }
+    if (this.settings.connectedContainerType === 'git') {
+      this.settings.connectedContainerType = 'obsidian';
+    }
     if (!Array.isArray(this.settings.activeContainerIds)) {
       this.settings.activeContainerIds = [];
     }

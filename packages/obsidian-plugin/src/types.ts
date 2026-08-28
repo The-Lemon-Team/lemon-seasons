@@ -86,6 +86,8 @@ export interface LentaContainerScope {
 export interface LentaContainerSummaryDto {
   id: string;
   name: string;
+  title?: string;
+  description?: string;
   type: 'git' | 'simple';
   scope: LentaContainerScope;
   totalNotes: number;
@@ -127,7 +129,7 @@ export interface LentaPluginSettings {
   containerKey: string;
   /** Optional metadata of the connected container */
   connectedContainerName?: string;
-  connectedContainerType?: 'git' | 'simple';
+  connectedContainerType?: string;
   vaultRootFolder: string;
   autoSyncIntervalMinutes: number;
   defaultFeedSlug: string;
@@ -136,7 +138,7 @@ export interface LentaPluginSettings {
   defaultConflictStrategy: ConflictStrategy;
   autoSyncOnEdit: boolean;
 
-  /** Base URL of the Obsidian Container Sync Server (port 3000 by default). */
+  /** Base URL of the Obsidian Container Sync Server (defaults to backend port 3001). */
   containerServerUrl: string;
   /**
    * API key sent as `X-Api-Key` header to the container sync server.
@@ -157,15 +159,15 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   activeContainerIds: [],
   containerKey: '',
   connectedContainerName: '',
-  connectedContainerType: 'git',
+  connectedContainerType: 'obsidian',
   vaultRootFolder: 'Lenta',
   autoSyncIntervalMinutes: 0,
   defaultFeedSlug: '',
   lastSyncedAt: '',
   lastSyncedCommit: '',
-  defaultConflictStrategy: 'create_backup_fork',
+  defaultConflictStrategy: 'overwrite_remote',
   autoSyncOnEdit: false,
-  containerServerUrl: 'http://localhost:3000',
+  containerServerUrl: 'http://localhost:3001',
   containerApiKey: '',
   containerPrivacyFilter: 'all',
 };

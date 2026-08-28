@@ -1,6 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { LentaContainerSummaryDto, LentaFolderDto, LentaPluginSettings } from '../types';
 import { isContainerPublic } from '../utils/container-privacy';
+import { getContainerDisplayTitle } from '../utils/container-title';
 import { ChangedLentaFile } from '../services/changed-files-scanner';
 
 export interface ContainerHeroCardOptions {
@@ -40,7 +41,8 @@ export function renderContainerHeroCard(
 
   const isPublic = isContainerPublic(container);
   const rootFolder = settings.vaultRootFolder || 'Lenta';
-  const containerVaultPath = `${rootFolder}/${container.name || container.id}`;
+  const displayTitle = getContainerDisplayTitle(container);
+  const containerVaultPath = `${rootFolder}/${displayTitle}`;
 
   // Filter unpushed changes for this container
   const containerPendingFiles = changedFiles.filter((cf) => {
@@ -74,10 +76,12 @@ export function renderContainerHeroCard(
   icon.style.cssText = 'font-size: 1.5em;';
 
   const titleWrap = leftTitle.createDiv();
-  const h3 = titleWrap.createEl('h3', { text: container.name || container.id });
+  const h3 = titleWrap.createEl('h3', { text: displayTitle });
   h3.style.cssText = 'margin: 0; font-weight: 700; font-size: 1.15em; color: #fff; display: flex; align-items: center; gap: 8px;';
 
-  const idSpan = titleWrap.createEl('span', { text: `ID: ${container.id}` });
+  const shortId = container.id.length > 20 ? `${container.id.slice(0, 8)}…${container.id.slice(-4)}` : container.id;
+  const idSpan = titleWrap.createEl('span', { text: `ID: ${shortId}` });
+  idSpan.title = container.id;
   idSpan.style.cssText = 'font-size: 0.78em; color: var(--text-muted, #888); font-family: var(--font-monospace, monospace);';
 
   // Badges container
@@ -95,7 +99,7 @@ export function renderContainerHeroCard(
 
   // Type Badge
   const typeBadge = badgeWrap.createSpan({ cls: 'lenta-badge' });
-  typeBadge.setText((container.type || 'git').toUpperCase());
+  typeBadge.setText(container.type === 'git' ? 'VERSIONED' : (container.type || 'SIMPLE').toUpperCase());
   typeBadge.style.cssText = 'padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 0.75em; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);';
 
   // ── Grid Pillars (4 Columns) ──────────────────────────────────────────────
@@ -149,7 +153,7 @@ export function renderContainerHeroCard(
     <div style="font-size: 0.8em; line-height: 1.45; color: #ccc;">
       <div>• <strong>Tracked Notes:</strong> <strong style="color:#fff;">${container.totalNotes ?? 0} notes</strong></div>
       <div>• <strong>Root Folder:</strong> <code>${rootFolder}</code></div>
-      <div>• <strong>Container Mode:</strong> ${container.type === 'git' ? 'Git Time Machine' : 'Simple File Sync'}</div>
+      <div>• <strong>Container Mode:</strong> ${container.type === 'git' ? 'Versioned Vault' : 'Simple File Sync'}</div>
     </div>
   `;
 
@@ -161,7 +165,7 @@ export function renderContainerHeroCard(
   const p4 = grid.createDiv({ cls: 'lenta-hero-pillar' });
   p4.innerHTML = `
     <div style="font-weight: 700; font-size: 0.82em; color: #c084fc; margin-bottom: 6px; display:flex; align-items:center; gap:5px;">
-      📜 GIT REVISION STATUS
+      📜 REVISION HISTORY STATUS
     </div>
     <div style="font-size: 0.8em; line-height: 1.45; color: #ccc;">
       <div>• <strong>Head Commit:</strong> <code style="color:#e9d5ff; background:rgba(192,132,252,0.15); padding:1px 5px; border-radius:4px;">${commitShort}</code> (${commitDateStr})</div>

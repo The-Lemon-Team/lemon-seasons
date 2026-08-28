@@ -45,6 +45,16 @@ export const AuthModal: React.FC = () => {
   };
 
   const handleDemoSelect = (role: UserRole) => {
+    if (role === 'guest') {
+      setEmail('guest@lemon.team');
+      setPassword('guest');
+    } else if (role === 'user') {
+      setEmail('user@lemon.team');
+      setPassword('user');
+    } else {
+      setEmail('admin@lemon.team');
+      setPassword('admin');
+    }
     switchDemoRole(role);
   };
 
@@ -85,11 +95,11 @@ export const AuthModal: React.FC = () => {
 
       {/* Modal Body */}
       <div className="p-6 flex flex-col gap-5 max-h-[80vh] overflow-y-auto">
-        {/* One-Click Quick Demo Sign In Cards */}
+        {/* Quick System Accounts */}
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-mono font-semibold text-[#c9c7b2] uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#c9cd58]" />
-            {t.signInWithDemoRole}
+            Быстрый выбор аккаунта (Guest / User / Admin)
           </span>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -103,13 +113,13 @@ export const AuthModal: React.FC = () => {
                   : 'bg-[#121414] border-[#242828] text-[#c9c7b2] hover:border-[#484837] hover:text-white'
               }`}
             >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-sans font-bold text-xs">🌐 {t.guestRole}</span>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-sans font-bold text-xs">🌐 Guest</span>
                 <Eye className="w-3.5 h-3.5 text-[#93927e]" />
               </div>
-              <p className="text-[10px] text-[#93927e] line-clamp-2 leading-snug">
-                {t.demoGuestDesc}
-              </p>
+              <span className="text-[10px] font-mono text-[#93927e] bg-[#1a1c1c] px-1.5 py-0.5 rounded border border-[#2d3030] inline-block w-fit">
+                pass: guest
+              </span>
             </button>
 
             {/* Member Card */}
@@ -122,13 +132,13 @@ export const AuthModal: React.FC = () => {
                   : 'bg-[#121414] border-[#242828] text-[#c9c7b2] hover:border-[#c9cd58]/50 hover:text-white'
               }`}
             >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-sans font-bold text-xs text-[#c9cd58]">👤 {t.memberRole}</span>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-sans font-bold text-xs text-[#c9cd58]">👤 User</span>
                 <UserCheck className="w-3.5 h-3.5 text-[#c9cd58]" />
               </div>
-              <p className="text-[10px] text-[#93927e] line-clamp-2 leading-snug">
-                {t.demoMemberDesc}
-              </p>
+              <span className="text-[10px] font-mono text-[#c9c7b2] bg-[#1a1c1c] px-1.5 py-0.5 rounded border border-[#2d3030] inline-block w-fit">
+                pass: user
+              </span>
             </button>
 
             {/* Admin Card */}
@@ -141,13 +151,13 @@ export const AuthModal: React.FC = () => {
                   : 'bg-[#121414] border-[#242828] text-[#c9c7b2] hover:border-[#ef4444]/50 hover:text-white'
               }`}
             >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-sans font-bold text-xs text-[#ef4444]">⚡ {t.adminRole}</span>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-sans font-bold text-xs text-[#ef4444]">⚡ Admin</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-[#ef4444]" />
               </div>
-              <p className="text-[10px] text-[#93927e] line-clamp-2 leading-snug">
-                {t.demoAdminDesc}
-              </p>
+              <span className="text-[10px] font-mono text-[#fca5a5] bg-[#1a1c1c] px-1.5 py-0.5 rounded border border-[#2d3030] inline-block w-fit">
+                pass: admin
+              </span>
             </button>
           </div>
         </div>
