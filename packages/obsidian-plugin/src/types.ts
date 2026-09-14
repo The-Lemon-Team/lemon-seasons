@@ -27,6 +27,9 @@ export interface LentaFolderDto {
   path: string;
   icon?: string | null;
   color?: string | null;
+  privacy?: string;
+  containerId?: string | null;
+  scope?: 'external' | 'internal';
   noteCount?: number;
   updatedAt?: string;
 }

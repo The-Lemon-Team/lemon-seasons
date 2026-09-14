@@ -107,7 +107,8 @@ export class NotesService {
       }
     }
 
-    const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders);
+    const targetContainerId = (createNoteDto as any).containerId || undefined;
+    const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
 
     // Prepare initial links if provided
     let linksData: Prisma.NoteLinkCreateWithoutNoteInput[] | undefined = undefined;
@@ -446,8 +447,8 @@ export class NotesService {
           : updateNoteDto.folder
           ? [updateNoteDto.folder]
           : [];
-
-      const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders);
+      const targetContainerId = (updateNoteDto as any).containerId || current.containerId || undefined;
+      const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
 
       // Remove existing note folders and recreate
       await this.prisma.noteFolder.deleteMany({

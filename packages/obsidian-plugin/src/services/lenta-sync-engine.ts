@@ -39,7 +39,7 @@ export class LentaSyncEngine {
     await this.ledgerManager.loadLedger();
 
     const lastSync = this.ledgerManager.lastSyncTimestamp || settings.lastSyncedAt || undefined;
-    const result = await this.apiClient.getSyncChanges(lastSync);
+    const result = await this.apiClient.getSyncChanges(lastSync, settings.containerId);
 
     const conflicts: FileDiffItemDto[] = [];
     let pulledCount = 0;

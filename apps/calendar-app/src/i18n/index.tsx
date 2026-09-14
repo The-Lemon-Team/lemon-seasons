@@ -306,6 +306,15 @@ export interface Translations {
   privacyRuleHeading: string;
   containerPrivacyConstraintNote: string;
   openFolderInManager: string;
+  folderScope: string;
+  folderScopeExternal: string;
+  folderScopeInternal: string;
+  folderScopeExternalDesc: string;
+  folderScopeInternalDesc: string;
+  filterExternal: string;
+  filterInternal: string;
+  targetContainer: string;
+  pushesToContainers: (count: number) => string;
 }
 
 
@@ -612,6 +621,15 @@ export const ruTranslations: Translations = {
   privacyRuleHeading: 'Правило приватности контейнеров',
   containerPrivacyConstraintNote: 'Публичные контейнеры могут содержать только публичные папки. Приватные контейнеры могут содержать любые папки (приватные и публичные).',
   openFolderInManager: 'Открыть в Менеджере папок',
+  folderScope: 'Область действия папки',
+  folderScopeExternal: '🌐 Общая проектная (External)',
+  folderScopeInternal: '📦 Внутренняя контейнера (Internal)',
+  folderScopeExternalDesc: 'Доступна глобально. Любые изменения и новые заметки автоматически транслируются во все привязанные Obsidian контейнеры.',
+  folderScopeInternalDesc: 'Доступна только внутри выбранного Obsidian контейнера. Заметки остаются строго локальными для этого хранилища.',
+  filterExternal: 'Проектные (External)',
+  filterInternal: 'Контейнерные (Internal)',
+  targetContainer: 'Целевой контейнер Obsidian',
+  pushesToContainers: (count: number) => `Транслируется в ${count} ${pluralizeRu(count, 'контейнер', 'контейнера', 'контейнеров')}`,
 };
 
 
@@ -918,6 +936,15 @@ export const enTranslations: Translations = {
   privacyRuleHeading: 'Container Privacy Rule',
   containerPrivacyConstraintNote: 'Public containers can only hold public folders. Private containers can hold any folder (private and public).',
   openFolderInManager: 'Open in Folder Manager',
+  folderScope: 'Folder Scope',
+  folderScopeExternal: '🌐 Common Project (External)',
+  folderScopeInternal: '📦 Container Internal (Internal)',
+  folderScopeExternalDesc: 'Available globally. New notes and changes automatically broadcast to all bound Obsidian containers.',
+  folderScopeInternalDesc: 'Scoped exclusively to the selected Obsidian container. Notes remain local to this vault.',
+  filterExternal: 'Project (External)',
+  filterInternal: 'Container (Internal)',
+  targetContainer: 'Target Obsidian Container',
+  pushesToContainers: (count: number) => `Broadcasting to ${count} ${count === 1 ? 'container' : 'containers'}`,
 };
 
 

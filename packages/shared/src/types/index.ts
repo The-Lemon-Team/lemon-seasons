@@ -15,6 +15,7 @@ export interface Feed {
 }
 
 export type FolderPrivacy = 'private' | 'public';
+export type FolderScope = 'external' | 'internal';
 
 export interface Folder {
   id: string;
@@ -23,6 +24,8 @@ export interface Folder {
   icon: string | null;
   color: string | null;
   privacy?: FolderPrivacy;
+  containerId?: string | null;
+  scope?: FolderScope;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -38,6 +41,8 @@ export interface FolderTreeNode {
   icon: string | null;
   color: string | null;
   privacy?: FolderPrivacy;
+  containerId?: string | null;
+  scope?: FolderScope;
   notesCount: number;
   directNotesCount: number;
   updatedAt: string;
@@ -235,6 +240,8 @@ export interface CreateFolderInput {
   icon?: string;
   color?: string;
   privacy?: FolderPrivacy;
+  containerId?: string | null;
+  scope?: FolderScope;
 }
 
 export interface UpdateFolderInput {
@@ -243,6 +250,8 @@ export interface UpdateFolderInput {
   icon?: string;
   color?: string;
   privacy?: FolderPrivacy;
+  containerId?: string | null;
+  scope?: FolderScope;
 }
 
 export interface CreateTaxonomyInput {
@@ -439,6 +448,8 @@ export interface BoundFolder {
   notesCount?: number;
   status?: 'active' | 'paused';
   privacy?: FolderPrivacy;
+  externalFolderId?: string;
+  scope?: FolderScope;
 }
 
 export interface ObsidianContainer {

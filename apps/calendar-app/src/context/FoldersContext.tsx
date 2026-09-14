@@ -26,6 +26,11 @@ interface FoldersContextType {
   selectedFolderId: string | null;
   selectedFolder: Folder | null;
   setSelectedFolderId: (id: string | null) => void;
+  scopeFilter: 'all' | 'external' | 'internal';
+  setScopeFilter: (scope: 'all' | 'external' | 'internal') => void;
+  externalFolders: Folder[];
+  internalFolders: Folder[];
+  getInternalFoldersForContainer: (containerId: string) => Folder[];
   addFolder: (input: CreateFolderInput) => Folder;
   updateFolder: (id: string, updates: Partial<Folder>) => void;
   deleteFolder: (id: string) => void;
@@ -50,6 +55,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'book-open',
     color: '#a855f7',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-01T10:00:00.000Z',
     updatedAt: '2026-08-20T10:00:00.000Z',
     deletedAt: null,
@@ -62,6 +69,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'archive',
     color: '#8b5cf6',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-01T11:00:00.000Z',
     updatedAt: '2026-08-15T11:00:00.000Z',
     deletedAt: null,
@@ -74,6 +83,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'sparkles',
     color: '#a855f7',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-01T11:30:00.000Z',
     updatedAt: '2026-08-18T11:30:00.000Z',
     deletedAt: null,
@@ -86,6 +97,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'folder-kanban',
     color: '#c9cd58',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-05T09:00:00.000Z',
     updatedAt: '2026-08-22T09:00:00.000Z',
     deletedAt: null,
@@ -98,6 +111,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'lemon',
     color: '#c9cd58',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-05T09:30:00.000Z',
     updatedAt: '2026-08-23T12:00:00.000Z',
     deletedAt: null,
@@ -110,6 +125,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'flask-conical',
     color: '#3b82f6',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-06T14:00:00.000Z',
     updatedAt: '2026-08-20T14:00:00.000Z',
     deletedAt: null,
@@ -122,6 +139,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'bot',
     color: '#3b82f6',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-06T14:30:00.000Z',
     updatedAt: '2026-08-22T14:30:00.000Z',
     deletedAt: null,
@@ -134,6 +153,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'newspaper',
     color: '#f59e0b',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-02T08:00:00.000Z',
     updatedAt: '2026-08-21T08:00:00.000Z',
     deletedAt: null,
@@ -146,6 +167,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'film',
     color: '#f43f5e',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-02T08:30:00.000Z',
     updatedAt: '2026-08-22T16:00:00.000Z',
     deletedAt: null,
@@ -158,6 +181,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'shield',
     color: '#ef4444',
     privacy: 'public',
+    containerId: null,
+    scope: 'external',
     createdAt: '2026-08-02T09:00:00.000Z',
     updatedAt: '2026-08-23T10:00:00.000Z',
     deletedAt: null,
@@ -170,6 +195,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'lock',
     color: '#f43f5e',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-10T09:15:00.000Z',
     updatedAt: '2026-08-23T11:00:00.000Z',
     deletedAt: null,
@@ -182,6 +209,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'circle-dollar-sign',
     color: '#10b981',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-10T10:00:00.000Z',
     updatedAt: '2026-08-22T10:00:00.000Z',
     deletedAt: null,
@@ -194,6 +223,8 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'trending-up',
     color: '#10b981',
     privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
     createdAt: '2026-08-10T10:30:00.000Z',
     updatedAt: '2026-08-22T10:30:00.000Z',
     deletedAt: null,
@@ -217,7 +248,20 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed: Folder[] = JSON.parse(saved);
+        return parsed.map((f) => ({
+          ...f,
+          scope: f.scope || (f.containerId ? 'internal' : 'external'),
+          containerId:
+            f.containerId !== undefined
+              ? f.containerId
+              : f.path.startsWith('01_Daily_Logs') ||
+                f.path.startsWith('04_Archive') ||
+                f.path.startsWith('Core_Strategy') ||
+                f.path.startsWith('Financials')
+              ? 'cont-personal-vault'
+              : null,
+        }));
       }
     } catch {
       // fallback
@@ -228,6 +272,23 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(() => {
     return INITIAL_FOLDERS[0]?.id || null;
   });
+
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'external' | 'internal'>('all');
+
+  const externalFolders = useMemo(() => {
+    return folders.filter((f) => f.scope === 'external' || !f.containerId);
+  }, [folders]);
+
+  const internalFolders = useMemo(() => {
+    return folders.filter((f) => f.scope === 'internal' || Boolean(f.containerId));
+  }, [folders]);
+
+  const getInternalFoldersForContainer = useCallback(
+    (containerId: string) => {
+      return folders.filter((f) => f.containerId === containerId);
+    },
+    [folders]
+  );
 
   // Save to localStorage
   useEffect(() => {
@@ -250,6 +311,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // 1. Initialize map
     for (const f of folders) {
       const directCount = f._count?.noteFolders || 0;
+      const folderScope: 'external' | 'internal' = f.scope || (f.containerId ? 'internal' : 'external');
       folderMap.set(f.path, {
         id: f.id,
         name: f.name,
@@ -257,6 +319,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         icon: f.icon,
         color: f.color,
         privacy: f.privacy || 'public',
+        containerId: f.containerId,
+        scope: folderScope,
         directNotesCount: directCount,
         notesCount: directCount,
         updatedAt: f.updatedAt,
@@ -315,6 +379,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const cleanPath = normalizePath(input.path);
     const name = input.name?.trim() || getFolderName(cleanPath);
     const privacy: FolderPrivacy = input.privacy || 'public';
+    const containerId = input.containerId || null;
+    const scope = input.scope || (containerId ? 'internal' : 'external');
 
     const newFolder: Folder = {
       id: `fld-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -323,6 +389,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
       icon: input.icon || (privacy === 'private' ? 'lock' : 'folder'),
       color: input.color || (privacy === 'private' ? '#a855f7' : '#c9cd58'),
       privacy,
+      containerId,
+      scope,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -544,6 +612,11 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         selectedFolderId,
         selectedFolder,
         setSelectedFolderId,
+        scopeFilter,
+        setScopeFilter,
+        externalFolders,
+        internalFolders,
+        getInternalFoldersForContainer,
         addFolder,
         updateFolder,
         deleteFolder,

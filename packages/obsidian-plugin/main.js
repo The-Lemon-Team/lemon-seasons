@@ -4682,8 +4682,13 @@ var LentaApiClient = class {
     }
     return [];
   }
-  async getSyncChanges(since) {
-    const query = since ? `?since=${encodeURIComponent(since)}` : "";
+  async getSyncChanges(since, containerId) {
+    const params = new URLSearchParams();
+    if (since)
+      params.append("since", since);
+    if (containerId)
+      params.append("containerId", containerId);
+    const query = params.toString() ? `?${params.toString()}` : "";
     return this.request({
       url: `${this.baseUrl}/sync/changes${query}`,
       method: "GET"
@@ -5277,7 +5282,7 @@ var LentaSyncEngine = class {
     const settings = this.getSettings();
     await this.ledgerManager.loadLedger();
     const lastSync = this.ledgerManager.lastSyncTimestamp || settings.lastSyncedAt || void 0;
-    const result = await this.apiClient.getSyncChanges(lastSync);
+    const result = await this.apiClient.getSyncChanges(lastSync, settings.containerId);
     const conflicts = [];
     let pulledCount = 0;
     let deletedCount = 0;

@@ -55,15 +55,19 @@ model Note {
 model Folder {
   id          String       @id @default(uuid())
   name        String
-  path        String       @unique
+  path        String
   icon        String?
   color       String?
+  privacy     String       @default("public")
+  containerId String?
+  container   Container?   @relation(fields: [containerId], references: [id], onDelete: Cascade)
   noteFolders NoteFolder[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
   @@index([path])
+  @@index([containerId])
   @@index([updatedAt])
   @@index([deletedAt])
 }
@@ -168,6 +172,7 @@ model Container {
   ownerUserId String?
   ownerUser   User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   notes       Note[]
+  folders     Folder[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?

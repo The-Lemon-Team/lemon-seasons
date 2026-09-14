@@ -15,7 +15,16 @@ export class SyncController {
     type: String,
     description: 'ISO 8601 timestamp to retrieve modified/created/deleted records since',
   })
-  getChanges(@Query('since') since?: string) {
-    return this.syncService.getChangesSince(since);
+  @ApiQuery({
+    name: 'containerId',
+    required: false,
+    type: String,
+    description: 'Optional Obsidian container ID to pull container-scoped internal folders and notes',
+  })
+  getChanges(
+    @Query('since') since?: string,
+    @Query('containerId') containerId?: string,
+  ) {
+    return this.syncService.getChangesSince(since, containerId);
   }
 }

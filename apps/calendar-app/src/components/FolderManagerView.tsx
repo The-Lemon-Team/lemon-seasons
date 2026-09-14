@@ -52,6 +52,7 @@ interface FolderTreeNodeItemProps {
   onToggleExpand: (path: string) => void;
   searchFilter: string;
   privacyFilter: 'all' | 'public' | 'private';
+  scopeFilter?: 'all' | 'external' | 'internal';
 }
 
 const renderIconComponent = (iconName: string | null, className = 'w-4 h-4') => {
@@ -89,31 +90,41 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
   onToggleExpand,
   searchFilter,
   privacyFilter,
+  scopeFilter = 'all',
 }) => {
   const { t } = useI18n();
   const isExpanded = expandedMap[node.path] ?? true;
   const isSelected = selectedId === node.id;
   const hasChildren = node.children && node.children.length > 0;
 
+  const nodeScope = node.scope || (node.containerId ? 'internal' : 'external');
+
   // Filter check
   const matchesPrivacy =
     privacyFilter === 'all' ? true : (node.privacy || 'public') === privacyFilter;
+  const matchesScope =
+    scopeFilter === 'all' ? true : nodeScope === scopeFilter;
   const matchesSearch =
     !searchFilter ||
     node.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
     node.path.toLowerCase().includes(searchFilter.toLowerCase());
 
   const hasMatchingChild = (n: FolderTreeNode): boolean => {
-    if (
-      (!searchFilter || n.name.toLowerCase().includes(searchFilter.toLowerCase()) || n.path.toLowerCase().includes(searchFilter.toLowerCase())) &&
-      (privacyFilter === 'all' || (n.privacy || 'public') === privacyFilter)
-    ) {
+    const childScope = n.scope || (n.containerId ? 'internal' : 'external');
+    const childMatchesPrivacy = privacyFilter === 'all' || (n.privacy || 'public') === privacyFilter;
+    const childMatchesScope = scopeFilter === 'all' || childScope === scopeFilter;
+    const childMatchesSearch =
+      !searchFilter ||
+      n.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      n.path.toLowerCase().includes(searchFilter.toLowerCase());
+
+    if (childMatchesPrivacy && childMatchesScope && childMatchesSearch) {
       return true;
     }
     return n.children.some(hasMatchingChild);
   };
 
-  const shouldRender = matchesPrivacy && matchesSearch ? true : hasMatchingChild(node);
+  const shouldRender = (matchesPrivacy && matchesScope && matchesSearch) ? true : hasMatchingChild(node);
   if (!shouldRender) return null;
 
   const isPrivate = node.privacy === 'private';
@@ -165,6 +176,18 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
 
         {/* Badges & Actions */}
         <div className="flex items-center gap-1 shrink-0">
+          {/* Scope Badge (EXT vs INT) */}
+          <span
+            title={nodeScope === 'external' ? t.folderScopeExternalDesc : t.folderScopeInternalDesc}
+            className={`text-[9px] font-mono px-1 py-0.5 rounded font-semibold border ${
+              nodeScope === 'external'
+                ? 'bg-[#c9cd58]/15 text-[#e5e971] border-[#c9cd58]/30'
+                : 'bg-[#3b82f6]/15 text-[#93c5fd] border-[#3b82f6]/30'
+            }`}
+          >
+            {nodeScope === 'external' ? 'EXT' : 'INT'}
+          </span>
+
           {/* Privacy Badge */}
           <span
             title={isPrivate ? t.folderPrivacyPrivate : t.folderPrivacyPublic}
@@ -228,6 +251,7 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
               onToggleExpand={onToggleExpand}
               searchFilter={searchFilter}
               privacyFilter={privacyFilter}
+              scopeFilter={scopeFilter}
             />
           ))}
         </div>
@@ -244,6 +268,10 @@ export const FolderManagerView: React.FC = () => {
     selectedFolderId,
     selectedFolder,
     setSelectedFolderId,
+    scopeFilter,
+    setScopeFilter,
+    externalFolders,
+    internalFolders,
     deleteFolder,
     getFolderPrivacyImpact,
     executePrivacyChange,
@@ -283,6 +311,8 @@ export const FolderManagerView: React.FC = () => {
   const totalFoldersCount = folders.length;
   const publicFoldersCount = folders.filter((f) => f.privacy === 'public').length;
   const privateFoldersCount = folders.filter((f) => f.privacy === 'private').length;
+  const externalFoldersCount = externalFolders.length;
+  const internalFoldersCount = internalFolders.length;
 
   const foldersInContainersCount = useMemo(() => {
     const boundPaths = new Set(
@@ -331,6 +361,13 @@ export const FolderManagerView: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
+  const selectedFolderScope = selectedFolder
+    ? (selectedFolder.scope || (selectedFolder.containerId ? 'internal' : 'external'))
+    : null;
+  const ownerContainer = selectedFolder?.containerId
+    ? containers.find((c) => c.id === selectedFolder.containerId)
+    : null;
+
   return (
     <div className="flex flex-col h-full bg-[#121414] overflow-hidden">
       {/* Top Header Banner */}
@@ -367,8 +404,16 @@ export const FolderManagerView: React.FC = () => {
           <div className="px-3 py-1.5 rounded-lg bg-[#141616] border border-[#2d3030] flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />
             <div className="text-[11px] font-mono">
-              <span className="text-[#93927e]">Публичные: </span>
-              <span className="font-bold text-[#e5e971]">{publicFoldersCount}</span>
+              <span className="text-[#93927e]">{t.folderScopeExternal}: </span>
+              <span className="font-bold text-[#e5e971]">{externalFoldersCount}</span>
+            </div>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-lg bg-[#141616] border border-[#2d3030] flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-[#3b82f6]" />
+            <div className="text-[11px] font-mono">
+              <span className="text-[#93927e]">{t.folderScopeInternal}: </span>
+              <span className="font-bold text-[#93c5fd]">{internalFoldersCount}</span>
             </div>
           </div>
 
@@ -377,14 +422,6 @@ export const FolderManagerView: React.FC = () => {
             <div className="text-[11px] font-mono">
               <span className="text-[#93927e]">Приватные: </span>
               <span className="font-bold text-[#d8b4fe]">{privateFoldersCount}</span>
-            </div>
-          </div>
-
-          <div className="px-3 py-1.5 rounded-lg bg-[#141616] border border-[#2d3030] flex items-center gap-2">
-            <Layers className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <div className="text-[11px] font-mono">
-              <span className="text-[#93927e]">В контейнерах: </span>
-              <span className="font-bold text-[#93c5fd]">{foldersInContainersCount}</span>
             </div>
           </div>
 
@@ -422,6 +459,41 @@ export const FolderManagerView: React.FC = () => {
               />
             </div>
 
+            {/* Scope Filter Tabs */}
+            <div className="flex items-center gap-1 p-0.5 bg-[#121414] rounded border border-[#2d3030] text-[10px] font-mono">
+              <button
+                type="button"
+                onClick={() => setScopeFilter('all')}
+                className={`flex-1 py-1 rounded transition-colors text-center ${
+                  scopeFilter === 'all' ? 'bg-[#242828] text-[#e2e2e2] font-bold' : 'text-[#93927e] hover:text-white'
+                }`}
+              >
+                Все ({totalFoldersCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setScopeFilter('external')}
+                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
+                  scopeFilter === 'external' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'text-[#93927e] hover:text-[#e5e971]'
+                }`}
+                title={t.folderScopeExternalDesc}
+              >
+                <Globe className="w-2.5 h-2.5" />
+                <span>{t.filterExternal} ({externalFoldersCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setScopeFilter('internal')}
+                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
+                  scopeFilter === 'internal' ? 'bg-[#3b82f6]/20 text-[#93c5fd] font-bold' : 'text-[#93927e] hover:text-[#93c5fd]'
+                }`}
+                title={t.folderScopeInternalDesc}
+              >
+                <Layers className="w-2.5 h-2.5" />
+                <span>{t.filterInternal} ({internalFoldersCount})</span>
+              </button>
+            </div>
+
             {/* Privacy Filter Tabs */}
             <div className="flex items-center gap-1 p-0.5 bg-[#121414] rounded border border-[#2d3030] text-[10px] font-mono">
               <button
@@ -431,7 +503,7 @@ export const FolderManagerView: React.FC = () => {
                   privacyFilter === 'all' ? 'bg-[#242828] text-[#e2e2e2] font-bold' : 'text-[#93927e] hover:text-white'
                 }`}
               >
-                Все ({totalFoldersCount})
+                Все
               </button>
               <button
                 type="button"
@@ -481,6 +553,7 @@ export const FolderManagerView: React.FC = () => {
                   onToggleExpand={handleToggleExpand}
                   searchFilter={searchTerm}
                   privacyFilter={privacyFilter}
+                  scopeFilter={scopeFilter}
                 />
               ))
             )}
@@ -556,8 +629,59 @@ export const FolderManagerView: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Scope Banner: External Broadcast vs Internal Container */}
+                {selectedFolderScope === 'external' ? (
+                  <div className="p-3.5 rounded-lg bg-[#c9cd58]/10 border border-[#c9cd58]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#c9cd58]/20 text-[#e5e971] flex items-center justify-center text-base shrink-0 border border-[#c9cd58]/40">
+                        🌐
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs uppercase text-[#e5e971]">
+                            {t.folderScopeExternal} (Common Project Folder)
+                          </span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#c9cd58]/20 text-[#faff85] font-bold border border-[#c9cd58]/30">
+                            Broadcast Channel
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#c9c7b2] mt-0.5 leading-snug">
+                          {t.pushesToContainers(containerUsages.length)}: {containerUsages.length > 0 ? containerUsages.map((u) => u.containerName).join(', ') : 'Папка пока не привязана к контейнерам'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-mono text-[#93927e] shrink-0">
+                      Синхронизация: <span className="text-[#e5e971] font-bold">{containerUsages.length} хранилищ</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-lg bg-[#3b82f6]/10 border border-[#3b82f6]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#3b82f6]/20 text-[#93c5fd] flex items-center justify-center text-base shrink-0 border border-[#3b82f6]/40">
+                        📦
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs uppercase text-[#93c5fd]">
+                            {t.folderScopeInternal} (Container-Scoped Folder)
+                          </span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#3b82f6]/20 text-[#bfdbfe] font-bold border border-[#3b82f6]/30">
+                            {ownerContainer?.name || selectedFolder.containerId || 'Obsidian Container'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#c9c7b2] mt-0.5 leading-snug">
+                          {t.folderScopeInternalDesc}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-mono text-[#93927e] shrink-0">
+                      Хранилище: <span className="text-[#93c5fd] font-bold">{ownerContainer?.name || 'Локальный Vault'}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Privacy Rule & Obsidian Containment Banner */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   {/* Privacy Status & Change CTA Card */}
                   <div className={`p-3 rounded-lg border flex items-center justify-between gap-3 ${
                     selectedFolder.privacy === 'private'

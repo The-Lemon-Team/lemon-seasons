@@ -5,6 +5,7 @@ import { useObsidianContainerCommitsQuery, useObsidianContainerTreeQuery } from 
 import { useI18n } from '../i18n';
 import { ObsidianLogo } from './ObsidianLogo';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
+import { CreateFolderModal } from './CreateFolderModal';
 import { ContainerObserveMode, FolderPrivacy } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -31,6 +32,7 @@ import {
   Clock,
   Settings,
   Zap,
+  Layers,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -62,7 +64,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
     pendingChanges,
   } = useObsidianContainers();
 
-  const { folders } = useFoldersContext();
+  const { folders, getInternalFoldersForContainer, deleteFolder: deleteInternalFolder } = useFoldersContext();
 
   const container = containers.find((c) => c.id === containerId);
 
@@ -70,6 +72,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
   const [copiedToken, setCopiedToken] = useState(false);
   const [warningContainerImpact, setWarningContainerImpact] = useState<ContainerPrivacyImpact | null>(null);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [isCreateInternalFolderOpen, setIsCreateInternalFolderOpen] = useState(false);
 
   // Quick Folder Binding Input State
   const [isAddFolderOpen, setIsAddFolderOpen] = useState(false);
@@ -108,6 +111,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
   const isPrivate = container.privacy === 'private';
   const isSyncing = isSyncingId === container.id;
   const pendingCount = pendingChanges[container.id] ?? 0;
+  const internalFolders = container ? getInternalFoldersForContainer(container.id) : [];
 
   const handleCopyToken = () => {
     navigator.clipboard.writeText(container.token);
@@ -429,38 +433,47 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
             </div>
           )}
 
-          {/* TAB 2: Bound Folders Manager */}
+          {/* TAB 2: Bound Folders & Internal Folders Manager */}
           {activeTab === 'folders' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Section 1: External Bound Folders */}
               <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-4">
                 <div className="flex items-center justify-between border-b border-[#242828] pb-3">
                   <div>
                     <h3 className="font-sans font-bold text-base text-white flex items-center gap-2">
-                      <FolderGit2 className="w-4 h-4 text-[#c9cd58]" />
-                      <span>Отслеживаемые папки (Observed Folders)</span>
+                      <Globe className="w-4 h-4 text-[#c9cd58]" />
+                      <span>Привязанные проектные папки (External Bound Folders)</span>
                     </h3>
                     <p className="text-xs text-[#93927e] mt-0.5">
-                      Правила рекурсивного наблюдения и сопоставления папок Obsidian.
+                      Общие папки проекта, транслируемые во все подключённые клиенты Obsidian.
                     </p>
                   </div>
 
                   <button
                     onClick={() => setIsAddFolderOpen(true)}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#a855f7] hover:bg-[#b76eff] text-white font-sans text-xs font-semibold flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-lg bg-[#c9cd58] hover:bg-[#d8db6f] text-[#121414] font-sans text-xs font-bold flex items-center gap-1.5 shadow-glow-lemon"
                   >
                     <FolderPlus className="w-3.5 h-3.5" />
                     <span>Привязать папку</span>
                   </button>
                 </div>
 
+                {/* Scope Explanation Banner */}
+                <div className="p-3 rounded-lg bg-[#c9cd58]/10 border border-[#c9cd58]/30 flex items-start gap-2.5 text-xs">
+                  <Globe className="w-4 h-4 text-[#c9cd58] shrink-0 mt-0.5" />
+                  <p className="text-[#c9c7b2] leading-relaxed">
+                    <strong className="text-[#e5e971]">Канал вещания:</strong> Привязка внешней папки подключает хранилище к общему каналу заметок. Любая заметка, добавленная в эту папку на сервере или через календарь, автоматически синхронизируется сюда и в другие привязанные хранилища.
+                  </p>
+                </div>
+
                 {/* Inline Quick Add Form */}
                 {isAddFolderOpen && (
                   <form
                     onSubmit={handleQuickFolderSubmit}
-                    className="p-4 rounded-xl bg-[#121414] border border-[#a855f7]/50 space-y-3"
+                    className="p-4 rounded-xl bg-[#121414] border border-[#c9cd58]/50 space-y-3"
                   >
-                    <div className="flex items-center justify-between text-xs font-mono font-bold text-[#d8b4fe]">
-                      <span>Новая привязанная папка</span>
+                    <div className="flex items-center justify-between text-xs font-mono font-bold text-[#e5e971]">
+                      <span>Привязать проектную папку к контейнеру</span>
                       <button
                         type="button"
                         onClick={() => setIsAddFolderOpen(false)}
@@ -487,7 +500,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
                           setQuickFolderInput((prev) => ({ ...prev, path: e.target.value }));
                           setBindingError('');
                         }}
-                        className="bg-[#181a1a] border border-[#242828] rounded-lg text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none focus:border-[#a855f7]"
+                        className="bg-[#181a1a] border border-[#242828] rounded-lg text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none focus:border-[#c9cd58]"
                       />
 
                       <select
@@ -516,7 +529,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-1.5 rounded-lg bg-[#a855f7] hover:bg-[#b76eff] text-white text-xs font-mono font-semibold"
+                        className="px-4 py-1.5 rounded-lg bg-[#c9cd58] hover:bg-[#d8db6f] text-[#121414] text-xs font-mono font-bold"
                       >
                         Сохранить привязку
                       </button>
@@ -524,46 +537,153 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
                   </form>
                 )}
 
-                {/* Folder List */}
+                {/* External Bound Folders List */}
                 <div className="space-y-2">
-                  {container.boundFolders.map((bf) => (
-                    <div
-                      key={bf.id}
-                      className="p-3.5 rounded-xl bg-[#121414] border border-[#242828] flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <Folder className={`w-4 h-4 shrink-0 ${bf.isPrimary ? 'text-[#e5e971]' : 'text-[#a855f7]'}`} />
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <span className="font-mono text-sm text-[#e2e2e2] font-semibold truncate">
-                            {bf.path}
-                          </span>
-                          {bf.isPrimary && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 font-bold shrink-0">
-                              Primary Folder
+                  {container.boundFolders.length === 0 ? (
+                    <div className="p-4 rounded-xl bg-[#121414] border border-[#242828] text-center text-xs font-mono text-[#93927e]">
+                      К этому контейнеру пока не привязано ни одной проектной папки.
+                    </div>
+                  ) : (
+                    container.boundFolders.map((bf) => (
+                      <div
+                        key={bf.id}
+                        className="p-3.5 rounded-xl bg-[#121414] border border-[#242828] flex items-center justify-between gap-3 text-xs hover:border-[#c9cd58]/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <Folder className={`w-4 h-4 shrink-0 ${bf.isPrimary ? 'text-[#e5e971]' : 'text-[#c9cd58]'}`} />
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="font-mono text-sm text-[#e2e2e2] font-semibold truncate">
+                              {bf.path}
                             </span>
-                          )}
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#1e2020] text-[#93927e] border border-[#242828] shrink-0">
-                            Mode: {bf.observeMode}
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/30 font-bold shrink-0">
+                              🌐 EXT
+                            </span>
+                            {bf.isPrimary && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#c9cd58]/20 text-[#e5e971] border border-[#c9cd58]/40 font-bold shrink-0">
+                                Primary Folder
+                              </span>
+                            )}
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#1e2020] text-[#93927e] border border-[#242828] shrink-0">
+                              Mode: {bf.observeMode}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="font-mono text-xs text-[#93927e]">
+                            {bf.notesCount || 0} заметок
                           </span>
+                          {container.boundFolders.length > 1 && (
+                            <button
+                              onClick={() => removeBoundFolder(container.id, bf.id)}
+                              className="p-1 rounded text-[#666] hover:text-[#f87171] hover:bg-[#242828]"
+                              title="Отвязать папку"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-mono text-xs text-[#93927e]">
-                          {bf.notesCount || 0} заметок
-                        </span>
-                        {container.boundFolders.length > 1 && (
-                          <button
-                            onClick={() => removeBoundFolder(container.id, bf.id)}
-                            className="p-1 rounded text-[#666] hover:text-[#f87171] hover:bg-[#242828]"
-                            title="Отвязать папку"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+              {/* Section 2: Internal Scoped Folders */}
+              <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#242828] pb-3">
+                  <div>
+                    <h3 className="font-sans font-bold text-base text-white flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-[#3b82f6]" />
+                      <span>Внутренние папки контейнера (Internal Folders) ({internalFolders.length})</span>
+                    </h3>
+                    <p className="text-xs text-[#93927e] mt-0.5">
+                      Папки, привязанные строго к данному контейнеру и изолированные от других хранилищ.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setIsCreateInternalFolderOpen(true)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#3b82f6] hover:bg-[#60a5fa] text-white font-sans text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    <span>+ Создать папку контейнера</span>
+                  </button>
+                </div>
+
+                {/* Internal Scope Explanation Banner */}
+                <div className="p-3 rounded-lg bg-[#3b82f6]/10 border border-[#3b82f6]/30 flex items-start gap-2.5 text-xs">
+                  <Layers className="w-4 h-4 text-[#3b82f6] shrink-0 mt-0.5" />
+                  <p className="text-[#c9c7b2] leading-relaxed">
+                    <strong className="text-[#93c5fd]">Локальная изоляция:</strong> Внутренние папки принадлежат исключительно этому контейнеру («{container.name}»). Заметки в них сохраняются локально для этого хранилища и никогда не транслируются в другие хранилища.
+                  </p>
+                </div>
+
+                {/* Internal Folders List */}
+                <div className="space-y-2">
+                  {internalFolders.length === 0 ? (
+                    <div className="p-6 rounded-xl bg-[#121414] border border-[#242828] text-center space-y-2">
+                      <Folder className="w-8 h-8 text-[#444747] mx-auto" />
+                      <p className="text-xs font-mono text-[#e2e2e2] font-semibold">
+                        В этом контейнере пока нет локальных внутренних папок
+                      </p>
+                      <p className="text-[11px] font-mono text-[#93927e] max-w-md mx-auto">
+                        Вы можете создать внутреннюю папку для заметок, предназначенных только для этого хранилища.
+                      </p>
                     </div>
-                  ))}
+                  ) : (
+                    internalFolders.map((f) => (
+                      <div
+                        key={f.id}
+                        className="p-3.5 rounded-xl bg-[#121414] border border-[#242828] flex items-center justify-between gap-3 text-xs hover:border-[#3b82f6]/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <Folder
+                            className="w-4 h-4 shrink-0"
+                            style={{ color: f.color || (f.privacy === 'private' ? '#a855f7' : '#3b82f6') }}
+                          />
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="font-mono text-sm text-[#e2e2e2] font-semibold truncate">
+                              {f.name}
+                            </span>
+                            <span className="text-[11px] font-mono text-[#93927e] truncate">
+                              ({f.path})
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#3b82f6]/20 text-[#93c5fd] border border-[#3b82f6]/30 font-bold shrink-0">
+                              📦 INT
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-mono flex items-center gap-1 font-semibold ${
+                                f.privacy === 'private'
+                                  ? 'bg-[#a855f7]/20 text-[#d8b4fe]'
+                                  : 'bg-[#c9cd58]/20 text-[#e5e971]'
+                              }`}
+                            >
+                              {f.privacy === 'private' ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
+                              <span>{f.privacy === 'private' ? 'Приватная' : 'Публичная'}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="font-mono text-xs text-[#93927e]">
+                            {f._count?.noteFolders || 0} заметок
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Удалить внутреннюю папку «${f.name}»?`)) {
+                                deleteInternalFolder(f.id);
+                              }
+                            }}
+                            className="p-1 rounded text-[#666] hover:text-[#f87171] hover:bg-[#242828]"
+                            title="Удалить папку"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -719,6 +839,15 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
         }}
         containerImpact={warningContainerImpact}
         onConfirm={handleConfirmContainerPrivacyChange}
+      />
+
+      {/* Create Internal Folder Modal */}
+      <CreateFolderModal
+        isOpen={isCreateInternalFolderOpen}
+        onClose={() => setIsCreateInternalFolderOpen(false)}
+        defaultContainerId={container.id}
+        defaultScope="internal"
+        defaultPrivacy={container.privacy === 'private' ? 'private' : 'public'}
       />
     </div>
   );

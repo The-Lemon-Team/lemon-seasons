@@ -253,7 +253,7 @@ export class LentaApiClient {
     return [];
   }
 
-  async getSyncChanges(since?: string): Promise<{
+  async getSyncChanges(since?: string, containerId?: string): Promise<{
     syncedAt: string;
     since: string;
     counts: Record<string, number>;
@@ -262,7 +262,10 @@ export class LentaApiClient {
     taxonomy: LentaTaxonomyNodeDto[];
     folders: LentaFolderDto[];
   }> {
-    const query = since ? `?since=${encodeURIComponent(since)}` : '';
+    const params = new URLSearchParams();
+    if (since) params.append('since', since);
+    if (containerId) params.append('containerId', containerId);
+    const query = params.toString() ? `?${params.toString()}` : '';
     return this.request({
       url: `${this.baseUrl}/sync/changes${query}`,
       method: 'GET',

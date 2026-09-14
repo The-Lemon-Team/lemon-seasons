@@ -65,15 +65,18 @@ async function addNoteProgrammatically(params: {
   });
 
   // 3. Ensure Folder
-  const folder = await prisma.folder.upsert({
-    where: { path: params.folderPath },
-    update: {},
-    create: {
-      path: params.folderPath,
-      name: params.folderPath.split('/').pop() || 'Calendar',
-      icon: 'folder',
-    },
+  let folder = await prisma.folder.findFirst({
+    where: { path: params.folderPath, containerId: null },
   });
+  if (!folder) {
+    folder = await prisma.folder.create({
+      data: {
+        path: params.folderPath,
+        name: params.folderPath.split('/').pop() || 'Calendar',
+        icon: 'folder',
+      },
+    });
+  }
 
   // 4. Create Note
   const note = await prisma.note.create({

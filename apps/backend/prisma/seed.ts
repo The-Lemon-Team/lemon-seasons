@@ -150,7 +150,7 @@ async function main() {
   const folderMap = new Map<string, string>();
   async function getOrCreateFolder(path: string, icon = 'folder'): Promise<string> {
     if (folderMap.has(path)) return folderMap.get(path)!;
-    const existing = await prisma.folder.findUnique({ where: { path } });
+    const existing = await prisma.folder.findFirst({ where: { path, containerId: null } });
     if (existing) {
       folderMap.set(path, existing.id);
       return existing.id;

@@ -42,4 +42,21 @@ export class CreateFolderDto {
   @IsString()
   @IsOptional()
   privacy?: 'public' | 'private';
+
+  @ApiPropertyOptional({
+    description: 'ID of the Obsidian container for internal/scoped folders (null for global external folders)',
+    example: 'cont-personal-vault',
+  })
+  @IsString()
+  @IsOptional()
+  containerId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Folder scope: external (global project folder) or internal (container-specific)',
+    example: 'external',
+    enum: ['external', 'internal'],
+  })
+  @IsString()
+  @IsOptional()
+  scope?: 'external' | 'internal';
 }

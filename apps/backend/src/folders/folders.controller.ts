@@ -26,14 +26,18 @@ export class FoldersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all folders (flat list)' })
+  @ApiOperation({ summary: 'List all folders (flat list) with optional containerId or scope filtering' })
   @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'containerId', required: false, type: String })
+  @ApiQuery({ name: 'scope', required: false, enum: ['external', 'internal', 'all'] })
   findAll(
     @Query('includeDeleted') includeDeleted?: string,
     @Query('search') search?: string,
+    @Query('containerId') containerId?: string,
+    @Query('scope') scope?: 'external' | 'internal' | 'all',
   ) {
-    return this.foldersService.findAll(includeDeleted === 'true', search);
+    return this.foldersService.findAll(includeDeleted === 'true', search, containerId, scope);
   }
 
   @Get('tree')
@@ -41,8 +45,14 @@ export class FoldersController {
     summary: 'Get nested hierarchical folder tree for Obsidian-style file explorer',
   })
   @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean })
-  getTree(@Query('includeDeleted') includeDeleted?: string) {
-    return this.foldersService.getTree(includeDeleted === 'true');
+  @ApiQuery({ name: 'containerId', required: false, type: String })
+  @ApiQuery({ name: 'scope', required: false, enum: ['external', 'internal', 'all'] })
+  getTree(
+    @Query('includeDeleted') includeDeleted?: string,
+    @Query('containerId') containerId?: string,
+    @Query('scope') scope?: 'external' | 'internal' | 'all',
+  ) {
+    return this.foldersService.getTree(includeDeleted === 'true', containerId, scope);
   }
 
   @Get(':id')

@@ -3,6 +3,8 @@ import { NoteType } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds } from '../api/queries';
 import { useFoldersContext } from '../context/FoldersContext';
+import { useObsidianContainers } from '../context/ObsidianContainersContext';
+import { Folder as FolderType } from '@lenta/shared';
 import { X, Calendar, Tag, Plus, Check, FileText, Folder } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
@@ -17,12 +19,23 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
   const { t } = useI18n();
   const { data: feeds = [] } = useFeeds();
 
-  let folders: Array<{ id: string; name: string; path: string }> = [];
+  let externalFolders: FolderType[] = [];
+  let internalFolders: FolderType[] = [];
   try {
     const foldersCtx = useFoldersContext();
-    folders = foldersCtx.folders || [];
+    externalFolders = foldersCtx.externalFolders || [];
+    internalFolders = foldersCtx.internalFolders || [];
   } catch {
-    folders = [];
+    externalFolders = [];
+    internalFolders = [];
+  }
+
+  let containers: any[] = [];
+  try {
+    const contCtx = useObsidianContainers();
+    containers = contCtx.containers || [];
+  } catch {
+    containers = [];
   }
 
   const [title, setTitle] = useState('');
@@ -187,26 +200,67 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
                   </div>
 
                   {!isCustomFolder ? (
-                    <select
-                      value={folderPath}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setIsCustomFolder(true);
-                          setFolderPath('');
-                        } else {
-                          setFolderPath(e.target.value);
-                        }
-                      }}
-                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                    >
-                      <option value="">{t.noteFolderRoot}</option>
-                      {folders.map((f) => (
-                        <option key={f.id} value={f.path}>
-                          📁 {f.name} ({f.path})
-                        </option>
-                      ))}
-                      <option value="__custom__">✏️ {t.noteFolderCustom}</option>
-                    </select>
+                    <>
+                      <select
+                        value={folderPath}
+                        onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            setIsCustomFolder(true);
+                            setFolderPath('');
+                          } else {
+                            setFolderPath(e.target.value);
+                          }
+                        }}
+                        className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                      >
+                        <option value="">{t.noteFolderRoot}</option>
+                        {externalFolders.length > 0 && (
+                          <optgroup label="🌐 Общие проектные папки (External)">
+                            {externalFolders.map((f) => (
+                              <option key={f.id} value={f.path}>
+                                🌐 {f.name} ({f.path})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {internalFolders.length > 0 && (
+                          <optgroup label="📦 Папки контейнеров (Internal)">
+                            {internalFolders.map((f) => {
+                              const cont = containers.find((c) => c.id === f.containerId);
+                              return (
+                                <option key={f.id} value={f.path}>
+                                  📦 [{cont?.name || 'Vault'}] {f.name} ({f.path})
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                        <option value="__custom__">✏️ {t.noteFolderCustom}</option>
+                      </select>
+
+                      {/* Scope Information Note */}
+                      {(() => {
+                        const selectedFolderObj = [...externalFolders, ...internalFolders].find(
+                          (f) => f.path.toLowerCase() === folderPath.toLowerCase()
+                        );
+                        if (!selectedFolderObj) return null;
+                        const isExt = selectedFolderObj.scope === 'external' || !selectedFolderObj.containerId;
+                        const cont = containers.find((c) => c.id === selectedFolderObj.containerId);
+                        return (
+                          <p className="mt-1 text-[10px] font-mono leading-tight">
+                            {isExt ? (
+                              <span className="text-[#e5e971]">
+                                🌐 <strong>{t.folderScopeExternal}</strong>: заметка будет транслироваться во все подключённые Obsidian-контейнеры.
+                              </span>
+                            ) : (
+                              <span className="text-[#93c5fd]">
+                                📦 <strong>{t.folderScopeInternal}</strong>: сохранится строго внутри «{cont?.name || selectedFolderObj.containerId}».
+                              </span>
+                            )}
+                          </p>
+                        );
+                      })()}
+                    </>
                   ) : (
                     <input
                       type="text"

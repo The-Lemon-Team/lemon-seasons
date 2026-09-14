@@ -10,7 +10,7 @@ vi.mock('obsidian', () => ({
 describe('LentaApiClient - listContainers', () => {
   let client: LentaApiClient;
   const baseUrl = 'http://localhost:4000/api';
-  const containerBaseUrl = 'http://localhost:3000';
+  const containerBaseUrl = 'http://localhost:3001';
 
   beforeEach(() => {
     vi.clearAllMocks();

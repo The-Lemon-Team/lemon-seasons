@@ -5,9 +5,31 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SyncService {
   constructor(private prisma: PrismaService) {}
 
-  async getChangesSince(sinceIsoString?: string) {
+  async getChangesSince(sinceIsoString?: string, containerId?: string) {
     const sinceDate = sinceIsoString ? new Date(sinceIsoString) : new Date(0);
     const now = new Date();
+
+    const folderCondition = containerId
+      ? {
+          updatedAt: { gte: sinceDate },
+          OR: [{ containerId: null }, { containerId }],
+        }
+      : {
+          updatedAt: { gte: sinceDate },
+          containerId: null,
+        };
+
+    const noteCondition = containerId
+      ? {
+          updatedAt: { gte: sinceDate },
+          OR: [
+            { containerId: null },
+            { containerId },
+          ],
+        }
+      : {
+          updatedAt: { gte: sinceDate },
+        };
 
     const [feeds, notes, taxonomy, hashtags, folders] = await Promise.all([
       this.prisma.feed.findMany({
@@ -16,9 +38,7 @@ export class SyncService {
         },
       }),
       this.prisma.note.findMany({
-        where: {
-          updatedAt: { gte: sinceDate },
-        },
+        where: noteCondition,
         include: {
           tags: true,
           hashtags: true,
@@ -45,9 +65,7 @@ export class SyncService {
         },
       }),
       this.prisma.folder.findMany({
-        where: {
-          updatedAt: { gte: sinceDate },
-        },
+        where: folderCondition,
       }),
     ]);
 

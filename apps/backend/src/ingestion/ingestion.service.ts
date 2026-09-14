@@ -93,8 +93,8 @@ export class IngestionService {
    * Helper: Ensure Folder exists
    */
   public async ensureFolder(path: string, icon?: string) {
-    const existing = await this.prisma.folder.findUnique({
-      where: { path },
+    const existing = await this.prisma.folder.findFirst({
+      where: { path, containerId: null, deletedAt: null },
     });
     if (existing) return existing;
 

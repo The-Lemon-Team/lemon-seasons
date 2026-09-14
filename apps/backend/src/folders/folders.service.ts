@@ -10,6 +10,8 @@ export interface FolderTreeNode {
   icon: string | null;
   color: string | null;
   privacy?: 'private' | 'public';
+  containerId?: string | null;
+  scope?: 'external' | 'internal';
   notesCount: number;
   directNotesCount: number;
   updatedAt: Date;
@@ -48,17 +50,23 @@ export class FoldersService {
       throw new ConflictException('Folder path cannot be empty');
     }
 
+    const targetContainerId = createFolderDto.containerId || null;
+
     const existing = await this.prisma.folder.findFirst({
-      where: { path, deletedAt: null },
+      where: {
+        path,
+        containerId: targetContainerId,
+        deletedAt: null,
+      },
     });
     if (existing) {
-      throw new ConflictException(`Folder with path '${path}' already exists`);
+      throw new ConflictException(`Folder with path '${path}' already exists in this scope`);
     }
 
     const name = createFolderDto.name?.trim() || FoldersService.getFolderName(path);
 
     // Auto-create any missing parent folders in the path hierarchy
-    await this.ensureParentFolders(path);
+    await this.ensureParentFolders(path, targetContainerId, createFolderDto.privacy);
 
     return this.prisma.folder.create({
       data: {
@@ -66,6 +74,8 @@ export class FoldersService {
         path,
         icon: createFolderDto.icon?.trim() || null,
         color: createFolderDto.color?.trim() || null,
+        privacy: createFolderDto.privacy || 'public',
+        containerId: targetContainerId,
       },
       include: {
         _count: {
@@ -77,7 +87,11 @@ export class FoldersService {
     });
   }
 
-  private async ensureParentFolders(childPath: string) {
+  private async ensureParentFolders(
+    childPath: string,
+    containerId: string | null = null,
+    privacy: 'public' | 'private' = 'public',
+  ) {
     const parts = childPath.split('/');
     if (parts.length <= 1) return;
 
@@ -85,23 +99,47 @@ export class FoldersService {
     for (let i = 0; i < parts.length - 1; i++) {
       currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
       const existing = await this.prisma.folder.findFirst({
-        where: { path: currentPath, deletedAt: null },
+        where: {
+          path: currentPath,
+          containerId,
+          deletedAt: null,
+        },
       });
       if (!existing) {
         await this.prisma.folder.create({
           data: {
             name: parts[i],
             path: currentPath,
+            containerId,
+            privacy,
           },
         });
       }
     }
   }
 
-  async findAll(includeDeleted = false, search?: string) {
+  async findAll(
+    includeDeleted = false,
+    search?: string,
+    containerId?: string,
+    scope?: 'external' | 'internal' | 'all',
+  ) {
+    let containerCondition: any = {};
+
+    if (scope === 'external') {
+      containerCondition = { containerId: null };
+    } else if (scope === 'internal') {
+      containerCondition = containerId ? { containerId } : { containerId: { not: null } };
+    } else if (containerId) {
+      containerCondition = {
+        OR: [{ containerId: null }, { containerId }],
+      };
+    }
+
     return this.prisma.folder.findMany({
       where: {
         ...(includeDeleted ? {} : { deletedAt: null }),
+        ...containerCondition,
         ...(search
           ? {
               OR: [
@@ -122,8 +160,12 @@ export class FoldersService {
     });
   }
 
-  async getTree(includeDeleted = false): Promise<FolderTreeNode[]> {
-    const folders = await this.findAll(includeDeleted);
+  async getTree(
+    includeDeleted = false,
+    containerId?: string,
+    scope?: 'external' | 'internal' | 'all',
+  ): Promise<FolderTreeNode[]> {
+    const folders = await this.findAll(includeDeleted, undefined, containerId, scope);
 
     const folderMap = new Map<string, FolderTreeNode>();
     const roots: FolderTreeNode[] = [];
@@ -131,15 +173,18 @@ export class FoldersService {
     // 1. Initialize all nodes
     for (const folder of folders) {
       const directCount = folder._count?.noteFolders || 0;
+      const folderScope: 'external' | 'internal' = folder.containerId ? 'internal' : 'external';
       folderMap.set(folder.path, {
         id: folder.id,
         name: folder.name,
         path: folder.path,
         icon: folder.icon,
         color: folder.color,
-        privacy: (folder as any).privacy || 'public',
+        privacy: (folder.privacy as 'public' | 'private') || 'public',
+        containerId: folder.containerId,
+        scope: folderScope,
         directNotesCount: directCount,
-        notesCount: directCount, // will accumulate children counts
+        notesCount: directCount,
         updatedAt: folder.updatedAt,
         deletedAt: folder.deletedAt,
         children: [],
@@ -255,6 +300,8 @@ export class FoldersService {
         ...(newPath ? { path: newPath } : {}),
         ...(updateFolderDto.icon !== undefined ? { icon: updateFolderDto.icon?.trim() || null } : {}),
         ...(updateFolderDto.color !== undefined ? { color: updateFolderDto.color?.trim() || null } : {}),
+        ...(updateFolderDto.privacy !== undefined ? { privacy: updateFolderDto.privacy } : {}),
+        ...(updateFolderDto.containerId !== undefined ? { containerId: updateFolderDto.containerId || null } : {}),
       },
       include: {
         _count: {
@@ -307,6 +354,7 @@ export class FoldersService {
    */
   async resolveFolderAssignments(
     folderInputs?: (string | FolderInputItem)[],
+    containerId?: string,
   ): Promise<{ folderId: string; isPrimary: boolean; order: number }[]> {
     if (!folderInputs || folderInputs.length === 0) {
       return [];
@@ -323,16 +371,22 @@ export class FoldersService {
       if (!normalizedPath) continue;
 
       let folder = await this.prisma.folder.findFirst({
-        where: { path: normalizedPath, deletedAt: null },
+        where: {
+          path: normalizedPath,
+          ...(containerId ? { OR: [{ containerId }, { containerId: null }] } : { containerId: null }),
+          deletedAt: null,
+        },
+        orderBy: { containerId: 'desc' },
       });
 
       if (!folder) {
         // Auto-create folder hierarchy
-        await this.ensureParentFolders(normalizedPath);
+        await this.ensureParentFolders(normalizedPath, containerId || null);
         folder = await this.prisma.folder.create({
           data: {
             name: FoldersService.getFolderName(normalizedPath),
             path: normalizedPath,
+            containerId: containerId || null,
           },
         });
       }
