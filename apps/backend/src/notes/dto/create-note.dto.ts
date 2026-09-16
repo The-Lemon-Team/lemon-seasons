@@ -19,10 +19,15 @@ export enum NoteType {
 }
 
 export class CreateNoteDto {
-  @ApiProperty({ description: 'Feed ID this note belongs to' })
+  @ApiPropertyOptional({ description: 'Feed ID this note belongs to' })
   @IsString()
-  @IsNotEmpty()
-  feedId: string;
+  @IsOptional()
+  feedId?: string;
+
+  @ApiPropertyOptional({ description: 'Container ID this note belongs to' })
+  @IsString()
+  @IsOptional()
+  containerId?: string;
 
   @ApiProperty({ description: 'Title of the note', example: 'Marvel Cinematic Universe Phase 5 Overview' })
   @IsString()
@@ -99,6 +104,16 @@ export class CreateNoteDto {
   @IsString()
   @IsOptional()
   folder?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of Folder IDs to associate with this note',
+    type: [String],
+    example: ['folder-uuid-1'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  folderIds?: string[];
 
   @ApiPropertyOptional({
     description: 'If true, auto-suggests and provisions a default folder from taxonomy tag path when no folders are provided',

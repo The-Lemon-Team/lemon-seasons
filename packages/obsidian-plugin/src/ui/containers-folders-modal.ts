@@ -31,7 +31,8 @@ export class LentaContainersFoldersModal extends Modal {
     settings: LentaPluginSettings,
     onSaveSettings: () => Promise<void>,
     onOpenConnectionsModal?: () => void,
-    syncEngine?: LentaSyncEngine
+    syncEngine?: LentaSyncEngine,
+    private onOpenSyncModal?: (mode: 'push' | 'pull') => void
   ) {
     super(app);
     this.apiClient = apiClient;
@@ -533,7 +534,10 @@ export class LentaContainersFoldersModal extends Modal {
       infoDesc.setText(`${stagedCount} container${stagedCount === 1 ? '' : 's'} connected for active vault work.`);
     }
 
-    const connectBtn = container.createEl('button', {
+    const buttonsRow = container.createDiv({ cls: 'lenta-connect-actions-group' });
+    buttonsRow.style.cssText = 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;';
+
+    const connectBtn = buttonsRow.createEl('button', {
       cls: 'mod-cta lenta-btn-lemon lenta-connect-main-btn',
       text: this.isConnecting ? '⏳ Connecting & Updating Files...' : (hasChanges ? '🔌 Connect & Update Files' : '🔌 Re-Connect & Refresh Files'),
     });
@@ -543,6 +547,32 @@ export class LentaContainersFoldersModal extends Modal {
     connectBtn.onclick = async () => {
       await this.applyConnectionAndUpdateFiles();
     };
+
+    if (this.onOpenSyncModal) {
+      const pullBtn = buttonsRow.createEl('button', {
+        cls: 'lenta-action-btn lenta-pull-btn',
+        text: '📥 Pull (⬇)',
+      });
+      pullBtn.title = 'Open Pull modal to inspect server commits and pull changes';
+      pullBtn.style.cssText = 'padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;';
+      pullBtn.disabled = this.isConnecting;
+      pullBtn.onclick = () => {
+        this.close();
+        this.onOpenSyncModal!('pull');
+      };
+
+      const pushBtn = buttonsRow.createEl('button', {
+        cls: 'lenta-action-btn lenta-push-btn',
+        text: '📤 Push (⬆)',
+      });
+      pushBtn.title = 'Open Push modal to compose commit and push local changes';
+      pushBtn.style.cssText = 'padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;';
+      pushBtn.disabled = this.isConnecting;
+      pushBtn.onclick = () => {
+        this.close();
+        this.onOpenSyncModal!('push');
+      };
+    }
   }
 
   private renderHeaderAndMappingInfo() {

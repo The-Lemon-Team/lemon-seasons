@@ -92,7 +92,12 @@ export class NotesService {
     );
 
     // Resolve folders
-    let rawFolders = createNoteDto.folders || (createNoteDto.folder ? [createNoteDto.folder] : []);
+    let rawFolders: (string | any)[] = createNoteDto.folders
+      ? [...createNoteDto.folders]
+      : (createNoteDto.folder ? [createNoteDto.folder] : []);
+    if (createNoteDto.folderIds && createNoteDto.folderIds.length > 0) {
+      rawFolders = [...rawFolders, ...createNoteDto.folderIds];
+    }
 
     // Smart Routing: If no folders provided, optionally suggest/provision folder from primary taxonomy tag
     if (rawFolders.length === 0 && tagIds.length > 0) {
@@ -107,8 +112,19 @@ export class NotesService {
       }
     }
 
-    const targetContainerId = (createNoteDto as any).containerId || undefined;
+    let targetContainerId = (createNoteDto as any).containerId || undefined;
     const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
+
+    // If containerId not provided, attempt to inherit from the primary assigned folder
+    if (!targetContainerId && folderAssignments.length > 0) {
+      const primaryFolder = await this.prisma.folder.findUnique({
+        where: { id: folderAssignments[0].folderId },
+        select: { containerId: true },
+      });
+      if (primaryFolder?.containerId) {
+        targetContainerId = primaryFolder.containerId;
+      }
+    }
 
     // Prepare initial links if provided
     let linksData: Prisma.NoteLinkCreateWithoutNoteInput[] | undefined = undefined;
@@ -138,8 +154,8 @@ export class NotesService {
         startDate: new Date(createNoteDto.startDate),
         endDate: createNoteDto.endDate ? new Date(createNoteDto.endDate) : null,
         sourceLink: initialSourceLink,
-        icon: createNoteDto.icon,
-        feed: { connect: { id: createNoteDto.feedId } },
+        feed: createNoteDto.feedId ? { connect: { id: createNoteDto.feedId } } : undefined,
+        container: targetContainerId ? { connect: { id: targetContainerId } } : undefined,
         tags: tagIds.length > 0 ? { connect: tagIds.map((id) => ({ id })) } : undefined,
         hashtags: hashtagIds.length > 0 ? { connect: hashtagIds.map((id) => ({ id })) } : undefined,
         folders: folderAssignments.length > 0
@@ -440,13 +456,20 @@ export class NotesService {
     }
 
     // Handle folders update if provided
-    if (updateNoteDto.folders !== undefined || updateNoteDto.folder !== undefined) {
-      const rawFolders =
+    if (
+      updateNoteDto.folders !== undefined ||
+      updateNoteDto.folder !== undefined ||
+      updateNoteDto.folderIds !== undefined
+    ) {
+      let rawFolders: (string | any)[] =
         updateNoteDto.folders !== undefined
-          ? updateNoteDto.folders
+          ? [...updateNoteDto.folders]
           : updateNoteDto.folder
           ? [updateNoteDto.folder]
           : [];
+      if (updateNoteDto.folderIds && updateNoteDto.folderIds.length > 0) {
+        rawFolders = [...rawFolders, ...updateNoteDto.folderIds];
+      }
       const targetContainerId = (updateNoteDto as any).containerId || current.containerId || undefined;
       const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
 
@@ -480,6 +503,11 @@ export class NotesService {
         ...(updateNoteDto.sourceLink !== undefined ? { sourceLink: updateNoteDto.sourceLink } : {}),
         ...(updateNoteDto.icon !== undefined ? { icon: updateNoteDto.icon } : {}),
         ...(updateNoteDto.feedId ? { feed: { connect: { id: updateNoteDto.feedId } } } : {}),
+        ...((updateNoteDto as any).containerId !== undefined
+          ? (updateNoteDto as any).containerId
+            ? { container: { connect: { id: (updateNoteDto as any).containerId } } }
+            : { container: { disconnect: true } }
+          : {}),
         tags: tagUpdates,
         hashtags: hashtagUpdates,
       },

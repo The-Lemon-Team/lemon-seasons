@@ -148,19 +148,38 @@ async function main() {
 
   // 2. Helper functions for upserting Folder, Taxonomy, Hashtag, Image, Links
   const folderMap = new Map<string, string>();
-  async function getOrCreateFolder(path: string, icon = 'folder'): Promise<string> {
-    if (folderMap.has(path)) return folderMap.get(path)!;
-    const existing = await prisma.folder.findFirst({ where: { path, containerId: null } });
+  async function getOrCreateFolder(
+    path: string,
+    icon = 'folder',
+    containerId: string | null = null,
+    privacy: 'public' | 'private' = 'public'
+  ): Promise<string> {
+    const key = `${path}::${containerId || 'null'}`;
+    if (folderMap.has(key)) return folderMap.get(key)!;
+
+    // Ensure parent folders exist
+    const parts = path.split('/');
+    if (parts.length > 1) {
+      let currentPath = '';
+      for (let i = 0; i < parts.length - 1; i++) {
+        currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+        await getOrCreateFolder(currentPath, 'folder', containerId, privacy);
+      }
+    }
+
+    const existing = await prisma.folder.findFirst({
+      where: { path, containerId: containerId ? containerId : null },
+    });
     if (existing) {
-      folderMap.set(path, existing.id);
+      folderMap.set(key, existing.id);
       return existing.id;
     }
-    const parts = path.split('/');
+
     const name = parts[parts.length - 1];
     const created = await prisma.folder.create({
-      data: { path, name, icon },
+      data: { path, name, icon, containerId, privacy },
     });
-    folderMap.set(path, created.id);
+    folderMap.set(key, created.id);
     return created.id;
   }
 
@@ -223,7 +242,17 @@ async function main() {
     // Folders
     if (item.folders && item.folders.length > 0) {
       for (let i = 0; i < item.folders.length; i++) {
-        const folderId = await getOrCreateFolder(item.folders[i]);
+        const folderPath = item.folders[i];
+        const isInternal =
+          item.containerId === 'cont-private-user-vault' ||
+          folderPath.startsWith('04_Archive') ||
+          folderPath.startsWith('01_Daily_Logs') ||
+          folderPath.startsWith('Bookmarks') ||
+          folderPath.startsWith('Core_Strategy') ||
+          folderPath.startsWith('Financials');
+        const cId = isInternal ? (item.containerId || 'cont-private-user-vault') : null;
+        const privacy = isInternal ? 'private' : 'public';
+        const folderId = await getOrCreateFolder(folderPath, 'folder', cId, privacy);
         await prisma.noteFolder.create({
           data: {
             noteId: note.id,
@@ -403,7 +432,7 @@ async function main() {
       sourceLink: 'https://notion.so/strategy/q4-content',
       icon: 'trending_up',
       taxonomyPath: 'strategy.planning',
-      folders: ['Strategy/Planning', 'Projects/Lenta'],
+      folders: ['Strategy/Planning', '02_Projects/Lenta'],
       hashtags: ['Strategy', 'Roadmap', 'Q4'],
       description: `### Strategy Review & Goals\nEvaluating the performance metrics for Q3 and aligning editorial calendars for the upcoming holiday push.\n\n1. **Taxonomy Alignment:** Ensure taxonomy tags are strictly adhered to for cross-referencing across Obsidian and Admin CMS.\n2. **Performance Metrics:** Review read times, syndication reach, and sync latency.`,
     },
@@ -415,7 +444,7 @@ async function main() {
       startDate: '2026-10-24T12:00:00.000Z',
       icon: 'palette',
       taxonomyPath: 'design.tokens',
-      folders: ['Design/Tokens', 'Projects/Lenta'],
+      folders: ['Design/Tokens', '02_Projects/Lenta'],
       hashtags: ['DesignSystem', 'Tokens', 'UI'],
       description: `### New Palette Configuration\n\n\`\`\`json\n{\n  "colors": {\n    "primary": "#c9cd58",\n    "surface": "#121414",\n    "secondary": "#c9c8a5",\n    "tertiary": "#a4d0bf"\n  },\n  "fonts": {\n    "ui": "Inter",\n    "metadata": "JetBrains Mono"\n  }\n}\n\`\`\`\n\nAll components now adhere to the 4px base unit grid and Level 1/Level 2 elevation borders.`,
     },
@@ -430,6 +459,191 @@ async function main() {
       folders: ['Operations/Infrastructure'],
       hashtags: ['DevOps', 'Postgres', 'Sync'],
       description: `### Private Vault Infrastructure Checklist\n- [x] PostgreSQL schema synchronized with Prisma ORM\n- [x] Multi-Container support for public & encrypted private vaults\n- [x] Obsidian Plugin sync engine with offline delta ledger`,
+    },
+
+    // ── 04_Archive/Thoughts (Internal / Private) ──────────────────────────
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Reflections on Dual-Scope Folders & Obsidian Containment',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-12T15:30:00.000Z',
+      icon: 'sparkles',
+      taxonomyPath: 'architecture.thoughts',
+      folders: ['04_Archive/Thoughts', '04_Archive'],
+      hashtags: ['Thoughts', 'Architecture', 'Obsidian'],
+      description: `### Dual-Scope Folders: The Core Tradeoff\n\nExternal project folders broadcast globally to all connected vaults, whereas internal container folders are strictly isolated to personal encrypted vaults.\n\nKey takeaways:\n1. Never mix public and private note references in internal logs.\n2. Delta sync must filter by \`containerId\` at the database query level.\n3. The UI must clearly indicate scope badges (EXT vs INT) so users have zero doubt about privacy.`,
+    },
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Offline-First Note Architecture: Last-Write-Wins vs Vector Clocks',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-10T11:00:00.000Z',
+      icon: 'sparkles',
+      taxonomyPath: 'architecture.sync',
+      folders: ['04_Archive/Thoughts', '04_Archive'],
+      hashtags: ['Thoughts', 'OfflineFirst', 'CRDT'],
+      description: `### Offline-First Philosophy\n\nIn client-first applications like Obsidian, files are the ultimate source of truth for the author.\n\n- Field-level Last-Write-Wins (LWW) with hash verification provides predictable merges without heavyweight CRDT overhead.\n- \`lenta_id\` in frontmatter ensures note identity survives file renames and moves across directories.`,
+    },
+    {
+      feedId: feedProduct.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Mental Models for Chronological Information Systems',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-08T09:45:00.000Z',
+      icon: 'sparkles',
+      taxonomyPath: 'product.philosophy',
+      folders: ['04_Archive/Thoughts', '04_Archive'],
+      hashtags: ['Thoughts', 'Product', 'MentalModels'],
+      description: `### Linear vs Branching Time\n\nMost calendar applications treat time as empty slots to fill. Project Lenta treats time as an anchor for evolving documents.\n\n- Events have durations, milestones have moments, releases have cascading dependencies.\n- Organizing by both semantic taxonomy and physical virtual folders mirrors how human memory works.`,
+    },
+
+    // ── Bookmarks (Internal / Private) ────────────────────────────────────
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Project Lenta Monorepo Architecture & API Reference',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-14T10:00:00.000Z',
+      icon: 'book-open',
+      sourceLink: 'https://github.com/The-Lemon-Team/lemon-seasons',
+      taxonomyPath: 'docs.architecture',
+      folders: ['Bookmarks'],
+      hashtags: ['Bookmarks', 'Docs', 'Lenta'],
+      description: `### Key System Reference Links\n- REST Delta Sync: \`/sync/changes?since=<ISO>&containerId=<ID>\`\n- Swagger Docs: \`http://localhost:3001/api/docs\`\n- Calendar App: \`http://localhost:3000\`\n- Admin CMS: \`http://localhost:5173\``,
+    },
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: 'PostgreSQL ltree & GiST Hierarchical Indexing Best Practices',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-05T14:20:00.000Z',
+      icon: 'book-open',
+      sourceLink: 'https://www.postgresql.org/docs/current/ltree.html',
+      taxonomyPath: 'docs.database',
+      folders: ['Bookmarks'],
+      hashtags: ['Bookmarks', 'Postgres', 'ltree'],
+      description: `### Reference on ltree Operators\n- \`subpath(path, offset, len)\`: Extract subpath slice\n- \`path <@ 'world.europe'\`: Find all children within subtree\n- GiST index ensures sub-millisecond tree traversal even across 100k+ taxonomy nodes.`,
+    },
+
+    // ── 01_Daily_Logs (Internal / Private) ────────────────────────────────
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: '2026-09-15 Daily Sync: Dual Folder Engine Verification & Push/Pull',
+      type: NoteType.EVENT,
+      startDate: '2026-09-15T09:00:00.000Z',
+      endDate: '2026-09-15T18:00:00.000Z',
+      icon: 'book-open',
+      taxonomyPath: 'logs.daily',
+      folders: ['01_Daily_Logs'],
+      hashtags: ['DailyLog', 'Standup', 'Sync'],
+      description: `### Daily Standup & Focus Areas\n- [x] Dual-scope folder architecture completed\n- [x] Verified Prisma schema relations for NoteFolder\n- [/] Verifying transparent Push/Pull synchronization between Obsidian test-vault and Web Calendar App\n- [/] Populating real folder files and validating note inspector`,
+    },
+    {
+      feedId: feedTech.id,
+      containerId: 'cont-private-user-vault',
+      title: '2026-09-14 Daily Sync: Container Privacy & Token Migration',
+      type: NoteType.EVENT,
+      startDate: '2026-09-14T09:00:00.000Z',
+      endDate: '2026-09-14T18:00:00.000Z',
+      icon: 'book-open',
+      taxonomyPath: 'logs.daily',
+      folders: ['01_Daily_Logs'],
+      hashtags: ['DailyLog', 'Standup', 'Security'],
+      description: `### Daily Standup Summary\n- Fixed authentication tokens across Obsidian plugin and backend.\n- Added container-scoped isolation tests.\n- Cleaned up orphaned Docker containers.`,
+    },
+
+    // ── 02_Projects/Lenta (External / Public) ─────────────────────────────
+    {
+      feedId: feedProduct.id,
+      title: 'Dual Folder Engine Architecture & Folder Manager View',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-13T14:00:00.000Z',
+      icon: 'lemon',
+      taxonomyPath: 'projects.lenta.architecture',
+      folders: ['02_Projects/Lenta', '02_Projects'],
+      hashtags: ['Lenta', 'Architecture', 'UI'],
+      description: `### Dual Folder Engine Specification\n\nProject Lenta supports two orthogonal hierarchical dimensions:\n1. **Taxonomy Tree (ltree)**: Subject classification for filtering and facet navigation.\n2. **Virtual Folders (NoteFolder)**: Obsidian vault file tree projection for local file explorer parity.\n\nThe Folder Manager View provides a full Obsidian Explorer UI inside the Calendar web application.`,
+    },
+    {
+      feedId: feedProduct.id,
+      title: 'Timeline View & Chronological Hub Specifications',
+      type: NoteType.PERIOD,
+      startDate: '2026-09-01T00:00:00.000Z',
+      endDate: '2026-09-30T23:59:59.000Z',
+      icon: 'calendar',
+      taxonomyPath: 'projects.lenta.roadmap',
+      folders: ['02_Projects/Lenta', '02_Projects'],
+      hashtags: ['Lenta', 'Timeline', 'Roadmap'],
+      description: `### September 2026 Milestone: Timeline View\n- High-performance virtualized canvas for multi-feed chronological display.\n- MiniCalendar navigation drawer with quick month jump.\n- Real-time delta sync updates without full page reloads.`,
+    },
+
+    // ── 03_Research/AI (External / Public) ────────────────────────────────
+    {
+      feedId: feedTech.id,
+      title: 'Local Embeddings and Vector Search in Obsidian Vaults',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-11T16:00:00.000Z',
+      icon: 'bot',
+      taxonomyPath: 'research.ai.vector',
+      folders: ['03_Research/AI', '03_Research'],
+      hashtags: ['AI', 'Embeddings', 'Research'],
+      description: `### Embedding Strategies for Local Markdown Files\n- Exploring ONNX runtime with all-MiniLM-L6-v2 inside Obsidian plugin.\n- Storing 384-dimensional vector embeddings in local IndexedDB.\n- Hybrid semantic + BM25 keyword search for sub-second retrieval.`,
+    },
+    {
+      feedId: feedTech.id,
+      title: 'Agentic Workflows in Collaborative Knowledge Management',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-07T13:30:00.000Z',
+      icon: 'bot',
+      taxonomyPath: 'research.ai.agents',
+      folders: ['03_Research/AI', '03_Research'],
+      hashtags: ['AI', 'Agents', 'Workflows'],
+      description: `### Pair Programming with Specialized Subagents\nEvaluating autonomous agent architectures for background ledger reconciliation and conflict resolution in distributed note graphs.`,
+    },
+
+    // ── Financials/Q3_Q4 (Internal / Private) ─────────────────────────────
+    {
+      feedId: feedProduct.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Q3-Q4 2026 Cloud Infrastructure & DevOps Budget Allocation',
+      type: NoteType.PERIOD,
+      startDate: '2026-07-01T00:00:00.000Z',
+      endDate: '2026-12-31T23:59:59.000Z',
+      icon: 'circle-dollar-sign',
+      taxonomyPath: 'financials.budget',
+      folders: ['Financials/Q3_Q4', 'Financials'],
+      hashtags: ['Financials', 'Budget', 'Cloud'],
+      description: `### Financial Summary: Q3-Q4 2026\n- Server instances (PostgreSQL 16 High-Availability): 45%\n- S3 Storage & CDN Media hosting: 25%\n- CI/CD build minutes & staging environments: 15%\n- Contingency fund: 15%`,
+    },
+    {
+      feedId: feedProduct.id,
+      containerId: 'cont-private-user-vault',
+      title: 'SaaS Monetization & Open Source Licensing Framework',
+      type: NoteType.SINGLE,
+      startDate: '2026-09-02T10:15:00.000Z',
+      icon: 'circle-dollar-sign',
+      taxonomyPath: 'financials.monetization',
+      folders: ['Financials/Q3_Q4', 'Financials'],
+      hashtags: ['Financials', 'SaaS', 'Strategy'],
+      description: `### Business Model Strategy\nCore headless CMS and Obsidian plugin remain open source (MIT). Enterprise multi-tenant sync and team access control offered as Lemon Cloud Pro.`,
+    },
+
+    // ── Core_Strategy (Internal / Private) ────────────────────────────────
+    {
+      feedId: feedProduct.id,
+      containerId: 'cont-private-user-vault',
+      title: 'Core Strategic Principles 2026: Privacy-First & Distributed Ownership',
+      type: NoteType.PERIOD,
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: '2026-12-31T23:59:59.000Z',
+      icon: 'lock',
+      taxonomyPath: 'strategy.core',
+      folders: ['Core_Strategy'],
+      hashtags: ['CoreStrategy', 'Principles', 'Privacy'],
+      description: `### The Three Non-Negotiable Pillars\n1. **User Owns Their Data**: Notes live as plain text Markdown on the local filesystem.\n2. **Privacy by Design**: Private vaults are physically partitioned by container IDs and never broadcast.\n3. **Frictionless Sync**: Delta-based synchronization with deterministic conflict resolution.`,
     },
   ];
 

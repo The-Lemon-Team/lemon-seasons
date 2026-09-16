@@ -367,31 +367,50 @@ export class FoldersService {
     for (let i = 0; i < folderInputs.length; i++) {
       const item = folderInputs[i];
       const rawPath = typeof item === 'string' ? item : item.path;
-      const normalizedPath = FoldersService.normalizePath(rawPath);
-      if (!normalizedPath) continue;
+      if (!rawPath) continue;
 
-      let folder = await this.prisma.folder.findFirst({
-        where: {
-          path: normalizedPath,
-          ...(containerId ? { OR: [{ containerId }, { containerId: null }] } : { containerId: null }),
-          deletedAt: null,
-        },
-        orderBy: { containerId: 'desc' },
-      });
+      let folder: any = null;
 
-      if (!folder) {
-        // Auto-create folder hierarchy
-        await this.ensureParentFolders(normalizedPath, containerId || null);
-        folder = await this.prisma.folder.create({
-          data: {
-            name: FoldersService.getFolderName(normalizedPath),
-            path: normalizedPath,
-            containerId: containerId || null,
+      // 1. If rawPath or item has an ID (e.g. UUID), lookup folder by ID first
+      const possibleId = typeof item === 'object' && (item as any).id ? (item as any).id : rawPath;
+      if (possibleId && typeof possibleId === 'string' && possibleId.length === 36 && possibleId.includes('-')) {
+        folder = await this.prisma.folder.findFirst({
+          where: {
+            id: possibleId,
+            deletedAt: null,
           },
         });
       }
 
-      if (!seenFolderIds.has(folder.id)) {
+      // 2. If not found by ID, look up by normalized path
+      const normalizedPath = FoldersService.normalizePath(rawPath);
+      if (!folder && normalizedPath) {
+        folder = await this.prisma.folder.findFirst({
+          where: {
+            path: normalizedPath,
+            ...(containerId ? { OR: [{ containerId }, { containerId: null }] } : { containerId: null }),
+            deletedAt: null,
+          },
+          orderBy: { containerId: 'desc' },
+        });
+      }
+
+      // 3. If still not found and normalizedPath is a real path (not a UUID), auto-create folder hierarchy
+      if (!folder && normalizedPath) {
+        const isUuid = rawPath.length === 36 && rawPath.includes('-');
+        if (!isUuid) {
+          await this.ensureParentFolders(normalizedPath, containerId || null);
+          folder = await this.prisma.folder.create({
+            data: {
+              name: FoldersService.getFolderName(normalizedPath),
+              path: normalizedPath,
+              containerId: containerId || null,
+            },
+          });
+        }
+      }
+
+      if (folder && !seenFolderIds.has(folder.id)) {
         seenFolderIds.add(folder.id);
         const isItemPrimary = typeof item === 'object' ? Boolean(item.isPrimary) : i === 0;
         const isPrimary = isItemPrimary && !primaryAssigned;

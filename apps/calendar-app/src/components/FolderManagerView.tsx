@@ -6,6 +6,7 @@ import { FolderTreeNode, Folder, Note, NoteType, FolderPrivacy } from '@lenta/sh
 import { CreateFolderModal } from './CreateFolderModal';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
 import { NoteDetailModal } from './NoteDetailModal';
+import { CreateNoteModal } from './CreateNoteModal';
 import {
   Folder as FolderIcon,
   FolderPlus,
@@ -37,6 +38,9 @@ import {
   Archive,
   Star,
   CircleDollarSign,
+  Download,
+  Upload,
+  RefreshCw,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -46,6 +50,7 @@ interface FolderTreeNodeItemProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAddSubfolder: (path: string, privacy: FolderPrivacy) => void;
+  onAddNote?: (folderPath: string, folderId: string) => void;
   onTogglePrivacyRequest: (folderId: string, targetPrivacy: FolderPrivacy) => void;
   onDeleteRequest: (folderId: string) => void;
   expandedMap: Record<string, boolean>;
@@ -84,6 +89,7 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
   selectedId,
   onSelect,
   onAddSubfolder,
+  onAddNote,
   onTogglePrivacyRequest,
   onDeleteRequest,
   expandedMap,
@@ -202,37 +208,60 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
           <span className="text-[10px] font-mono bg-[#141616] text-[#93927e] px-1.5 py-0.5 rounded border border-[#2d3030]">
             {node.notesCount}
           </span>
-
-          {/* Hover Actions Menu */}
-          <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150">
-            {/* Add Subfolder */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddSubfolder(node.path, node.privacy || 'public');
-              }}
-              title="Добавить подпапку"
-              className="p-1 rounded bg-[#141616] hover:bg-[#282a2a] text-[#93927e] hover:text-[#c9cd58] transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-            </button>
-
-            {/* Quick Toggle Privacy */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePrivacyRequest(node.id, targetPrivacy);
-              }}
-              title={`Сменить на ${targetPrivacy === 'private' ? 'Приватную' : 'Публичную'}`}
-              className="p-1 rounded bg-[#141616] hover:bg-[#282a2a] text-[#93927e] hover:text-[#e5e971] transition-colors"
-            >
-              {isPrivate ? <Globe className="w-3 h-3 text-[#c9cd58]" /> : <Lock className="w-3 h-3 text-[#a855f7]" />}
-            </button>
-          </div>
         </div>
       </div>
+
+      {/* Inline Micro-Toolbar for Selected Folder */}
+      {isSelected && (
+        <div
+          style={{ paddingLeft: `${depth * 14 + 26}px` }}
+          className="flex items-center gap-1.5 py-1.5 pr-2 my-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
+        >
+          {/* Add Note Button */}
+          {onAddNote && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddNote(node.path, node.id);
+              }}
+              title={`${t.createNoteInFolder} (${node.name})`}
+              className="px-2 py-1 rounded bg-[#c9cd58]/20 hover:bg-[#c9cd58]/30 text-[#e5e971] border border-[#c9cd58]/40 font-mono text-[10px] font-bold flex items-center gap-1 transition-all shadow-sm"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Заметка</span>
+            </button>
+          )}
+
+          {/* Add Subfolder Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddSubfolder(node.path, node.privacy || 'public');
+            }}
+            title="Добавить подпапку"
+            className="px-2 py-1 rounded bg-[#202323] hover:bg-[#2c3030] text-[#e2e2e2] border border-[#333737] font-mono text-[10px] flex items-center gap-1 transition-all"
+          >
+            <FolderPlus className="w-3 h-3 text-[#c9cd58]" />
+            <span>Подпапка</span>
+          </button>
+
+          {/* Quick Toggle Privacy Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePrivacyRequest(node.id, targetPrivacy);
+            }}
+            title={`Сменить на ${targetPrivacy === 'private' ? 'Приватную' : 'Публичную'}`}
+            className="px-2 py-1 rounded bg-[#202323] hover:bg-[#2c3030] text-[#c9c7b2] border border-[#333737] font-mono text-[10px] flex items-center gap-1 transition-all"
+          >
+            {isPrivate ? <Globe className="w-3 h-3 text-[#c9cd58]" /> : <Lock className="w-3 h-3 text-[#a855f7]" />}
+            <span>{isPrivate ? 'Public' : 'Private'}</span>
+          </button>
+        </div>
+      )}
 
       {/* Render Subfolder Children */}
       {hasChildren && isExpanded && (
@@ -245,6 +274,7 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
               selectedId={selectedId}
               onSelect={onSelect}
               onAddSubfolder={onAddSubfolder}
+              onAddNote={onAddNote}
               onTogglePrivacyRequest={onTogglePrivacyRequest}
               onDeleteRequest={onDeleteRequest}
               expandedMap={expandedMap}
@@ -277,9 +307,18 @@ export const FolderManagerView: React.FC = () => {
     executePrivacyChange,
     getFolderContainerUsage,
     getNotesForFolder,
+    refreshFolders,
   } = useFoldersContext();
 
-  const { containers } = useObsidianContainers();
+  const {
+    containers,
+    pushContainer,
+    pullContainer,
+    isSyncingId,
+    syncDirection,
+    openSyncModal,
+    addSessionChange,
+  } = useObsidianContainers();
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -287,15 +326,31 @@ export const FolderManagerView: React.FC = () => {
   const [noteTypeFilter, setNoteTypeFilter] = useState<string>('all');
   const [noteSearch, setNoteSearch] = useState('');
 
+  // Push / Pull Sync State
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [syncToast, setSyncToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createParentPath, setCreateParentPath] = useState('');
   const [createDefaultPrivacy, setCreateDefaultPrivacy] = useState<FolderPrivacy>('public');
+  const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
+  const [createNoteFolderPath, setCreateNoteFolderPath] = useState('');
 
   const [warningImpact, setWarningImpact] = useState<PrivacyImpact | null>(null);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
 
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+  // Handle interactive Pull via modal
+  const handleGlobalPull = () => {
+    openSyncModal({ mode: 'pull', containerId: containers[0]?.id });
+  };
+
+  // Handle interactive Push via modal
+  const handleGlobalPush = () => {
+    openSyncModal({ mode: 'push', containerId: containers[0]?.id });
+  };
 
   // Tree Expansion state
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
@@ -425,6 +480,44 @@ export const FolderManagerView: React.FC = () => {
             </div>
           </div>
 
+          {/* Pull Modal Button */}
+          <button
+            type="button"
+            onClick={handleGlobalPull}
+            className="px-3 py-1.5 rounded-lg bg-[#141616] hover:bg-[#202323] text-[#93c5fd] border border-[#3b82f6]/40 hover:border-[#3b82f6] font-mono font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
+            title="Открыть окно получения изменений с сервера (Pull)"
+          >
+            <Download className={`w-3.5 h-3.5 ${isSyncingId && syncDirection === 'pull' ? 'animate-bounce text-[#93c5fd]' : ''}`} />
+            <span>{isSyncingId && syncDirection === 'pull' ? t.syncingPull : t.pullFromVault}</span>
+          </button>
+
+          {/* Push Modal Button */}
+          <button
+            type="button"
+            onClick={handleGlobalPush}
+            className="px-3 py-1.5 rounded-lg bg-[#141616] hover:bg-[#202323] text-[#c9cd58] border border-[#c9cd58]/40 hover:border-[#c9cd58] font-mono font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
+            title="Открыть окно отправки изменений на сервер (Push)"
+          >
+            <Upload className={`w-3.5 h-3.5 ${isSyncingId && syncDirection === 'push' ? 'animate-bounce text-[#e5e971]' : ''}`} />
+            <span>{isSyncingId && syncDirection === 'push' ? t.syncingPush : t.pushToVault}</span>
+          </button>
+
+          {/* Sync Status Badge (Clickable) */}
+          <button
+            type="button"
+            onClick={handleGlobalPush}
+            className="px-2.5 py-1.5 rounded-lg bg-[#141616] hover:bg-[#202323] border border-[#2d3030] hover:border-[#3d4242] flex items-center gap-1.5 text-[11px] font-mono text-[#93927e] hover:text-white transition-all shrink-0 cursor-pointer"
+            title="Статус синхронизации. Нажмите, чтобы открыть окно Push/Pull"
+          >
+            <span className={`w-2 h-2 rounded-full ${isSyncingId ? 'bg-[#3b82f6] animate-ping' : 'bg-[#10b981]'}`} />
+            <span className="hidden sm:inline">
+              {isSyncingId ? (syncDirection === 'pull' ? t.syncingPull : t.syncingPush) : t.syncedWithBackend}
+            </span>
+            {lastSyncedAt && (
+              <span className="text-[#e2e2e2] font-semibold">({lastSyncedAt})</span>
+            )}
+          </button>
+
           {/* New Folder Button */}
           <button
             type="button"
@@ -441,10 +534,31 @@ export const FolderManagerView: React.FC = () => {
         </div>
       </header>
 
+      {/* Sync Feedback Toast Banner */}
+      {syncToast && (
+        <div className={`px-5 py-2.5 text-xs font-mono flex items-center justify-between border-b transition-all shrink-0 ${
+          syncToast.type === 'error'
+            ? 'bg-[#ef4444]/15 border-[#ef4444]/40 text-[#fca5a5]'
+            : 'bg-[#10b981]/15 border-[#10b981]/40 text-[#86efac]'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="font-semibold">{syncToast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSyncToast(null)}
+            className="hover:text-white transition-colors p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Main Split-Pane Explorer Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Pane: Folder Tree & Filters */}
-        <aside className="w-80 border-r border-[#242828] bg-[#161818] flex flex-col shrink-0">
+        <aside className="w-84 border-r border-[#242828] bg-[#161818] flex flex-col shrink-0">
           {/* Filter & Search Bar */}
           <div className="p-3 border-b border-[#242828] space-y-2">
             {/* Search Input */}
@@ -547,6 +661,11 @@ export const FolderManagerView: React.FC = () => {
                   selectedId={selectedFolderId}
                   onSelect={setSelectedFolderId}
                   onAddSubfolder={handleAddSubfolder}
+                  onAddNote={(folderPath, folderId) => {
+                    setSelectedFolderId(folderId);
+                    setCreateNoteFolderPath(folderPath);
+                    setIsCreateNoteModalOpen(true);
+                  }}
                   onTogglePrivacyRequest={handleTogglePrivacyRequest}
                   onDeleteRequest={deleteFolder}
                   expandedMap={expandedMap}
@@ -603,6 +722,20 @@ export const FolderManagerView: React.FC = () => {
 
                   {/* Right Actions */}
                   <div className="flex items-center gap-2">
+                    {/* Create Note in This Folder Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateNoteFolderPath(selectedFolder.path);
+                        setIsCreateNoteModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded bg-[#c9cd58]/20 hover:bg-[#c9cd58]/30 text-[#e5e971] border border-[#c9cd58]/40 font-mono text-xs flex items-center gap-1.5 transition-colors font-bold"
+                      title={`${t.createNoteInFolder} (${selectedFolder.name})`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{t.createNoteInFolder}</span>
+                    </button>
+
                     {/* Add Subfolder Button */}
                     <button
                       type="button"
@@ -883,6 +1016,33 @@ export const FolderManagerView: React.FC = () => {
       <NoteDetailModal
         note={selectedNote}
         onClose={() => setSelectedNote(null)}
+      />
+
+      {/* 4. Create Note in Folder Modal */}
+      <CreateNoteModal
+        isOpen={isCreateNoteModalOpen}
+        onClose={() => {
+          setIsCreateNoteModalOpen(false);
+          setCreateNoteFolderPath('');
+        }}
+        initialFolderPath={createNoteFolderPath || selectedFolder?.path}
+        onSuccess={() => {
+          const folderName = selectedFolder?.name || createNoteFolderPath || 'Корневая папка';
+          const targetPath = createNoteFolderPath || selectedFolder?.path || '01_Daily_Logs';
+          addSessionChange({
+            type: 'add',
+            entityType: 'note',
+            title: `Заметка в ${folderName}`,
+            path: `${targetPath}/Note_${Date.now().toString(36)}.md`,
+            containerId: selectedFolder?.containerId || containers[0]?.id,
+            contentSnippet: `# Заметка в ${folderName}\n\nСоздана в сессии ${dayjs().format('YYYY-MM-DD HH:mm')}`,
+          });
+          setSyncToast({
+            message: `Заметка успешно сохранена в папку ${folderName}`,
+            type: 'success',
+          });
+          setTimeout(() => setSyncToast(null), 4000);
+        }}
       />
     </div>
   );

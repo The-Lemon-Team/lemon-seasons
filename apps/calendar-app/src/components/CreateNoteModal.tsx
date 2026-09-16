@@ -13,9 +13,15 @@ interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  initialFolderPath?: string;
 }
 
-export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialFolderPath,
+}) => {
   const { t } = useI18n();
   const { data: feeds = [] } = useFeeds();
 
@@ -44,10 +50,18 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
   const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState('');
   const [feedId, setFeedId] = useState('');
-  const [folderPath, setFolderPath] = useState('');
+  const [folderPath, setFolderPath] = useState(initialFolderPath || '');
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Set initial folder path when opened or prop changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setFolderPath(initialFolderPath || '');
+      setIsCustomFolder(false);
+    }
+  }, [initialFolderPath, isOpen]);
 
   // Set default feed when feeds load
   React.useEffect(() => {
@@ -235,6 +249,11 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({ isOpen, onClos
                             })}
                           </optgroup>
                         )}
+                        {folderPath &&
+                          !externalFolders.some((f) => f.path.toLowerCase() === folderPath.toLowerCase()) &&
+                          !internalFolders.some((f) => f.path.toLowerCase() === folderPath.toLowerCase()) && (
+                            <option value={folderPath}>📁 {folderPath}</option>
+                          )}
                         <option value="__custom__">✏️ {t.noteFolderCustom}</option>
                       </select>
 

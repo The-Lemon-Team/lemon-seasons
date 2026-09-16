@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Folder, FolderTreeNode, FolderPrivacy, CreateFolderInput, UpdateFolderInput, Note } from '@lenta/shared';
 import { useObsidianContainers } from './ObsidianContainersContext';
 import { useTimeSliceNotes } from '../api/queries';
+import { calendarApi } from '../api/client';
 
 export interface PrivacyImpact {
   folderId: string;
@@ -43,11 +44,26 @@ interface FoldersContextType {
     boundFolderId: string;
   }>;
   getNotesForFolder: (folderPath: string, recursive?: boolean) => Note[];
+  refreshFolders: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'lemon_lenta_folders_v1';
 
 const INITIAL_FOLDERS: Folder[] = [
+  {
+    id: 'fld-bookmarks',
+    name: 'Bookmarks',
+    path: 'Bookmarks',
+    icon: 'book-open',
+    color: '#3b82f6',
+    privacy: 'private',
+    containerId: 'cont-personal-vault',
+    scope: 'internal',
+    createdAt: '2026-08-01T09:00:00.000Z',
+    updatedAt: '2026-08-20T09:00:00.000Z',
+    deletedAt: null,
+    _count: { noteFolders: 2 },
+  },
   {
     id: 'fld-daily-logs',
     name: '01_Daily_Logs',
@@ -497,6 +513,24 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (normalized.includes('daily_logs') && (n.startDate || n.createdAt)) {
           return n.type === 'SINGLE' || n.type === 'EVENT';
         }
+        if (normalized.includes('thoughts') || normalized.includes('archive')) {
+          return (
+            n.tags?.some((t) => t.path.includes('thought') || t.path.includes('philosophy') || t.path.includes('sync')) ||
+            n.hashtags?.some((h) => h.name.toLowerCase().includes('thought')) ||
+            n.title.toLowerCase().includes('reflection') ||
+            n.title.toLowerCase().includes('thought') ||
+            n.title.toLowerCase().includes('mental')
+          );
+        }
+        if (normalized.includes('bookmarks')) {
+          return Boolean(n.sourceLink) || n.hashtags?.some((h) => h.name.toLowerCase().includes('bookmark'));
+        }
+        if (normalized.includes('lenta') || normalized.includes('projects')) {
+          return (
+            n.tags?.some((t) => t.path.includes('lenta') || t.path.includes('project')) ||
+            n.title.toLowerCase().includes('lenta')
+          );
+        }
         if (normalized.includes('cinema') || normalized.includes('marvel')) {
           return (
             n.type === 'FILM_RELEASE' ||
@@ -515,7 +549,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
         if (normalized.includes('strategy') || normalized.includes('financials')) {
           return (
-            n.tags?.some((t) => t.path.includes('politics') || t.path.includes('biz')) ||
+            n.tags?.some((t) => t.path.includes('politics') || t.path.includes('biz') || t.path.includes('financial') || t.path.includes('strategy')) ||
             n.type === 'PERIOD'
           );
         }
@@ -525,6 +559,30 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     },
     [allNotes]
   );
+
+  // Refresh folders from backend API
+  const refreshFolders = useCallback(async () => {
+    try {
+      const serverFolders = await calendarApi.getFolders(false);
+      if (Array.isArray(serverFolders) && serverFolders.length > 0) {
+        setFolders((prev) => {
+          const map = new Map<string, Folder>();
+          prev.forEach((f) => map.set(f.path, f));
+          serverFolders.forEach((sf) => {
+            const existing = map.get(sf.path);
+            map.set(sf.path, {
+              ...existing,
+              ...sf,
+              scope: sf.scope || (sf.containerId ? 'internal' : 'external'),
+            });
+          });
+          return Array.from(map.values());
+        });
+      }
+    } catch (e) {
+      console.warn('Could not refresh folders from server, using local cache', e);
+    }
+  }, []);
 
   // Calculate Privacy Change Impact before changing
   const getFolderPrivacyImpact = useCallback(
@@ -624,6 +682,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         executePrivacyChange,
         getFolderContainerUsage,
         getNotesForFolder,
+        refreshFolders,
       }}
     >
       {children}
