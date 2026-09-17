@@ -21,12 +21,11 @@ export class LentaSyncLedgerManager {
 
   async loadLedger(): Promise<SyncLedger> {
     try {
-      const root = normalizePath(this.getVaultRoot());
-      const ledgerPath = `${root}/${this.ledgerFileName}`;
-      const file = this.app.vault.getAbstractFileByPath(ledgerPath);
+      const root = normalizePath(this.getVaultRoot() || '');
+      const ledgerPath = normalizePath(root ? `${root}/${this.ledgerFileName}` : this.ledgerFileName);
 
-      if (file instanceof TFile) {
-        const text = await this.app.vault.read(file);
+      if (await this.app.vault.adapter.exists(ledgerPath)) {
+        const text = await this.app.vault.adapter.read(ledgerPath);
         this.ledger = JSON.parse(text);
       }
     } catch (err) {
@@ -37,17 +36,17 @@ export class LentaSyncLedgerManager {
 
   async saveLedger(): Promise<void> {
     try {
-      const root = normalizePath(this.getVaultRoot());
-      const ledgerPath = `${root}/${this.ledgerFileName}`;
+      const root = normalizePath(this.getVaultRoot() || '');
+      const ledgerPath = normalizePath(root ? `${root}/${this.ledgerFileName}` : this.ledgerFileName);
       this.ledger.vaultRootFolder = root;
       const jsonStr = JSON.stringify(this.ledger, null, 2);
 
-      const file = this.app.vault.getAbstractFileByPath(ledgerPath);
-      if (file instanceof TFile) {
-        await this.app.vault.modify(file, jsonStr);
-      } else {
-        await this.app.vault.create(ledgerPath, jsonStr);
+      // Ensure directory exists if root is nested
+      if (root && !(await this.app.vault.adapter.exists(root))) {
+        await this.app.vault.adapter.mkdir(root);
       }
+
+      await this.app.vault.adapter.write(ledgerPath, jsonStr);
     } catch (err) {
       console.error('Lenta: Failed to save sync ledger', err);
     }

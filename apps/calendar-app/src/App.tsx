@@ -19,6 +19,7 @@ import { PrivateContainersModal } from './components/PrivateContainersModal';
 import { KeyManagementModal } from './components/KeyManagementModal';
 import { ObsidianContainersView } from './components/ObsidianContainersView';
 import { FolderManagerView } from './components/FolderManagerView';
+import { SyncPushPullModal } from './components/SyncPushPullModal';
 import { useObsidianContainers, ObsidianContainersProvider } from './context/ObsidianContainersContext';
 import { FoldersProvider } from './context/FoldersContext';
 import { UserKeysProvider } from './context/UserKeysContext';
@@ -26,7 +27,13 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const { containers: obsidianContainers = [] } = useObsidianContainers();
+  const {
+    containers: obsidianContainers = [],
+    isSyncModalOpen,
+    syncModalMode,
+    syncModalContainerId,
+    closeSyncModal,
+  } = useObsidianContainers();
   const {
     filters,
     setStartDate,
@@ -340,6 +347,14 @@ const CalendarAppInner: React.FC = () => {
 
       {/* 8. Auth Modal */}
       <AuthModal />
+
+      {/* 9. Interactive Sync Push & Pull Modal */}
+      <SyncPushPullModal
+        isOpen={isSyncModalOpen}
+        onClose={closeSyncModal}
+        initialMode={syncModalMode}
+        targetContainerId={syncModalContainerId || undefined}
+      />
     </div>
   );
 };

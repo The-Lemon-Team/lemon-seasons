@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice, normalizePath } from 'obsidian';
+import { App, Modal, Setting, Notice, normalizePath, TFile } from 'obsidian';
 import { LentaApiClient } from '../services/lenta-api-client';
 import { LentaFrontmatterUtil } from '../services/lenta-frontmatter';
 import {
@@ -29,17 +29,26 @@ export class LentaQuickAddModal extends Modal {
   private sourceLink = '';
   private icon = '';
   private description = '';
+  private initialFolderId?: string;
+  private initialFolderPath?: string;
 
   constructor(
     app: App,
     apiClient: LentaApiClient,
     getSettings: () => LentaPluginSettings,
-    onSuccess: (filePath: string) => void
+    onSuccess: (filePath: string) => void,
+    initialFolderId?: string,
+    initialFolderPath?: string
   ) {
     super(app);
     this.apiClient = apiClient;
     this.getSettings = getSettings;
     this.onSuccess = onSuccess;
+    this.initialFolderId = initialFolderId;
+    this.initialFolderPath = initialFolderPath;
+    if (initialFolderId) {
+      this.selectedFolderId = initialFolderId;
+    }
   }
 
   async onOpen() {
@@ -56,6 +65,23 @@ export class LentaQuickAddModal extends Modal {
       this.feeds = feeds;
       this.folders = folders;
       this.taxonomyNodes = taxonomy;
+
+      if (this.selectedFolderId) {
+        const matched = folders.find((f) => f.id === this.selectedFolderId || f.path === this.selectedFolderId);
+        if (matched) {
+          this.selectedFolderId = matched.id;
+        } else if (this.initialFolderPath) {
+          const byPath = folders.find((f) => f.path === this.initialFolderPath || f.name === this.initialFolderPath);
+          if (byPath) {
+            this.selectedFolderId = byPath.id;
+          }
+        }
+      } else if (this.initialFolderPath) {
+        const matched = folders.find((f) => f.path === this.initialFolderPath || f.name === this.initialFolderPath);
+        if (matched) {
+          this.selectedFolderId = matched.id;
+        }
+      }
 
       if (feeds.length > 0 && !this.feedId) {
         const defaultSlug = this.getSettings().defaultFeedSlug;
@@ -85,11 +111,16 @@ export class LentaQuickAddModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
+    const targetFolder = this.folders.find((f) => f.id === this.selectedFolderId);
+    const folderDisplay = targetFolder ? targetFolder.path : this.initialFolderPath;
+
     const header = contentEl.createDiv({ cls: 'lenta-modal-header' });
     header.createEl('h2', { text: '🍋 Create Lenta Note' });
     header.createEl('p', {
       cls: 'lenta-modal-subtitle',
-      text: 'Add a new time-based record to Project Lenta and your local Obsidian vault.',
+      text: folderDisplay
+        ? `Target folder: 📁 ${folderDisplay}`
+        : 'Add a new time-based record to Project Lenta and your local Obsidian vault.',
     });
 
     // 1. Title
@@ -115,7 +146,16 @@ export class LentaQuickAddModal extends Modal {
           dropdown.addOption(folder.id, `📁 ${folder.path}`);
         }
 
-        dropdown.setValue(this.selectedFolderId || 'root');
+        const hasFolder = this.folders.some((f) => f.id === this.selectedFolderId);
+        if (!hasFolder && (this.selectedFolderId || this.initialFolderPath)) {
+          const fallbackId = this.selectedFolderId || this.initialFolderPath!;
+          const fallbackPath = this.initialFolderPath || this.selectedFolderId;
+          dropdown.addOption(fallbackId, `📁 ${fallbackPath}`);
+          dropdown.setValue(fallbackId);
+        } else {
+          dropdown.setValue(this.selectedFolderId || 'root');
+        }
+
         dropdown.onChange((val) => {
           this.selectedFolderId = val === 'root' ? '' : val;
         });
@@ -196,8 +236,19 @@ export class LentaQuickAddModal extends Modal {
         const startIso = this.startDate ? new Date(this.startDate).toISOString() : new Date().toISOString();
         const endIso = this.endDate ? new Date(this.endDate).toISOString() : undefined;
 
+        const targetFolder = this.folders.find((f) => f.id === this.selectedFolderId);
+        const folderPath = targetFolder
+          ? targetFolder.path
+          : (this.selectedFolderId && this.selectedFolderId !== 'root'
+            ? this.selectedFolderId
+            : (this.initialFolderPath || undefined));
+
         const tagIds = this.selectedTaxonomyId ? [this.selectedTaxonomyId] : [];
-        const folderIds = this.selectedFolderId ? [this.selectedFolderId] : [];
+        const folderIds = targetFolder
+          ? [targetFolder.id]
+          : (this.selectedFolderId && this.selectedFolderId !== 'root' ? [this.selectedFolderId] : []);
+        const folders = folderPath ? [folderPath] : undefined;
+        const targetContainerId = targetFolder?.containerId || this.getSettings().activeContainerId || undefined;
 
         // 1. Create on server
         const created = await this.apiClient.createNote({
@@ -211,11 +262,22 @@ export class LentaQuickAddModal extends Modal {
           description: this.description.trim() || undefined,
           tagIds,
           folderIds,
+          folders,
+          folder: folderPath,
+          containerId: targetContainerId,
         });
 
         // 2. Write to Obsidian Vault
         const rootFolder = this.getSettings().vaultRootFolder || 'Lenta';
-        const vaultPath = normalizePath(LentaFrontmatterUtil.getNoteVaultPath(created, rootFolder));
+        let vaultPath = normalizePath(LentaFrontmatterUtil.getNoteVaultPath(created, rootFolder));
+
+        // If backend returned without folder but a folder was targeted, ensure vault path uses the targeted folder
+        if (folderPath && (!created.folders || created.folders.length === 0)) {
+          const cleanTitle = created.title.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Untitled';
+          const cleanFolder = folderPath.replace(/^\/+|\/+$/g, '');
+          vaultPath = normalizePath(`${rootFolder}/${cleanFolder}/${cleanTitle}.md`);
+        }
+
         const markdown = LentaFrontmatterUtil.serializeNoteToMarkdown(created);
 
         // Ensure directory exists
@@ -224,9 +286,47 @@ export class LentaQuickAddModal extends Modal {
           await this.app.vault.createFolder(dir);
         }
 
-        await this.app.vault.create(vaultPath, markdown);
+        // Avoid "File already exists" error when creating notes with similar or identical titles
+        let finalVaultPath = vaultPath;
+        const existingFile = this.app.vault.getAbstractFileByPath(finalVaultPath);
+
+        if (existingFile instanceof TFile) {
+          let isSameNote = false;
+          try {
+            const content = await this.app.vault.read(existingFile);
+            const parsed = LentaFrontmatterUtil.parseMarkdown(content);
+            if (parsed.lentaId === created.id) {
+              isSameNote = true;
+            }
+          } catch {
+            // ignore error reading
+          }
+
+          if (isSameNote) {
+            await this.app.vault.modify(existingFile, markdown);
+          } else {
+            // A different file with this filename exists. Auto-increment filename to prevent Obsidian collision error.
+            const dirPath = finalVaultPath.substring(0, finalVaultPath.lastIndexOf('/'));
+            const baseWithExt = finalVaultPath.substring(finalVaultPath.lastIndexOf('/') + 1);
+            const dotIdx = baseWithExt.lastIndexOf('.');
+            const baseName = dotIdx !== -1 ? baseWithExt.substring(0, dotIdx) : baseWithExt;
+            const ext = dotIdx !== -1 ? baseWithExt.substring(dotIdx) : '.md';
+
+            let counter = 1;
+            let candidate = `${dirPath}/${baseName} (${counter})${ext}`;
+            while (this.app.vault.getAbstractFileByPath(candidate)) {
+              counter++;
+              candidate = `${dirPath}/${baseName} (${counter})${ext}`;
+            }
+            finalVaultPath = normalizePath(candidate);
+            await this.app.vault.create(finalVaultPath, markdown);
+          }
+        } else {
+          await this.app.vault.create(finalVaultPath, markdown);
+        }
+
         new Notice(`🍋 Created "${created.title}" successfully!`);
-        this.onSuccess(vaultPath);
+        this.onSuccess(finalVaultPath);
         this.close();
       } catch (err: any) {
         new Notice(`Failed to create note: ${err.message || err}`);

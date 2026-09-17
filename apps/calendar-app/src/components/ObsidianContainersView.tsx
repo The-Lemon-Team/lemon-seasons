@@ -232,6 +232,7 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
     isSyncingId,
     syncDirection,
     pendingChanges,
+    openSyncModal,
   } = useObsidianContainers();
 
   const { folders } = useFoldersContext();
@@ -822,9 +823,8 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        pushContainer(container.id);
+                        openSyncModal({ mode: 'push', containerId: container.id });
                       }}
-                      disabled={isSyncing}
                       title="Push local changes"
                       className={`px-2.5 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                         isSyncing && syncDirection === 'push'
@@ -841,9 +841,8 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        pullContainer(container.id);
+                        openSyncModal({ mode: 'pull', containerId: container.id });
                       }}
-                      disabled={isSyncing}
                       title="Pull latest notes"
                       className={`px-2.5 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                         isSyncing && syncDirection === 'pull'

@@ -34,6 +34,13 @@ export class LentaSyncEngine {
     pulledCount: number;
     deletedCount: number;
     conflicts: FileDiffItemDto[];
+    downloadedFilesList: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }>;
   }> {
     const settings = this.getSettings();
     await this.ledgerManager.loadLedger();
@@ -42,6 +49,13 @@ export class LentaSyncEngine {
     const result = await this.apiClient.getSyncChanges(lastSync, settings.containerId);
 
     const conflicts: FileDiffItemDto[] = [];
+    const downloadedFilesList: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }> = [];
     let pulledCount = 0;
     let deletedCount = 0;
 
@@ -115,29 +129,64 @@ export class LentaSyncEngine {
             resolvedNote,
             mergeResult.mergedBody
           );
+          downloadedFilesList.push({
+            path: filePath,
+            title: resolvedNote.title,
+            content: mergedMarkdown,
+            size: mergedMarkdown.length,
+            isNew: false,
+          });
           pulledCount++;
         }
       } else {
-        // New note from server: create file in computed path
+        // New note from server: create file in computed path (or modify if existing file on disk)
         await this.ensureDirectoryForFile(computedPath);
         const markdownContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
-        const newFile = await vault.create(computedPath, markdownContent);
+        const existing = vault.getAbstractFileByPath(computedPath);
+        let fileMtime = Date.now();
+        if (existing instanceof TFile) {
+          await vault.modify(existing, markdownContent);
+          fileMtime = existing.stat.mtime || Date.now();
+        } else {
+          const newFile = await vault.create(computedPath, markdownContent);
+          fileMtime = newFile.stat.mtime || Date.now();
+        }
 
         this.ledgerManager.recordSync(
           note.id,
           computedPath,
           note.updatedAt,
-          newFile.stat.mtime || Date.now(),
+          fileMtime,
           note,
           note.description || ''
         );
+        downloadedFilesList.push({
+          path: computedPath,
+          title: note.title,
+          content: markdownContent,
+          size: markdownContent.length,
+          isNew: true,
+        });
         pulledCount++;
       }
     }
 
     // Save updated ledger and settings
     this.ledgerManager.lastSyncTimestamp = result.syncedAt;
-    settings.lastSyncedAt = result.syncedAt;
+
+    // Ensure lastSyncedAt is recorded after all files have been written to disk.
+    // We compute the maximum mtime of all written files and add a 1000ms buffer,
+    // ensuring disk I/O latency does not cause downloaded files to appear as local edits.
+    let maxMtime = Date.now();
+    for (const item of downloadedFilesList) {
+      const abstractFile = vault.getAbstractFileByPath(item.path);
+      if (abstractFile instanceof TFile && abstractFile.stat?.mtime > maxMtime) {
+        maxMtime = abstractFile.stat.mtime;
+      }
+    }
+    const safeLastSyncedAt = new Date(Math.max(Date.now(), maxMtime) + 1000).toISOString();
+    settings.lastSyncedAt = safeLastSyncedAt;
+
     await this.ledgerManager.saveLedger();
     await this.saveSettings();
 
@@ -145,6 +194,7 @@ export class LentaSyncEngine {
       pulledCount,
       deletedCount,
       conflicts,
+      downloadedFilesList,
     };
   }
 
@@ -159,6 +209,13 @@ export class LentaSyncEngine {
     pulledCount: number;
     deletedCount: number;
     conflicts: FileDiffItemDto[];
+    downloadedFilesList?: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }>;
   }> {
     let downloadedFiles = 0;
     for (const id of containerIds) {
@@ -174,6 +231,7 @@ export class LentaSyncEngine {
     return {
       downloadedFiles,
       ...deltaRes,
+      downloadedFilesList: deltaRes.downloadedFilesList,
     };
   }
 
@@ -411,7 +469,20 @@ export class LentaSyncEngine {
   /**
    * Downloads and syncs actual folder structure and files for a specific connected container into the local Obsidian vault.
    */
-  async syncContainerFiles(containerId: string, containerName?: string): Promise<{ downloadedFiles: number; createdFolders: number }> {
+  async syncContainerFiles(
+    containerId: string,
+    containerName?: string
+  ): Promise<{
+    downloadedFiles: number;
+    createdFolders: number;
+    files: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }>;
+  }> {
     const settings = this.getSettings();
     const vault = this.app.vault;
     const rootFolder = settings.vaultRootFolder || 'Lenta';
@@ -423,6 +494,13 @@ export class LentaSyncEngine {
 
     let downloadedFiles = 0;
     let createdFolders = 0;
+    const downloadedList: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }> = [];
 
     // 1. Try fetching files from Container Sync Server (/containers/:id/files)
     let containerFiles: Array<{ path: string; content?: string; mtime?: number }> = [];
@@ -447,6 +525,7 @@ export class LentaSyncEngine {
 
         const content = fileItem.content || '';
         const existingFile = vault.getAbstractFileByPath(targetVaultPath);
+        const isNew = !(existingFile instanceof TFile);
 
         if (existingFile instanceof TFile) {
           await vault.modify(existingFile, content);
@@ -454,6 +533,13 @@ export class LentaSyncEngine {
           await vault.create(targetVaultPath, content);
         }
         downloadedFiles++;
+        downloadedList.push({
+          path: targetVaultPath,
+          title: fileItem.path.split('/').pop() || fileItem.path,
+          content,
+          size: content.length,
+          isNew,
+        });
       }
 
       // Clean up any extraneous files in containerFolderPath that are not in validPathsInContainer
@@ -477,7 +563,19 @@ export class LentaSyncEngine {
         await cleanExtraneous(containerFolderObj);
       }
 
-      return { downloadedFiles, createdFolders };
+      if (downloadedFiles > 0) {
+        let maxMtime = Date.now();
+        for (const item of downloadedList) {
+          const abstractFile = vault.getAbstractFileByPath(item.path);
+          if (abstractFile instanceof TFile && abstractFile.stat?.mtime > maxMtime) {
+            maxMtime = abstractFile.stat.mtime;
+          }
+        }
+        settings.lastSyncedAt = new Date(Math.max(Date.now(), maxMtime) + 1000).toISOString();
+        await this.saveSettings();
+      }
+
+      return { downloadedFiles, createdFolders, files: downloadedList };
     }
 
     // 2. Fallback / Feed Containers: Fetch notes from NestJS Lenta API for this container/feed
@@ -511,6 +609,7 @@ export class LentaSyncEngine {
 
         const markdownContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note as any);
         const existingFile = vault.getAbstractFileByPath(noteVaultPath);
+        const isNew = !(existingFile instanceof TFile);
 
         if (existingFile instanceof TFile) {
           await vault.modify(existingFile, markdownContent);
@@ -518,12 +617,31 @@ export class LentaSyncEngine {
           await vault.create(noteVaultPath, markdownContent);
         }
         downloadedFiles++;
+        downloadedList.push({
+          path: noteVaultPath,
+          title: note.title || 'Untitled Note',
+          content: markdownContent,
+          size: markdownContent.length,
+          isNew,
+        });
       }
     } catch (fallbackErr) {
       console.warn(`Failed to pull notes for container ${containerId}:`, fallbackErr);
     }
 
-    return { downloadedFiles, createdFolders };
+    if (downloadedFiles > 0) {
+      let maxMtime = Date.now();
+      for (const item of downloadedList) {
+        const abstractFile = vault.getAbstractFileByPath(item.path);
+        if (abstractFile instanceof TFile && abstractFile.stat?.mtime > maxMtime) {
+          maxMtime = abstractFile.stat.mtime;
+        }
+      }
+      settings.lastSyncedAt = new Date(Math.max(Date.now(), maxMtime) + 1000).toISOString();
+      await this.saveSettings();
+    }
+
+    return { downloadedFiles, createdFolders, files: downloadedList };
   }
 
   private async ensureFolder(path: string): Promise<void> {

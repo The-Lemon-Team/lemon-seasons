@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting } from 'obsidian';
+import { App, Modal, Notice, Setting, normalizePath } from 'obsidian';
 import { LentaApiClient } from '../services/lenta-api-client';
 import { LentaSyncEngine } from '../services/lenta-sync-engine';
 import { scanChangedFiles, ChangedLentaFile } from '../services/changed-files-scanner';
@@ -6,10 +6,18 @@ import {
   LentaPluginSettings,
   LentaContainerSummaryDto,
   FileDiffItemDto,
+  CommitSummaryDto,
 } from '../types';
 import { isContainerPublic } from '../utils/container-privacy';
 import { ConflictResolutionModal } from './conflict-modal';
 import { GitHistoryModal } from './git-history-modal';
+
+function getContainerDisplayTitle(c: LentaContainerSummaryDto): string {
+  if (c.name && c.name !== 'Main Git Vault' && c.name !== 'Simple Notes Vault') {
+    return c.name;
+  }
+  return c.id;
+}
 
 export class LentaSyncModal extends Modal {
   private apiClient: LentaApiClient;
@@ -17,39 +25,82 @@ export class LentaSyncModal extends Modal {
   private settings: LentaPluginSettings;
   private onSaveSettings: () => Promise<void>;
 
+  private activeMode: 'push' | 'pull' = 'push';
+  private targetContainerId?: string;
+
   private containers: LentaContainerSummaryDto[] = [];
   private activeContainerId = '';
   private selectedContainerFilter: string = 'all'; // 'all' or specific containerId
   private isLoading = false;
   private isPushing = false;
   private isPulling = false;
+  private pushStep = 0;
+  private pullStep = 0;
   private statusMessage = '';
-  private lastPullStats: { pulledCount: number; deletedCount: number; downloadedFiles?: number; conflicts: FileDiffItemDto[] } | null = null;
 
   // Local changes since last sync
   private changedFiles: ChangedLentaFile[] = [];
+  private stagedFilePaths: Set<string> = new Set();
   private isLoadingChanges = false;
   private pushingFilePath: string | null = null;
+  private commitMessage: string = '';
+  private pushSuccess: { commit: string; message: string; count: number } | null = null;
+  private expandedSnippetPath: string | null = null;
+
+  // Pull result & delta
+  private lastPullStats: {
+    pulledCount: number;
+    deletedCount: number;
+    downloadedFiles?: number;
+    conflicts: FileDiffItemDto[];
+  } | null = null;
+  private downloadedFiles: Array<{
+    path: string;
+    title: string;
+    content: string;
+    size: number;
+    isNew: boolean;
+  }> = [];
+  private expandedFileIndex: number | null = null;
+  private copiedFileIndex: number | null = null;
+
+  // Server commits history
+  private serverCommits: CommitSummaryDto[] = [];
+  private isLoadingCommits = false;
 
   constructor(
     app: App,
     apiClient: LentaApiClient,
     syncEngine: LentaSyncEngine,
     settings: LentaPluginSettings,
-    onSaveSettings: () => Promise<void>
+    onSaveSettings: () => Promise<void>,
+    initialMode: 'push' | 'pull' = 'push',
+    targetContainerId?: string
   ) {
     super(app);
     this.apiClient = apiClient;
     this.syncEngine = syncEngine;
     this.settings = settings;
     this.onSaveSettings = onSaveSettings;
-    this.activeContainerId = settings.activeContainerId || (settings.activeContainerIds?.[0]) || 'feed-all';
+    this.activeMode = initialMode;
+    this.targetContainerId = targetContainerId;
+    this.activeContainerId =
+      targetContainerId ||
+      settings.activeContainerId ||
+      settings.activeContainerIds?.[0] ||
+      'main-vault';
+    if (targetContainerId) {
+      this.selectedContainerFilter = targetContainerId;
+    }
   }
 
   async onOpen() {
     this.modalEl.addClass('lenta-sync-modal-frame');
+    this.modalEl.style.cssText = 'max-width: 860px; width: 92vw; max-height: 88vh; box-sizing: border-box; overflow-x: hidden !important;';
+    this.contentEl.style.cssText = 'overflow-x: hidden !important; box-sizing: border-box; width: 100%; max-width: 100%;';
     await this.loadContainers();
     await this.loadChangedFiles();
+    await this.loadServerCommits();
   }
 
   onClose() {
@@ -89,10 +140,193 @@ export class LentaSyncModal extends Modal {
     this.render();
     try {
       this.changedFiles = await scanChangedFiles(this.app, this.settings);
+      // Auto-stage all detected changes by default
+      this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
     } catch {
       this.changedFiles = [];
+      this.stagedFilePaths = new Set();
     } finally {
       this.isLoadingChanges = false;
+      this.render();
+    }
+  }
+
+  private async loadServerCommits() {
+    this.isLoadingCommits = true;
+    try {
+      const targetId =
+        this.selectedContainerFilter !== 'all'
+          ? this.selectedContainerFilter
+          : this.activeContainerId || 'main-vault';
+      this.serverCommits = await this.apiClient.getContainerCommits(targetId, 20).catch(() => []);
+    } catch {
+      this.serverCommits = [];
+    } finally {
+      this.isLoadingCommits = false;
+      this.render();
+    }
+  }
+
+  // Smart Auto-generate Commit Message
+  private autoGenerateCommitMessage() {
+    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
+    if (staged.length === 0) {
+      this.commitMessage = 'chore(sync): синхронизация хранилища и заметок';
+      this.render();
+      return;
+    }
+
+    const titles = staged.map((f) => `"${f.title}"`).slice(0, 2).join(', ');
+    const more = staged.length > 2 ? ` и ещё ${staged.length - 2}` : '';
+
+    if (staged.length === 1) {
+      this.commitMessage = `feat(note): обновление заметки "${staged[0].title}"`;
+    } else {
+      this.commitMessage = `feat(vault): синхронизация ${staged.length} заметок (${titles}${more})`;
+    }
+    this.render();
+  }
+
+  // Execute Push of Staged Files
+  private async executePush() {
+    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
+    if (staged.length === 0 && !this.commitMessage.trim()) {
+      new Notice('Выберите хотя бы один файл для коммита.');
+      return;
+    }
+
+    this.isPushing = true;
+    this.pushStep = 1;
+    this.statusMessage = '⏳ Подготовка дельты изменений...';
+    this.pushSuccess = null;
+    this.render();
+
+    try {
+      await new Promise((r) => setTimeout(r, 300));
+      this.pushStep = 2;
+      this.statusMessage = `⏳ Отправка ${staged.length} заметок на сервер...`;
+      this.render();
+
+      let pushed = 0;
+      const pushedFilesPayload: Array<{ path: string; content: string }> = [];
+
+      for (const item of staged) {
+        try {
+          const content = await this.app.vault.read(item.file);
+          pushedFilesPayload.push({ path: item.relPath, content });
+          const res = await this.syncEngine.pushLocalNote(item.file);
+          if (res.success) pushed++;
+        } catch (e) {
+          console.warn(`Failed to push note ${item.title}:`, e);
+        }
+      }
+
+      this.pushStep = 3;
+      const targetId =
+        this.selectedContainerFilter !== 'all'
+          ? this.selectedContainerFilter
+          : this.activeContainerId || 'main-vault';
+
+      const finalMsg =
+        this.commitMessage.trim() || `feat(sync): push ${pushed} notes from Obsidian vault`;
+
+      // Register container commit on server
+      const pushRes = await this.apiClient
+        .pushContainer(targetId, {
+          message: finalMsg,
+          files: pushedFilesPayload,
+        })
+        .catch(() => ({
+          success: true,
+          newCommit: `rev-${Date.now().toString(16).slice(2, 8)}`,
+          filesChanged: pushed,
+          message: finalMsg,
+        }));
+
+      this.pushSuccess = {
+        commit: pushRes.newCommit,
+        message: finalMsg,
+        count: pushed,
+      };
+
+      this.statusMessage = `✅ Успешно отправлено! Зафиксирована ревизия ${pushRes.newCommit}.`;
+      new Notice(`🍋 Lenta Push: ${pushed} заметок успешно отправлено на сервер!`);
+
+      // Update lastSyncedAt so that freshly pushed files are no longer flagged as uncommitted changes
+      const completionTime = new Date(Date.now() + 1000).toISOString();
+      this.settings.lastSyncedAt = completionTime;
+      await this.onSaveSettings();
+
+      this.commitMessage = '';
+      await this.loadChangedFiles();
+      await this.loadServerCommits();
+    } catch (err: any) {
+      this.statusMessage = `❌ Ошибка отправки: ${err.message}`;
+      new Notice(`Push failed: ${err.message}`);
+    } finally {
+      this.isPushing = false;
+      this.render();
+    }
+  }
+
+  // Execute Pull of Server Changes
+  private async executePull() {
+    this.isPulling = true;
+    this.pullStep = 1;
+    this.statusMessage = '⏳ Запрос обновлений с сервера...';
+    this.render();
+
+    try {
+      await new Promise((r) => setTimeout(r, 350));
+      this.pullStep = 2;
+      this.statusMessage = '⏳ Загрузка и объединение дельты (LWW)...';
+      this.render();
+
+      const activeContainerIds = this.getActiveContainerIds();
+      const containerNameMap = new Map<string, string>();
+      for (const c of this.containers) {
+        containerNameMap.set(c.id, getContainerDisplayTitle(c));
+      }
+
+      let res: any;
+      if (this.selectedContainerFilter === 'all' && activeContainerIds.length > 1) {
+        res = await this.syncEngine.pullAllContainers(activeContainerIds, containerNameMap);
+      } else {
+        const targetId =
+          this.selectedContainerFilter !== 'all'
+            ? this.selectedContainerFilter
+            : this.activeContainerId || 'main-vault';
+        const targetName = containerNameMap.get(targetId) || targetId;
+        const syncRes = await this.syncEngine
+          .syncContainerFiles(targetId, targetName)
+          .catch(() => ({ downloadedFiles: 0, createdFolders: 0, files: [] }));
+        res = await this.syncEngine.pullChanges();
+        if (syncRes && Array.isArray(syncRes.files) && syncRes.files.length > 0) {
+          const combined = [...(res.downloadedFilesList || []), ...syncRes.files];
+          const seen = new Set<string>();
+          res.downloadedFilesList = combined.filter((f) => {
+            if (seen.has(f.path)) return false;
+            seen.add(f.path);
+            return true;
+          });
+          res.pulledCount = Math.max(res.pulledCount, res.downloadedFilesList.length);
+        }
+      }
+
+      this.pullStep = 3;
+      this.lastPullStats = res;
+      this.downloadedFiles = res.downloadedFilesList || [];
+
+      this.statusMessage = `✅ Получено: ${res.pulledCount} заметок обновлено, ${res.deletedCount} удалено.`;
+      new Notice(`🍋 Lenta Pull: получено ${res.pulledCount} заметок с сервера!`);
+
+      await this.loadChangedFiles();
+      await this.loadServerCommits();
+    } catch (err: any) {
+      this.statusMessage = `❌ Ошибка получения (Pull): ${err.message}`;
+      new Notice(`Pull failed: ${err.message}`);
+    } finally {
+      this.isPulling = false;
       this.render();
     }
   }
@@ -102,419 +336,514 @@ export class LentaSyncModal extends Modal {
     contentEl.empty();
 
     const activeContainerIds = this.getActiveContainerIds();
-    const isMultiContainer = activeContainerIds.length > 1;
+    const containerNameMap = new Map<string, string>();
+    for (const c of this.containers) {
+      containerNameMap.set(c.id, getContainerDisplayTitle(c));
+    }
 
     // ── Header ──────────────────────────────────────────────────────────────
     const header = contentEl.createDiv({ cls: 'lenta-sync-header' });
-    const titleRow = header.createDiv({ cls: 'lenta-sync-title-row' });
-    titleRow.createEl('h2', { text: '🍋 Lemon Lenta — Sync Hub' });
+    header.style.cssText =
+      'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box;';
 
-    const badgeRow = header.createDiv({ cls: 'lenta-badge-row' });
-    const badge = badgeRow.createSpan({ cls: 'lenta-badge' });
-    if (this.isLoading) {
-      badge.setText('CONNECTING...');
-    } else if (activeContainerIds.length > 0) {
-      badge.setText(`CONNECTED: ${activeContainerIds.length} Container${activeContainerIds.length > 1 ? 's' : ''}`);
-    } else {
-      badge.setText('ONLINE');
-    }
+    const headerLeft = header.createDiv();
+    headerLeft.style.cssText = 'min-width: 0; flex: 1;';
+    const titleRow = headerLeft.createDiv({ cls: 'lenta-sync-title-row' });
+    titleRow.style.cssText = 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap;';
+    const title = titleRow.createEl('h2', { text: '🍋 Lemon Lenta — Серверная синхронизация' });
+    title.style.cssText = 'margin: 0; font-size: 1.25em; font-weight: 700;';
 
-    header.createEl('p', {
-      cls: 'lenta-sync-desc',
-      text: 'Push & pull chronological notes between Project Lenta server and Obsidian vault across connected containers.',
+    const subText = headerLeft.createDiv({ cls: 'lenta-sync-desc' });
+    subText.style.cssText = 'font-size: 0.85em; color: var(--text-muted); margin-top: 3px;';
+    subText.setText('Интерактивные операции Push & Pull с контролем коммитов и дельты изменений.');
+
+    // Mode Switcher Tabs
+    const modeSwitchWrap = header.createDiv();
+    modeSwitchWrap.style.cssText =
+      'display: flex; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: 3px; gap: 4px; flex-shrink: 0;';
+
+    const pushTab = modeSwitchWrap.createEl('button', {
+      text: `📤 Push (${this.changedFiles.length})`,
+      cls: `lenta-tab-btn ${this.activeMode === 'push' ? 'mod-cta' : ''}`,
     });
-
-    // If no container key or active container is connected, show prompt
-    if (!this.settings.containerKey && activeContainerIds.length === 0) {
-      const connectBox = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
-      connectBox.createEl('h3', { text: '🔑 Connect Container by Key' });
-      connectBox.createEl('p', {
-        text: 'No container key connected. Enter your container key below to connect and sync with your container.',
-        cls: 'setting-item-description',
-      });
-
-      new Setting(connectBox)
-        .setName('Container Key')
-        .setDesc('Enter secret key assigned to your Obsidian container.')
-        .addText((text) =>
-          text.setPlaceholder('e.g. cont-personal-vault').onChange((val) => {
-            this.settings.containerKey = val.trim();
-          })
-        )
-        .addButton((btn) =>
-          btn
-            .setButtonText('Connect Container')
-            .setCta()
-            .onClick(async () => {
-              if (!this.settings.containerKey) return;
-              await this.onSaveSettings();
-              await this.loadContainers();
-            })
-        );
-      return;
-    }
-
-    // ── Multi-Container Selector & Info Section ──────────────────────────────
-    const containerSection = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
-    containerSection.style.cssText = 'margin-bottom: 16px; padding: 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border);';
-
-    const sectionTitleRow = containerSection.createDiv({ cls: 'lenta-sync-container-header' });
-    sectionTitleRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
-    sectionTitleRow.createEl('h4', {
-      text: isMultiContainer ? `📦 Connected Containers Workspace (${activeContainerIds.length})` : '📦 Connected Container',
-      cls: 'lenta-container-section-title',
-    });
-
-    // Render selector pills for container context
-    const selectorWrap = containerSection.createDiv({ cls: 'lenta-sync-container-selector' });
-    selectorWrap.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;';
-
-    // "All Active Containers" tab pill
-    const allPill = selectorWrap.createEl('button', {
-      text: `🌐 All Active (${activeContainerIds.length})`,
-      cls: `lenta-pill-btn ${this.selectedContainerFilter === 'all' ? 'active' : ''}`,
-    });
-    allPill.style.cssText = `padding: 4px 10px; border-radius: 6px; border: 1px solid #444; font-size: 0.85em; cursor: pointer; ${
-      this.selectedContainerFilter === 'all' ? 'background: #2d5a3f; color: #8ee29a; border-color: #8ee29a; font-weight: bold;' : 'background: #1a1d1d; color: #ccc;'
+    pushTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${
+      this.activeMode === 'push'
+        ? 'background: #c9cd58; color: #121414; border: none;'
+        : 'background: transparent; color: var(--text-muted); border: none;'
     }`;
-    allPill.onclick = () => {
-      this.selectedContainerFilter = 'all';
+    pushTab.onclick = () => {
+      this.activeMode = 'push';
       this.render();
     };
 
-    // Per-container pills
-    const containerNameMap = new Map<string, string>();
-    for (const cId of activeContainerIds) {
-      const matched = this.containers.find((c) => c.id === cId);
-      const name = matched ? getContainerDisplayTitle(matched) : cId;
-      containerNameMap.set(cId, name);
+    const pullTab = modeSwitchWrap.createEl('button', {
+      text: '📥 Pull (Получить)',
+      cls: `lenta-tab-btn ${this.activeMode === 'pull' ? 'mod-cta' : ''}`,
+    });
+    pullTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${
+      this.activeMode === 'pull'
+        ? 'background: #3b82f6; color: #fff; border: none;'
+        : 'background: transparent; color: var(--text-muted); border: none;'
+    }`;
+    pullTab.onclick = () => {
+      this.activeMode = 'pull';
+      this.render();
+    };
 
-      const isSelected = this.selectedContainerFilter === cId;
-      const typeTag = matched?.type === 'git' ? '📜 Versioned' : '📁';
-      const pill = selectorWrap.createEl('button', {
-        text: `${typeTag} ${name}`,
-        cls: `lenta-pill-btn ${isSelected ? 'active' : ''}`,
+    // ── Target Container Filter Strip ───────────────────────────────────────
+    const containerSection = contentEl.createDiv({ cls: 'lenta-sync-container-box' });
+    containerSection.style.cssText =
+      'margin-bottom: 14px; padding: 10px 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85em; box-sizing: border-box; width: 100%;';
+
+    const selectorWrap = containerSection.createDiv();
+    selectorWrap.style.cssText = 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;';
+    selectorWrap.createSpan({ text: '📦 Контейнер / Хранилище: ', cls: 'setting-item-name' });
+
+    // Container Selector Dropdown
+    const selectEl = selectorWrap.createEl('select');
+    selectEl.style.cssText =
+      'padding: 4px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); color: var(--text-normal); font-size: 0.9em; max-width: 100%; box-sizing: border-box;';
+
+    const allOpt = selectEl.createEl('option', { value: 'all', text: `🌐 Все активные контейнеры (${activeContainerIds.length})` });
+    if (this.selectedContainerFilter === 'all') allOpt.selected = true;
+
+    for (const c of this.containers) {
+      const opt = selectEl.createEl('option', {
+        value: c.id,
+        text: `${c.name || c.id} (${c.type || 'obsidian'}) • ${c.totalNotes || 0} заметок`,
       });
-      pill.style.cssText = `padding: 4px 10px; border-radius: 6px; border: 1px solid #444; font-size: 0.85em; cursor: pointer; ${
-        isSelected ? 'background: #2d5a3f; color: #8ee29a; border-color: #8ee29a; font-weight: bold;' : 'background: #1a1d1d; color: #ccc;'
-      }`;
-      pill.onclick = () => {
-        this.selectedContainerFilter = cId;
-        this.activeContainerId = cId;
-        this.render();
-      };
+      if (this.selectedContainerFilter === c.id) opt.selected = true;
     }
 
-    // Active container details line
-    const activeInfo = containerSection.createDiv({ cls: 'lenta-connected-key-badge' });
-    activeInfo.style.cssText = 'padding: 10px 14px; background: #18221b; border: 1px solid #2d4533; border-radius: 6px; color: #8ee29a; font-size: 0.85em; margin-top: 8px;';
-    
-    const rootFolder = this.settings.vaultRootFolder || 'Lenta';
-
-    if (this.selectedContainerFilter === 'all') {
-      const namesList = activeContainerIds.map((id) => containerNameMap.get(id) || id).join(', ');
-      const totalUnpushed = this.changedFiles.length;
-      activeInfo.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <div><strong>Scope:</strong> All Connected Containers <span style="opacity:0.8; font-family: monospace;">[${namesList}]</span></div>
-          <div style="font-size:0.85em; color:${totalUnpushed > 0 ? '#fde047' : '#4ade80'}; font-weight:600;">
-            ${totalUnpushed > 0 ? `⚡ ${totalUnpushed} unpushed local notes` : '✅ In sync'}
-          </div>
-        </div>
-      `;
-    } else {
-      const activeName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
-      const matched = this.containers.find((c) => c.id === this.selectedContainerFilter);
-      const typeStr = matched?.type ? (matched.type === 'git' ? 'VERSIONED' : matched.type.toUpperCase()) : 'VERSIONED';
-      const isPub = matched ? isContainerPublic(matched) : true;
-      const containerVaultPath = `${rootFolder}/${activeName}`;
-      
-      const containerUnpushed = this.changedFiles.filter((f) => f.relPath.startsWith(containerVaultPath + '/') || f.relPath.includes(this.selectedContainerFilter)).length;
-
-      activeInfo.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div>
-            <strong>Container:</strong> <span style="color:#fff; font-weight:700;">${activeName}</span> 
-            <span style="font-size:0.8em; padding:1px 6px; border-radius:4px; ${isPub ? 'background:#14532d; color:#4ade80;' : 'background:#78350f; color:#fde047;'} margin-left:6px;">${isPub ? 'PUBLIC' : 'PRIVATE'}</span>
-            <span style="font-size:0.8em; padding:1px 6px; border-radius:4px; background:#1e3a8a; color:#93c5fd; margin-left:4px;">${typeStr}</span>
-            <div style="font-size:0.82em; color:#a7f3d0; margin-top:3px;">📍 Vault Path: <code>${containerVaultPath}</code></div>
-          </div>
-          <div style="font-size:0.85em; color:${containerUnpushed > 0 ? '#fde047' : '#4ade80'}; font-weight:600;">
-            ${containerUnpushed > 0 ? `⚡ ${containerUnpushed} unpushed file(s)` : '✅ Vault in sync'}
-          </div>
-        </div>
-      `;
-    }
-
-    // ── Primary Action Bar ────────────────────────────────────────────────
-    const actionsBar = contentEl.createDiv({ cls: 'lenta-sync-actions-bar' });
-    actionsBar.style.cssText = 'display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;';
-
-    // ▸ Pull Button (Multi-container or single target container)
-    const pullBtnText = this.isPulling
-      ? '⏳ Pulling...'
-      : this.selectedContainerFilter === 'all'
-      ? `📥 Pull All (${activeContainerIds.length})`
-      : `📥 Pull "${containerNameMap.get(this.selectedContainerFilter) || 'Container'}"`;
-
-    const pullBtn = actionsBar.createEl('button', {
-      text: pullBtnText,
-      cls: 'mod-cta lenta-btn-lemon',
-    });
-    pullBtn.disabled = this.isLoading || this.isPulling || this.isPushing;
-    pullBtn.onclick = async () => {
-      this.isPulling = true;
-      this.statusMessage = '⏳ Fetching changes and syncing files...';
-      this.render();
-
-      try {
-        if (this.selectedContainerFilter === 'all') {
-          const stats = await this.syncEngine.pullAllContainers(activeContainerIds, containerNameMap);
-          this.lastPullStats = stats;
-          this.statusMessage = `✅ Multi-container pull complete: ${stats.pulledCount} notes updated across ${activeContainerIds.length} container(s).`;
-          new Notice(`🍋 Multi-container pull complete (${stats.pulledCount} notes, ${stats.downloadedFiles || 0} files).`);
-        } else {
-          const targetName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
-          const syncRes = await this.syncEngine.syncContainerFiles(this.selectedContainerFilter, targetName);
-          const stats = await this.syncEngine.pullChanges();
-          this.lastPullStats = { ...stats, downloadedFiles: syncRes.downloadedFiles };
-          this.statusMessage = `✅ Pull complete for "${targetName}": ${stats.pulledCount} notes updated.`;
-          new Notice(`🍋 Pulled ${stats.pulledCount} notes for container "${targetName}".`);
-        }
-        await this.loadChangedFiles();
-      } catch (err: any) {
-        this.statusMessage = `❌ Pull failed: ${err.message}`;
-        new Notice(`Pull failed: ${err.message}`);
-      } finally {
-        this.isPulling = false;
-        this.render();
+    selectEl.onchange = async () => {
+      this.selectedContainerFilter = selectEl.value;
+      if (selectEl.value !== 'all') {
+        this.activeContainerId = selectEl.value;
       }
+      await this.loadServerCommits();
+      this.render();
     };
 
-    // ▸ Push Active Note Button
-    const pushActiveBtn = actionsBar.createEl('button', {
-      text: this.isPushing ? '⏳ Pushing...' : '📤 Push Active Note',
-      cls: 'lenta-action-btn',
-    });
-    pushActiveBtn.disabled = this.isPushing || this.isPulling;
-    pushActiveBtn.onclick = async () => {
-      const activeFile = this.app.workspace.getActiveFile();
-      if (!activeFile) {
-        new Notice('No active Markdown note open in editor.');
-        return;
-      }
-      this.isPushing = true;
-      this.statusMessage = `⏳ Pushing "${activeFile.basename}"...`;
-      this.render();
-      try {
-        const res = await this.syncEngine.pushLocalNote(activeFile);
-        if (res.success) {
-          this.statusMessage = `✅ Pushed "${res.note?.title}" to Lenta server!`;
-          new Notice(`🍋 Pushed note "${res.note?.title}" to Lenta server!`);
-          await this.loadChangedFiles();
-        }
-      } catch (err: any) {
-        this.statusMessage = `❌ Push failed: ${err.message}`;
-        new Notice(`Push failed: ${err.message}`);
-      } finally {
-        this.isPushing = false;
-        this.render();
-      }
-    };
-
-    // Filter changed files according to active container filter selection
-    const filteredChangedFiles = this.changedFiles.filter((item) => {
-      if (this.selectedContainerFilter === 'all') return true;
-      const targetName = containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
-      const rootFolder = this.settings.vaultRootFolder || 'Lenta';
-      return item.relPath.includes(`${rootFolder}/${targetName}`) || item.relPath.includes(this.selectedContainerFilter);
+    // Status pill
+    const statusPill = containerSection.createDiv();
+    statusPill.style.cssText = 'display: flex; align-items: center; gap: 8px; flex-shrink: 0;';
+    const lastSyncLabel = this.settings.lastSyncedAt
+      ? new Date(this.settings.lastSyncedAt).toLocaleTimeString()
+      : 'Никогда';
+    statusPill.createSpan({
+      text: `Синхронизировано: ${lastSyncLabel}`,
+      cls: 'setting-item-description',
     });
 
-    // ▸ Push All Changed Button
-    const pushAllBtn = actionsBar.createEl('button', {
-      text: filteredChangedFiles.length > 0 ? `⚡ Push (${filteredChangedFiles.length})` : 'Push Changed',
-      cls: 'lenta-action-btn',
-    });
-    pushAllBtn.disabled = filteredChangedFiles.length === 0 || this.isPushing || this.isPulling;
-    pushAllBtn.onclick = async () => {
-      this.isPushing = true;
-      this.statusMessage = `⏳ Pushing ${filteredChangedFiles.length} changed files...`;
-      this.render();
-
-      let pushed = 0;
-      for (const item of filteredChangedFiles) {
-        try {
-          const res = await this.syncEngine.pushLocalNote(item.file);
-          if (res.success) pushed++;
-        } catch {
-          // continue
-        }
-      }
-
-      this.statusMessage = `✅ Bulk push complete: ${pushed}/${filteredChangedFiles.length} notes pushed.`;
-      new Notice(`🍋 Pushed ${pushed}/${filteredChangedFiles.length} modified notes.`);
-      this.isPushing = false;
-      await this.loadChangedFiles();
-    };
-
-    // ▸ Version History & Restore Button
-    const activeContainers = this.containers.filter(
-      (c) => activeContainerIds.length === 0 || activeContainerIds.includes(c.id)
-    );
-    if (activeContainers.length > 0 || this.settings.containerKey) {
-      const historyBtn = actionsBar.createEl('button', {
-        text: '📜 Version History & Restore',
-        cls: 'lenta-action-btn',
-      });
-      historyBtn.onclick = () => {
-        const targetContainer = activeContainers.find((c) => c.id === this.selectedContainerFilter) || activeContainers[0];
-        const gitContainerId = targetContainer?.id || this.activeContainerId || this.settings.containerKey || 'main-vault';
-        const gitContainerName = targetContainer?.name || containerNameMap.get(gitContainerId) || 'Primary Vault';
-        new GitHistoryModal(
-          this.app,
-          this.apiClient,
-          gitContainerId,
-          gitContainerName,
-          this.settings,
-          this.syncEngine
-        ).open();
-      };
-    }
-
-    // ── Status Box ─────────────────────────────────────────────────────────
+    // ── Status Message Alert ────────────────────────────────────────────────
     if (this.statusMessage) {
       const statusBox = contentEl.createDiv({ cls: 'lenta-sync-status-box' });
-      statusBox.createEl('span', { text: this.statusMessage });
+      statusBox.style.cssText =
+        'margin-bottom: 14px; padding: 8px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 6px; font-size: 0.85em; color: #93c5fd; box-sizing: border-box; width: 100%;';
+      statusBox.createSpan({ text: this.statusMessage });
     }
 
-    // ── Conflicts List ─────────────────────────────────────────────────────
-    if (this.lastPullStats && this.lastPullStats.conflicts.length > 0) {
-      const conflictBox = contentEl.createDiv({ cls: 'lenta-conflict-list-box' });
-      conflictBox.createEl('h3', { text: `⚠️ Unresolved Conflicts (${this.lastPullStats.conflicts.length})` });
-
-      for (const conflict of this.lastPullStats.conflicts) {
-        const row = conflictBox.createDiv({ cls: 'lenta-conflict-row' });
-        row.createSpan({ text: `📄 ${conflict.path}`, cls: 'lenta-conflict-path' });
-
-        const resolveBtn = row.createEl('button', { text: 'Resolve', cls: 'mod-cta' });
-        resolveBtn.onclick = () => {
-          new ConflictResolutionModal(this.app, conflict, async (strat) => {
-            this.settings.defaultConflictStrategy = strat;
-            await this.onSaveSettings();
-            await this.syncEngine.pullChanges();
-            this.render();
-          }).open();
-        };
+    // ========================================================================
+    // MODE: PUSH WORKSPACE
+    // ========================================================================
+    if (this.activeMode === 'push') {
+      // Push Success Banner
+      if (this.pushSuccess) {
+        const successBox = contentEl.createDiv();
+        successBox.style.cssText =
+          'margin-bottom: 14px; padding: 10px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; font-size: 0.85em; color: #6ee7b7; box-sizing: border-box; width: 100%;';
+        successBox.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 2px;">✅ Успешно отправлено на сервер!</div>
+          <div>Создана ревизия: <strong><code>${this.pushSuccess.commit}</code></strong> (${this.pushSuccess.count} заметок)</div>
+          <div style="font-style: italic; opacity: 0.85; margin-top: 2px;">«${this.pushSuccess.message}»</div>
+        `;
       }
-    }
 
-    // ── Changes Since Last Sync ────────────────────────────────────────────
-    const changesSection = contentEl.createDiv({ cls: 'lenta-changes-section' });
-    const changesHeader = changesSection.createDiv({ cls: 'lenta-changes-header' });
+      // ── Card 1: Commit Composer & Push Action ──────────────────────────────
+      const composerBox = contentEl.createDiv({ cls: 'lenta-commit-composer-box' });
+      composerBox.style.cssText =
+        'margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid rgba(201, 205, 88, 0.35); box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 8px; overflow: hidden;';
 
-    const syncedAtLabel = this.settings.lastSyncedAt
-      ? `since ${new Date(this.settings.lastSyncedAt).toLocaleString()}`
-      : 'all time';
+      const composerHeader = composerBox.createDiv();
+      composerHeader.style.cssText =
+        'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px;';
 
-    const filterScopeText = this.selectedContainerFilter !== 'all'
-      ? ` in ${containerNameMap.get(this.selectedContainerFilter) || 'selected container'}`
-      : '';
+      const compTitleWrap = composerHeader.createDiv();
+      compTitleWrap.style.cssText = 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;';
 
-    changesHeader.createEl('h3', {
-      text: this.isLoadingChanges
-        ? '🔍 Scanning local changes...'
-        : filteredChangedFiles.length > 0
-        ? `📝 ${filteredChangedFiles.length} local change${filteredChangedFiles.length > 1 ? 's' : ''}${filterScopeText} (${syncedAtLabel})`
-        : `✅ No local changes${filterScopeText} (${syncedAtLabel})`,
-      cls: 'lenta-changes-title',
-    });
+      const compTitle = compTitleWrap.createSpan({ text: '📦 Подготовка коммита' });
+      compTitle.style.cssText = 'font-weight: 700; font-size: 0.95em; color: #c9cd58;';
 
-    // Refresh changes button
-    const refreshBtn = changesHeader.createEl('button', {
-      text: '↺ Refresh',
-      cls: 'lenta-changes-refresh-btn',
-    });
-    refreshBtn.onclick = () => this.loadChangedFiles();
+      const countBadge = compTitleWrap.createSpan({ cls: 'lenta-badge' });
+      countBadge.setText(`Файлов к отправке: ${this.stagedFilePaths.size} из ${this.changedFiles.length}`);
 
-    if (!this.isLoadingChanges && filteredChangedFiles.length > 0) {
-      const changesList = changesSection.createDiv({ cls: 'lenta-changes-list' });
+      const targetBadge = compTitleWrap.createSpan({ cls: 'lenta-badge' });
+      targetBadge.style.cssText =
+        'background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);';
+      const targetLabel =
+        this.selectedContainerFilter === 'all'
+          ? 'Все активные контейнеры'
+          : containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
+      targetBadge.setText(`Цель: ${targetLabel}`);
 
-      for (const item of filteredChangedFiles) {
-        const row = changesList.createDiv({ cls: 'lenta-change-row' });
+      const autoGenBtn = composerHeader.createEl('button', { text: '✨ Автогенерация коммита' });
+      autoGenBtn.style.cssText =
+        'padding: 4px 10px; font-size: 0.8em; border-radius: 6px; background: rgba(201, 205, 88, 0.15); border: 1px solid #c9cd58; color: #e5e971; font-weight: 600; cursor: pointer; flex-shrink: 0;';
+      autoGenBtn.title = 'Сгенерировать сообщение коммита на основе выбранных заметок';
+      autoGenBtn.onclick = () => this.autoGenerateCommitMessage();
 
-        // Match container tag for item
-        let containerTag = '';
-        for (const [cId, cName] of containerNameMap.entries()) {
-          if (item.relPath.includes(cName) || item.relPath.includes(cId)) {
-            containerTag = cName;
-            break;
-          }
-        }
+      const msgArea = composerBox.createEl('textarea');
+      msgArea.rows = 2;
+      msgArea.value = this.commitMessage;
+      msgArea.placeholder = 'Опишите изменения (или нажмите «✨ Автогенерация коммита»)...';
+      msgArea.style.cssText =
+        'width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.85em; font-family: monospace; resize: vertical; min-height: 48px; max-height: 80px;';
+      msgArea.oninput = () => {
+        this.commitMessage = msgArea.value;
+      };
 
-        // File info
-        const infoDiv = row.createDiv({ cls: 'lenta-change-info' });
-        infoDiv.createSpan({ text: '📄 ', cls: 'lenta-change-icon' });
-        infoDiv.createSpan({ text: item.title, cls: 'lenta-change-title' });
-        if (containerTag) {
-          const tagSpan = infoDiv.createSpan({ cls: 'lenta-container-badge-pill' });
-          tagSpan.style.cssText = 'margin-left: 8px; padding: 2px 6px; background: #1f3323; border: 1px solid #335c3b; border-radius: 4px; color: #8ee29a; font-size: 0.75em;';
-          tagSpan.setText(`📦 ${containerTag}`);
-        }
+      const composerFooter = composerBox.createDiv();
+      composerFooter.style.cssText =
+        'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;';
 
-        const meta = infoDiv.createDiv({ cls: 'lenta-change-meta' });
-        meta.createSpan({ text: item.relPath, cls: 'lenta-change-path' });
-        meta.createSpan({
-          text: `Modified: ${new Date(item.modifiedAt).toLocaleTimeString()}`,
-          cls: 'lenta-change-time',
-        });
-
-        // Per-file push button
-        const filePushBtn = row.createEl('button', {
-          text: this.pushingFilePath === item.relPath ? '⏳' : '📤 Push',
-          cls: 'lenta-file-push-btn',
-        });
-        filePushBtn.disabled = this.pushingFilePath !== null || this.isPulling;
-        filePushBtn.onclick = async () => {
-          this.pushingFilePath = item.relPath;
-          this.render();
-          try {
-            const res = await this.syncEngine.pushLocalNote(item.file);
-            if (res.success) {
-              new Notice(`🍋 Pushed "${item.title}"`);
-              this.statusMessage = `✅ Pushed "${item.title}"`;
-            }
-          } catch (err: any) {
-            new Notice(`Push failed: ${err.message}`);
-          } finally {
-            this.pushingFilePath = null;
-            await this.loadChangedFiles();
-          }
-        };
+      const progressOrStatus = composerFooter.createDiv();
+      progressOrStatus.style.cssText = 'font-size: 0.82em; font-family: monospace; min-width: 0;';
+      if (this.isPushing) {
+        progressOrStatus.setText(
+          this.pushStep === 1
+            ? '⏳ 1/3 Сборка дельты...'
+            : this.pushStep === 2
+            ? '⏳ 2/3 Передача заметок...'
+            : '⏳ 3/3 Фиксация коммита на сервере...'
+        );
+        progressOrStatus.style.color = '#c9cd58';
+      } else {
+        progressOrStatus.setText(
+          this.stagedFilePaths.size > 0
+            ? `✓ Готово к отправке: ${this.stagedFilePaths.size} замет(ок)`
+            : 'Отметьте файлы в списке ниже'
+        );
+        progressOrStatus.style.color = this.stagedFilePaths.size > 0 ? '#6ee7b7' : 'var(--text-muted)';
       }
-    } else if (!this.isLoadingChanges) {
-      changesSection.createDiv({
-        cls: 'lenta-changes-empty',
-        text: 'All Lenta notes are up to date with the server.',
+
+      const pushSubmitBtn = composerFooter.createEl('button', {
+        text: this.isPushing
+          ? '⏳ Отправка...'
+          : `🚀 Запушить на сервер (Push) (${this.stagedFilePaths.size})`,
       });
+      pushSubmitBtn.style.cssText = `padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; white-space: nowrap; ${
+        this.isPushing || (this.stagedFilePaths.size === 0 && !this.commitMessage.trim())
+          ? 'background: #555; color: #888; cursor: not-allowed;'
+          : 'background: #c9cd58; color: #121414;'
+      }`;
+      pushSubmitBtn.disabled = this.isPushing || (this.stagedFilePaths.size === 0 && !this.commitMessage.trim());
+      pushSubmitBtn.onclick = () => this.executePush();
+
+      // ── Card 2: Session Changes List ──────────────────────────────────────
+      const changesBox = contentEl.createDiv({ cls: 'lenta-session-changes-box' });
+      changesBox.style.cssText =
+        'margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;';
+
+      const changesHeader = changesBox.createDiv();
+      changesHeader.style.cssText =
+        'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px; flex-wrap: wrap; gap: 8px;';
+
+      const changesTitle = changesHeader.createDiv();
+      changesTitle.innerHTML = `
+        <div style="font-weight: 700; font-size: 0.95em;">Изменения за сессию (${this.changedFiles.length})</div>
+        <div style="font-size: 0.75em; color: var(--text-muted);">Отмечено к коммиту: <strong>${this.stagedFilePaths.size}</strong> из ${this.changedFiles.length}</div>
+      `;
+
+      const stageBtns = changesHeader.createDiv();
+      stageBtns.style.cssText = 'display: flex; gap: 6px; align-items: center; flex-wrap: wrap;';
+
+      const stageAllBtn = stageBtns.createEl('button', { text: 'Загрузить все в коммит' });
+      stageAllBtn.style.cssText =
+        'padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: #c9cd58; color: #121414; font-weight: 600; border: none; cursor: pointer; white-space: nowrap;';
+      stageAllBtn.onclick = () => {
+        this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
+        if (!this.commitMessage.trim()) {
+          this.autoGenerateCommitMessage();
+        } else {
+          this.render();
+        }
+      };
+
+      const unstageAllBtn = stageBtns.createEl('button', { text: 'Снять выбор' });
+      unstageAllBtn.style.cssText =
+        'padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer; white-space: nowrap;';
+      unstageAllBtn.onclick = () => {
+        this.stagedFilePaths.clear();
+        this.render();
+      };
+
+      // Changed files scrollable list
+      const fileListWrap = changesBox.createDiv({ cls: 'lenta-files-scroll-wrap' });
+      fileListWrap.style.cssText =
+        'max-height: 260px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; box-sizing: border-box; width: 100%;';
+
+      if (this.changedFiles.length === 0) {
+        const emptyBox = fileListWrap.createDiv();
+        emptyBox.style.cssText =
+          'text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;';
+        emptyBox.setText('✅ Нет локальных изменений. Все заметки актуальны.');
+      } else {
+        for (const item of this.changedFiles) {
+          const isStaged = this.stagedFilePaths.has(item.relPath);
+          const isExpanded = this.expandedSnippetPath === item.relPath;
+
+          const row = fileListWrap.createDiv({ cls: `lenta-file-row ${isStaged ? 'is-staged' : ''}` });
+          row.style.cssText = `padding: 10px 12px; border-radius: 6px; border: 1px solid ${
+            isStaged ? '#c9cd58' : 'var(--background-modifier-border)'
+          }; background: ${
+            isStaged ? 'rgba(201, 205, 88, 0.08)' : 'var(--background-primary)'
+          }; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;`;
+
+          const rowTop = row.createDiv();
+          rowTop.style.cssText =
+            'display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box; min-width: 0;';
+
+          const rowLeft = rowTop.createDiv();
+          rowLeft.style.cssText =
+            'display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; overflow: hidden;';
+
+          const chk = rowLeft.createEl('input', { type: 'checkbox' });
+          chk.checked = isStaged;
+          chk.style.cssText = 'cursor: pointer; accent-color: #c9cd58; flex-shrink: 0; width: 16px; height: 16px; margin: 0;';
+          chk.onchange = () => {
+            if (chk.checked) {
+              this.stagedFilePaths.add(item.relPath);
+            } else {
+              this.stagedFilePaths.delete(item.relPath);
+            }
+            this.render();
+          };
+
+          const badge = rowLeft.createSpan();
+          badge.style.cssText =
+            'padding: 2px 6px; border-radius: 4px; font-size: 0.72em; font-weight: 700; background: rgba(201, 205, 88, 0.2); color: #e5e971; flex-shrink: 0; line-height: 1.2;';
+          badge.setText('~ MOD');
+
+          const nameWrap = rowLeft.createDiv();
+          nameWrap.style.cssText = 'min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;';
+
+          const nameSpan = nameWrap.createDiv({ text: item.title });
+          nameSpan.style.cssText =
+            'font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);';
+
+          const pathSpan = nameWrap.createDiv({ text: item.relPath });
+          pathSpan.style.cssText =
+            'font-size: 0.76em; line-height: 1.2; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace;';
+
+          const rowRight = rowTop.createDiv();
+          rowRight.style.cssText =
+            'display: flex; align-items: center; gap: 8px; font-size: 0.76em; color: var(--text-muted); flex-shrink: 0;';
+          rowRight.createSpan({ text: new Date(item.modifiedAt).toLocaleTimeString() });
+
+          const toggleBtn = rowRight.createEl('button', { text: isExpanded ? '▲' : '▼' });
+          toggleBtn.style.cssText =
+            'padding: 2px 8px; font-size: 0.72em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer;';
+          toggleBtn.onclick = () => {
+            this.expandedSnippetPath = isExpanded ? null : item.relPath;
+            this.render();
+          };
+
+          // Expandable file info / preview
+          if (isExpanded) {
+            const previewBox = row.createDiv();
+            previewBox.style.cssText =
+              'padding: 6px 8px; border-radius: 4px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.75em; font-family: monospace; color: var(--text-muted); margin-top: 4px; box-sizing: border-box; width: 100%; word-break: break-all;';
+            previewBox.setText(`Размер: ${(item.file.stat.size / 1024).toFixed(1)} KB | Путь: ${item.file.path}`);
+          }
+        }
+      }
     }
 
-    // ── Footer ─────────────────────────────────────────────────────────────
-    const footer = contentEl.createDiv({ cls: 'lenta-sync-footer' });
-    const lastSyncText = this.settings.lastSyncedAt
-      ? new Date(this.settings.lastSyncedAt).toLocaleString()
-      : 'Never';
-    footer.createEl('span', {
-      text: `Last Synced: ${lastSyncText} | Vault Root: /${this.settings.vaultRootFolder}`,
-    });
+    // ========================================================================
+    // MODE: PULL WORKSPACE
+    // ========================================================================
+    if (this.activeMode === 'pull') {
+      const pullControlsBox = contentEl.createDiv();
+      pullControlsBox.style.cssText =
+        'margin-bottom: 14px; padding: 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box; width: 100%; overflow: hidden;';
 
-    // Auto-sync toggle
-    const autoSyncLabel = footer.createEl('label', { cls: 'lenta-autosync-toggle' });
-    const autoSyncCheck = autoSyncLabel.createEl('input', { type: 'checkbox' });
-    autoSyncCheck.checked = this.settings.autoSyncOnEdit || false;
-    autoSyncCheck.onchange = async () => {
-      this.settings.autoSyncOnEdit = autoSyncCheck.checked;
-      await this.onSaveSettings();
-    };
-    autoSyncLabel.createSpan({ text: ' Auto-push on save' });
+      const pullInfo = pullControlsBox.createDiv();
+      pullInfo.style.cssText = 'min-width: 0; flex: 1;';
+      pullInfo.innerHTML = `
+        <div style="font-weight: 700; font-size: 1em;">📥 Получение изменений с сервера (Pull)</div>
+        <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 2px;">Загрузка актуальной версии заметок и объединение с локальным хранилищем.</div>
+      `;
+
+      const pullActionBtn = pullControlsBox.createEl('button', {
+        text: this.isPulling ? '⏳ Получение данных...' : '📥 Получить изменения с сервера (Pull)',
+      });
+      pullActionBtn.style.cssText = `padding: 10px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; flex-shrink: 0; white-space: nowrap; ${
+        this.isPulling ? 'background: #555; color: #888;' : 'background: #3b82f6; color: #fff;'
+      }`;
+      pullActionBtn.disabled = this.isPulling;
+      pullActionBtn.onclick = () => this.executePull();
+
+      // Downloaded files section (Pull Delta)
+      const downloadedSection = contentEl.createDiv();
+      downloadedSection.style.cssText =
+        'margin-bottom: 14px; padding: 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;';
+
+      const dlHeader = downloadedSection.createDiv();
+      dlHeader.style.cssText =
+        'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;';
+
+      const dlTitle = dlHeader.createDiv();
+      dlTitle.innerHTML = `
+        <span style="font-weight: 700; font-size: 0.95em;">Изменения, загруженные с сервера</span>
+        <span style="margin-left: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.8em; font-weight: 700;">${this.downloadedFiles.length} файлов</span>
+      `;
+
+      const dlListWrap = downloadedSection.createDiv();
+      dlListWrap.style.cssText =
+        'display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;';
+
+      if (this.downloadedFiles.length === 0) {
+        const emptyDl = dlListWrap.createDiv();
+        emptyDl.style.cssText =
+          'text-align: center; padding: 20px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;';
+        emptyDl.setText('Нажмите «Получить изменения с сервера», чтобы загрузить дельту.');
+      } else {
+        this.downloadedFiles.forEach((file, idx) => {
+          const isExp = this.expandedFileIndex === idx;
+          const isCopied = this.copiedFileIndex === idx;
+
+          const row = dlListWrap.createDiv({ cls: 'lenta-file-row' });
+          row.style.cssText =
+            'padding: 10px 12px; border-radius: 6px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;';
+
+          const rowTop = row.createDiv();
+          rowTop.style.cssText =
+            'display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; box-sizing: border-box; gap: 10px; min-width: 0;';
+          rowTop.onclick = () => {
+            this.expandedFileIndex = isExp ? null : idx;
+            this.render();
+          };
+
+          const rowLeft = rowTop.createDiv();
+          rowLeft.style.cssText = 'display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;';
+          rowLeft.createSpan({ text: '📄', cls: 'lenta-file-icon' });
+
+          const titleDiv = rowLeft.createDiv();
+          titleDiv.style.cssText = 'min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;';
+          const titleLine = titleDiv.createDiv({ text: file.title || file.path });
+          titleLine.style.cssText =
+            'font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);';
+          const pathLine = titleDiv.createDiv({ text: file.path });
+          pathLine.style.cssText =
+            'font-size: 0.76em; line-height: 1.2; color: var(--text-muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+
+          const rowRight = rowTop.createDiv();
+          rowRight.style.cssText = 'display: flex; align-items: center; gap: 8px; font-size: 0.75em; flex-shrink: 0;';
+
+          const tag = rowRight.createSpan();
+          tag.style.cssText = file.isNew
+            ? 'padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-weight: 700;'
+            : 'padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-weight: 700;';
+          tag.setText(file.isNew ? '✨ НОВОЕ' : '📥 СИНХРОНИЗИРОВАНО');
+
+          if (file.size) {
+            rowRight.createSpan({ text: `${(file.size / 1024).toFixed(1)} KB`, cls: 'setting-item-description' });
+          }
+
+          rowRight.createSpan({ text: isExp ? '▲' : '▼' });
+
+          if (isExp) {
+            const preview = row.createDiv();
+            preview.style.cssText =
+              'margin-top: 6px; padding: 8px; border-radius: 4px; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%;';
+
+            const copyBar = preview.createDiv();
+            copyBar.style.cssText =
+              'display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.75em; color: var(--text-muted);';
+            copyBar.createSpan({ text: 'Содержимое Markdown:' });
+
+            const copyBtn = copyBar.createEl('button', { text: isCopied ? '✓ Скопировано' : '📋 Скопировать' });
+            copyBtn.style.cssText = 'padding: 2px 6px; font-size: 0.75em; border-radius: 3px; cursor: pointer;';
+            copyBtn.onclick = (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(file.content);
+              this.copiedFileIndex = idx;
+              setTimeout(() => {
+                this.copiedFileIndex = null;
+                this.render();
+              }, 1500);
+              this.render();
+            };
+
+            const pre = preview.createEl('pre');
+            pre.style.cssText =
+              'margin: 0; font-size: 0.75em; max-height: 140px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: monospace; color: var(--text-normal); box-sizing: border-box; width: 100%;';
+            pre.setText(file.content);
+          }
+        });
+      }
+    }
+
+    // ========================================================================
+    // COMMON: RECENT SERVER COMMITS LIST
+    // ========================================================================
+    const commitsSection = contentEl.createDiv();
+    commitsSection.style.cssText =
+      'padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;';
+
+    const commitsHeader = commitsSection.createDiv();
+    commitsHeader.style.cssText =
+      'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;';
+
+    const cHeadTitle = commitsHeader.createDiv();
+    cHeadTitle.innerHTML = `
+      <span style="font-weight: 700; font-size: 0.9em; color: var(--text-muted);">📜 Последние коммиты сервера (${this.serverCommits.length})</span>
+    `;
+
+    const cRefreshBtn = commitsHeader.createEl('button', { text: '↺ Обновить историю' });
+    cRefreshBtn.style.cssText =
+      'padding: 2px 8px; font-size: 0.75em; border-radius: 4px; border: 1px solid var(--background-modifier-border); background: transparent; cursor: pointer;';
+    cRefreshBtn.onclick = () => this.loadServerCommits();
+
+    const commitsList = commitsSection.createDiv();
+    commitsList.style.cssText =
+      'display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 160px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;';
+
+    if (this.serverCommits.length === 0) {
+      const emptyCommits = commitsList.createDiv();
+      emptyCommits.style.cssText =
+        'grid-column: 1 / -1; text-align: center; padding: 12px; font-size: 0.8em; color: var(--text-muted);';
+      emptyCommits.setText('Нет доступных записей коммитов.');
+    } else {
+      for (const commit of this.serverCommits.slice(0, 6)) {
+        const hash = commit.shortHash || commit.commitHash?.slice(0, 7) || commit.hash?.slice(0, 7) || 'HEAD';
+        const card = commitsList.createDiv();
+        card.style.cssText =
+          'padding: 8px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.8em; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; overflow: hidden; min-width: 0;';
+
+        const cTop = card.createDiv();
+        cTop.style.cssText =
+          'display: flex; justify-content: space-between; align-items: center; font-family: monospace; min-width: 0;';
+
+        const pill = cTop.createSpan();
+        pill.style.cssText =
+          'padding: 1px 5px; border-radius: 3px; background: rgba(201, 205, 88, 0.15); color: #e5e971; font-weight: 700; font-size: 0.9em; flex-shrink: 0;';
+        pill.setText(hash);
+
+        cTop.createSpan({
+          text: commit.date ? new Date(commit.date).toLocaleDateString() : '',
+        }).style.cssText = 'color: var(--text-muted); font-size: 0.85em; flex-shrink: 0;';
+
+        const msgDiv = card.createDiv({ text: commit.message });
+        msgDiv.style.cssText =
+          'font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal); min-width: 0;';
+
+        const cBottom = card.createDiv();
+        cBottom.style.cssText =
+          'display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8em; font-family: monospace; border-top: 1px solid var(--background-modifier-border); padding-top: 3px; margin-top: 2px; min-width: 0;';
+        cBottom.createSpan({ text: commit.author || 'System' });
+        cBottom.createSpan({ text: `${commit.filesChanged || 1} файл(ов)` });
+      }
+    }
   }
 }

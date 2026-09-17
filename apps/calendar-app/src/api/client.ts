@@ -11,6 +11,7 @@ import {
   FolderTreeNode,
   CreateFolderInput,
   UpdateFolderInput,
+  CreateNoteInput,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -23,6 +24,12 @@ export const apiClient = axios.create({
 });
 
 export const calendarApi = {
+  // Create Note
+  createNote: async (input: CreateNoteInput): Promise<Note> => {
+    const res = await apiClient.post<Note>('/notes', input);
+    return res.data;
+  },
+
   // Range Notes Query
   getNotes: async (params?: QueryNotesParams): Promise<NotesResponse> => {
     const res = await apiClient.get<NotesResponse>('/notes', { params });

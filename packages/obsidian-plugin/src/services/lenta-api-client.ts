@@ -222,6 +222,22 @@ export class LentaApiClient {
     });
   }
 
+  async createFolder(dto: {
+    path: string;
+    name?: string;
+    icon?: string;
+    color?: string;
+    privacy?: 'public' | 'private';
+    containerId?: string | null;
+    scope?: 'external' | 'internal';
+  }): Promise<LentaFolderDto> {
+    return this.request<LentaFolderDto>({
+      url: `${this.baseUrl}/folders`,
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+  }
+
   async getNotes(params?: {
     feedId?: string;
     type?: string;
@@ -229,6 +245,9 @@ export class LentaApiClient {
     startDateFrom?: string;
     startDateTo?: string;
     tagPath?: string;
+    folder?: string;
+    folderId?: string;
+    folderPrefix?: string;
   }): Promise<LentaNoteDto[]> {
     const query = new URLSearchParams();
     if (params?.feedId) query.set('feedId', params.feedId);
@@ -237,6 +256,9 @@ export class LentaApiClient {
     if (params?.startDateFrom) query.set('startDateFrom', params.startDateFrom);
     if (params?.startDateTo) query.set('startDateTo', params.startDateTo);
     if (params?.tagPath) query.set('tagPath', params.tagPath);
+    if (params?.folder) query.set('folder', params.folder);
+    if (params?.folderId) query.set('folderId', params.folderId);
+    if (params?.folderPrefix) query.set('folderPrefix', params.folderPrefix);
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
     const res = await this.request<any>({
@@ -283,6 +305,9 @@ export class LentaApiClient {
     icon?: string;
     tagIds?: string[];
     folderIds?: string[];
+    folders?: (string | { path: string; isPrimary?: boolean; order?: number })[];
+    folder?: string;
+    containerId?: string;
   }): Promise<LentaNoteDto> {
     return this.request<LentaNoteDto>({
       url: `${this.baseUrl}/notes`,
@@ -592,6 +617,28 @@ export class LentaApiClient {
       url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/file-restore`,
       method: 'POST',
       body: JSON.stringify({ path, commitHash, message }),
+    });
+  }
+
+  async pushContainer(
+    containerId: string,
+    dto: { baseCommit?: string; message?: string; files?: Array<{ path: string; content: string }> } = {}
+  ): Promise<{ success: boolean; newCommit: string; filesChanged: number; message: string }> {
+    return this.containerRequest<{ success: boolean; newCommit: string; filesChanged: number; message: string }>({
+      url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/push`,
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+  }
+
+  async pullContainer(
+    containerId: string,
+    dto: { sinceCommit?: string; paths?: string[] } = {}
+  ): Promise<{ commit: string; files: Array<{ path: string; content: string; size?: number }>; isFullSync: boolean }> {
+    return this.containerRequest<{ commit: string; files: Array<{ path: string; content: string; size?: number }>; isFullSync: boolean }>({
+      url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/pull`,
+      method: 'POST',
+      body: JSON.stringify(dto),
     });
   }
 

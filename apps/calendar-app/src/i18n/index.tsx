@@ -315,6 +315,16 @@ export interface Translations {
   filterInternal: string;
   targetContainer: string;
   pushesToContainers: (count: number) => string;
+
+  // Transparent Sync Controls & Feedback
+  pullFromVault: string;
+  pushToVault: string;
+  syncSuccess: string;
+  lastSyncedAgo: string;
+  createNoteInFolder: string;
+  syncingPull: string;
+  syncingPush: string;
+  syncedWithBackend: string;
 }
 
 
@@ -630,6 +640,16 @@ export const ruTranslations: Translations = {
   filterInternal: 'Контейнерные (Internal)',
   targetContainer: 'Целевой контейнер Obsidian',
   pushesToContainers: (count: number) => `Транслируется в ${count} ${pluralizeRu(count, 'контейнер', 'контейнера', 'контейнеров')}`,
+
+  // Transparent Sync Controls & Feedback
+  pullFromVault: 'Получить (Pull)',
+  pushToVault: 'Отправить (Push)',
+  syncSuccess: 'Синхронизация успешно завершена',
+  lastSyncedAgo: 'Синхронизировано',
+  createNoteInFolder: 'Новая заметка в папке',
+  syncingPull: 'Получение данных...',
+  syncingPush: 'Отправка данных...',
+  syncedWithBackend: 'Синхронизировано с бэкендом',
 };
 
 
@@ -945,6 +965,16 @@ export const enTranslations: Translations = {
   filterInternal: 'Container (Internal)',
   targetContainer: 'Target Obsidian Container',
   pushesToContainers: (count: number) => `Broadcasting to ${count} ${count === 1 ? 'container' : 'containers'}`,
+
+  // Transparent Sync Controls & Feedback
+  pullFromVault: 'Pull Changes',
+  pushToVault: 'Push Changes',
+  syncSuccess: 'Synchronization completed successfully',
+  lastSyncedAgo: 'Synced',
+  createNoteInFolder: 'New note in folder',
+  syncingPull: 'Pulling data...',
+  syncingPush: 'Pushing data...',
+  syncedWithBackend: 'Synced with backend',
 };
 
 

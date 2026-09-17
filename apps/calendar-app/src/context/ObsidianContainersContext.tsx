@@ -11,7 +11,32 @@ export interface ContainerPrivacyImpact {
   conflictingFolders: BoundFolder[];
 }
 
-interface ObsidianContainersContextType {
+export interface SessionChange {
+  id: string;
+  type: 'add' | 'modify' | 'delete';
+  entityType: 'note' | 'folder' | 'setting';
+  title: string;
+  path: string;
+  containerId?: string;
+  timestamp: number;
+  dateStr: string;
+  contentSnippet?: string;
+  staged: boolean;
+}
+
+export interface PullResult {
+  containerId: string;
+  commit: string;
+  files: Array<{
+    path: string;
+    content: string;
+    size?: number;
+    mtime?: number;
+  }>;
+  timestamp: string;
+}
+
+export interface ObsidianContainersContextType {
   containers: ObsidianContainer[];
   activeContainer: ObsidianContainer | null;
   setActiveContainerId: (id: string | null) => void;
@@ -37,6 +62,7 @@ interface ObsidianContainersContextType {
       observeMode?: 'all' | 'filtered' | 'recursive';
       filterTag?: string;
       privacy?: FolderPrivacy;
+      notesCount?: number;
     }>;
   }) => Promise<ObsidianContainer> | ObsidianContainer;
   updateContainer: (id: string, updates: Partial<ObsidianContainer>) => void;
@@ -59,15 +85,75 @@ interface ObsidianContainersContextType {
   updateBoundFolder: (containerId: string, folderId: string, updates: Partial<BoundFolder>) => void;
   regenerateToken: (containerId: string) => string;
   triggerSync: (containerId: string) => Promise<void>;
-  pushContainer: (containerId: string) => Promise<void>;
-  pullContainer: (containerId: string) => Promise<void>;
+  pushContainer: (
+    containerId: string,
+    options?: { message?: string; files?: Array<{ path: string; content?: string }> }
+  ) => Promise<{ success: boolean; newCommit: string; filesChanged: number; message: string }>;
+  pullContainer: (
+    containerId: string,
+    options?: { sinceCommit?: string; paths?: string[] }
+  ) => Promise<PullResult>;
   isSyncingId: string | null;
   syncDirection: 'push' | 'pull' | null;
   pendingChanges: Record<string, number>;
+  // Session Changes
+  sessionChanges: SessionChange[];
+  addSessionChange: (change: Omit<SessionChange, 'id' | 'timestamp' | 'dateStr' | 'staged'>) => void;
+  toggleStageSessionChange: (id: string) => void;
+  stageAllSessionChanges: (staged?: boolean) => void;
+  clearSessionChanges: () => void;
+  // Pull Result
+  lastPullResult: PullResult | null;
+  // Modal State
+  isSyncModalOpen: boolean;
+  syncModalMode: 'push' | 'pull';
+  syncModalContainerId: string | null;
+  openSyncModal: (options?: { mode?: 'push' | 'pull'; containerId?: string }) => void;
+  closeSyncModal: () => void;
 }
 
 const STORAGE_KEY = 'lemon_lenta_obsidian_containers_v1';
 const SELECTED_KEY = 'lemon_lenta_selected_container_ids_v1';
+const SESSION_CHANGES_KEY = 'lemon_lenta_session_changes_v1';
+
+const INITIAL_SESSION_CHANGES: SessionChange[] = [
+  {
+    id: 'chg-1',
+    type: 'add',
+    entityType: 'note',
+    title: 'Release Planning v2.1',
+    path: '01_Daily_Logs/Release_Planning.md',
+    containerId: 'cont-personal-vault',
+    timestamp: Date.now() - 1000 * 60 * 12,
+    dateStr: '12 мин назад',
+    contentSnippet: '# Release Planning v2.1\n- [x] Push & Pull interactive modal\n- [x] Auto-generate commit message',
+    staged: true,
+  },
+  {
+    id: 'chg-2',
+    type: 'modify',
+    entityType: 'folder',
+    title: '04_Archive/Thoughts',
+    path: '04_Archive/Thoughts',
+    containerId: 'cont-personal-vault',
+    timestamp: Date.now() - 1000 * 60 * 25,
+    dateStr: '25 мин назад',
+    contentSnippet: 'Privacy setting updated: private, bound folder recursive',
+    staged: true,
+  },
+  {
+    id: 'chg-3',
+    type: 'add',
+    entityType: 'note',
+    title: 'AI Architecture & Vector Pipelines',
+    path: '02_Projects/AI_Research.md',
+    containerId: 'main-vault',
+    timestamp: Date.now() - 1000 * 60 * 40,
+    dateStr: '40 мин назад',
+    contentSnippet: 'Recent transformer study notes and embedding caching strategies',
+    staged: true,
+  },
+];
 
 const INITIAL_CONTAINERS: ObsidianContainer[] = [
   {
@@ -224,6 +310,78 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     });
     return init;
   });
+
+  // sessionChanges: list of changes made during the current session
+  const [sessionChanges, setSessionChanges] = useState<SessionChange[]>(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_CHANGES_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {}
+    return INITIAL_SESSION_CHANGES;
+  });
+
+  // Save sessionChanges to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(SESSION_CHANGES_KEY, JSON.stringify(sessionChanges));
+    } catch {}
+  }, [sessionChanges]);
+
+  // lastPullResult: details of files downloaded during the last pull
+  const [lastPullResult, setLastPullResult] = useState<PullResult | null>(null);
+
+  // Sync Push/Pull Modal State
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncModalMode, setSyncModalMode] = useState<'push' | 'pull'>('push');
+  const [syncModalContainerId, setSyncModalContainerId] = useState<string | null>(null);
+
+  const openSyncModal = useCallback((options?: { mode?: 'push' | 'pull'; containerId?: string }) => {
+    if (options?.mode) {
+      setSyncModalMode(options.mode);
+    }
+    if (options?.containerId) {
+      setSyncModalContainerId(options.containerId);
+    }
+    setIsSyncModalOpen(true);
+  }, []);
+
+  const closeSyncModal = useCallback(() => {
+    setIsSyncModalOpen(false);
+  }, []);
+
+  const addSessionChange = useCallback((change: Omit<SessionChange, 'id' | 'timestamp' | 'dateStr' | 'staged'>) => {
+    const now = Date.now();
+    const newChange: SessionChange = {
+      ...change,
+      id: `chg-${now}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: now,
+      dateStr: 'Только что',
+      staged: true,
+    };
+    setSessionChanges((prev) => [newChange, ...prev]);
+    if (change.containerId) {
+      setPendingChanges((prev) => ({
+        ...prev,
+        [change.containerId!]: (prev[change.containerId!] || 0) + 1,
+      }));
+    }
+  }, []);
+
+  const toggleStageSessionChange = useCallback((id: string) => {
+    setSessionChanges((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, staged: !item.staged } : item))
+    );
+  }, []);
+
+  const stageAllSessionChanges = useCallback((staged: boolean = true) => {
+    setSessionChanges((prev) => prev.map((item) => ({ ...item, staged })));
+  }, []);
+
+  const clearSessionChanges = useCallback(() => {
+    setSessionChanges([]);
+  }, []);
 
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
   const [isServerLoading, setIsServerLoading] = useState<boolean>(true);
@@ -630,14 +788,35 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
   );
 
   const pushContainer = useCallback(
-    async (containerId: string) => {
+    async (
+      containerId: string,
+      options?: { message?: string; files?: Array<{ path: string; content?: string }> }
+    ) => {
       setIsSyncingId(containerId);
       setSyncDirection('push');
       updateContainer(containerId, { status: 'syncing' });
 
+      let pushResult = {
+        success: true,
+        newCommit: `rev-${Date.now()}`,
+        filesChanged: options?.files?.length || 1,
+        message: options?.message || 'Web app manual push sync',
+      };
+
       if (isServerConnected) {
         try {
-          await containersApi.pushContainer(containerId, { message: 'Web app manual push sync' });
+          const res = await containersApi.pushContainer(containerId, {
+            message: options?.message || 'Web app manual push sync',
+            files: options?.files as any,
+          });
+          if (res) {
+            pushResult = {
+              success: res.success,
+              newCommit: res.newCommit,
+              filesChanged: res.filesChanged,
+              message: res.message,
+            };
+          }
         } catch (err) {
           console.warn(`Server push failed for ${containerId}`, err);
         }
@@ -656,35 +835,72 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         })
       );
 
+      // Remove staged session changes for this container or all staged
+      setSessionChanges((prev) =>
+        prev.filter((chg) => !chg.staged || (chg.containerId && chg.containerId !== containerId))
+      );
       setPendingChanges((prev) => ({ ...prev, [containerId]: 0 }));
       setIsSyncingId(null);
       setSyncDirection(null);
+      return pushResult;
     },
     [isServerConnected, updateContainer]
   );
 
   const pullContainer = useCallback(
-    async (containerId: string) => {
+    async (
+      containerId: string,
+      options?: { sinceCommit?: string; paths?: string[] }
+    ): Promise<PullResult> => {
       setIsSyncingId(containerId);
       setSyncDirection('pull');
       updateContainer(containerId, { status: 'syncing' });
 
-      let pulledFilesCount = 0;
+      let pulledFiles: Array<{ path: string; content: string; size?: number; mtime?: number }> = [];
+      let commitHash = `rev-${Date.now()}`;
+
       if (isServerConnected) {
         try {
-          const res = await containersApi.pullContainer(containerId, {});
-          pulledFilesCount = res.files?.length || 0;
+          const res = await containersApi.pullContainer(containerId, {
+            sinceCommit: options?.sinceCommit,
+            paths: options?.paths,
+          });
+          pulledFiles = res.files || [];
+          commitHash = res.commit || commitHash;
         } catch (err) {
           console.warn(`Server pull failed for ${containerId}`, err);
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 800));
+        pulledFiles = [
+          {
+            path: 'Design/Tokens/Design System V2 Tokens & Olive Gold Palette.md',
+            content: '---\ntitle: "Design System V2 Tokens"\nfeed: "design-systems"\n---\n# Design System V2\nUpdated colors & typography.',
+            size: 890,
+            mtime: Date.now(),
+          },
+          {
+            path: 'Strategy/Planning/Q4 Content Strategy Review.md',
+            content: '---\ntitle: "Q4 Content Strategy Review"\nfeed: "tech-strategy"\n---\n# Q4 Content Strategy\nReviewing milestones.',
+            size: 1420,
+            mtime: Date.now() - 3600000,
+          },
+        ];
       }
+
+      const result: PullResult = {
+        containerId,
+        commit: commitHash,
+        files: pulledFiles,
+        timestamp: new Date().toISOString(),
+      };
+
+      setLastPullResult(result);
 
       setContainers((prev) =>
         prev.map((c) => {
           if (c.id !== containerId) return c;
-          const added = pulledFilesCount || Math.floor(Math.random() * 3) + 1;
+          const added = pulledFiles.length || Math.floor(Math.random() * 3) + 1;
           return {
             ...c,
             status: 'connected',
@@ -696,6 +912,7 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
 
       setIsSyncingId(null);
       setSyncDirection(null);
+      return result;
     },
     [isServerConnected, updateContainer]
   );
@@ -731,6 +948,17 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         isSyncingId,
         syncDirection,
         pendingChanges,
+        sessionChanges,
+        addSessionChange,
+        toggleStageSessionChange,
+        stageAllSessionChanges,
+        clearSessionChanges,
+        lastPullResult,
+        isSyncModalOpen,
+        syncModalMode,
+        syncModalContainerId,
+        openSyncModal,
+        closeSyncModal,
       }}
     >
       {children}

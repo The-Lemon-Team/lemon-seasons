@@ -4,6 +4,7 @@ import { LentaSyncEngine } from './services/lenta-sync-engine';
 import { LentaFrontmatterUtil } from './services/lenta-frontmatter';
 import { LentaPluginSettings, DEFAULT_SETTINGS } from './types';
 import { LentaQuickAddModal } from './ui/quick-add-modal';
+import { LentaCreateFolderModal } from './ui/create-folder-modal';
 import { LentaSyncModal } from './ui/sync-modal';
 import { LentaConnectionsModal } from './ui/connections-modal';
 import { LentaContainersFoldersModal } from './ui/containers-folders-modal';
@@ -45,14 +46,36 @@ export default class WorkspaceLentaPlugin extends Plugin {
           leaf,
           this.apiClient,
           () => this.settings,
-          () => this.openQuickAddModal(),
-          () => this.openSyncModal(),
+          (folderId?: string, folderPath?: string) => this.openQuickAddModal(folderId, folderPath),
+          (mode?: 'push' | 'pull') => this.openSyncModal(mode || 'push'),
           () => this.openConnectionsModal(),
-          () => this.openContainersFoldersModal()
+          () => this.openContainersFoldersModal(),
+          async () => {
+            this.openSyncModal('pull');
+          },
+          async () => {
+            this.openSyncModal('push');
+          },
+          (folderId?: string, folderPath?: string) => this.openCreateFolderModal(folderId, folderPath)
         )
     );
 
     // 2. Ribbon Icons
+    const pullRibbonIcon = this.addRibbonIcon('download', '🍋 Lemon Lenta: Pull Changes from Server (⬇)', () => {
+      this.openSyncModal('pull');
+    });
+    pullRibbonIcon.addClass('lenta-ribbon-btn');
+
+    const pushRibbonIcon = this.addRibbonIcon('upload', '🍋 Lemon Lenta: Push Changed to Server (⬆)', () => {
+      this.openSyncModal('push');
+    });
+    pushRibbonIcon.addClass('lenta-ribbon-btn');
+
+    const sidebarRibbonIcon = this.addRibbonIcon('calendar-range', '🍋 Lemon Lenta: Open Lenta Hub Sidebar', () => {
+      this.activateSidebarView();
+    });
+    sidebarRibbonIcon.addClass('lenta-ribbon-btn');
+
     const containersRibbonIcon = this.addRibbonIcon('box', '🍋 Lemon Lenta: Containers & Folders Manager', () => {
       this.openContainersFoldersModal();
     });
@@ -113,6 +136,14 @@ export default class WorkspaceLentaPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'lenta-create-folder',
+      name: 'Create New Folder in Lenta & Vault',
+      callback: () => {
+        this.openCreateFolderModal();
+      },
+    });
+
+    this.addCommand({
       id: 'lenta-open-sidebar',
       name: 'Open Lenta Hierarchy Sidebar (Folders / Feeds / Taxonomy)',
       callback: () => {
@@ -122,17 +153,9 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
     this.addCommand({
       id: 'lenta-pull-delta-changes',
-      name: 'Pull Delta Changes from Server',
-      callback: async () => {
-        this.updateStatusBar('Syncing...');
-        try {
-          const stats = await this.syncEngine.pullChanges();
-          new Notice(`🍋 Pulled ${stats.pulledCount} notes (${stats.deletedCount} deleted).`);
-          this.updateStatusBar('Synced');
-        } catch (err: any) {
-          new Notice(`Sync failed: ${err.message}`);
-          this.updateStatusBar('Error');
-        }
+      name: 'Pull Changes from Server (Interactive Modal)',
+      callback: () => {
+        this.openSyncModal('pull');
       },
     });
 
@@ -158,9 +181,9 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
     this.addCommand({
       id: 'lenta-push-all-changed',
-      name: 'Push All Modified Notes Since Last Sync',
-      callback: async () => {
-        await this.pushAllChangedNotes();
+      name: 'Push Changes to Server (Interactive Modal)',
+      callback: () => {
+        this.openSyncModal('push');
       },
     });
 
@@ -220,6 +243,10 @@ export default class WorkspaceLentaPlugin extends Plugin {
         }
       })
     );
+
+    this.app.workspace.onLayoutReady(() => {
+      this.activateSidebarView();
+    });
 
     console.log('Project Lenta Obsidian Plugin loaded successfully.');
   }
@@ -307,24 +334,58 @@ export default class WorkspaceLentaPlugin extends Plugin {
     }
   }
 
-  openQuickAddModal() {
+  openQuickAddModal(initialFolderId?: string, initialFolderPath?: string) {
     new LentaQuickAddModal(
       this.app,
       this.apiClient,
       () => this.settings,
       (filePath) => {
         this.app.workspace.openLinkText(filePath, '', false);
-      }
+        // Also refresh active sidebar views so newly created note appears in folder accordion
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            if (initialFolderId) {
+              leaf.view.expandFolder(initialFolderId);
+            }
+            leaf.view.invalidateFolderNotes(initialFolderId);
+            leaf.view.refreshData();
+          }
+        }
+      },
+      initialFolderId,
+      initialFolderPath
     ).open();
   }
 
-  openSyncModal() {
+  openCreateFolderModal(parentFolderId?: string, parentFolderPath?: string) {
+    new LentaCreateFolderModal(
+      this.app,
+      this.apiClient,
+      () => this.settings,
+      async (newFolder) => {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            await leaf.view.refreshData();
+            leaf.view.selectFolder(newFolder.id, newFolder.path);
+          }
+        }
+      },
+      parentFolderId,
+      parentFolderPath
+    ).open();
+  }
+
+  openSyncModal(initialMode: 'push' | 'pull' = 'push', targetContainerId?: string) {
     new LentaSyncModal(
       this.app,
       this.apiClient,
       this.syncEngine,
       this.settings,
-      () => this.saveSettings()
+      () => this.saveSettings(),
+      initialMode,
+      targetContainerId
     ).open();
   }
 
@@ -345,7 +406,8 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.settings,
       () => this.saveSettings(),
       () => this.openConnectionsModal(),
-      this.syncEngine
+      this.syncEngine,
+      (mode) => this.openSyncModal(mode)
     ).open();
   }
 

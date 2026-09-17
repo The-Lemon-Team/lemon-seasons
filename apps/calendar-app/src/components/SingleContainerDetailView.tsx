@@ -62,6 +62,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
     isSyncingId,
     syncDirection,
     pendingChanges,
+    openSyncModal,
   } = useObsidianContainers();
 
   const { folders, getInternalFoldersForContainer, deleteFolder: deleteInternalFolder } = useFoldersContext();
@@ -278,8 +279,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
         {/* Quick Sync & Control Buttons */}
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => pushContainer(container.id)}
-            disabled={isSyncing}
+            onClick={() => openSyncModal({ mode: 'push', containerId: container.id })}
             className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
               isSyncing && syncDirection === 'push'
                 ? 'bg-[#c9cd58]/25 text-[#e5e971] border-[#c9cd58]/50'
@@ -296,8 +296,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
           </button>
 
           <button
-            onClick={() => pullContainer(container.id)}
-            disabled={isSyncing}
+            onClick={() => openSyncModal({ mode: 'pull', containerId: container.id })}
             className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold flex items-center gap-1.5 border transition-all ${
               isSyncing && syncDirection === 'pull'
                 ? 'bg-[#a855f7]/25 text-[#d8b4fe] border-[#a855f7]/50'

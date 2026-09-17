@@ -172,4 +172,84 @@ describe('LentaApiClient - listContainers', () => {
     expect(containers.some((c) => c.id.includes('custom-key-xyz'))).toBe(true);
     expect(containers.some((c) => c.id.includes('active-id-999'))).toBe(true);
   });
+
+  it('should post createFolder payload to /folders endpoint', async () => {
+    let capturedParams: any = null;
+    mockRequestUrl.mockImplementation(async (params: any) => {
+      capturedParams = params;
+      return {
+        status: 201,
+        json: {
+          id: 'folder-123',
+          path: '02_Projects/NewProject',
+          name: 'NewProject',
+          privacy: 'private',
+          icon: 'folder',
+          color: '#c9cd58',
+        },
+      };
+    });
+
+    const res = await client.createFolder({
+      path: '02_Projects/NewProject',
+      name: 'NewProject',
+      privacy: 'private',
+      icon: 'folder',
+      color: '#c9cd58',
+    });
+
+    expect(capturedParams.url).toBe(`${baseUrl}/folders`);
+    expect(capturedParams.method).toBe('POST');
+    const body = JSON.parse(capturedParams.body);
+    expect(body.path).toBe('02_Projects/NewProject');
+    expect(body.privacy).toBe('private');
+    expect(res.id).toBe('folder-123');
+    expect(res.name).toBe('NewProject');
+  });
+
+  it('should post createNote payload with folder, folders, folderIds and containerId', async () => {
+    let capturedParams: any = null;
+    mockRequestUrl.mockImplementation(async (params: any) => {
+      capturedParams = params;
+      return {
+        status: 201,
+        json: {
+          id: 'note-456',
+          title: 'Daily Meeting',
+          folders: [
+            {
+              id: 'nf-1',
+              folderId: 'folder-123',
+              folder: { id: 'folder-123', path: '01_daily' },
+              isPrimary: true,
+              order: 0,
+            },
+          ],
+        },
+      };
+    });
+
+    const res = await client.createNote({
+      title: 'Daily Meeting',
+      feedId: 'feed-1',
+      type: 'EVENT',
+      startDate: '2026-09-17T12:00:00.000Z',
+      folders: ['01_daily'],
+      folder: '01_daily',
+      folderIds: ['folder-123'],
+      containerId: 'cont-1',
+    });
+
+    expect(capturedParams.url).toBe(`${baseUrl}/notes`);
+    expect(capturedParams.method).toBe('POST');
+    const body = JSON.parse(capturedParams.body);
+    expect(body.title).toBe('Daily Meeting');
+    expect(body.folders).toEqual(['01_daily']);
+    expect(body.folder).toBe('01_daily');
+    expect(body.folderIds).toEqual(['folder-123']);
+    expect(body.containerId).toBe('cont-1');
+    expect(res.id).toBe('note-456');
+    expect(res.folders?.[0].folder.path).toBe('01_daily');
+  });
 });
+
