@@ -15,7 +15,7 @@ tags:
   - "usmidterms"
 cover_image: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800"
 icon: "flag"
-updated_at: "2026-09-16T19:42:55.060Z"
+updated_at: "2026-09-17T16:13:42.868Z"
 deleted: false
 ---
 

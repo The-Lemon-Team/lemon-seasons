@@ -1,9 +1,10 @@
 ---
 lenta_id: "1c7617d7-2275-4b2b-ab88-7df7db39adda"
 title: "Q4 Content Strategy Review"
+feed: "tech-strategy"
 type: "PERIOD"
-start_date: "2026-11-01T00:00:00.000Z"
-end_date: "2026-11-30T23:59:59.000Z"
+start_date: "Sun Nov 01 2026 03:00:00 GMT+0300 (Москва, стандартное время)"
+end_date: "Tue Dec 01 2026 02:59:59 GMT+0300 (Москва, стандартное время)"
 primary_folder: "Strategy/Planning"
 folders:
   - "Strategy/Planning"
@@ -19,7 +20,7 @@ links:
     title: "Официальный источник"
     is_source: true
 icon: "trending_up"
-updated_at: "2026-09-17T16:13:42.420Z"
+updated_at: "Thu Sep 17 2026 19:13:42 GMT+0300 (Москва, стандартное время)"
 deleted: false
 ---
 

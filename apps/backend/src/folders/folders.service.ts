@@ -9,7 +9,7 @@ export interface FolderTreeNode {
   path: string;
   icon: string | null;
   color: string | null;
-  privacy?: 'private' | 'public';
+  privacy?: 'private' | 'public' | 'obsidian';
   containerId?: string | null;
   scope?: 'external' | 'internal';
   notesCount: number;
@@ -52,29 +52,45 @@ export class FoldersService {
 
     const targetContainerId = createFolderDto.containerId || null;
 
+    if (targetContainerId) {
+      await this.ensureContainerExists(targetContainerId);
+    }
+
+    // Determine privacy: default to 'obsidian' if inside a container and not explicitly specified
+    const privacy = createFolderDto.privacy || (targetContainerId ? 'obsidian' : 'public');
+
+    // Case-insensitive lookup inside this container scope
     const existing = await this.prisma.folder.findFirst({
       where: {
-        path,
+        path: { equals: path, mode: 'insensitive' },
         containerId: targetContainerId,
         deletedAt: null,
       },
+      include: {
+        _count: {
+          select: {
+            noteFolders: { where: { note: { deletedAt: null } } },
+          },
+        },
+      },
     });
     if (existing) {
-      throw new ConflictException(`Folder with path '${path}' already exists in this scope`);
+      // Idempotent: return existing folder instead of throwing 409 Conflict
+      return existing;
     }
 
     const name = createFolderDto.name?.trim() || FoldersService.getFolderName(path);
 
     // Auto-create any missing parent folders in the path hierarchy
-    await this.ensureParentFolders(path, targetContainerId, createFolderDto.privacy);
+    await this.ensureParentFolders(path, targetContainerId, privacy);
 
     return this.prisma.folder.create({
       data: {
         name,
         path,
-        icon: createFolderDto.icon?.trim() || null,
-        color: createFolderDto.color?.trim() || null,
-        privacy: createFolderDto.privacy || 'public',
+        icon: createFolderDto.icon?.trim() || (privacy === 'obsidian' ? 'box' : null),
+        color: createFolderDto.color?.trim() || (privacy === 'obsidian' ? '#3b82f6' : null),
+        privacy,
         containerId: targetContainerId,
       },
       include: {
@@ -87,10 +103,42 @@ export class FoldersService {
     });
   }
 
+  private async ensureContainerExists(containerId: string): Promise<void> {
+    const existing = await this.prisma.container.findUnique({
+      where: { id: containerId },
+    });
+    if (existing) return;
+
+    const isPub =
+      !containerId.startsWith('lenta_obs_') &&
+      !containerId.includes('private') &&
+      !containerId.includes('secret') &&
+      !containerId.includes('cont-private');
+    const name = containerId.startsWith('feed-')
+      ? `📰 Feed Container (${containerId.replace(/^feed-/, '')})`
+      : !isPub
+      ? `🔒 User Vault Container (${containerId.slice(0, 16)})`
+      : `🍋 Obsidian Container (${containerId.slice(0, 16)})`;
+
+    await this.prisma.container
+      .create({
+        data: {
+          id: containerId,
+          name,
+          type: containerId.startsWith('feed-') ? 'feed' : 'obsidian',
+          description: `Auto-provisioned container for ${containerId}`,
+          visibility: isPub ? 'public' : 'private',
+        },
+      })
+      .catch((err) => {
+        console.warn(`[FoldersService] auto-provision container ${containerId}:`, err?.message || err);
+      });
+  }
+
   private async ensureParentFolders(
     childPath: string,
     containerId: string | null = null,
-    privacy: 'public' | 'private' = 'public',
+    privacy: 'public' | 'private' | 'obsidian' = 'public',
   ) {
     const parts = childPath.split('/');
     if (parts.length <= 1) return;
@@ -100,7 +148,7 @@ export class FoldersService {
       currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
       const existing = await this.prisma.folder.findFirst({
         where: {
-          path: currentPath,
+          path: { equals: currentPath, mode: 'insensitive' },
           containerId,
           deletedAt: null,
         },
@@ -126,13 +174,25 @@ export class FoldersService {
   ) {
     let containerCondition: any = {};
 
-    if (scope === 'external') {
+    if (scope === 'all') {
+      containerCondition = containerId
+        ? { OR: [{ containerId: null }, { containerId }] }
+        : {};
+    } else if (scope === 'external') {
       containerCondition = { containerId: null };
     } else if (scope === 'internal') {
       containerCondition = containerId ? { containerId } : { containerId: { not: null } };
     } else if (containerId) {
       containerCondition = {
         OR: [{ containerId: null }, { containerId }],
+      };
+    } else {
+      // Global scope: exclude internal 'obsidian' container folders from global view
+      containerCondition = {
+        OR: [
+          { containerId: null },
+          { privacy: { not: 'obsidian' } },
+        ],
       };
     }
 
@@ -224,9 +284,13 @@ export class FoldersService {
   }
 
   async findOne(idOrPath: string) {
+    const normalized = FoldersService.normalizePath(idOrPath);
     const folder = await this.prisma.folder.findFirst({
       where: {
-        OR: [{ id: idOrPath }, { path: FoldersService.normalizePath(idOrPath) }],
+        OR: [
+          { id: idOrPath },
+          { path: { equals: normalized, mode: 'insensitive' } },
+        ],
       },
       include: {
         noteFolders: {
@@ -267,12 +331,17 @@ export class FoldersService {
       ? FoldersService.normalizePath(updateFolderDto.path)
       : undefined;
 
-    if (newPath && newPath !== current.path) {
+    if (newPath && newPath.toLowerCase() !== current.path.toLowerCase()) {
       const existing = await this.prisma.folder.findFirst({
-        where: { path: newPath, id: { not: id }, deletedAt: null },
+        where: {
+          path: { equals: newPath, mode: 'insensitive' },
+          containerId: current.containerId,
+          id: { not: id },
+          deletedAt: null,
+        },
       });
       if (existing) {
-        throw new ConflictException(`Folder with path '${newPath}' already exists`);
+        throw new ConflictException(`Folder with path '${newPath}' already exists in this scope`);
       }
 
       // If path changes, rename prefix on all subfolders too
@@ -387,7 +456,7 @@ export class FoldersService {
       if (!folder && normalizedPath) {
         folder = await this.prisma.folder.findFirst({
           where: {
-            path: normalizedPath,
+            path: { equals: normalizedPath, mode: 'insensitive' },
             ...(containerId ? { OR: [{ containerId }, { containerId: null }] } : { containerId: null }),
             deletedAt: null,
           },
@@ -399,12 +468,14 @@ export class FoldersService {
       if (!folder && normalizedPath) {
         const isUuid = rawPath.length === 36 && rawPath.includes('-');
         if (!isUuid) {
-          await this.ensureParentFolders(normalizedPath, containerId || null);
+          const folderPrivacy = containerId ? 'obsidian' : 'public';
+          await this.ensureParentFolders(normalizedPath, containerId || null, folderPrivacy);
           folder = await this.prisma.folder.create({
             data: {
               name: FoldersService.getFolderName(normalizedPath),
               path: normalizedPath,
               containerId: containerId || null,
+              privacy: folderPrivacy,
             },
           });
         }

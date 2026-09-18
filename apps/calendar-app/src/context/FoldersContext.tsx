@@ -394,7 +394,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addFolder = useCallback((input: CreateFolderInput): Folder => {
     const cleanPath = normalizePath(input.path);
     const name = input.name?.trim() || getFolderName(cleanPath);
-    const privacy: FolderPrivacy = input.privacy || 'public';
+    const privacy: FolderPrivacy = input.privacy || (input.containerId ? 'obsidian' : 'public');
     const containerId = input.containerId || null;
     const scope = input.scope || (containerId ? 'internal' : 'external');
 
@@ -402,8 +402,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: `fld-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name,
       path: cleanPath,
-      icon: input.icon || (privacy === 'private' ? 'lock' : 'folder'),
-      color: input.color || (privacy === 'private' ? '#a855f7' : '#c9cd58'),
+      icon: input.icon || (privacy === 'obsidian' ? 'box' : privacy === 'private' ? 'lock' : 'folder'),
+      color: input.color || (privacy === 'obsidian' ? '#3b82f6' : privacy === 'private' ? '#a855f7' : '#c9cd58'),
       privacy,
       containerId,
       scope,
@@ -563,7 +563,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Refresh folders from backend API
   const refreshFolders = useCallback(async () => {
     try {
-      const serverFolders = await calendarApi.getFolders(false);
+      const serverFolders = await calendarApi.getFolders(false, undefined, undefined, 'all');
       if (Array.isArray(serverFolders) && serverFolders.length > 0) {
         setFolders((prev) => {
           const map = new Map<string, Folder>();
@@ -583,6 +583,10 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.warn('Could not refresh folders from server, using local cache', e);
     }
   }, []);
+
+  useEffect(() => {
+    refreshFolders();
+  }, [refreshFolders]);
 
   // Calculate Privacy Change Impact before changing
   const getFolderPrivacyImpact = useCallback(

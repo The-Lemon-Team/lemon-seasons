@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useFoldersContext, PrivacyImpact } from '../context/FoldersContext';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { useI18n } from '../i18n';
-import { FolderTreeNode, Folder, Note, NoteType, FolderPrivacy } from '@lenta/shared';
+import { FolderTreeNode, Folder, Note, NoteType, FolderPrivacy, FolderScope } from '@lenta/shared';
 import { CreateFolderModal } from './CreateFolderModal';
 import { PrivacyChangeWarningModal } from './PrivacyChangeWarningModal';
 import { NoteDetailModal } from './NoteDetailModal';
@@ -49,7 +49,7 @@ interface FolderTreeNodeItemProps {
   depth?: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onAddSubfolder: (path: string, privacy: FolderPrivacy) => void;
+  onAddSubfolder: (path: string, privacy: FolderPrivacy, containerId?: string | null, scope?: FolderScope) => void;
   onAddNote?: (folderPath: string, folderId: string) => void;
   onTogglePrivacyRequest: (folderId: string, targetPrivacy: FolderPrivacy) => void;
   onDeleteRequest: (folderId: string) => void;
@@ -238,7 +238,7 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onAddSubfolder(node.path, node.privacy || 'public');
+              onAddSubfolder(node.path, node.privacy || 'public', node.containerId, node.scope);
             }}
             title="Добавить подпапку"
             className="px-2 py-1 rounded bg-[#202323] hover:bg-[#2c3030] text-[#e2e2e2] border border-[#333737] font-mono text-[10px] flex items-center gap-1 transition-all"
@@ -334,6 +334,8 @@ export const FolderManagerView: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createParentPath, setCreateParentPath] = useState('');
   const [createDefaultPrivacy, setCreateDefaultPrivacy] = useState<FolderPrivacy>('public');
+  const [createDefaultScope, setCreateDefaultScope] = useState<FolderScope>('external');
+  const [createDefaultContainerId, setCreateDefaultContainerId] = useState<string | null>(null);
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
   const [createNoteFolderPath, setCreateNoteFolderPath] = useState('');
 
@@ -410,9 +412,17 @@ export const FolderManagerView: React.FC = () => {
     }
   };
 
-  const handleAddSubfolder = (parentPath: string, privacy: FolderPrivacy) => {
+  const handleAddSubfolder = (
+    parentPath: string,
+    privacy: FolderPrivacy,
+    containerId?: string | null,
+    scope?: FolderScope
+  ) => {
     setCreateParentPath(parentPath);
-    setCreateDefaultPrivacy(privacy);
+    const isContainer = Boolean(containerId) || scope === 'internal' || privacy === 'obsidian';
+    setCreateDefaultPrivacy(isContainer ? 'obsidian' : privacy);
+    setCreateDefaultScope(isContainer ? 'internal' : (scope || 'external'));
+    setCreateDefaultContainerId(containerId || null);
     setIsCreateModalOpen(true);
   };
 
@@ -523,7 +533,14 @@ export const FolderManagerView: React.FC = () => {
             type="button"
             onClick={() => {
               setCreateParentPath('');
-              setCreateDefaultPrivacy('public');
+              const isContainer =
+                scopeFilter === 'internal' ||
+                (selectedFolder && (Boolean(selectedFolder.containerId) || selectedFolder.scope === 'internal' || selectedFolder.privacy === 'obsidian'));
+              setCreateDefaultPrivacy(isContainer ? 'obsidian' : 'public');
+              setCreateDefaultScope(isContainer ? 'internal' : 'external');
+              setCreateDefaultContainerId(
+                isContainer ? (selectedFolder?.containerId || containers[0]?.id || null) : null
+              );
               setIsCreateModalOpen(true);
             }}
             className="px-3.5 py-1.5 rounded-lg bg-[#c9cd58] hover:bg-[#d8db6f] text-[#121414] font-mono font-bold text-xs flex items-center gap-2 transition-all shadow-glow-lemon shrink-0"
@@ -739,7 +756,7 @@ export const FolderManagerView: React.FC = () => {
                     {/* Add Subfolder Button */}
                     <button
                       type="button"
-                      onClick={() => handleAddSubfolder(selectedFolder.path, selectedFolder.privacy || 'public')}
+                      onClick={() => handleAddSubfolder(selectedFolder.path, selectedFolder.privacy || 'public', selectedFolder.containerId, selectedFolder.scope)}
                       className="px-3 py-1.5 rounded bg-[#242828] hover:bg-[#333535] text-[#e2e2e2] font-mono text-xs flex items-center gap-1.5 transition-colors"
                     >
                       <FolderPlus className="w-3.5 h-3.5 text-[#c9cd58]" />
@@ -999,6 +1016,8 @@ export const FolderManagerView: React.FC = () => {
         onClose={() => setIsCreateModalOpen(false)}
         parentPath={createParentPath}
         defaultPrivacy={createDefaultPrivacy}
+        defaultScope={createDefaultScope}
+        defaultContainerId={createDefaultContainerId}
       />
 
       {/* 2. Privacy Change Warning Modal */}

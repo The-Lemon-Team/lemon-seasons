@@ -17,6 +17,8 @@ export interface FileItemDto {
   content?: string;
   mtime?: number;
   size?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CommitSummaryDto {
@@ -212,8 +214,23 @@ export class ContainersService {
 
     return notes.map((n) => {
       const primaryFolder = n.folders?.find((f: any) => f.isPrimary)?.folder?.path || n.folders?.[0]?.folder?.path;
-      const safeTitle = n.title.replace(/[\\/:*?"<>|]/g, '_');
-      const fallbackPath = primaryFolder ? `${primaryFolder}/${safeTitle}.md` : `${safeTitle}.md`;
+      const rawTitle = (n.title || 'Untitled').trim();
+      const safeTitle = rawTitle.replace(/[\\/:*?"<>|]/g, '_').trim();
+      let prefix = '';
+      if (n.startDate) {
+        const d = new Date(n.startDate);
+        if (!isNaN(d.getTime())) {
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const dateStr = `${yyyy}-${mm}-${dd}`;
+          if (!safeTitle.startsWith(dateStr) && !/^\d{4}-\d{2}-\d{2}/.test(safeTitle)) {
+            prefix = `${dateStr} - `;
+          }
+        }
+      }
+      const fileName = `${prefix}${safeTitle}.md`;
+      const fallbackPath = primaryFolder ? `${primaryFolder}/${fileName}` : fileName;
       const markdown = LentaFrontmatterUtil.serializeNoteToMarkdown(n as any);
 
       return {
@@ -221,6 +238,8 @@ export class ContainersService {
         content: markdown,
         mtime: n.updatedAt.getTime(),
         size: markdown.length,
+        startDate: n.startDate ? n.startDate.toISOString() : undefined,
+        endDate: n.endDate ? n.endDate.toISOString() : undefined,
       };
     });
   }

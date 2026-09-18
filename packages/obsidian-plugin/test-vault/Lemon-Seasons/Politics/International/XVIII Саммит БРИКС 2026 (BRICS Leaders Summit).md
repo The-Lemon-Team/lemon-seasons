@@ -14,7 +14,7 @@ tags:
   - "brics2026"
 cover_image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800"
 icon: "landmark"
-updated_at: "2026-09-16T19:42:55.330Z"
+updated_at: "2026-09-17T16:13:43.419Z"
 deleted: false
 ---
 

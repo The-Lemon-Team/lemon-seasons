@@ -14,7 +14,7 @@ tags:
   - "postgres"
   - "sync"
 icon: "dns"
-updated_at: "2026-09-16T19:42:54.540Z"
+updated_at: "2026-09-17T16:13:42.085Z"
 deleted: false
 ---
 

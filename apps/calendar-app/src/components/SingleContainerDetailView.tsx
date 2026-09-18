@@ -846,7 +846,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
         onClose={() => setIsCreateInternalFolderOpen(false)}
         defaultContainerId={container.id}
         defaultScope="internal"
-        defaultPrivacy={container.privacy === 'private' ? 'private' : 'public'}
+        defaultPrivacy="obsidian"
       />
     </div>
   );
