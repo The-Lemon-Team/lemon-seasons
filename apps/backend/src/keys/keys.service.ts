@@ -97,4 +97,21 @@ export class KeysService {
 
     return { success: true };
   }
+
+  async validateKey(key: string): Promise<{ valid: boolean; name?: string; userId?: string }> {
+    if (!key || key.trim().length === 0) {
+      return { valid: false };
+    }
+    const record = await this.prisma.userKey.findUnique({
+      where: { key: key.trim() },
+    });
+    if (!record || record.isRevoked) {
+      return { valid: false };
+    }
+    return {
+      valid: true,
+      name: record.name,
+      userId: record.userId,
+    };
+  }
 }

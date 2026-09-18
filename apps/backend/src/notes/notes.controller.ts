@@ -12,11 +12,13 @@ import {
   UploadedFiles,
   UploadedFile,
   BadRequestException,
+  Headers,
 } from '@nestjs/common';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
+import { QuickShareNoteDto } from './dto/quick-share-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
@@ -32,6 +34,19 @@ export class NotesController {
   @ApiResponse({ status: 201, description: 'Note created successfully' })
   create(@Body() createNoteDto: CreateNoteDto) {
     return this.notesService.create(createNoteDto);
+  }
+
+  @Post('quick-share')
+  @ApiOperation({ summary: 'Save link from mobile Android share intent into designated folder (e.g. Mobile/Shared)' })
+  @ApiResponse({ status: 201, description: 'Link note created successfully in folder' })
+  quickShare(
+    @Body() quickShareNoteDto: QuickShareNoteDto,
+    @Headers('x-user-key') headerKey?: string,
+  ) {
+    if (headerKey && !quickShareNoteDto.userKey) {
+      quickShareNoteDto.userKey = headerKey;
+    }
+    return this.notesService.quickShare(quickShareNoteDto);
   }
 
   @Get()

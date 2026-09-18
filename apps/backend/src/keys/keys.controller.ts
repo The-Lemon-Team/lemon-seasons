@@ -6,6 +6,11 @@ import { UserKey } from '@lenta/shared';
 export class KeysController {
   constructor(private readonly keysService: KeysService) {}
 
+  @Get('validate')
+  async validateKey(@Query('key') key: string): Promise<{ valid: boolean; name?: string; userId?: string }> {
+    return this.keysService.validateKey(key);
+  }
+
   @Get()
   async getKeys(@Query('userId') userId?: string): Promise<UserKey[]> {
     return this.keysService.getKeysForUser(userId || 'usr-member-001');

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Lemon Lenta</string>
+    <string name="share_target_title">Save to Lemon / Obsidian</string>
+    <string name="save_button">Save Link</string>
+    <string name="saving_state">Saving…</string>
+    <string name="saved_online">✓ Note saved to Mobile/Shared</string>
+    <string name="saved_offline">Saved locally (offline). Will sync when online.</string>
+    <string name="folder_target_label">Destination</string>
+    <string name="folder_default">Mobile/Shared</string>
+    <string name="container_default">main-vault</string>
+</resources>
