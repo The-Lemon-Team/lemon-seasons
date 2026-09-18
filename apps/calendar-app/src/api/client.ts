@@ -12,6 +12,7 @@ import {
   CreateFolderInput,
   UpdateFolderInput,
   CreateNoteInput,
+  UpdateNoteInput,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -27,6 +28,18 @@ export const calendarApi = {
   // Create Note
   createNote: async (input: CreateNoteInput): Promise<Note> => {
     const res = await apiClient.post<Note>('/notes', input);
+    return res.data;
+  },
+
+  // Update Note
+  updateNote: async (id: string, input: UpdateNoteInput): Promise<Note> => {
+    const res = await apiClient.patch<Note>(`/notes/${id}`, input);
+    return res.data;
+  },
+
+  // Delete Note
+  deleteNote: async (id: string): Promise<{ success: boolean }> => {
+    const res = await apiClient.delete<{ success: boolean }>(`/notes/${id}`);
     return res.data;
   },
 
@@ -66,16 +79,25 @@ export const calendarApi = {
   },
 
   // Folders API
-  getFolders: async (includeDeleted = false, search?: string): Promise<Folder[]> => {
+  getFolders: async (
+    includeDeleted = false,
+    search?: string,
+    containerId?: string,
+    scope: 'external' | 'internal' | 'all' = 'all'
+  ): Promise<Folder[]> => {
     const res = await apiClient.get<Folder[]>('/folders', {
-      params: { includeDeleted, search },
+      params: { includeDeleted, search, containerId, scope },
     });
     return res.data;
   },
 
-  getFolderTree: async (includeDeleted = false): Promise<FolderTreeNode[]> => {
+  getFolderTree: async (
+    includeDeleted = false,
+    containerId?: string,
+    scope: 'external' | 'internal' | 'all' = 'all'
+  ): Promise<FolderTreeNode[]> => {
     const res = await apiClient.get<FolderTreeNode[]>('/folders/tree', {
-      params: { includeDeleted },
+      params: { includeDeleted, containerId, scope },
     });
     return res.data;
   },

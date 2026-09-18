@@ -79,6 +79,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
       {/* New Entry CTA (For Logged In Users) */}
       <button
         type="button"
+        data-testid="quick-add-btn"
         onClick={onOpenQuickAdd}
         className="bg-[#121414] border border-[#484837] hover:border-[#e5e971] hover:text-[#e5e971] text-[#e2e2e2] font-mono text-xs py-2.5 px-4 rounded transition-colors flex justify-center items-center gap-2 w-full mb-3 shadow-sm"
       >

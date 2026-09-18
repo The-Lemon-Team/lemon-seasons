@@ -33,9 +33,9 @@ export const KeyManagementModal: React.FC<KeyManagementModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created = generateKey(selectedProvider, keyName);
+    const created = await generateKey(selectedProvider, keyName);
     setNewlyGeneratedKey(created);
     setKeyName('');
   };
@@ -46,9 +46,9 @@ export const KeyManagementModal: React.FC<KeyManagementModalProps> = ({
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
-  const handleRevoke = (keyId: string) => {
+  const handleRevoke = async (keyId: string) => {
     if (window.confirm(t.revokeKeyConfirm)) {
-      revokeKey(keyId);
+      await revokeKey(keyId);
       if (newlyGeneratedKey?.id === keyId) {
         setNewlyGeneratedKey(null);
       }

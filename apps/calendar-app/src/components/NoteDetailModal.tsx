@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Note, NoteTypeColors } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,10 +13,14 @@ import {
   Folder,
   Rss,
   Edit3,
+  Check,
   Image as ImageIcon,
+  AlertCircle,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { Modal } from './Modal';
+import { calendarApi } from '../api/client';
+import { queryKeys } from '../api/queries';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -24,8 +29,46 @@ interface NoteDetailModalProps {
 
 export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose }) => {
   const { t, getTypeLabel } = useI18n();
+  const queryClient = useQueryClient();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (note) {
+      setEditTitle(note.title);
+      setEditDescription(note.description || '');
+      setIsEditing(false);
+      setEditError(null);
+    }
+  }, [note]);
 
   if (!note) return null;
+
+  const handleSaveEdit = async () => {
+    if (!editTitle.trim() || isSavingEdit) return;
+    setIsSavingEdit(true);
+    setEditError(null);
+
+    try {
+      const updated = await calendarApi.updateNote(note.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      });
+      note.title = updated.title;
+      note.description = updated.description;
+      await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error('Failed to update note:', err);
+      setEditError(err?.response?.data?.message || err?.message || 'Ошибка обновления заметки');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
   const startDay = dayjs(note.startDate);
@@ -69,19 +112,56 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Edit in Admin CMS */}
-            <a
-              href={`http://localhost:5173/notes/${note.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#484837] hover:border-[#c9cd58] text-xs font-mono text-[#c9c7b2] hover:text-[#e5e971] transition-colors"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>{t.editNote}</span>
-            </a>
+            {isEditing ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  disabled={isSavingEdit}
+                  className="px-2.5 py-1 rounded bg-[#121414] border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:bg-[#242828] transition-colors"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="button"
+                  data-testid="save-note-btn"
+                  onClick={handleSaveEdit}
+                  disabled={isSavingEdit || !editTitle.trim()}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-bold text-xs font-sans transition-colors disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isSavingEdit ? 'Сохранение...' : t.save}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  data-testid="edit-note-btn"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#484837] hover:border-[#c9cd58] text-xs font-mono text-[#c9c7b2] hover:text-[#e5e971] transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{t.editNote}</span>
+                </button>
+
+                {/* Edit in Admin CMS */}
+                <a
+                  href={`http://localhost:5173/notes/${note.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#242828] text-xs font-mono text-[#93927e] hover:text-[#c9c7b2] transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>CMS</span>
+                </a>
+              </>
+            )}
 
             {/* Close Button */}
             <button
+              type="button"
+              data-testid="close-modal-btn"
               onClick={onClose}
               className="p-1 rounded text-[#c9c7b2] hover:text-white hover:bg-[#333535] transition-colors"
             >
@@ -92,6 +172,13 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
 
         {/* Modal Content Scroll Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {editError && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded bg-red-900/30 border border-red-500/50 text-red-200 text-xs font-mono">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{editError}</span>
+            </div>
+          )}
+
           {/* Main Cover Banner if available */}
           {mainImage?.url && (
             <div className="w-full h-56 rounded-md overflow-hidden bg-[#121414] border border-[#242828] relative">
@@ -105,9 +192,24 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
 
           {/* Title & Timing */}
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
-              {note.title}
-            </h2>
+            {isEditing ? (
+              <div className="mb-3">
+                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                  Заголовок заметки
+                </label>
+                <input
+                  type="text"
+                  data-testid="edit-note-title-input"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-base font-bold font-sans px-3 py-2 text-white outline-none"
+                />
+              </div>
+            ) : (
+              <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
+                {note.title}
+              </h2>
+            )}
 
             {/* Date Time Metadata Bar */}
             <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#c9c7b2] bg-[#121414] p-3 rounded border border-[#242828]">
@@ -184,7 +286,21 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           )}
 
           {/* Markdown Content Body */}
-          {note.description && (
+          {isEditing ? (
+            <div className="border-t border-[#242828] pt-4">
+              <h4 className="text-xs font-mono uppercase tracking-widest text-[#93927e] mb-2">
+                Описание (Markdown)
+              </h4>
+              <textarea
+                data-testid="edit-note-description-input"
+                rows={6}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Текст заметки в формате Markdown..."
+                className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono p-3 text-[#e2e2e2] placeholder-[#93927e] outline-none resize-y"
+              />
+            </div>
+          ) : note.description ? (
             <div className="border-t border-[#242828] pt-4">
               <h4 className="text-xs font-mono uppercase tracking-widest text-[#93927e] mb-3">
                 {t.noteDetails}
@@ -195,7 +311,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                 </ReactMarkdown>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Secondary Image Gallery */}
           {note.images && note.images.length > 1 && (

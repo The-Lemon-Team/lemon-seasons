@@ -136,7 +136,8 @@ export class LentaFrontmatterUtil {
    * Computes the vault relative path for a Lenta note.
    */
   public static getNoteVaultPath(note: Note, rootFolder = 'Lenta'): string {
-    const cleanTitle = note.title.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Untitled';
+    const rawTitle = (note.title || 'Untitled').trim();
+    const cleanTitle = rawTitle.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Untitled';
     const primaryFolder = note.folders?.find((f) => f.isPrimary)?.folder?.path || note.folders?.[0]?.folder?.path;
 
     const parts: string[] = [rootFolder];
@@ -147,7 +148,22 @@ export class LentaFrontmatterUtil {
       parts.push(`Feeds/${note.feed.slug}`);
     }
 
-    return `${parts.join('/')}/${cleanTitle}.md`;
+    let prefix = '';
+    const dateSource = note.startDate || (note as any).start_date;
+    if (dateSource) {
+      const d = new Date(dateSource);
+      if (!isNaN(d.getTime())) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        if (!cleanTitle.startsWith(dateStr) && !/^\d{4}-\d{2}-\d{2}/.test(cleanTitle)) {
+          prefix = `${dateStr} - `;
+        }
+      }
+    }
+
+    return `${parts.join('/')}/${prefix}${cleanTitle}.md`;
   }
 
   private static parseYamlBlock(yaml: string, target: Record<string, any>): void {

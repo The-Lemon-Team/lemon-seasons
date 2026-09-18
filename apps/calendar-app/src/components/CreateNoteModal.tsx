@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { NoteType } from '@lenta/shared';
 import { useI18n } from '../i18n';
-import { useFeeds } from '../api/queries';
+import { useFeeds, queryKeys } from '../api/queries';
+import { calendarApi } from '../api/client';
 import { useFoldersContext } from '../context/FoldersContext';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { Folder as FolderType } from '@lenta/shared';
-import { X, Calendar, Tag, Plus, Check, FileText, Folder } from 'lucide-react';
+import { X, Calendar, Tag, Plus, Check, FileText, Folder, AlertCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
 
@@ -23,6 +25,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   initialFolderPath,
 }) => {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const { data: feeds = [] } = useFeeds();
 
   let externalFolders: FolderType[] = [];
@@ -54,12 +57,15 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Set initial folder path when opened or prop changes
   React.useEffect(() => {
     if (isOpen) {
       setFolderPath(initialFolderPath || '');
       setIsCustomFolder(false);
+      setErrorMessage(null);
     }
   }, [initialFolderPath, isOpen]);
 
@@ -70,21 +76,49 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
     }
   }, [feeds, feedId]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
-      setTitle('');
-      setDescription('');
-      setHashtagsInput('');
-      setFolderPath('');
-      setIsCustomFolder(false);
-      onSuccess?.();
-      onClose();
-    }, 1000);
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const hashtags = hashtagsInput
+        .split(/[,\s]+/)
+        .map((h) => h.trim().replace(/^#/, ''))
+        .filter(Boolean);
+
+      await calendarApi.createNote({
+        title: title.trim(),
+        description: description.trim(),
+        type,
+        startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        feedId: feedId || undefined,
+        hashtags: hashtags.length > 0 ? hashtags : undefined,
+      });
+
+      // Invalidate queries so that the newly created note is immediately displayed on the calendar
+      await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setTitle('');
+        setDescription('');
+        setHashtagsInput('');
+        setFolderPath('');
+        setIsCustomFolder(false);
+        onSuccess?.();
+        onClose();
+      }, 600);
+    } catch (err: any) {
+      console.error('Failed to create note on backend:', err);
+      setErrorMessage(err?.response?.data?.message || err?.message || 'Ошибка создания заметки');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -138,6 +172,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 <input
                   type="text"
                   required
+                  data-testid="note-title-input"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t.noteTitlePlaceholder}
@@ -345,6 +380,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 </label>
                 <textarea
                   rows={5}
+                  data-testid="note-desc-input"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t.noteContentPlaceholder}
@@ -352,21 +388,31 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 />
               </div>
 
+              {errorMessage && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded bg-red-900/30 border border-red-500/50 text-red-200 text-xs font-mono">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#242828]">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-md border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:bg-[#242828] hover:text-white transition-colors"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-md border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:bg-[#242828] hover:text-white transition-colors disabled:opacity-50"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-md bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs transition-colors flex items-center gap-2 shadow-glow-lemon"
+                  data-testid="note-submit-btn"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-md bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs transition-colors flex items-center gap-2 shadow-glow-lemon disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>{t.save}</span>
+                  <span>{isSubmitting ? 'Сохранение...' : t.save}</span>
                 </button>
               </div>
             </>

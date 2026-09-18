@@ -14,7 +14,7 @@ export interface Feed {
   notes?: Note[];
 }
 
-export type FolderPrivacy = 'private' | 'public';
+export type FolderPrivacy = 'private' | 'public' | 'obsidian';
 export type FolderScope = 'external' | 'internal';
 
 export interface Folder {
@@ -197,7 +197,7 @@ export interface NotesResponse {
 }
 
 export interface CreateNoteInput {
-  feedId: string;
+  feedId?: string;
   title: string;
   description?: string;
   type: NoteType;

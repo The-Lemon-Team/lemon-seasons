@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { UserKey, KeyProvider, KeyProviderMeta } from '@lenta/shared';
 import { useAuth } from './AuthContext';
 
+import { apiClient } from '../api/client';
+
 export const KEY_PROVIDERS: KeyProviderMeta[] = [
   {
     id: 'obsidian',
@@ -54,9 +56,10 @@ const STORAGE_KEY = 'lemon_lenta_user_keys_v1';
 interface UserKeysContextValue {
   keys: UserKey[];
   providers: KeyProviderMeta[];
-  generateKey: (provider: KeyProvider, name: string) => UserKey;
-  revokeKey: (keyId: string) => void;
+  generateKey: (provider: KeyProvider, name: string) => Promise<UserKey>;
+  revokeKey: (keyId: string) => Promise<void>;
   getKeysByProvider: (provider: KeyProvider) => UserKey[];
+  refreshKeys: () => Promise<void>;
 }
 
 const UserKeysContext = createContext<UserKeysContextValue | undefined>(undefined);
@@ -77,6 +80,30 @@ export const UserKeysProvider: React.FC<{ children: ReactNode }> = ({ children }
     return INITIAL_KEYS;
   });
 
+  const refreshKeys = async () => {
+    try {
+      const res = await apiClient.get<UserKey[]>('/keys', {
+        params: { userId: currentUserId },
+      });
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setKeys((prev) => {
+          const map = new Map<string, UserKey>();
+          // local fallback keys
+          prev.forEach((k) => map.set(k.id, k));
+          // server authority keys
+          res.data.forEach((k) => map.set(k.id, k));
+          return Array.from(map.values());
+        });
+      }
+    } catch (err) {
+      // backend might be unreachable or mock mode
+    }
+  };
+
+  useEffect(() => {
+    refreshKeys();
+  }, [currentUserId]);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
@@ -94,27 +121,49 @@ export const UserKeysProvider: React.FC<{ children: ReactNode }> = ({ children }
     return res;
   };
 
-  const generateKey = (provider: KeyProvider, name: string): UserKey => {
+  const generateKey = async (provider: KeyProvider, name: string): Promise<UserKey> => {
     const meta = KEY_PROVIDERS.find((p) => p.id === provider) || KEY_PROVIDERS[0];
-    const prefix = meta.keyPrefix;
-    const secret = `${prefix}${generateRandomToken()}`;
+    const keyName = name.trim() || `${meta.name} Key`;
 
-    const newKey: UserKey = {
-      id: `key-${provider}-${Date.now()}`,
-      userId: currentUserId,
-      name: name.trim() || `${meta.name} Key`,
-      provider,
-      key: secret,
-      createdAt: new Date().toISOString(),
-      isRevoked: false,
-    };
+    try {
+      // Create key on backend PostgreSQL
+      const res = await apiClient.post<UserKey>('/keys', {
+        userId: currentUserId,
+        provider,
+        name: keyName,
+      });
+      const serverKey = res.data;
+      setKeys((prev) => [serverKey, ...prev.filter((k) => k.id !== serverKey.id)]);
+      return serverKey;
+    } catch (err) {
+      console.warn('Backend keys endpoint error, creating local fallback key', err);
+      const prefix = meta.keyPrefix;
+      const secret = `${prefix}${generateRandomToken()}`;
 
-    setKeys((prev) => [newKey, ...prev]);
-    return newKey;
+      const newKey: UserKey = {
+        id: `key-${provider}-${Date.now()}`,
+        userId: currentUserId,
+        name: keyName,
+        provider,
+        key: secret,
+        createdAt: new Date().toISOString(),
+        isRevoked: false,
+      };
+
+      setKeys((prev) => [newKey, ...prev]);
+      return newKey;
+    }
   };
 
-  const revokeKey = (keyId: string) => {
+  const revokeKey = async (keyId: string): Promise<void> => {
     setKeys((prev) => prev.map((k) => (k.id === keyId ? { ...k, isRevoked: true } : k)));
+    try {
+      await apiClient.delete(`/keys/${keyId}`, {
+        params: { userId: currentUserId },
+      });
+    } catch (err) {
+      console.warn('Failed to revoke key on server', err);
+    }
   };
 
   const getKeysByProvider = (provider: KeyProvider): UserKey[] => {
@@ -131,6 +180,7 @@ export const UserKeysProvider: React.FC<{ children: ReactNode }> = ({ children }
         generateKey,
         revokeKey,
         getKeysByProvider,
+        refreshKeys,
       }}
     >
       {children}

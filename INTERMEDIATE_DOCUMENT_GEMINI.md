@@ -567,11 +567,19 @@ When taking this document to an external Gemini session, use these prompts and a
   - Should folders remain decoupled from taxonomy, or should there be an automated mapping option (e.g. creating folders from taxonomy paths)?
   - How should the Admin CMS UI present both folder trees and taxonomy trees without confusing content editors?
 
-### Topic 4: Monorepo Consolidation & Shared Type Packages
-- **Goal**: Streamline shared TypeScript interfaces across `backend`, `frontend`, `packages/obsidian-lenta-plugin`, and the future `calendar-app`.
-- **Discussion Points**:
-  - Best lightweight monorepo tool (npm workspaces / Turborepo / pnpm) to share types (`Note`, `NoteType`, `SyncPayload`, `Frontmatter`) without heavy build overhead.
+### Topic 5: "Current Day" Concept & Chronological File Naming
+- **Goal**: Expand the contextual **"Current Day" (Сегодняшний день)** planning layer atop dry chronological data.
+- **Implemented Foundation**:
+  - Filenames prefixed with `YYYY-MM-DD - <Title>.md` (standard ISO-8601 alphabetical-is-chronological ordering).
+  - Obsidian Container Tree View integration:
+    - Highlighting matching notes (`.lenta-tree-node-today` with accent border, soft glow, and `📍 СЕГОДНЯ` badge).
+    - Chronological Timeline Marker (`lenta-tree-today-marker`) inserted between past and future files when today has no notes, with an inline quick-add button.
+- **Future Roadmap**:
+  - Daily Agenda & Cross-Feed Collector: Synthesize notes across all subscribed feeds and containers for today.
+  - Contextual Quick Capture with automatic date anchoring.
+  - Two-way temporal focus synchronization between Web Calendar App (`?date=YYYY-MM-DD`) and Obsidian Plugin.
 
 ---
 
 *(End of Intermediate Architecture & State Specification)*
+
