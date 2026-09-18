@@ -15,7 +15,7 @@ tags:
   - "financials"
   - "saas"
 icon: "circle-dollar-sign"
-updated_at: "2026-09-16T19:42:56.486Z"
+updated_at: "2026-09-17T16:13:45.985Z"
 deleted: false
 ---
 

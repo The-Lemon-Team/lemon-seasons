@@ -1,24 +1,25 @@
 {
   "serverUrl": "http://localhost:3001",
-  "authToken": "lenta_obs_938152182c2b4c6a1d3d1f98fa3dc48d",
-  "username": "",
-  "userEmail": "member@lemon.team",
+  "authToken": "lenta_obs_81f92a44103c3806291ca950373a5b48",
+  "username": "obsidian-e2e-user",
+  "userEmail": "obsidian-e2e-user@lemon.team",
   "isPrivateContainerConnected": true,
-  "activeContainerId": "f31d2966-3ae0-475d-a644-8bf4e505d771",
+  "activeContainerId": "feed-all",
   "activeContainerIds": [
-    "f31d2966-3ae0-475d-a644-8bf4e505d771"
+    "fe617fbb-ac70-454d-a0fb-6a01189b755e",
+    "feed-all"
   ],
-  "containerKey": "f31d2966-3ae0-475d-a644-8bf4e505d771",
-  "connectedContainerName": "Test",
-  "connectedContainerType": "obsidian",
+  "containerKey": "",
+  "connectedContainerName": "🍋 All Feeds (Master Vault)",
+  "connectedContainerType": "git",
   "vaultRootFolder": "Lemon-Seasons",
   "autoSyncIntervalMinutes": 0,
   "defaultFeedSlug": "",
-  "lastSyncedAt": "2026-09-17T20:40:23.175Z",
+  "lastSyncedAt": "2026-09-19T10:55:35.230Z",
   "lastSyncedCommit": "",
   "defaultConflictStrategy": "create_backup_fork",
   "autoSyncOnEdit": false,
   "containerServerUrl": "http://localhost:3001",
   "containerApiKey": "",
-  "containerPrivacyFilter": "public"
+  "containerPrivacyFilter": "all"
 }

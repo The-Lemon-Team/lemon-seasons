@@ -4337,7 +4337,8 @@ var init_dist = __esm({
        * Computes the vault relative path for a Lenta note.
        */
       static getNoteVaultPath(note, rootFolder = "Lenta") {
-        const cleanTitle = note.title.replace(/[\\/:*?"<>|]/g, "-").trim() || "Untitled";
+        const rawTitle = (note.title || "Untitled").trim();
+        const cleanTitle = rawTitle.replace(/[\\/:*?"<>|]/g, "-").trim() || "Untitled";
         const primaryFolder = note.folders?.find((f) => f.isPrimary)?.folder?.path || note.folders?.[0]?.folder?.path;
         const parts = [rootFolder];
         if (primaryFolder) {
@@ -4345,7 +4346,21 @@ var init_dist = __esm({
         } else if (note.feed?.slug) {
           parts.push(`Feeds/${note.feed.slug}`);
         }
-        return `${parts.join("/")}/${cleanTitle}.md`;
+        let prefix = "";
+        const dateSource = note.startDate || note.start_date;
+        if (dateSource) {
+          const d = new Date(dateSource);
+          if (!isNaN(d.getTime())) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            if (!cleanTitle.startsWith(dateStr) && !/^\d{4}-\d{2}-\d{2}/.test(cleanTitle)) {
+              prefix = `${dateStr} - `;
+            }
+          }
+        }
+        return `${parts.join("/")}/${prefix}${cleanTitle}.md`;
       }
       static parseYamlBlock(yaml, target) {
         const lines = yaml.split(/\r?\n/);
@@ -4611,9 +4626,37 @@ var LentaApiClient = class {
     }
   }
   // --- Auth & Session Methods ---
+  async validateKey(key) {
+    const targetKey = key || this.containerKey || this.authToken;
+    if (!targetKey || !targetKey.trim()) {
+      return { valid: false };
+    }
+    try {
+      return await this.request({
+        url: `${this.baseUrl}/keys/validate?key=${encodeURIComponent(targetKey.trim())}`,
+        method: "GET"
+      });
+    } catch {
+      return { valid: false };
+    }
+  }
   async validateToken(token) {
     const activeToken = token || this.authToken;
     if (!activeToken) {
+      return { success: false };
+    }
+    if (activeToken.startsWith("lenta_obs_") || activeToken.startsWith("lenta_api_")) {
+      const keyRes = await this.validateKey(activeToken);
+      if (keyRes.valid) {
+        return {
+          success: true,
+          user: {
+            email: `${keyRes.userId || "obsidian-user"}@lemon.team`,
+            name: keyRes.name || "Obsidian Vault User",
+            role: "user"
+          }
+        };
+      }
       return { success: false };
     }
     return {
@@ -4643,15 +4686,30 @@ var LentaApiClient = class {
       method: "GET"
     });
   }
+  async createFeed(dto) {
+    return this.request({
+      url: `${this.baseUrl}/feeds`,
+      method: "POST",
+      body: JSON.stringify(dto)
+    });
+  }
   async getTaxonomyTree() {
     return this.request({
       url: `${this.baseUrl}/taxonomy/tree`,
       method: "GET"
     });
   }
-  async getFolders() {
+  async getFolders(params) {
+    const query = new URLSearchParams();
+    if (params?.containerId)
+      query.set("containerId", params.containerId);
+    if (params?.scope)
+      query.set("scope", params.scope);
+    if (params?.search)
+      query.set("search", params.search);
+    const qs = query.toString() ? `?${query.toString()}` : "";
     return this.request({
-      url: `${this.baseUrl}/folders`,
+      url: `${this.baseUrl}/folders${qs}`,
       method: "GET"
     });
   }
@@ -5381,10 +5439,27 @@ var LentaSyncEngine = class {
         let fileMtime = Date.now();
         if (existing instanceof import_obsidian3.TFile) {
           await vault.modify(existing, markdownContent);
-          fileMtime = existing.stat.mtime || Date.now();
+          fileMtime = existing.stat?.mtime || Date.now();
+        } else if (await vault.adapter.exists(computedPath)) {
+          await vault.adapter.write(computedPath, markdownContent);
+          try {
+            const stat = await vault.adapter.stat(computedPath);
+            fileMtime = stat?.mtime || Date.now();
+          } catch {
+            fileMtime = Date.now();
+          }
         } else {
-          const newFile = await vault.create(computedPath, markdownContent);
-          fileMtime = newFile.stat.mtime || Date.now();
+          try {
+            const newFile = await vault.create(computedPath, markdownContent);
+            fileMtime = newFile.stat?.mtime || Date.now();
+          } catch (err) {
+            if (err?.message?.includes("already exists") || err?.message?.includes("EEXIST")) {
+              await vault.adapter.write(computedPath, markdownContent);
+              fileMtime = Date.now();
+            } else {
+              throw err;
+            }
+          }
         }
         this.ledgerManager.recordSync(
           note.id,
@@ -5463,9 +5538,6 @@ var LentaSyncEngine = class {
       if (match)
         feedId = match.id;
     }
-    if (!feedId && feeds.length > 0) {
-      feedId = feeds[0].id;
-    }
     const noteType = parsed.frontmatter.type || "EVENT";
     const startDate = parsed.frontmatter.start_date || parsed.frontmatter.startDate || (/* @__PURE__ */ new Date()).toISOString();
     const noteId = parsed.lentaId || parsed.frontmatter.id;
@@ -5494,9 +5566,17 @@ var LentaSyncEngine = class {
       await this.ledgerManager.saveLedger();
       return { success: true, note: updated };
     } else {
+      const settings = this.getSettings();
+      let containerId = void 0;
+      if (settings.activeContainerId && !settings.activeContainerId.startsWith("feed-")) {
+        containerId = settings.activeContainerId;
+      }
       const created = await this.apiClient.createNote({
         title: parsed.title,
-        feedId,
+        feedId: feedId || void 0,
+        containerId,
+        folder: parsed.frontmatter.primary_folder || void 0,
+        folders: parsed.frontmatter.folders || (parsed.frontmatter.primary_folder ? [parsed.frontmatter.primary_folder] : void 0),
         description: processedBody,
         type: noteType,
         startDate,
@@ -5731,8 +5811,18 @@ var LentaSyncEngine = class {
         const isNew = !(existingFile instanceof import_obsidian3.TFile);
         if (existingFile instanceof import_obsidian3.TFile) {
           await vault.modify(existingFile, markdownContent);
+        } else if (await vault.adapter.exists(noteVaultPath)) {
+          await vault.adapter.write(noteVaultPath, markdownContent);
         } else {
-          await vault.create(noteVaultPath, markdownContent);
+          try {
+            await vault.create(noteVaultPath, markdownContent);
+          } catch (err) {
+            if (err?.message?.includes("already exists") || err?.message?.includes("EEXIST")) {
+              await vault.adapter.write(noteVaultPath, markdownContent);
+            } else {
+              throw err;
+            }
+          }
         }
         downloadedFiles++;
         downloadedList.push({
@@ -5783,9 +5873,6 @@ var LentaSyncEngine = class {
   }
 };
 
-// src/main.ts
-init_lenta_frontmatter();
-
 // src/types.ts
 var DEFAULT_SETTINGS = {
   serverUrl: "http://localhost:3001",
@@ -5813,9 +5900,14 @@ var DEFAULT_SETTINGS = {
 // src/ui/quick-add-modal.ts
 var import_obsidian4 = require("obsidian");
 init_lenta_frontmatter();
-var LentaQuickAddModal = class extends import_obsidian4.Modal {
-  constructor(app, apiClient, getSettings, onSuccess, initialFolderId, initialFolderPath) {
+var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Modal {
+  constructor(app, apiClient, getSettings, onSuccess, initialFolderId, initialFolderPath, initialContainerId, initialContainerName, cachedContainerFiles, initialDate, initialType) {
     super(app);
+    this.initialContainerId = initialContainerId;
+    this.initialContainerName = initialContainerName;
+    this.cachedContainerFiles = cachedContainerFiles;
+    this.initialDate = initialDate;
+    this.initialType = initialType;
     this.feeds = [];
     this.folders = [];
     this.taxonomyNodes = [];
@@ -5823,30 +5915,61 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
     this.title = "";
     this.feedId = "";
     this.type = "EVENT";
-    this.startDate = (/* @__PURE__ */ new Date()).toISOString().slice(0, 16);
-    // YYYY-MM-DDTHH:mm
+    this.startDate = "";
     this.endDate = "";
     this.selectedFolderId = "";
+    this.isCustomFolder = false;
+    this.customFolderPath = "";
     this.selectedTaxonomyId = "";
     this.sourceLink = "";
     this.icon = "";
     this.description = "";
+    this.pluginApp = app;
+    this.app = app;
     this.apiClient = apiClient;
     this.getSettings = getSettings;
     this.onSuccess = onSuccess;
     this.initialFolderId = initialFolderId;
     this.initialFolderPath = initialFolderPath;
+    this.initialContainerId = initialContainerId;
+    this.initialContainerName = initialContainerName;
     if (initialFolderId) {
       this.selectedFolderId = initialFolderId;
     }
+    if (initialDate) {
+      this.startDate = initialDate.includes("T") ? initialDate.split("T")[0] : initialDate;
+    } else {
+      this.startDate = this.formatLocalDate(/* @__PURE__ */ new Date());
+    }
+    if (initialType) {
+      this.type = initialType;
+    }
+  }
+  formatLocalDate(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  getTargetContainerId() {
+    return this.initialContainerId || this.getSettings().activeContainerId || void 0;
+  }
+  getTargetContainerName() {
+    const settings = this.getSettings();
+    return this.initialContainerName || settings.connectedContainerName || (this.getTargetContainerId() ? this.getTargetContainerId() : void 0);
+  }
+  isObsidianContainerMode() {
+    return Boolean(this.getTargetContainerId());
   }
   async onOpen() {
     this.modalEl.addClass("lenta-quick-add-modal");
     this.renderLoading();
     try {
+      const containerId = this.getTargetContainerId();
+      const isContainer = this.isObsidianContainerMode();
       const [feeds, folders, taxonomy] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
-        this.apiClient.getFolders().catch(() => []),
+        isContainer && containerId ? this.loadContainerFolders(containerId).catch(() => []) : this.apiClient.getFolders().catch(() => []),
         this.apiClient.getTaxonomyTree().catch(() => [])
       ]);
       this.feeds = feeds;
@@ -5866,18 +5989,139 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
         const matched = folders.find((f) => f.path === this.initialFolderPath || f.name === this.initialFolderPath);
         if (matched) {
           this.selectedFolderId = matched.id;
+        } else {
+          this.selectedFolderId = this.initialFolderPath;
         }
       }
-      if (feeds.length > 0 && !this.feedId) {
+      const myFeeds = this.getMyFeeds();
+      if (myFeeds.length > 0 && !this.feedId) {
         const defaultSlug = this.getSettings().defaultFeedSlug;
-        const defaultFeed = feeds.find((f) => f.slug === defaultSlug) || feeds[0];
+        const defaultFeed = myFeeds.find((f) => f.slug === defaultSlug) || myFeeds[0];
         this.feedId = defaultFeed.id;
+      } else if (feeds.length > 0 && !this.feedId) {
+        this.feedId = myFeeds[0]?.id || "feed-my-notes";
       }
       this.render();
     } catch (err) {
       new import_obsidian4.Notice(`Failed to load Lenta options: ${err.message}`);
       this.render();
     }
+  }
+  /**
+   * Resolves a dedicated, comprehensive list of folders for an Obsidian Container:
+   * - Preset folders ('Notes', 'Daily', 'Projects', 'Archive')
+   * - Folders registered on server with this containerId
+   * - Folders extracted from actual container files
+   * - Subfolders present in local Obsidian vault for this container
+   */
+  async loadContainerFolders(containerId) {
+    const foldersMap = /* @__PURE__ */ new Map();
+    for (const preset of _LentaQuickAddModal.DEFAULT_OBSIDIAN_FOLDERS) {
+      foldersMap.set(preset, {
+        id: preset,
+        path: preset,
+        name: preset,
+        containerId
+      });
+    }
+    try {
+      const serverFolders = await this.apiClient.getFolders({ containerId, scope: "all" });
+      for (const sf of serverFolders) {
+        if (sf.path) {
+          const cleanPath = sf.path.replace(/^\/+|\/+$/g, "");
+          foldersMap.set(cleanPath, {
+            ...sf,
+            path: cleanPath
+          });
+        }
+      }
+    } catch {
+    }
+    try {
+      const files = this.cachedContainerFiles && this.cachedContainerFiles.length > 0 ? this.cachedContainerFiles : await this.apiClient.getContainerFiles(containerId);
+      for (const file of files) {
+        if (!file.path)
+          continue;
+        const norm = (0, import_obsidian4.normalizePath)(file.path).replace(/^\/+/, "");
+        const parts = norm.split("/").filter(Boolean);
+        let cur = "";
+        for (let i = 0; i < parts.length - 1; i++) {
+          cur = cur ? `${cur}/${parts[i]}` : parts[i];
+          if (!foldersMap.has(cur)) {
+            foldersMap.set(cur, {
+              id: cur,
+              path: cur,
+              name: parts[i],
+              containerId
+            });
+          }
+        }
+      }
+    } catch {
+    }
+    try {
+      const settings = this.getSettings();
+      const rootFolder = settings.vaultRootFolder || "Lenta";
+      const containerName = this.getTargetContainerName() || containerId;
+      const safeName = containerName.replace(/[\\/:*?"<>|]/g, "_");
+      const safeUnderscoreName = safeName.replace(/\s+/g, "_");
+      const dir1 = (0, import_obsidian4.normalizePath)(`${rootFolder}/${safeName}`);
+      const dir2 = (0, import_obsidian4.normalizePath)(`${rootFolder}/${safeUnderscoreName}`);
+      const appInstance = this.pluginApp || this.app;
+      const allFiles = appInstance?.vault?.getAllLoadedFiles?.() || [];
+      for (const f of allFiles) {
+        const isFolder = f instanceof import_obsidian4.TFolder || f && Array.isArray(f.children) || f && !f.extension && f.path;
+        if (isFolder) {
+          const norm = (0, import_obsidian4.normalizePath)(f.path);
+          let rel = "";
+          if (norm.startsWith(dir1 + "/")) {
+            rel = norm.slice(dir1.length + 1).replace(/^\/+|\/+$/g, "");
+          } else if (norm.startsWith(dir2 + "/")) {
+            rel = norm.slice(dir2.length + 1).replace(/^\/+|\/+$/g, "");
+          }
+          if (rel && !foldersMap.has(rel)) {
+            foldersMap.set(rel, {
+              id: rel,
+              path: rel,
+              name: rel.split("/").pop() || rel,
+              containerId
+            });
+          }
+        }
+      }
+    } catch {
+    }
+    if (this.initialFolderPath) {
+      const cleanInit = this.initialFolderPath.replace(/^\/+|\/+$/g, "");
+      if (cleanInit && !foldersMap.has(cleanInit)) {
+        foldersMap.set(cleanInit, {
+          id: cleanInit,
+          path: cleanInit,
+          name: cleanInit.split("/").pop() || cleanInit,
+          containerId
+        });
+      }
+    }
+    return Array.from(foldersMap.values()).sort((a, b) => a.path.localeCompare(b.path));
+  }
+  isMyFeed(feed) {
+    if (feed.privacy === "private" || feed.visibility === "private" || feed.isUserOwn === true) {
+      return true;
+    }
+    if (feed.privacy === "public" || feed.visibility === "public") {
+      return false;
+    }
+    const slug = (feed.slug || "").toLowerCase();
+    const title = (feed.title || "").toLowerCase();
+    const defaultSlug = (this.getSettings().defaultFeedSlug || "").toLowerCase();
+    if (defaultSlug && (slug === defaultSlug || slug.includes(defaultSlug))) {
+      return true;
+    }
+    const myKeywords = ["my", "my-", "my_", "personal", "private", "user", "own", "me"];
+    return myKeywords.some((kw) => slug.includes(kw) || title.includes(kw));
+  }
+  getMyFeeds() {
+    return this.feeds.filter((f) => this.isMyFeed(f));
   }
   onClose() {
     this.contentEl.empty();
@@ -5891,39 +6135,122 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
   render() {
     const { contentEl } = this;
     contentEl.empty();
+    const isContainer = this.isObsidianContainerMode();
+    const resolvedContainerName = this.getTargetContainerName() || "Main Container";
     const targetFolder = this.folders.find((f) => f.id === this.selectedFolderId);
-    const folderDisplay = targetFolder ? targetFolder.path : this.initialFolderPath;
+    const folderDisplay = targetFolder ? targetFolder.path : this.selectedFolderId || this.initialFolderPath;
+    const containerDisplay = isContainer ? ` [\u{1F4E6} ${resolvedContainerName}]` : "";
     const header = contentEl.createDiv({ cls: "lenta-modal-header" });
-    header.createEl("h2", { text: "\u{1F34B} Create Lenta Note" });
+    header.createEl("h2", { text: `\u{1F34B} Create Lenta Note${containerDisplay}` });
     header.createEl("p", {
       cls: "lenta-modal-subtitle",
-      text: folderDisplay ? `Target folder: \u{1F4C1} ${folderDisplay}` : "Add a new time-based record to Project Lenta and your local Obsidian vault."
+      text: folderDisplay ? `Target folder: \u{1F4C1} ${folderDisplay}${isContainer ? ` (in \u{1F4E6} ${resolvedContainerName})` : ""}` : isContainer ? `Target container: \u{1F4E6} ${resolvedContainerName}. Add a new record.` : "Add a new time-based record to Project Lenta and your local Obsidian vault."
     });
     new import_obsidian4.Setting(contentEl).setName("Note Title").setDesc("Headline or milestone name").addText((text) => {
-      text.setPlaceholder("e.g. Project Launch v2.0").onChange((val) => {
+      text.setPlaceholder("e.g. Project Launch v2.0").setValue(this.title).onChange((val) => {
         this.title = val;
       });
     });
-    new import_obsidian4.Setting(contentEl).setName("Target Container Folder").setDesc("Select the container folder for note placement (Obsidian rule: limit 1 folder).").addDropdown((dropdown) => {
-      const settings = this.getSettings();
-      const activeContainerName = settings.connectedContainerName || settings.activeContainerId || "Main Container";
-      dropdown.addOption("root", `\u{1F4C1} / (Root: ${activeContainerName})`);
-      for (const folder of this.folders) {
-        dropdown.addOption(folder.id, `\u{1F4C1} ${folder.path}`);
-      }
-      const hasFolder = this.folders.some((f) => f.id === this.selectedFolderId);
-      if (!hasFolder && (this.selectedFolderId || this.initialFolderPath)) {
-        const fallbackId = this.selectedFolderId || this.initialFolderPath;
-        const fallbackPath = this.initialFolderPath || this.selectedFolderId;
-        dropdown.addOption(fallbackId, `\u{1F4C1} ${fallbackPath}`);
-        dropdown.setValue(fallbackId);
-      } else {
-        dropdown.setValue(this.selectedFolderId || "root");
-      }
-      dropdown.onChange((val) => {
-        this.selectedFolderId = val === "root" ? "" : val;
+    let endDateComponent = null;
+    new import_obsidian4.Setting(contentEl).setName("Note Type").setDesc("Chronological classification of the note (Event, Period, Single note, etc.)").addDropdown((dropdown) => {
+      dropdown.addOption("EVENT", "\u{1F4C5} Event / \u0421\u043E\u0431\u044B\u0442\u0438\u0435").addOption("PERIOD", "\u23F1\uFE0F Period / \u041F\u0435\u0440\u0438\u043E\u0434 \u0432\u0440\u0435\u043C\u0435\u043D\u0438").addOption("SINGLE", "\u{1F4CC} Single / \u0422\u043E\u0447\u0435\u0447\u043D\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430").addOption("DONE", "\u2705 Milestone / \u0412\u0435\u0445\u0430 (Done)").addOption("FILM_RELEASE", "\u{1F3AC} Release / \u041C\u0435\u0434\u0438\u0430-\u0440\u0435\u043B\u0438\u0437").addOption("MENTION", "\u{1F4AC} Mention / \u0423\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u0435").setValue(this.type).onChange((val) => {
+        this.type = val;
+        if (this.type === "PERIOD" && !this.endDate && this.startDate) {
+          this.endDate = this.startDate;
+          if (endDateComponent && typeof endDateComponent.setValue === "function") {
+            endDateComponent.setValue(this.endDate);
+          }
+        }
       });
     });
+    new import_obsidian4.Setting(contentEl).setName("Start Date").setDesc("Start date for this event or period (start_date)").addText((text) => {
+      if (text.inputEl) {
+        text.inputEl.type = "date";
+        text.inputEl.addClass("lenta-date-input");
+      }
+      text.setValue(this.startDate || "");
+      text.onChange((val) => {
+        this.startDate = val;
+      });
+    });
+    new import_obsidian4.Setting(contentEl).setName("End Date").setDesc("Optional completion date (end_date, recommended for PERIOD)").addText((text) => {
+      endDateComponent = text;
+      if (text.inputEl) {
+        text.inputEl.type = "date";
+        text.inputEl.addClass("lenta-date-input");
+      }
+      text.setValue(this.endDate || "");
+      text.onChange((val) => {
+        this.endDate = val;
+      });
+    }).addExtraButton((btn) => {
+      btn.setIcon("cross").setTooltip("Clear end date").onClick(() => {
+        this.endDate = "";
+        if (endDateComponent && typeof endDateComponent.setValue === "function") {
+          endDateComponent.setValue("");
+        }
+      });
+    });
+    const myFeeds = this.getMyFeeds();
+    new import_obsidian4.Setting(contentEl).setName("My Feed").setDesc("\u{1F512} Public feeds are moderated by admin. Only personal feeds (My Feeds) can be selected.").addDropdown((dropdown) => {
+      if (myFeeds.length === 0) {
+        dropdown.addOption("feed-my-notes", "\u{1F512} My Notes (Personal Feed)");
+        this.feedId = "feed-my-notes";
+      } else {
+        for (const feed of myFeeds) {
+          dropdown.addOption(feed.id, `\u{1F512} ${feed.title}`);
+        }
+        if (!this.feedId || !myFeeds.some((f) => f.id === this.feedId)) {
+          this.feedId = myFeeds[0].id;
+        }
+        dropdown.setValue(this.feedId);
+      }
+      dropdown.onChange((val) => {
+        this.feedId = val;
+      });
+    });
+    const folderSetting = new import_obsidian4.Setting(contentEl).setName("Target Container Folder").setDesc(
+      isContainer ? `Select folder inside \u{1F4E6} ${resolvedContainerName} (Obsidian rule: limit 1 folder).` : "Select folder for note placement (Obsidian rule: limit 1 folder)."
+    );
+    if (!this.isCustomFolder) {
+      folderSetting.addDropdown((dropdown) => {
+        dropdown.addOption("root", `\u{1F4C1} / (Root: ${resolvedContainerName})`);
+        for (const folder of this.folders) {
+          dropdown.addOption(folder.id, `\u{1F4C1} ${folder.path}`);
+        }
+        const hasFolder = this.folders.some((f) => f.id === this.selectedFolderId);
+        if (!hasFolder && (this.selectedFolderId || this.initialFolderPath)) {
+          const fallbackId = this.selectedFolderId || this.initialFolderPath;
+          const fallbackPath = this.initialFolderPath || this.selectedFolderId;
+          dropdown.addOption(fallbackId, `\u{1F4C1} ${fallbackPath}`);
+          dropdown.setValue(fallbackId);
+        } else {
+          dropdown.setValue(this.selectedFolderId || "root");
+        }
+        dropdown.addOption("__custom__", "\u270F\uFE0F + Custom Folder...");
+        dropdown.onChange((val) => {
+          if (val === "__custom__") {
+            this.isCustomFolder = true;
+            this.customFolderPath = "";
+            this.render();
+          } else {
+            this.selectedFolderId = val === "root" ? "" : val;
+          }
+        });
+      });
+    } else {
+      folderSetting.addText((text) => {
+        text.setPlaceholder("e.g. Work/Sprint-1 or Research").setValue(this.customFolderPath).onChange((val) => {
+          this.customFolderPath = val.trim().replace(/^\/+|\/+$/g, "");
+        });
+        text.inputEl.focus();
+      }).addExtraButton((btn) => {
+        btn.setIcon("list").setTooltip("Back to folder list").onClick(() => {
+          this.isCustomFolder = false;
+          this.render();
+        });
+      });
+    }
     if (this.taxonomyNodes.length > 0) {
       new import_obsidian4.Setting(contentEl).setName("Taxonomy Tag").setDesc("Hierarchical classification node").addDropdown((dropdown) => {
         dropdown.addOption("", "(No Taxonomy)");
@@ -5937,11 +6264,11 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
       });
     }
     new import_obsidian4.Setting(contentEl).setName("Icon & Source Link").setDesc('Optional icon name (e.g. "rocket", "calendar") and external URL').addText((text) => {
-      text.setPlaceholder("Icon (e.g. rocket)").onChange((val) => {
+      text.setPlaceholder("Icon (e.g. rocket)").setValue(this.icon).onChange((val) => {
         this.icon = val;
       });
     }).addText((text) => {
-      text.setPlaceholder("https://...").onChange((val) => {
+      text.setPlaceholder("https://...").setValue(this.sourceLink).onChange((val) => {
         this.sourceLink = val;
       });
     });
@@ -5964,23 +6291,53 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
         new import_obsidian4.Notice("Please enter a note title.");
         return;
       }
-      if (!this.feedId && this.feeds.length > 0) {
-        this.feedId = this.feeds[0].id;
+      if (!this.startDate) {
+        new import_obsidian4.Notice("Please select a start date.");
+        return;
       }
-      if (!this.feedId) {
-        this.feedId = "feed-default";
+      if (this.endDate && this.startDate) {
+        const startTimestamp = new Date(this.startDate).getTime();
+        const endTimestamp = new Date(this.endDate).getTime();
+        if (endTimestamp < startTimestamp) {
+          new import_obsidian4.Notice("\u26A0\uFE0F End date cannot be earlier than start date.");
+          return;
+        }
       }
+      let targetFeedId = this.feedId;
+      const matchedFeed = this.feeds.find((f) => f.id === targetFeedId);
+      if (!matchedFeed) {
+        try {
+          const createdFeed = await this.apiClient.createFeed({
+            title: "My Notes",
+            slug: "my-notes",
+            description: "Personal notes and reflections feed"
+          });
+          targetFeedId = createdFeed.id;
+          this.feeds.push(createdFeed);
+        } catch {
+          const fresh = await this.apiClient.getFeeds().catch(() => []);
+          const existing = fresh.find((f) => f.slug === "my-notes") || fresh[0];
+          if (existing)
+            targetFeedId = existing.id;
+        }
+      }
+      this.feedId = targetFeedId;
       submitBtn.disabled = true;
       submitBtn.setText("Creating...");
       try {
-        const startIso = this.startDate ? new Date(this.startDate).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
-        const endIso = this.endDate ? new Date(this.endDate).toISOString() : void 0;
-        const targetFolder2 = this.folders.find((f) => f.id === this.selectedFolderId);
-        const folderPath = targetFolder2 ? targetFolder2.path : this.selectedFolderId && this.selectedFolderId !== "root" ? this.selectedFolderId : this.initialFolderPath || void 0;
+        const startIso = this.startDate ? this.startDate.includes("T") ? new Date(this.startDate).toISOString() : (/* @__PURE__ */ new Date(`${this.startDate}T12:00:00.000Z`)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+        const endIso = this.endDate ? this.endDate.includes("T") ? new Date(this.endDate).toISOString() : (/* @__PURE__ */ new Date(`${this.endDate}T12:00:00.000Z`)).toISOString() : void 0;
+        let resolvedFolderPath = void 0;
+        if (this.isCustomFolder && this.customFolderPath) {
+          resolvedFolderPath = this.customFolderPath;
+        } else {
+          const targetFolder2 = this.folders.find((f) => f.id === this.selectedFolderId);
+          resolvedFolderPath = targetFolder2 ? targetFolder2.path : this.selectedFolderId && this.selectedFolderId !== "root" ? this.selectedFolderId : this.initialFolderPath || void 0;
+        }
         const tagIds = this.selectedTaxonomyId ? [this.selectedTaxonomyId] : [];
-        const folderIds = targetFolder2 ? [targetFolder2.id] : this.selectedFolderId && this.selectedFolderId !== "root" ? [this.selectedFolderId] : [];
-        const folders = folderPath ? [folderPath] : void 0;
-        const targetContainerId = targetFolder2?.containerId || this.getSettings().activeContainerId || void 0;
+        const folderIds = resolvedFolderPath ? [resolvedFolderPath] : [];
+        const folders = resolvedFolderPath ? [resolvedFolderPath] : void 0;
+        const targetContainerId = this.getTargetContainerId();
         const created = await this.apiClient.createNote({
           title: this.title.trim(),
           feedId: this.feedId,
@@ -5993,20 +6350,40 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
           tagIds,
           folderIds,
           folders,
-          folder: folderPath,
+          folder: resolvedFolderPath,
           containerId: targetContainerId
         });
         const rootFolder = this.getSettings().vaultRootFolder || "Lenta";
-        let vaultPath = (0, import_obsidian4.normalizePath)(LentaFrontmatterUtil.getNoteVaultPath(created, rootFolder));
-        if (folderPath && (!created.folders || created.folders.length === 0)) {
-          const cleanTitle = created.title.replace(/[\\/:*?"<>|]/g, "-").trim() || "Untitled";
-          const cleanFolder = folderPath.replace(/^\/+|\/+$/g, "");
-          vaultPath = (0, import_obsidian4.normalizePath)(`${rootFolder}/${cleanFolder}/${cleanTitle}.md`);
+        let vaultPath;
+        if (this.isObsidianContainerMode()) {
+          const safeContainerName = resolvedContainerName.replace(/[\\/:*?"<>|]/g, "_");
+          const cleanTitle = (created.title || this.title).replace(/[\\/:*?"<>|]/g, "-").trim() || "Untitled";
+          if (resolvedFolderPath && resolvedFolderPath !== "root") {
+            const cleanFolder = resolvedFolderPath.replace(/^\/+|\/+$/g, "");
+            vaultPath = (0, import_obsidian4.normalizePath)(`${rootFolder}/${safeContainerName}/${cleanFolder}/${cleanTitle}.md`);
+          } else {
+            vaultPath = (0, import_obsidian4.normalizePath)(`${rootFolder}/${safeContainerName}/${cleanTitle}.md`);
+          }
+        } else {
+          vaultPath = (0, import_obsidian4.normalizePath)(LentaFrontmatterUtil.getNoteVaultPath(created, rootFolder));
+          if (resolvedFolderPath && (!created.folders || created.folders.length === 0)) {
+            const cleanTitle = (created.title || this.title).replace(/[\\/:*?"<>|]/g, "-").trim() || "Untitled";
+            const cleanFolder = resolvedFolderPath.replace(/^\/+|\/+$/g, "");
+            vaultPath = (0, import_obsidian4.normalizePath)(`${rootFolder}/${cleanFolder}/${cleanTitle}.md`);
+          }
         }
         const markdown = LentaFrontmatterUtil.serializeNoteToMarkdown(created);
         const dir = vaultPath.substring(0, vaultPath.lastIndexOf("/"));
         if (dir && !this.app.vault.getAbstractFileByPath(dir)) {
-          await this.app.vault.createFolder(dir);
+          const parts = dir.split("/");
+          let cur = "";
+          for (const p of parts) {
+            cur = cur ? `${cur}/${p}` : p;
+            const norm = (0, import_obsidian4.normalizePath)(cur);
+            if (!this.app.vault.getAbstractFileByPath(norm)) {
+              await this.app.vault.createFolder(norm);
+            }
+          }
         }
         let finalVaultPath = vaultPath;
         const existingFile = this.app.vault.getAbstractFileByPath(finalVaultPath);
@@ -6040,7 +6417,7 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
         } else {
           await this.app.vault.create(finalVaultPath, markdown);
         }
-        new import_obsidian4.Notice(`\u{1F34B} Created "${created.title}" successfully!`);
+        new import_obsidian4.Notice(`\u{1F34B} Created "${created.title}" in \u{1F4E6} ${resolvedContainerName} successfully!`);
         this.onSuccess(finalVaultPath);
         this.close();
       } catch (err) {
@@ -6051,16 +6428,24 @@ var LentaQuickAddModal = class extends import_obsidian4.Modal {
     };
   }
 };
+_LentaQuickAddModal.DEFAULT_OBSIDIAN_FOLDERS = [
+  "Notes",
+  "Daily",
+  "Projects",
+  "Archive"
+];
+var LentaQuickAddModal = _LentaQuickAddModal;
 
 // src/ui/create-folder-modal.ts
 var import_obsidian5 = require("obsidian");
 var LentaCreateFolderModal = class extends import_obsidian5.Modal {
-  constructor(app, apiClient, getSettings, onSuccess, initialParentFolderId, initialParentFolderPath, defaultPrivacy) {
+  constructor(app, apiClient, getSettings, onSuccess, initialParentFolderId, initialParentFolderPath, defaultPrivacy, targetContainerId) {
     super(app);
+    this.targetContainerId = targetContainerId;
     this.folders = [];
     this.folderName = "";
     this.selectedParentPath = "";
-    this.privacy = "private";
+    this.privacy = "obsidian";
     this.icon = "folder";
     this.color = "#c9cd58";
     this.apiClient = apiClient;
@@ -6068,18 +6453,38 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
     this.onSuccess = onSuccess;
     this.initialParentFolderId = initialParentFolderId;
     this.initialParentFolderPath = initialParentFolderPath;
+    this.targetContainerId = targetContainerId;
     if (initialParentFolderPath) {
       this.selectedParentPath = initialParentFolderPath;
     }
-    if (defaultPrivacy) {
+    if (targetContainerId) {
+      this.privacy = defaultPrivacy || "obsidian";
+    } else if (defaultPrivacy) {
       this.privacy = defaultPrivacy;
+    } else {
+      this.privacy = "public";
+    }
+    if (this.privacy === "obsidian") {
+      this.color = "#3b82f6";
+      this.icon = "box";
+    } else if (this.privacy === "private") {
+      this.color = "#a855f7";
+      this.icon = "lock";
+    } else {
+      this.color = "#c9cd58";
+      this.icon = "folder";
     }
   }
   async onOpen() {
     this.modalEl.addClass("lenta-create-folder-modal");
     this.renderLoading();
     try {
-      this.folders = await this.apiClient.getFolders().catch(() => []);
+      const settings = this.getSettings();
+      const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0];
+      this.folders = await this.apiClient.getFolders({
+        containerId: activeContainerId || void 0,
+        scope: "all"
+      }).catch(() => []);
       this.render();
     } catch (err) {
       new import_obsidian5.Notice(`Failed to load Lenta folders: ${err.message}`);
@@ -6115,7 +6520,7 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
     header.createEl("h2", { text: "\u{1F4C1} Create New Folder" });
     header.createEl("p", {
       cls: "lenta-modal-subtitle",
-      text: "Add a new structured folder in Project Lenta and your local Obsidian vault."
+      text: this.targetContainerId ? `Target Container: \u{1F4E6} ${this.targetContainerId}` : "Add a new structured folder in Project Lenta and your local Obsidian vault."
     });
     new import_obsidian5.Setting(contentEl).setName("Folder Name").setDesc('Enter the name for the new folder (e.g. "Projects", "Sprint-24", "Research")').addText((text) => {
       text.setPlaceholder("e.g. 02_Projects or Research").setValue(this.folderName).onChange((val) => {
@@ -6124,9 +6529,28 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
       });
       text.inputEl.focus();
     });
-    new import_obsidian5.Setting(contentEl).setName("Parent Folder").setDesc("Choose whether to place at root (/) or nest inside an existing folder").addDropdown((dropdown) => {
+    const settings = this.getSettings();
+    const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || null;
+    const localFolders = [];
+    const otherFolders = [];
+    for (const f of this.folders) {
+      const isLocal = activeContainerId && f.containerId === activeContainerId || f.privacy === "obsidian" || f.scope === "internal";
+      if (isLocal) {
+        localFolders.push(f);
+      } else {
+        otherFolders.push(f);
+      }
+    }
+    localFolders.sort((a, b) => a.path.localeCompare(b.path));
+    otherFolders.sort((a, b) => a.path.localeCompare(b.path));
+    new import_obsidian5.Setting(contentEl).setName("Parent Folder").setDesc("Choose whether to place at root (/) or nest inside an existing folder (local container folders shown first)").addDropdown((dropdown) => {
       dropdown.addOption("", "\u{1F4C1} / (Root)");
-      for (const f of this.folders) {
+      if (localFolders.length > 0) {
+        for (const f of localFolders) {
+          dropdown.addOption(f.path, `\u{1F4E6} ${f.path} (Local / Container)`);
+        }
+      }
+      for (const f of otherFolders) {
         dropdown.addOption(f.path, `\u{1F4C1} ${f.path}`);
       }
       dropdown.setValue(this.selectedParentPath);
@@ -6135,12 +6559,23 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
         this.updatePreview();
       });
     });
-    new import_obsidian5.Setting(contentEl).setName("Privacy & Scope").setDesc("Personal folders stay private in your vault; Public folders can be shared across feeds").addDropdown((dropdown) => {
+    new import_obsidian5.Setting(contentEl).setName("Folder Type & Privacy").setDesc("Obsidian Container folders are isolated locally; Private folders stay private; Public folders can be shared across feeds").addDropdown((dropdown) => {
+      dropdown.addOption("obsidian", "\u{1F4E6} Obsidian Folder (Local Container Scope)");
       dropdown.addOption("private", "\u{1F512} Private (My Folders / Personal Vault)");
-      dropdown.addOption("public", "\u{1F310} Public (Shared Folders / Feeds)");
+      dropdown.addOption("public", "\u{1F310} Public (Shared Project Folders / Feeds)");
       dropdown.setValue(this.privacy);
       dropdown.onChange((val) => {
         this.privacy = val;
+        if (val === "obsidian") {
+          this.color = "#3b82f6";
+          this.icon = "box";
+        } else if (val === "private") {
+          this.color = "#a855f7";
+          this.icon = "lock";
+        } else if (val === "public") {
+          this.color = "#c9cd58";
+          this.icon = "folder";
+        }
       });
     });
     new import_obsidian5.Setting(contentEl).setName("Icon & Color").setDesc('Optional Lucide icon name (e.g. "folder", "archive", "calendar", "star") and hex color').addText((text) => {
@@ -6181,26 +6616,30 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
       submitBtn.disabled = true;
       submitBtn.setText("Creating...");
       try {
-        const settings = this.getSettings();
-        const activeContainerId = settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || null;
+        const settings2 = this.getSettings();
+        const activeContainerId2 = this.targetContainerId || settings2.activeContainerId || settings2.activeContainerIds && settings2.activeContainerIds[0] || null;
         const created = await this.apiClient.createFolder({
           path: fullPath,
           name: cleanName.split("/").pop() || cleanName,
           icon: this.icon,
           color: this.color,
           privacy: this.privacy,
-          containerId: activeContainerId,
-          scope: this.privacy === "private" ? "internal" : "external"
+          containerId: activeContainerId2,
+          scope: this.privacy === "public" ? "external" : "internal"
         });
-        const rootFolder = settings.vaultRootFolder || "Lemon-Seasons";
-        const vaultFolderPath = (0, import_obsidian5.normalizePath)(`${rootFolder}/${fullPath}`);
+        const configuredRoot = settings2.vaultRootFolder !== void 0 && settings2.vaultRootFolder !== null ? settings2.vaultRootFolder.trim() : "Lemon-Seasons";
+        const vaultFolderPath = configuredRoot ? (0, import_obsidian5.normalizePath)(`${configuredRoot}/${fullPath}`) : (0, import_obsidian5.normalizePath)(fullPath);
         const parts = vaultFolderPath.split("/");
         let cur = "";
         for (const p of parts) {
           cur = cur ? `${cur}/${p}` : p;
           const norm = (0, import_obsidian5.normalizePath)(cur);
           if (!this.app.vault.getAbstractFileByPath(norm)) {
-            await this.app.vault.createFolder(norm);
+            try {
+              await this.app.vault.createFolder(norm);
+            } catch (vErr) {
+              console.warn(`[Lenta] vault.createFolder for ${norm}:`, vErr);
+            }
           }
         }
         new import_obsidian5.Notice(`\u{1F34B} Folder "${created.path}" created successfully!`);
@@ -7645,21 +8084,113 @@ var LentaContainersFoldersModal = class extends import_obsidian8.Modal {
 var import_obsidian9 = require("obsidian");
 init_lenta_frontmatter();
 var VIEW_TYPE_LENTA_SIDEBAR = "lemon-lenta-sidebar-view";
+function buildFileTree(files, folders = []) {
+  const rootChildren = [];
+  for (const folder of folders) {
+    const rawPath = (folder.path || "").replace(/\\/g, "/");
+    const parts = rawPath.split("/").filter(Boolean);
+    let currentChildren = rootChildren;
+    let accumulatedPath = "";
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+      let existing = currentChildren.find((node) => node.name === part);
+      if (!existing) {
+        existing = {
+          name: part,
+          path: accumulatedPath,
+          type: "folder",
+          children: []
+        };
+        currentChildren.push(existing);
+      }
+      if (existing.children) {
+        currentChildren = existing.children;
+      }
+    }
+  }
+  for (const file of files) {
+    const rawPath = file.path.replace(/\\/g, "/");
+    const parts = rawPath.split("/").filter(Boolean);
+    let currentChildren = rootChildren;
+    let accumulatedPath = "";
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isFile = i === parts.length - 1;
+      accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+      let dateStr = void 0;
+      if (isFile) {
+        if (file.startDate) {
+          const d = new Date(file.startDate);
+          if (!isNaN(d.getTime())) {
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          }
+        }
+        if (!dateStr) {
+          const match = part.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (match) {
+            dateStr = match[1];
+          }
+        }
+      }
+      let existing = currentChildren.find((node) => node.name === part);
+      if (!existing) {
+        existing = {
+          name: part,
+          path: accumulatedPath,
+          type: isFile ? "file" : "folder",
+          children: isFile ? void 0 : [],
+          size: isFile ? file.size : void 0,
+          mtime: isFile ? file.mtime : void 0,
+          startDate: isFile ? file.startDate : void 0,
+          endDate: isFile ? file.endDate : void 0,
+          dateStr: isFile ? dateStr : void 0
+        };
+        currentChildren.push(existing);
+      }
+      if (!isFile && existing.children) {
+        currentChildren = existing.children;
+      }
+    }
+  }
+  function sortNodes(nodes) {
+    nodes.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === "folder" ? -1 : 1;
+      }
+      if (a.dateStr && b.dateStr) {
+        const cmp = a.dateStr.localeCompare(b.dateStr);
+        if (cmp !== 0)
+          return cmp;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    for (const node of nodes) {
+      if (node.children) {
+        sortNodes(node.children);
+      }
+    }
+  }
+  sortNodes(rootChildren);
+  return rootChildren;
+}
 var LentaSidebarView = class extends import_obsidian9.ItemView {
-  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder) {
+  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder, onSaveSettings) {
     super(leaf);
     this.onQuickPull = onQuickPull;
     this.onQuickPush = onQuickPush;
+    this.sidebarMode = "notes";
+    this.activeTab = "folders";
+    this.scopeFilter = "my";
+    this.isLoading = false;
     this.feeds = [];
     this.folders = [];
     this.taxonomy = [];
-    this.activeTab = "folders";
-    this.scopeFilter = "all";
-    this.isLoading = false;
+    this.containers = [];
     // Selected folder for context
     this.selectedFolderId = null;
     this.selectedFolderPath = null;
-    // Track which items have expanded markdown previews / accordions
+    // Track which items have expanded previews / accordions
     this.expandedPreviews = /* @__PURE__ */ new Set();
     // Lazy-loaded notes per feed (list of notes)
     this.feedNotesList = /* @__PURE__ */ new Map();
@@ -7667,6 +8198,14 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     // Lazy-loaded notes per folder (list of notes)
     this.folderPreviewNotes = /* @__PURE__ */ new Map();
     this.loadingFolderNotesFor = /* @__PURE__ */ new Set();
+    // Lazy-loaded files and folders per container
+    this.containerFilesList = /* @__PURE__ */ new Map();
+    this.containerFoldersList = /* @__PURE__ */ new Map();
+    this.loadingContainerFilesFor = /* @__PURE__ */ new Set();
+    this.expandedContainerFolders = /* @__PURE__ */ new Set();
+    // Key connection state
+    this.isConnectingKey = false;
+    this.keyInputText = "";
     this.apiClient = apiClient;
     this.getSettings = getSettings;
     this.onOpenQuickAdd = onOpenQuickAdd;
@@ -7674,6 +8213,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.onOpenConnectionsModal = onOpenConnectionsModal;
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.onOpenCreateFolder = onOpenCreateFolder;
+    this.onSaveSettings = onSaveSettings;
     this.mdComponent = new import_obsidian9.Component();
   }
   selectFolder(folderId, folderPath) {
@@ -7682,10 +8222,18 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.render();
   }
   openCreateFolderModal(parentFolderId, parentFolderPath) {
+    const settings = this.getSettings();
+    const isContainerMode = this.sidebarMode === "containers";
+    const activeContainerId = isContainerMode ? settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || this.containers[0]?.id : void 0;
     if (this.onOpenCreateFolder) {
-      this.onOpenCreateFolder(parentFolderId, parentFolderPath);
+      this.onOpenCreateFolder(
+        parentFolderId,
+        parentFolderPath,
+        isContainerMode ? "obsidian" : void 0,
+        activeContainerId
+      );
     } else {
-      const defaultPrivacy = this.scopeFilter === "public" ? "public" : "private";
+      const defaultPrivacy = isContainerMode ? "obsidian" : this.scopeFilter === "public" ? "public" : "private";
       new LentaCreateFolderModal(
         this.app,
         this.apiClient,
@@ -7697,9 +8245,82 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         },
         parentFolderId,
         parentFolderPath,
-        defaultPrivacy
+        defaultPrivacy,
+        activeContainerId
       ).open();
     }
+  }
+  openQuickAddForContainer(containerId, containerName, folderPath, initialDate) {
+    const matchedContainer = this.containers.find((c) => c.id === containerId);
+    const resolvedName = containerName || matchedContainer?.name;
+    new LentaQuickAddModal(
+      this.app,
+      this.apiClient,
+      this.getSettings,
+      async () => {
+        this.containerFilesList.delete(containerId);
+        this.containerFoldersList.delete(containerId);
+        this.expandedPreviews.add(`container-${containerId}`);
+        if (folderPath) {
+          this.expandedContainerFolders.add(`${containerId}:${folderPath}`);
+        }
+        try {
+          const [files, folders] = await Promise.all([
+            this.apiClient.getContainerFiles(containerId).catch(() => []),
+            this.apiClient.getFolders({ containerId, scope: "all" }).catch(() => [])
+          ]);
+          this.containerFilesList.set(containerId, files);
+          this.containerFoldersList.set(containerId, folders);
+        } catch {
+        }
+        await this.refreshData();
+      },
+      void 0,
+      folderPath,
+      containerId,
+      resolvedName,
+      this.containerFilesList.get(containerId),
+      initialDate
+    ).open();
+  }
+  openCreateFolderForContainer(containerId, containerName, parentFolderId, parentFolderPath) {
+    const defaultPrivacy = "obsidian";
+    new LentaCreateFolderModal(
+      this.app,
+      this.apiClient,
+      this.getSettings,
+      async (newFolder) => {
+        this.containerFilesList.delete(containerId);
+        if (newFolder?.path) {
+          const currentFolders = this.containerFoldersList.get(containerId) || [];
+          if (!currentFolders.some((f) => f.path === newFolder.path)) {
+            currentFolders.push(newFolder);
+            this.containerFoldersList.set(containerId, currentFolders);
+          }
+        }
+        this.expandedPreviews.add(`container-${containerId}`);
+        if (parentFolderPath) {
+          this.expandedContainerFolders.add(`${containerId}:${parentFolderPath}`);
+        }
+        if (newFolder?.path) {
+          this.expandedContainerFolders.add(`${containerId}:${newFolder.path}`);
+        }
+        try {
+          const [files, folders] = await Promise.all([
+            this.apiClient.getContainerFiles(containerId).catch(() => []),
+            this.apiClient.getFolders({ containerId, scope: "all" }).catch(() => [])
+          ]);
+          this.containerFilesList.set(containerId, files);
+          this.containerFoldersList.set(containerId, folders);
+        } catch {
+        }
+        await this.refreshData();
+      },
+      parentFolderId,
+      parentFolderPath,
+      defaultPrivacy,
+      containerId
+    ).open();
   }
   getViewType() {
     return VIEW_TYPE_LENTA_SIDEBAR;
@@ -7732,14 +8353,16 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.isLoading = true;
     this.render();
     try {
-      const [feeds, folders, taxonomy] = await Promise.all([
+      const [feeds, folders, taxonomy, containers] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
-        this.apiClient.getFolders().catch(() => []),
-        this.apiClient.getTaxonomyTree().catch(() => [])
+        this.apiClient.getFolders({ scope: "all" }).catch(() => []),
+        this.apiClient.getTaxonomyTree().catch(() => []),
+        this.apiClient.listContainers({ fetchAll: true }).catch(() => [])
       ]);
       this.feeds = feeds;
       this.folders = folders;
       this.taxonomy = taxonomy;
+      this.containers = containers;
       const foldersToFetch = /* @__PURE__ */ new Set();
       for (const key of this.expandedPreviews) {
         if (key.startsWith("folder-")) {
@@ -7762,15 +8385,36 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
           }
         })
       );
+      const containersToFetch = /* @__PURE__ */ new Set();
+      for (const key of this.expandedPreviews) {
+        if (key.startsWith("container-")) {
+          containersToFetch.add(key.replace("container-", ""));
+        }
+      }
+      await Promise.all(
+        Array.from(containersToFetch).map(async (cId) => {
+          try {
+            const [files, cFolders] = await Promise.all([
+              this.apiClient.getContainerFiles(cId).catch(() => []),
+              this.apiClient.getFolders({ containerId: cId, scope: "all" }).catch(() => [])
+            ]);
+            this.containerFilesList.set(cId, files);
+            this.containerFoldersList.set(cId, cFolders);
+          } catch {
+            this.containerFilesList.set(cId, []);
+            this.containerFoldersList.set(cId, []);
+          }
+        })
+      );
     } catch (err) {
-      new import_obsidian9.Notice(`Failed to load Lenta hierarchy: ${err.message}`);
+      new import_obsidian9.Notice(`Failed to load Lenta data: ${err.message}`);
     } finally {
       this.isLoading = false;
       this.render();
     }
   }
   isMyFolder(folder) {
-    if (folder.privacy === "private")
+    if (folder.privacy === "private" || folder.privacy === "obsidian")
       return true;
     if (folder.privacy === "public")
       return false;
@@ -7792,22 +8436,36 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     ];
     return myKeywords.some((kw) => p.includes(kw));
   }
-  isMyScopeActive() {
-    if (this.activeTab === "feeds") {
-      return false;
-    }
-    if (this.scopeFilter === "my") {
+  isMyFeed(feed) {
+    if (feed.privacy === "private" || feed.visibility === "private" || feed.isUserOwn === true) {
       return true;
     }
-    if (this.scopeFilter === "public") {
+    if (feed.privacy === "public" || feed.visibility === "public") {
       return false;
     }
-    if (this.selectedFolderId) {
-      const f = this.folders.find((x) => x.id === this.selectedFolderId);
-      if (f)
-        return this.isMyFolder(f);
+    const slug = (feed.slug || "").toLowerCase();
+    const title = (feed.title || "").toLowerCase();
+    const defaultSlug = (this.getSettings().defaultFeedSlug || "").toLowerCase();
+    if (defaultSlug && (slug === defaultSlug || slug.includes(defaultSlug))) {
+      return true;
     }
-    return this.folders.some((f) => this.isMyFolder(f));
+    const myKeywords = ["my", "my-", "my_", "personal", "private", "user", "own", "me"];
+    return myKeywords.some((kw) => slug.includes(kw) || title.includes(kw));
+  }
+  isMyScopeActive() {
+    if (this.sidebarMode === "notes") {
+      if (this.scopeFilter === "my")
+        return true;
+      if (this.scopeFilter === "public")
+        return false;
+      if (this.activeTab === "folders" && this.selectedFolderId) {
+        const f = this.folders.find((x) => x.id === this.selectedFolderId);
+        if (f)
+          return this.isMyFolder(f);
+      }
+      return this.folders.some((f) => this.isMyFolder(f));
+    }
+    return this.scopeFilter === "my";
   }
   render() {
     const container = this.containerEl.children[1];
@@ -7824,16 +8482,12 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     if (selectedCount > 0) {
       const badge = titleRow.createSpan({ cls: "lenta-badge" });
       badge.setText(`CONTAINERS: ${selectedCount}`);
-      badge.title = `Connected containers count (${selectedCount}): ${settings.activeContainerIds.join(", ")}`;
+      badge.title = `Connected containers (${selectedCount}): ${settings.activeContainerIds.join(", ")}`;
     }
     const toolbar = header.createDiv({ cls: "lenta-sidebar-toolbar" });
     const addBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Quick Add Note" } });
     (0, import_obsidian9.setIcon)(addBtn, "plus");
     addBtn.onclick = () => {
-      if (!this.isMyScopeActive()) {
-        new import_obsidian9.Notice('\u{1F512} \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043D\u0430 "My".');
-        return;
-      }
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
     const addFolderToolbarBtn = toolbar.createEl("button", {
@@ -7861,11 +8515,6 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     const syncBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Sync Hub" } });
     (0, import_obsidian9.setIcon)(syncBtn, "zap");
     syncBtn.onclick = () => this.onOpenSyncModal("push");
-    if (this.onOpenContainersFoldersModal) {
-      const containerBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Containers & Folders Workspace" } });
-      (0, import_obsidian9.setIcon)(containerBtn, "box");
-      containerBtn.onclick = () => this.onOpenContainersFoldersModal();
-    }
     if (this.onOpenConnectionsModal) {
       const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Auth" } });
       (0, import_obsidian9.setIcon)(connBtn, "link-2");
@@ -7878,12 +8527,40 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     (0, import_obsidian9.setIcon)(collapseBtn, "chevrons-down-up");
     collapseBtn.onclick = () => {
       this.expandedPreviews.clear();
+      this.expandedContainerFolders.clear();
       this.render();
-      new import_obsidian9.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+      new import_obsidian9.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
     };
     const refreshBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Refresh Data" } });
     (0, import_obsidian9.setIcon)(refreshBtn, "refresh-cw");
     refreshBtn.onclick = () => this.refreshData();
+    const modeSwitcher = container.createDiv({ cls: "lenta-mode-switcher" });
+    const notesTab = modeSwitcher.createDiv({
+      cls: `lenta-mode-tab ${this.sidebarMode === "notes" ? "is-active" : ""}`,
+      text: "\u{1F4DD} Notes"
+    });
+    notesTab.onclick = () => {
+      this.sidebarMode = "notes";
+      this.render();
+    };
+    const containersTab = modeSwitcher.createDiv({
+      cls: `lenta-mode-tab ${this.sidebarMode === "containers" ? "is-active" : ""}`,
+      text: "\u{1F4E6} Containers"
+    });
+    containersTab.onclick = () => {
+      this.sidebarMode = "containers";
+      this.render();
+    };
+    if (this.sidebarMode === "notes") {
+      this.renderNotesMode(container);
+    } else {
+      this.renderContainersMode(container);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Notes Mode: Folders and Feeds
+  // ─────────────────────────────────────────────────────────────────────────
+  renderNotesMode(container) {
     const tabsRow = container.createDiv({ cls: "lenta-sidebar-tabs" });
     const tabFolders = tabsRow.createDiv({
       cls: `lenta-tab ${this.activeTab === "folders" ? "active" : ""}`,
@@ -7901,19 +8578,13 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       this.activeTab = "feeds";
       this.render();
     };
-    const tabTaxonomy = tabsRow.createDiv({
-      cls: `lenta-tab ${this.activeTab === "taxonomy" ? "active" : ""}`,
-      text: "Taxonomy"
-    });
-    tabTaxonomy.onclick = () => {
-      this.activeTab = "taxonomy";
-      this.render();
-    };
     const filterBar = container.createDiv({ cls: "lenta-scope-filter-bar" });
-    const filterOptions = [
-      { id: "all", label: "All", icon: "\u{1F465}" },
-      { id: "my", label: "My", icon: "\u{1F512}" },
-      { id: "public", label: "Public", icon: "\u{1F310}" }
+    const filterOptions = this.activeTab === "folders" ? [
+      { id: "my", label: "My Folders", icon: "\u{1F512}" },
+      { id: "public", label: "Public Folders", icon: "\u{1F310}" }
+    ] : [
+      { id: "my", label: "My Feeds", icon: "\u{1F512}" },
+      { id: "public", label: "Public Feeds", icon: "\u{1F310}" }
     ];
     for (const opt of filterOptions) {
       const pill = filterBar.createDiv({
@@ -7930,64 +8601,494 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       content.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading hierarchy..." });
     } else if (this.activeTab === "folders") {
       this.renderFolders(content);
-    } else if (this.activeTab === "feeds") {
-      this.renderFeeds(content);
     } else {
-      this.renderTaxonomy(content);
+      this.renderFeeds(content);
     }
     this.renderQuickAddFooter(container);
   }
-  renderQuickAddFooter(container) {
-    const footer = container.createDiv({ cls: "lenta-sidebar-footer" });
-    const isMyActive = this.isMyScopeActive();
-    const pushCurrentBtn = footer.createEl("button", {
-      cls: `lenta-footer-btn lenta-footer-btn-secondary ${isMyActive ? "" : "is-disabled"}`,
-      text: isMyActive ? "\u{1F4E4} Push Note" : "\u{1F512} Push Note",
-      attr: {
-        "aria-label": isMyActive ? "Push current open note to Lenta server" : "Disabled: Push is only available for notes in My Folders"
-      }
-    });
-    pushCurrentBtn.onclick = () => {
-      if (!isMyActive) {
-        new import_obsidian9.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
-        return;
-      }
-      const file = this.app.workspace.getActiveFile();
-      if (!file) {
-        new import_obsidian9.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
-        return;
-      }
-      this.onOpenSyncModal();
-    };
-    const addFolderBtn = footer.createEl("button", {
-      cls: "lenta-footer-btn lenta-footer-btn-secondary",
-      text: "+ New folder",
-      attr: {
-        "aria-label": this.selectedFolderPath ? `Create new folder inside "${this.selectedFolderPath}"` : "Create new folder in Lenta & Vault"
-      }
-    });
-    (0, import_obsidian9.setIcon)(addFolderBtn.createSpan(), "folder-plus");
-    addFolderBtn.onclick = () => {
-      this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
-    };
-    const addBtn = footer.createEl("button", {
-      cls: `lenta-footer-btn lenta-footer-btn-primary ${isMyActive ? "" : "is-disabled"}`,
-      text: isMyActive ? "+ New note" : "\u{1F512} + New note",
-      attr: {
-        "aria-label": isMyActive ? `Create new note${this.selectedFolderPath ? ` in ${this.selectedFolderPath}` : " in My Folders"}` : "Disabled: Creating notes is only allowed in My Folders"
-      }
-    });
-    if (isMyActive) {
-      (0, import_obsidian9.setIcon)(addBtn.createSpan(), "plus");
+  // ─────────────────────────────────────────────────────────────────────────
+  // Containers Mode: Direct Obsidian Containers Browser with Key Auth
+  // ─────────────────────────────────────────────────────────────────────────
+  renderContainersMode(container) {
+    this.renderContainerKeyCard(container);
+    const filterBar = container.createDiv({ cls: "lenta-scope-filter-bar" });
+    const filterOptions = [
+      { id: "my", label: "My Containers", icon: "\u{1F512}" },
+      { id: "public", label: "Public Containers", icon: "\u{1F310}" }
+    ];
+    for (const opt of filterOptions) {
+      const pill = filterBar.createDiv({
+        cls: `lenta-scope-pill ${this.scopeFilter === opt.id ? "active" : ""}`,
+        text: `${opt.icon} ${opt.label}`
+      });
+      pill.onclick = () => {
+        this.scopeFilter = opt.id;
+        this.render();
+      };
     }
-    addBtn.onclick = () => {
-      if (!isMyActive) {
-        new import_obsidian9.Notice('\u{1F512} \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
-        return;
-      }
-      this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
-    };
+    const content = container.createDiv({ cls: "lenta-sidebar-content" });
+    if (this.isLoading) {
+      content.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers..." });
+    } else {
+      this.renderContainers(content);
+    }
+    this.renderContainersFooter(container);
   }
+  renderContainerKeyCard(containerEl) {
+    const keyCard = containerEl.createDiv({ cls: "lenta-inline-key-card" });
+    const settings = this.getSettings();
+    const currentKey = settings.containerKey || settings.activeContainerIds && settings.activeContainerIds[0] || "";
+    if (currentKey) {
+      const row = keyCard.createDiv({ cls: "lenta-key-connected-row" });
+      const infoSpan = row.createSpan({ cls: "lenta-key-badge" });
+      infoSpan.setText(`\u{1F511} Connected: ${settings.connectedContainerName || currentKey.slice(0, 18)}`);
+      infoSpan.title = `Active container key: ${currentKey}`;
+      const disconnectBtn = row.createEl("button", {
+        cls: "lenta-key-action-btn mod-warning",
+        text: "Disconnect Key"
+      });
+      disconnectBtn.onclick = async () => {
+        settings.containerKey = "";
+        settings.activeContainerIds = [];
+        settings.activeContainerId = "";
+        settings.connectedContainerName = "";
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        new import_obsidian9.Notice("\u{1F34B} Container key disconnected");
+        await this.refreshData();
+      };
+    } else {
+      const inputWrap = keyCard.createDiv({ cls: "lenta-key-input-wrap" });
+      const input = inputWrap.createEl("input", {
+        type: "text",
+        placeholder: "\u{1F511} Enter private container key...",
+        value: this.keyInputText,
+        cls: "lenta-key-input"
+      });
+      input.oninput = (e) => {
+        this.keyInputText = e.target.value;
+      };
+      input.onkeydown = async (e) => {
+        if (e.key === "Enter") {
+          await this.connectKeyAction();
+        }
+      };
+      const connectBtn = inputWrap.createEl("button", {
+        cls: "lenta-btn-lemon lenta-key-connect-btn",
+        text: this.isConnectingKey ? "Connecting..." : "Connect"
+      });
+      connectBtn.disabled = this.isConnectingKey;
+      connectBtn.onclick = async () => {
+        await this.connectKeyAction();
+      };
+    }
+  }
+  async connectKeyAction() {
+    const key = this.keyInputText.trim();
+    if (!key) {
+      new import_obsidian9.Notice("Please enter a container key");
+      return;
+    }
+    this.isConnectingKey = true;
+    this.render();
+    try {
+      const res = await this.apiClient.connectContainerByKey(key);
+      if (res.success && res.container) {
+        const settings = this.getSettings();
+        settings.containerKey = key;
+        if (!settings.activeContainerIds)
+          settings.activeContainerIds = [];
+        if (!settings.activeContainerIds.includes(res.container.id)) {
+          settings.activeContainerIds.push(res.container.id);
+        }
+        settings.activeContainerId = res.container.id;
+        settings.connectedContainerName = res.container.name;
+        settings.connectedContainerType = res.container.type;
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        this.keyInputText = "";
+        new import_obsidian9.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
+        await this.refreshData();
+      } else {
+        new import_obsidian9.Notice("Could not connect container with provided key");
+      }
+    } catch (err) {
+      new import_obsidian9.Notice(`Connection failed: ${err.message}`);
+    } finally {
+      this.isConnectingKey = false;
+      this.render();
+    }
+  }
+  renderContainers(container) {
+    if (this.containers.length === 0) {
+      container.createDiv({ cls: "lenta-empty-state", text: "No containers found on server." });
+      return;
+    }
+    const myContainers = this.containers.filter((c) => !isContainerPublic(c));
+    const publicContainers = this.containers.filter((c) => isContainerPublic(c));
+    const displayed = this.scopeFilter === "my" ? myContainers : publicContainers;
+    if (displayed.length === 0) {
+      const empty = container.createDiv({ cls: "lenta-empty-state" });
+      if (this.scopeFilter === "my") {
+        empty.createEl("div", { text: "\u{1F512} No private containers found." });
+        empty.createEl("p", {
+          cls: "setting-item-description",
+          text: "Enter your container key above to unlock private user vaults."
+        });
+      } else {
+        empty.createEl("div", { text: "\u{1F310} No public containers found." });
+      }
+      return;
+    }
+    const list = container.createDiv({ cls: "lenta-tree-list" });
+    for (const item of displayed) {
+      this.renderContainerItem(list, item);
+    }
+  }
+  renderContainerItem(list, c) {
+    const itemEl = list.createDiv({ cls: "lenta-tree-item lenta-tree-item-container" });
+    const previewKey = `container-${c.id}`;
+    const isExpanded = this.expandedPreviews.has(previewKey);
+    const settings = this.getSettings();
+    const isActiveContainer = settings.activeContainerId === c.id || settings.activeContainerIds && settings.activeContainerIds.includes(c.id);
+    const headerRow = itemEl.createDiv({
+      cls: `lenta-container-header-row ${isExpanded ? "is-active" : ""} ${isActiveContainer ? "is-connected" : ""}`
+    });
+    const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
+    (0, import_obsidian9.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
+    const nameSpan = headerRow.createSpan({ text: getContainerDisplayTitle2(c), cls: "lenta-item-name" });
+    if (isActiveContainer) {
+      nameSpan.title = "Active connected container";
+    }
+    const typeBadge = headerRow.createSpan({ cls: "lenta-container-type-badge" });
+    typeBadge.setText(c.type || "obsidian");
+    const countPill = headerRow.createSpan({ cls: "lenta-count-pill" });
+    countPill.setText(`${c.totalNotes ?? 0}`);
+    countPill.title = `${c.totalNotes ?? 0} notes/files`;
+    const addBtn = headerRow.createEl("span", {
+      cls: "lenta-container-add-btn clickable-icon",
+      attr: { "aria-label": `Create Note or Folder in "${c.name}"` }
+    });
+    (0, import_obsidian9.setIcon)(addBtn, "plus");
+    addBtn.onclick = (e) => {
+      e.stopPropagation();
+      const menu = new import_obsidian9.Menu();
+      menu.addItem((item) => {
+        item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
+          this.openQuickAddForContainer(c.id, c.name);
+        });
+      });
+      menu.addItem((item) => {
+        item.setTitle("\u{1F4C1} New Folder in Container").setIcon("folder-plus").onClick(() => {
+          this.openCreateFolderForContainer(c.id, c.name);
+        });
+      });
+      menu.showAtMouseEvent(e);
+    };
+    const toggleBtn = headerRow.createEl("span", {
+      cls: "lenta-preview-toggle clickable-icon",
+      attr: { "aria-label": isExpanded ? "Collapse container" : "Expand container files" }
+    });
+    (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    headerRow.onclick = async () => {
+      if (isExpanded) {
+        this.expandedPreviews.delete(previewKey);
+        this.render();
+      } else {
+        this.expandedPreviews.add(previewKey);
+        if (!this.containerFilesList.has(c.id) && !this.loadingContainerFilesFor.has(c.id)) {
+          this.loadingContainerFilesFor.add(c.id);
+          this.render();
+          try {
+            const [files, cFolders] = await Promise.all([
+              this.apiClient.getContainerFiles(c.id).catch(() => []),
+              this.apiClient.getFolders({ containerId: c.id, scope: "all" }).catch(() => [])
+            ]);
+            this.containerFilesList.set(c.id, files);
+            this.containerFoldersList.set(c.id, cFolders);
+          } catch {
+            this.containerFilesList.set(c.id, []);
+            this.containerFoldersList.set(c.id, []);
+          } finally {
+            this.loadingContainerFilesFor.delete(c.id);
+          }
+        }
+        this.render();
+      }
+    };
+    if (isExpanded) {
+      const pane = itemEl.createDiv({ cls: "lenta-markdown-preview-pane lenta-container-tree-pane" });
+      const actionToolbar = pane.createDiv({ cls: "lenta-container-action-toolbar" });
+      const selectBtn = actionToolbar.createEl("button", {
+        cls: `lenta-container-action-btn ${isActiveContainer ? "is-active" : ""}`,
+        text: isActiveContainer ? "\u2713 Connected" : "Connect Container"
+      });
+      selectBtn.onclick = async (e) => {
+        e.stopPropagation();
+        settings.activeContainerId = c.id;
+        if (!settings.activeContainerIds)
+          settings.activeContainerIds = [];
+        if (!settings.activeContainerIds.includes(c.id)) {
+          settings.activeContainerIds.push(c.id);
+        }
+        settings.connectedContainerName = c.name;
+        settings.connectedContainerType = c.type;
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        new import_obsidian9.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
+        this.render();
+      };
+      const addNoteBtn = actionToolbar.createEl("button", {
+        cls: "lenta-container-action-btn lenta-container-action-btn-add",
+        text: "+ Note",
+        attr: { "aria-label": `Create note in "${c.name}"` }
+      });
+      (0, import_obsidian9.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      addNoteBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.openQuickAddForContainer(c.id, c.name);
+      };
+      const addFolderBtn = actionToolbar.createEl("button", {
+        cls: "lenta-container-action-btn lenta-container-action-btn-add",
+        text: "+ Folder",
+        attr: { "aria-label": `Create folder in "${c.name}"` }
+      });
+      (0, import_obsidian9.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
+      addFolderBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.openCreateFolderForContainer(c.id, c.name);
+      };
+      if (this.loadingContainerFilesFor.has(c.id)) {
+        pane.createDiv({ cls: "lenta-preview-loading", text: `\u23F3 Loading files for "${c.name}"...` });
+      } else {
+        const files = this.containerFilesList.get(c.id) || [];
+        const cFolders = this.containerFoldersList.get(c.id) || [];
+        if (files.length === 0 && cFolders.length === 0) {
+          pane.createDiv({ cls: "lenta-preview-empty", text: "\u{1F4ED} No files or folders found in this container." });
+        } else {
+          const treeRoot = buildFileTree(files, cFolders);
+          const treeContainer = pane.createDiv({ cls: "lenta-container-tree" });
+          this.renderFileTreeNodes(treeContainer, treeRoot, c.id);
+        }
+      }
+    }
+  }
+  renderFileTreeNodes(parentEl, nodes, containerId, depth = 0, currentFolderPath = "") {
+    const now = /* @__PURE__ */ new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const monthsRu = [
+      "\u044F\u043D\u0432\u0430\u0440\u044F",
+      "\u0444\u0435\u0432\u0440\u0430\u043B\u044F",
+      "\u043C\u0430\u0440\u0442\u0430",
+      "\u0430\u043F\u0440\u0435\u043B\u044F",
+      "\u043C\u0430\u044F",
+      "\u0438\u044E\u043D\u044F",
+      "\u0438\u044E\u043B\u044F",
+      "\u0430\u0432\u0433\u0443\u0441\u0442\u0430",
+      "\u0441\u0435\u043D\u0442\u044F\u0431\u0440\u044F",
+      "\u043E\u043A\u0442\u044F\u0431\u0440\u044F",
+      "\u043D\u043E\u044F\u0431\u0440\u044F",
+      "\u0434\u0435\u043A\u0430\u0431\u0440\u044F"
+    ];
+    const todayHumanStr = `${now.getDate()} ${monthsRu[now.getMonth()]} ${yyyy} \u0433.`;
+    const isTodayMatch = (n) => {
+      if (n.type !== "file")
+        return false;
+      if (n.dateStr === todayStr)
+        return true;
+      if (n.startDate && n.endDate) {
+        const s = n.startDate.slice(0, 10);
+        const e = n.endDate.slice(0, 10);
+        return todayStr >= s && todayStr <= e;
+      }
+      return false;
+    };
+    const hasAnyTodayFile = nodes.some((n) => isTodayMatch(n));
+    const datedFileNodes = nodes.filter((n) => n.type === "file" && n.dateStr);
+    let todayMarkerInserted = false;
+    const renderTodayMarker = () => {
+      if (todayMarkerInserted)
+        return;
+      todayMarkerInserted = true;
+      const markerEl = parentEl.createDiv({
+        cls: "lenta-tree-today-marker",
+        attr: { style: `padding-left: ${depth * 14 + 6}px;` }
+      });
+      markerEl.createSpan({ cls: "lenta-today-marker-line" });
+      const pill = markerEl.createSpan({ cls: "lenta-today-marker-pill" });
+      const iconSpan = pill.createSpan({ cls: "lenta-today-pill-icon" });
+      (0, import_obsidian9.setIcon)(iconSpan, "calendar");
+      pill.createSpan({ text: `\u0421\u0435\u0433\u043E\u0434\u043D\u044F: ${todayHumanStr}` });
+      pill.createSpan({ cls: "lenta-today-pill-status", text: "(\u0441\u043E\u0431\u044B\u0442\u0438\u0439 \u043D\u0435\u0442)" });
+      const addBtn = markerEl.createEl("button", {
+        cls: "lenta-today-marker-add-btn",
+        text: "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430",
+        attr: { "aria-label": `\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F (${todayStr}) \u0432 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435` }
+      });
+      (0, import_obsidian9.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      addBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.openQuickAddForContainer(containerId, void 0, currentFolderPath || void 0, todayStr);
+      };
+      markerEl.createSpan({ cls: "lenta-today-marker-line" });
+    };
+    for (const node of nodes) {
+      if (!hasAnyTodayFile && datedFileNodes.length > 0 && !todayMarkerInserted) {
+        if (node.type === "file" && node.dateStr && node.dateStr > todayStr) {
+          renderTodayMarker();
+        }
+      }
+      if (node.type === "folder") {
+        const folderKey = `${containerId}:${node.path}`;
+        const isFolderExpanded = this.expandedContainerFolders.has(folderKey);
+        const folderRow = parentEl.createDiv({
+          cls: `lenta-tree-node-folder ${isFolderExpanded ? "is-open" : ""}`,
+          attr: { style: `padding-left: ${depth * 14 + 6}px;` }
+        });
+        const iconEl = folderRow.createSpan({ cls: "lenta-item-icon" });
+        (0, import_obsidian9.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
+        folderRow.createSpan({ text: node.name, cls: "lenta-item-name" });
+        if (node.children && node.children.length > 0) {
+          folderRow.createSpan({ text: `${node.children.length}`, cls: "lenta-count-pill" });
+        }
+        const folderAddBtn = folderRow.createEl("span", {
+          cls: "lenta-folder-add-note clickable-icon",
+          attr: { "aria-label": `Add note or subfolder in ${node.name}` }
+        });
+        (0, import_obsidian9.setIcon)(folderAddBtn, "plus");
+        folderAddBtn.onclick = (e) => {
+          e.stopPropagation();
+          const menu = new import_obsidian9.Menu();
+          menu.addItem((item) => {
+            item.setTitle(`\u{1F4DD} New Note in "${node.name}"`).setIcon("file-plus").onClick(() => {
+              this.openQuickAddForContainer(containerId, void 0, node.path);
+            });
+          });
+          menu.addItem((item) => {
+            item.setTitle(`\u{1F4C1} New Subfolder in "${node.name}"`).setIcon("folder-plus").onClick(() => {
+              this.openCreateFolderForContainer(containerId, void 0, void 0, node.path);
+            });
+          });
+          menu.showAtMouseEvent(e);
+        };
+        folderRow.onclick = (e) => {
+          e.stopPropagation();
+          if (isFolderExpanded) {
+            this.expandedContainerFolders.delete(folderKey);
+          } else {
+            this.expandedContainerFolders.add(folderKey);
+          }
+          this.render();
+        };
+        if (isFolderExpanded) {
+          if (node.children && node.children.length > 0) {
+            this.renderFileTreeNodes(parentEl, node.children, containerId, depth + 1, node.path);
+          } else {
+            const emptyEl = parentEl.createDiv({
+              cls: "lenta-tree-empty-folder",
+              attr: { style: `padding-left: ${(depth + 1) * 14 + 10}px; padding-top: 4px; padding-bottom: 4px; font-size: 11px; opacity: 0.7; display: flex; align-items: center; gap: 8px;` }
+            });
+            emptyEl.createSpan({ text: "\u{1F4C1} (\u041F\u0443\u0441\u0442\u0430\u044F \u043F\u0430\u043F\u043A\u0430)" });
+            const addNoteQuick = emptyEl.createEl("button", {
+              cls: "lenta-container-action-btn lenta-container-action-btn-add",
+              text: "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430",
+              attr: { style: "padding: 2px 6px; font-size: 10px;" }
+            });
+            addNoteQuick.onclick = (e) => {
+              e.stopPropagation();
+              this.openQuickAddForContainer(containerId, void 0, node.path);
+            };
+          }
+        }
+      } else {
+        const isToday = isTodayMatch(node);
+        const fileRow = parentEl.createDiv({
+          cls: `lenta-tree-node-file ${isToday ? "is-today lenta-tree-node-today" : ""}`,
+          attr: { style: `padding-left: ${depth * 14 + 6}px;` }
+        });
+        const iconEl = fileRow.createSpan({ cls: `lenta-item-icon lenta-note-icon ${isToday ? "is-today" : ""}` });
+        (0, import_obsidian9.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
+        const nameSpan = fileRow.createSpan({ text: node.name, cls: `lenta-note-title ${isToday ? "is-today" : ""}` });
+        nameSpan.title = node.path;
+        if (isToday) {
+          const todayBadge = fileRow.createSpan({ cls: "lenta-today-badge", text: "\u{1F4CD} \u0421\u0415\u0413\u041E\u0414\u041D\u042F" });
+          todayBadge.title = "\u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441\u0435\u0433\u043E\u0434\u043D\u044F\u0448\u043D\u0435\u0433\u043E \u0434\u043D\u044F";
+        }
+        if (node.size) {
+          const sizeKb = Math.round(node.size / 1024);
+          fileRow.createSpan({ text: `${sizeKb || 1} KB`, cls: "lenta-note-date" });
+        }
+        fileRow.onclick = async (e) => {
+          e.stopPropagation();
+          await this.openContainerFileInVault(containerId, node.path, node.name);
+        };
+      }
+    }
+    if (!hasAnyTodayFile && datedFileNodes.length > 0 && !todayMarkerInserted) {
+      renderTodayMarker();
+    }
+  }
+  async openContainerFileInVault(containerId, filePath, fileName) {
+    const files = this.app.vault.getMarkdownFiles();
+    const normalize = (s) => s.toLowerCase().replace(/[:\/\\*?"<>|_-]/g, " ").replace(/\s+/g, " ").trim();
+    const baseWithoutExt = fileName.replace(/\.md$/i, "");
+    const normBase = normalize(baseWithoutExt);
+    const stripDate = (s) => s.replace(/^\d{4}-\d{2}-\d{2}\s*[-–—]?\s*/, "").trim();
+    const normNoDate = normalize(stripDate(baseWithoutExt));
+    let matched = files.find((f) => f.path === filePath || f.path.endsWith("/" + filePath) || f.path.endsWith(filePath));
+    if (!matched) {
+      matched = files.find((f) => normalize(f.basename) === normBase);
+    }
+    if (!matched) {
+      matched = files.find((f) => normalize(stripDate(f.basename)) === normNoDate);
+    }
+    if (matched) {
+      await this.app.workspace.getLeaf(false).openFile(matched);
+      new import_obsidian9.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      return;
+    }
+    try {
+      new import_obsidian9.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
+      const cachedFiles = this.containerFilesList.get(containerId) || [];
+      const fileEntry = cachedFiles.find((f) => f.path === filePath);
+      let content = fileEntry?.content;
+      if (!content) {
+        const fresh = await this.apiClient.getContainerFiles(containerId).catch(() => []);
+        const freshEntry = fresh.find((f) => f.path === filePath);
+        content = freshEntry?.content;
+      }
+      if (!content) {
+        content = `# ${baseWithoutExt}
+
+Downloaded from container \`${containerId}\`.
+`;
+      }
+      const root = this.getSettings().vaultRootFolder || "Lemon-Seasons";
+      const cleanRelPath = filePath.replace(/^[\\\/]+/, "");
+      const targetPath = `${root}/${cleanRelPath}`;
+      const lastSlash = targetPath.lastIndexOf("/");
+      if (lastSlash > 0) {
+        const parentDir = targetPath.slice(0, lastSlash);
+        if (!await this.app.vault.adapter.exists(parentDir)) {
+          await this.app.vault.adapter.mkdir(parentDir);
+        }
+      }
+      const newFile = await this.app.vault.create(targetPath, content);
+      await this.app.workspace.getLeaf(false).openFile(newFile);
+      new import_obsidian9.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+    } catch (err) {
+      new import_obsidian9.Notice(`Failed to open file: ${err.message}`);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Folders and Feeds Rendering
+  // ─────────────────────────────────────────────────────────────────────────
   renderFolders(container) {
     if (this.folders.length === 0) {
       container.createDiv({ cls: "lenta-empty-state", text: "No folders found on Lenta server." });
@@ -8001,19 +9102,12 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         return;
       }
       this.renderFolderList(container, myFolders, "\u{1F512} My Folders");
-    } else if (this.scopeFilter === "public") {
+    } else {
       if (publicFolders.length === 0) {
         container.createDiv({ cls: "lenta-empty-state", text: "\u{1F310} No public folders found." });
         return;
       }
       this.renderFolderList(container, publicFolders, "\u{1F310} Public Folders");
-    } else {
-      if (myFolders.length > 0) {
-        this.renderFolderList(container, myFolders, "\u{1F512} My Folders");
-      }
-      if (publicFolders.length > 0) {
-        this.renderFolderList(container, publicFolders, "\u{1F310} Public Folders");
-      }
     }
   }
   renderFolderList(container, folders, groupTitle) {
@@ -8118,85 +9212,109 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
   }
   renderFeeds(container) {
-    if (this.scopeFilter === "my") {
+    const myFeeds = this.feeds.filter((f) => this.isMyFeed(f));
+    const publicFeeds = this.feeds.filter((f) => !this.isMyFeed(f));
+    const displayed = this.scopeFilter === "my" ? myFeeds : publicFeeds;
+    if (displayed.length === 0) {
       const empty = container.createDiv({ cls: "lenta-empty-state" });
-      empty.createEl("div", { text: "\u{1F512} Feeds are public publication channels." });
-      empty.createEl("p", {
-        cls: "setting-item-description",
-        text: 'Switch filter to "All" or "Public" to view feeds.'
-      });
-      return;
-    }
-    if (this.feeds.length === 0) {
-      container.createDiv({ cls: "lenta-empty-state", text: "No feeds configured." });
+      if (this.scopeFilter === "my") {
+        empty.createEl("div", { text: "\u{1F512} No personal (My) feeds found." });
+        empty.createEl("p", {
+          cls: "setting-item-description",
+          text: "Personal feeds let you publish private notes without moderation."
+        });
+        const createBtn = empty.createEl("button", {
+          cls: "lenta-btn-lemon",
+          text: "+ Create Personal Feed"
+        });
+        createBtn.style.marginTop = "8px";
+        createBtn.onclick = async () => {
+          try {
+            const newFeed = await this.apiClient.createFeed({
+              title: "My Notes",
+              slug: "my-notes",
+              description: "Personal notes and reflections feed"
+            });
+            new import_obsidian9.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
+            await this.refreshData();
+          } catch (err) {
+            new import_obsidian9.Notice(`Failed to create feed: ${err.message}`);
+          }
+        };
+      } else {
+        empty.createEl("div", { text: "\u{1F310} No public feeds configured." });
+      }
       return;
     }
     const list = container.createDiv({ cls: "lenta-tree-list" });
-    for (const feed of this.feeds) {
-      const item = list.createDiv({ cls: "lenta-tree-item lenta-tree-item-feed" });
-      const previewKey = `feed-${feed.id}`;
-      const isExpanded = this.expandedPreviews.has(previewKey);
-      const headerRow = item.createDiv({
-        cls: `lenta-feed-header-row ${isExpanded ? "is-active" : ""}`
-      });
-      headerRow.createSpan({ text: "\u{1F4F0} ", cls: "lenta-item-icon" });
-      headerRow.createSpan({ text: feed.title, cls: "lenta-item-name" });
-      const count = headerRow.createSpan({ cls: "lenta-count-pill" });
-      count.setText(`${feed._count?.notes || 0}`);
-      const toggleBtn = headerRow.createEl("span", {
-        cls: "lenta-preview-toggle clickable-icon",
-        attr: { "aria-label": isExpanded ? "Collapse feed" : "Show feed notes" }
-      });
-      (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
-      headerRow.onclick = async () => {
-        if (isExpanded) {
-          this.expandedPreviews.delete(previewKey);
-          this.render();
-        } else {
-          this.expandedPreviews.add(previewKey);
-          if (!this.feedNotesList.has(feed.id) && !this.loadingPreviewFor.has(feed.id)) {
-            this.loadingPreviewFor.add(feed.id);
-            this.render();
-            try {
-              const notes = await this.apiClient.getNotes({ feedId: feed.id }).catch(() => []);
-              this.feedNotesList.set(feed.id, notes);
-            } catch {
-              this.feedNotesList.set(feed.id, []);
-            } finally {
-              this.loadingPreviewFor.delete(feed.id);
-            }
-          }
-          this.render();
-        }
-      };
+    for (const feed of displayed) {
+      this.renderFeedItem(list, feed);
+    }
+  }
+  renderFeedItem(list, feed) {
+    const item = list.createDiv({ cls: "lenta-tree-item lenta-tree-item-feed" });
+    const previewKey = `feed-${feed.id}`;
+    const isExpanded = this.expandedPreviews.has(previewKey);
+    const headerRow = item.createDiv({
+      cls: `lenta-feed-header-row ${isExpanded ? "is-active" : ""}`
+    });
+    headerRow.createSpan({ text: "\u{1F4F0} ", cls: "lenta-item-icon" });
+    headerRow.createSpan({ text: feed.title, cls: "lenta-item-name" });
+    const count = headerRow.createSpan({ cls: "lenta-count-pill" });
+    count.setText(`${feed._count?.notes || 0}`);
+    const toggleBtn = headerRow.createEl("span", {
+      cls: "lenta-preview-toggle clickable-icon",
+      attr: { "aria-label": isExpanded ? "Collapse feed" : "Show feed notes" }
+    });
+    (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    headerRow.onclick = async () => {
       if (isExpanded) {
-        const previewPane = item.createDiv({ cls: "lenta-markdown-preview-pane" });
-        if (this.loadingPreviewFor.has(feed.id)) {
-          previewPane.createDiv({ cls: "lenta-preview-loading", text: "\u23F3 Loading feed notes..." });
+        this.expandedPreviews.delete(previewKey);
+        this.render();
+      } else {
+        this.expandedPreviews.add(previewKey);
+        if (!this.feedNotesList.has(feed.id) && !this.loadingPreviewFor.has(feed.id)) {
+          this.loadingPreviewFor.add(feed.id);
+          this.render();
+          try {
+            const notes = await this.apiClient.getNotes({ feedId: feed.id }).catch(() => []);
+            this.feedNotesList.set(feed.id, notes);
+          } catch {
+            this.feedNotesList.set(feed.id, []);
+          } finally {
+            this.loadingPreviewFor.delete(feed.id);
+          }
+        }
+        this.render();
+      }
+    };
+    if (isExpanded) {
+      const previewPane = item.createDiv({ cls: "lenta-markdown-preview-pane" });
+      if (this.loadingPreviewFor.has(feed.id)) {
+        previewPane.createDiv({ cls: "lenta-preview-loading", text: "\u23F3 Loading feed notes..." });
+      } else {
+        const notes = this.feedNotesList.get(feed.id) || [];
+        if (notes.length === 0) {
+          previewPane.createDiv({ cls: "lenta-preview-empty", text: "\u{1F4ED} No notes in this feed yet." });
         } else {
-          const notes = this.feedNotesList.get(feed.id) || [];
-          if (notes.length === 0) {
-            previewPane.createDiv({ cls: "lenta-preview-empty", text: "\u{1F4ED} No notes in this feed yet." });
-          } else {
-            const notesList = previewPane.createDiv({ cls: "lenta-notes-list" });
-            for (const note of notes.slice(0, 15)) {
-              const row = notesList.createDiv({ cls: "lenta-note-row" });
-              const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
-              const nIcon = note.icon || "file-text";
-              if (nIcon.match(/^[a-z0-9-]+$/)) {
-                (0, import_obsidian9.setIcon)(noteIconSpan, nIcon);
-              } else {
-                noteIconSpan.setText(nIcon);
-              }
-              row.createSpan({ text: note.title, cls: "lenta-note-title" });
-              if (note.startDate) {
-                row.createSpan({ text: note.startDate.slice(0, 10), cls: "lenta-note-date" });
-              }
-              row.onclick = async (e) => {
-                e.stopPropagation();
-                await this.openNoteInVaultOrPreview(note);
-              };
+          const notesList = previewPane.createDiv({ cls: "lenta-notes-list" });
+          for (const note of notes.slice(0, 15)) {
+            const row = notesList.createDiv({ cls: "lenta-note-row" });
+            const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
+            const nIcon = note.icon || "file-text";
+            if (nIcon.match(/^[a-z0-9-]+$/)) {
+              (0, import_obsidian9.setIcon)(noteIconSpan, nIcon);
+            } else {
+              noteIconSpan.setText(nIcon);
             }
+            row.createSpan({ text: note.title, cls: "lenta-note-title" });
+            if (note.startDate) {
+              row.createSpan({ text: note.startDate.slice(0, 10), cls: "lenta-note-date" });
+            }
+            row.onclick = async (e) => {
+              e.stopPropagation();
+              await this.openNoteInVaultOrPreview(note);
+            };
           }
         }
       }
@@ -8248,17 +9366,101 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       new import_obsidian9.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
     }
   }
-  renderTaxonomy(container) {
-    if (this.taxonomy.length === 0) {
-      container.createDiv({ cls: "lenta-empty-state", text: "No taxonomy nodes found." });
-      return;
+  renderQuickAddFooter(container) {
+    const footer = container.createDiv({ cls: "lenta-sidebar-footer" });
+    const isMyActive = this.isMyScopeActive();
+    const pushCurrentBtn = footer.createEl("button", {
+      cls: `lenta-footer-btn lenta-footer-btn-secondary ${isMyActive ? "" : "is-disabled"}`,
+      text: isMyActive ? "\u{1F4E4} Push Note" : "\u{1F512} Push Note",
+      attr: {
+        "aria-label": isMyActive ? "Push current open note to Lenta server" : "Disabled: Push is only available for notes in My Folders"
+      }
+    });
+    pushCurrentBtn.onclick = () => {
+      if (!isMyActive) {
+        new import_obsidian9.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
+        return;
+      }
+      const file = this.app.workspace.getActiveFile();
+      if (!file) {
+        new import_obsidian9.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
+        return;
+      }
+      this.onOpenSyncModal();
+    };
+    const addFolderBtn = footer.createEl("button", {
+      cls: "lenta-footer-btn lenta-footer-btn-secondary",
+      text: "+ New folder",
+      attr: {
+        "aria-label": this.selectedFolderPath ? `Create new folder inside "${this.selectedFolderPath}"` : "Create new folder in Lenta & Vault"
+      }
+    });
+    (0, import_obsidian9.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    addFolderBtn.onclick = () => {
+      this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
+    };
+    const addBtn = footer.createEl("button", {
+      cls: `lenta-footer-btn lenta-footer-btn-primary ${isMyActive ? "" : "is-disabled"}`,
+      text: isMyActive ? "+ New note" : "\u{1F512} + New note",
+      attr: {
+        "aria-label": isMyActive ? `Create new note${this.selectedFolderPath ? ` in ${this.selectedFolderPath}` : " in My Folders"}` : "Disabled: Creating notes is only allowed in My Folders"
+      }
+    });
+    if (isMyActive) {
+      (0, import_obsidian9.setIcon)(addBtn.createSpan(), "plus");
     }
-    const list = container.createDiv({ cls: "lenta-tree-list" });
-    for (const node of this.taxonomy) {
-      const item = list.createDiv({ cls: "lenta-tree-item taxonomy" });
-      item.createSpan({ text: node.icon ? `${node.icon} ` : "\u{1F3F7}\uFE0F ", cls: "lenta-item-icon" });
-      item.createSpan({ text: node.path, cls: "lenta-item-name" });
-    }
+    addBtn.onclick = () => {
+      this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
+    };
+  }
+  renderContainersFooter(container) {
+    const footer = container.createDiv({ cls: "lenta-sidebar-footer" });
+    const settings = this.getSettings();
+    const activeId = settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || this.containers.find((c) => !isContainerPublic(c))?.id || this.containers[0]?.id;
+    const activeContainer = this.containers.find((c) => c.id === activeId);
+    const containerName = activeContainer?.name || "Container";
+    const syncBtn = footer.createEl("button", {
+      cls: "lenta-footer-btn lenta-footer-btn-secondary",
+      text: "\u26A1 Sync",
+      attr: { "aria-label": `Sync container "${containerName}"` }
+    });
+    syncBtn.onclick = async () => {
+      if (this.onQuickPull) {
+        await this.onQuickPull();
+      } else {
+        this.onOpenSyncModal("pull");
+      }
+    };
+    const addFolderBtn = footer.createEl("button", {
+      cls: "lenta-footer-btn lenta-footer-btn-secondary",
+      text: "+ Folder",
+      attr: {
+        "aria-label": activeId ? `Create folder in container "${containerName}"` : "Create folder in container"
+      }
+    });
+    (0, import_obsidian9.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    addFolderBtn.onclick = () => {
+      if (!activeId) {
+        new import_obsidian9.Notice("Please select or connect a container first");
+        return;
+      }
+      this.openCreateFolderForContainer(activeId, containerName);
+    };
+    const addNoteBtn = footer.createEl("button", {
+      cls: "lenta-footer-btn lenta-footer-btn-primary",
+      text: "+ Note",
+      attr: {
+        "aria-label": activeId ? `Create note in container "${containerName}"` : "Create note in container"
+      }
+    });
+    (0, import_obsidian9.setIcon)(addNoteBtn.createSpan(), "plus");
+    addNoteBtn.onclick = () => {
+      if (!activeId) {
+        new import_obsidian9.Notice("Please select or connect a container first");
+        return;
+      }
+      this.openQuickAddForContainer(activeId, containerName);
+    };
   }
 };
 
@@ -8330,12 +9532,6 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian10.Setting(containerEl).setName("Auto-Sync on File Edit").setDesc("Automatically push changes to Lenta server when editing a tracked Markdown file.").addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.autoSyncOnEdit || false).onChange(async (val) => {
-        this.plugin.settings.autoSyncOnEdit = val;
-        await this.plugin.saveSettings();
-      })
-    );
     new import_obsidian10.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
       (text) => text.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
     );
@@ -8344,12 +9540,6 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
 
 // src/main.ts
 var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
-  constructor() {
-    super(...arguments);
-    // Auto-sync debounce: file path → timeout handle
-    this.autoSyncTimers = /* @__PURE__ */ new Map();
-    this.AUTO_SYNC_DELAY_MS = 2e3;
-  }
   async onload() {
     await this.loadSettings();
     this.apiClient = new LentaApiClient(
@@ -8381,9 +9571,24 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         async () => {
           this.openSyncModal("push");
         },
-        (folderId, folderPath) => this.openCreateFolderModal(folderId, folderPath)
+        (folderId, folderPath, defaultPrivacy, targetContainerId) => this.openCreateFolderModal(folderId, folderPath, defaultPrivacy, targetContainerId),
+        async () => this.saveSettings()
       )
     );
+    const sidebarRibbonIcon = this.addRibbonIcon("calendar-range", "\u{1F34B} Lemon Lenta: Open Lenta Hub Sidebar", () => {
+      const leftSplit = this.app.workspace.leftSplit;
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+      const isVisible = leaves.length > 0 && !leftSplit?.collapsed;
+      if (leftSplit?.collapsed) {
+        leftSplit.expand();
+      }
+      this.activateSidebarView();
+      if (isVisible && leaves[0].view instanceof LentaSidebarView) {
+        leaves[0].view.refreshData();
+        new import_obsidian11.Notice("\u{1F34B} Lenta Hub refreshed");
+      }
+    });
+    sidebarRibbonIcon.addClass("lenta-ribbon-btn");
     const pullRibbonIcon = this.addRibbonIcon("download", "\u{1F34B} Lemon Lenta: Pull Changes from Server (\u2B07)", () => {
       this.openSyncModal("pull");
     });
@@ -8392,14 +9597,6 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       this.openSyncModal("push");
     });
     pushRibbonIcon.addClass("lenta-ribbon-btn");
-    const sidebarRibbonIcon = this.addRibbonIcon("calendar-range", "\u{1F34B} Lemon Lenta: Open Lenta Hub Sidebar", () => {
-      this.activateSidebarView();
-    });
-    sidebarRibbonIcon.addClass("lenta-ribbon-btn");
-    const containersRibbonIcon = this.addRibbonIcon("box", "\u{1F34B} Lemon Lenta: Containers & Folders Manager", () => {
-      this.openContainersFoldersModal();
-    });
-    containersRibbonIcon.addClass("lenta-ribbon-btn");
     const syncRibbonIcon = this.addRibbonIcon("zap", "\u{1F34B} Lemon Lenta: Sync Hub", () => {
       this.openSyncModal();
     });
@@ -8453,7 +9650,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     });
     this.addCommand({
       id: "lenta-open-sidebar",
-      name: "Open Lenta Hierarchy Sidebar (Folders / Feeds / Taxonomy)",
+      name: "Open Lenta Hub Sidebar (Notes & Containers)",
       callback: () => {
         this.activateSidebarView();
       }
@@ -8500,22 +9697,6 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       })
     );
     this.registerEvent(
-      this.app.vault.on("modify", (file) => {
-        if (!(file instanceof import_obsidian11.TFile) || file.extension !== "md")
-          return;
-        if (!this.settings.autoSyncOnEdit)
-          return;
-        const existing = this.autoSyncTimers.get(file.path);
-        if (existing)
-          clearTimeout(existing);
-        const timer = setTimeout(async () => {
-          this.autoSyncTimers.delete(file.path);
-          await this.autoSyncFile(file);
-        }, this.AUTO_SYNC_DELAY_MS);
-        this.autoSyncTimers.set(file.path, timer);
-      })
-    );
-    this.registerEvent(
       this.app.vault.on("delete", async (file) => {
         const activeContainer = this.settings.activeContainerId || this.settings.containerKey;
         const containerName = this.settings.connectedContainerName;
@@ -8539,33 +9720,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     console.log("Project Lenta Obsidian Plugin loaded successfully.");
   }
   onunload() {
-    for (const timer of this.autoSyncTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.autoSyncTimers.clear();
     console.log("Project Lenta Obsidian Plugin unloaded.");
-  }
-  /**
-   * Auto-sync a single file if it is Lenta-tracked (has lenta_id frontmatter).
-   */
-  async autoSyncFile(file) {
-    try {
-      const content = await this.app.vault.cachedRead(file);
-      const parsed = LentaFrontmatterUtil.parseMarkdown(content);
-      const lentaId = parsed.lentaId || parsed.frontmatter?.id;
-      if (!lentaId)
-        return;
-      this.updateStatusBar("Auto-syncing...");
-      const res = await this.syncEngine.pushLocalNote(file);
-      if (res.success) {
-        this.updateStatusBar("Synced \u2713");
-        setTimeout(() => this.updateStatusBar("Ready"), 3e3);
-      }
-    } catch (err) {
-      console.warn("\u{1F34B} Auto-sync failed for", file.path, err?.message);
-      this.updateStatusBar("Auto-sync error");
-      setTimeout(() => this.updateStatusBar("Ready"), 4e3);
-    }
   }
   /**
    * Push all modified Lenta notes since the last sync timestamp.
@@ -8607,6 +9762,9 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         });
       }
     }
+    if (this.app.workspace.leftSplit && this.app.workspace.leftSplit.collapsed) {
+      this.app.workspace.leftSplit.expand();
+    }
     if (leaf) {
       workspace.revealLeaf(leaf);
     }
@@ -8633,7 +9791,10 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       initialFolderPath
     ).open();
   }
-  openCreateFolderModal(parentFolderId, parentFolderPath) {
+  openCreateFolderModal(parentFolderId, parentFolderPath, defaultPrivacy, targetContainerId) {
+    const settings = this.settings;
+    const resolvedContainerId = targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0];
+    const effectivePrivacy = defaultPrivacy || (resolvedContainerId ? "obsidian" : "public");
     new LentaCreateFolderModal(
       this.app,
       this.apiClient,
@@ -8648,7 +9809,9 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         }
       },
       parentFolderId,
-      parentFolderPath
+      parentFolderPath,
+      effectivePrivacy,
+      resolvedContainerId
     ).open();
   }
   openSyncModal(initialMode = "push", targetContainerId) {

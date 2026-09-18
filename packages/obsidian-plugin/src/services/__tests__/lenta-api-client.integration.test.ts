@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { LentaApiClient } from '../lenta-api-client';
 
 describe('LentaApiClient - Real Backend Integration Tests', () => {
-  const baseUrl = process.env.BACKEND_URL || 'http://localhost:4000/api';
-  const containerBaseUrl = process.env.CONTAINER_SERVER_URL || 'http://localhost:3000';
+  const baseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+  const containerBaseUrl = process.env.CONTAINER_SERVER_URL || 'http://localhost:3001';
   const authToken = process.env.AUTH_TOKEN || 'lenta_obs_integration_test_token';
 
   it('should fetch the whole list of containers directly from backend without mocks', async () => {
@@ -49,7 +49,7 @@ describe('LentaApiClient - Real Backend Integration Tests', () => {
       expect(container).toHaveProperty('name');
       expect(typeof container.name).toBe('string');
       expect(container).toHaveProperty('type');
-      expect(['git', 'simple']).toContain(container.type);
+      expect(['git', 'simple', 'obsidian', 'feed']).toContain(container.type);
       expect(container).toHaveProperty('isPublic');
       expect(typeof container.isPublic).toBe('boolean');
       expect(container).toHaveProperty('visibility');

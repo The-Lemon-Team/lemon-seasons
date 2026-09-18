@@ -17,10 +17,6 @@ export default class WorkspaceLentaPlugin extends Plugin {
   syncEngine: LentaSyncEngine;
   private statusBarItemEl: HTMLElement;
 
-  // Auto-sync debounce: file path → timeout handle
-  private autoSyncTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
-  private readonly AUTO_SYNC_DELAY_MS = 2000;
-
   async onload() {
     await this.loadSettings();
 
@@ -56,11 +52,34 @@ export default class WorkspaceLentaPlugin extends Plugin {
           async () => {
             this.openSyncModal('push');
           },
-          (folderId?: string, folderPath?: string) => this.openCreateFolderModal(folderId, folderPath)
+          (
+            folderId?: string,
+            folderPath?: string,
+            defaultPrivacy?: 'private' | 'public' | 'obsidian',
+            targetContainerId?: string
+          ) => this.openCreateFolderModal(folderId, folderPath, defaultPrivacy, targetContainerId),
+          async () => this.saveSettings()
         )
     );
 
     // 2. Ribbon Icons
+    const sidebarRibbonIcon = this.addRibbonIcon('calendar-range', '🍋 Lemon Lenta: Open Lenta Hub Sidebar', () => {
+      const leftSplit = this.app.workspace.leftSplit;
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+      const isVisible = leaves.length > 0 && !leftSplit?.collapsed;
+
+      if (leftSplit?.collapsed) {
+        leftSplit.expand();
+      }
+      this.activateSidebarView();
+
+      if (isVisible && leaves[0].view instanceof LentaSidebarView) {
+        (leaves[0].view as LentaSidebarView).refreshData();
+        new Notice('🍋 Lenta Hub refreshed');
+      }
+    });
+    sidebarRibbonIcon.addClass('lenta-ribbon-btn');
+
     const pullRibbonIcon = this.addRibbonIcon('download', '🍋 Lemon Lenta: Pull Changes from Server (⬇)', () => {
       this.openSyncModal('pull');
     });
@@ -70,16 +89,6 @@ export default class WorkspaceLentaPlugin extends Plugin {
       this.openSyncModal('push');
     });
     pushRibbonIcon.addClass('lenta-ribbon-btn');
-
-    const sidebarRibbonIcon = this.addRibbonIcon('calendar-range', '🍋 Lemon Lenta: Open Lenta Hub Sidebar', () => {
-      this.activateSidebarView();
-    });
-    sidebarRibbonIcon.addClass('lenta-ribbon-btn');
-
-    const containersRibbonIcon = this.addRibbonIcon('box', '🍋 Lemon Lenta: Containers & Folders Manager', () => {
-      this.openContainersFoldersModal();
-    });
-    containersRibbonIcon.addClass('lenta-ribbon-btn');
 
     const syncRibbonIcon = this.addRibbonIcon('zap', '🍋 Lemon Lenta: Sync Hub', () => {
       this.openSyncModal();
@@ -145,7 +154,7 @@ export default class WorkspaceLentaPlugin extends Plugin {
 
     this.addCommand({
       id: 'lenta-open-sidebar',
-      name: 'Open Lenta Hierarchy Sidebar (Folders / Feeds / Taxonomy)',
+      name: 'Open Lenta Hub Sidebar (Notes & Containers)',
       callback: () => {
         this.activateSidebarView();
       },
@@ -199,25 +208,6 @@ export default class WorkspaceLentaPlugin extends Plugin {
       })
     );
 
-    // 7. Auto-Sync: Debounce push when a Lenta-tracked file is modified
-    this.registerEvent(
-      this.app.vault.on('modify', (file) => {
-        if (!(file instanceof TFile) || file.extension !== 'md') return;
-        if (!this.settings.autoSyncOnEdit) return;
-
-        // Debounce per file path
-        const existing = this.autoSyncTimers.get(file.path);
-        if (existing) clearTimeout(existing);
-
-        const timer = setTimeout(async () => {
-          this.autoSyncTimers.delete(file.path);
-          await this.autoSyncFile(file);
-        }, this.AUTO_SYNC_DELAY_MS);
-
-        this.autoSyncTimers.set(file.path, timer);
-      })
-    );
-
     // 8. Track Vault Deletions: Disconnect Container on Container Folder Deletion
     this.registerEvent(
       this.app.vault.on('delete', async (file) => {
@@ -252,35 +242,7 @@ export default class WorkspaceLentaPlugin extends Plugin {
   }
 
   onunload() {
-    // Clear all pending auto-sync timers
-    for (const timer of this.autoSyncTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.autoSyncTimers.clear();
     console.log('Project Lenta Obsidian Plugin unloaded.');
-  }
-
-  /**
-   * Auto-sync a single file if it is Lenta-tracked (has lenta_id frontmatter).
-   */
-  private async autoSyncFile(file: TFile): Promise<void> {
-    try {
-      const content = await this.app.vault.cachedRead(file);
-      const parsed = LentaFrontmatterUtil.parseMarkdown(content);
-      const lentaId = parsed.lentaId || parsed.frontmatter?.id;
-      if (!lentaId) return; // not a Lenta-tracked note
-
-      this.updateStatusBar('Auto-syncing...');
-      const res = await this.syncEngine.pushLocalNote(file);
-      if (res.success) {
-        this.updateStatusBar('Synced ✓');
-        setTimeout(() => this.updateStatusBar('Ready'), 3000);
-      }
-    } catch (err: any) {
-      console.warn('🍋 Auto-sync failed for', file.path, err?.message);
-      this.updateStatusBar('Auto-sync error');
-      setTimeout(() => this.updateStatusBar('Ready'), 4000);
-    }
   }
 
   /**
@@ -329,6 +291,10 @@ export default class WorkspaceLentaPlugin extends Plugin {
       }
     }
 
+    if (this.app.workspace.leftSplit && this.app.workspace.leftSplit.collapsed) {
+      this.app.workspace.leftSplit.expand();
+    }
+
     if (leaf) {
       workspace.revealLeaf(leaf);
     }
@@ -358,7 +324,22 @@ export default class WorkspaceLentaPlugin extends Plugin {
     ).open();
   }
 
-  openCreateFolderModal(parentFolderId?: string, parentFolderPath?: string) {
+  openCreateFolderModal(
+    parentFolderId?: string,
+    parentFolderPath?: string,
+    defaultPrivacy?: 'private' | 'public' | 'obsidian',
+    targetContainerId?: string
+  ) {
+    const settings = this.settings;
+    const resolvedContainerId =
+      targetContainerId ||
+      settings.activeContainerId ||
+      (settings.activeContainerIds && settings.activeContainerIds[0]);
+
+    const effectivePrivacy =
+      defaultPrivacy ||
+      (resolvedContainerId ? 'obsidian' : 'public');
+
     new LentaCreateFolderModal(
       this.app,
       this.apiClient,
@@ -373,7 +354,9 @@ export default class WorkspaceLentaPlugin extends Plugin {
         }
       },
       parentFolderId,
-      parentFolderPath
+      parentFolderPath,
+      effectivePrivacy,
+      resolvedContainerId
     ).open();
   }
 

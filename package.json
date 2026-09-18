@@ -22,7 +22,11 @@
     "calendar:build": "pnpm --filter @lenta/calendar-app run build",
     "shared:build": "pnpm --filter @lenta/shared run build",
     "plugin:build": "pnpm --filter @lemon/obsidian-lenta-plugin run build",
-    "plugin:dev": "pnpm --filter @lemon/obsidian-lenta-plugin run dev"
+    "plugin:dev": "pnpm --filter @lemon/obsidian-lenta-plugin run dev",
+    "plugin:test": "pnpm --filter @lemon/obsidian-lenta-plugin test",
+    "plugin:e2e": "pnpm --filter @lemon/obsidian-lenta-plugin run test:e2e",
+    "plugin:e2e:phase2": "pnpm --filter @lemon/obsidian-lenta-plugin run test:e2e:phase2",
+    "mobile:build": "cmd /c \"set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.19.10-hotspot && cd apps/mobile-android && gradlew.bat assembleDebug\""
   },
   "devDependencies": {
     "turbo": "^2.4.4"

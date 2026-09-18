@@ -251,5 +251,31 @@ describe('LentaApiClient - listContainers', () => {
     expect(res.id).toBe('note-456');
     expect(res.folders?.[0].folder.path).toBe('01_daily');
   });
+
+  it('should query getFolders with containerId and scope parameters', async () => {
+    let capturedParams: any = null;
+    mockRequestUrl.mockImplementation(async (params: any) => {
+      capturedParams = params;
+      return {
+        status: 200,
+        json: [
+          { id: 'f-cont-1', path: 'Projects/Alpha', containerId: 'cont-my-vault' },
+        ],
+      };
+    });
+
+    const folders = await client.getFolders({
+      containerId: 'cont-my-vault',
+      scope: 'all',
+      search: 'Alpha',
+    });
+
+    expect(capturedParams.url).toBe(
+      `${baseUrl}/folders?containerId=cont-my-vault&scope=all&search=Alpha`
+    );
+    expect(capturedParams.method).toBe('GET');
+    expect(folders.length).toBe(1);
+    expect(folders[0].path).toBe('Projects/Alpha');
+  });
 });
 

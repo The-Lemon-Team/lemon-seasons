@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "vitest run src/services/__tests__/lenta-api-client.integration.test.ts",
+    "test:e2e": "node scripts/run-obsidian-e2e.mjs",
+    "test:e2e:phase1": "node scripts/run-obsidian-e2e.mjs --phase=1",
+    "test:e2e:phase2": "node scripts/run-obsidian-e2e.mjs --phase=2"
   },
   "keywords": [
     "obsidian",
@@ -26,7 +30,9 @@
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.20.2",
     "obsidian": "latest",
+    "playwright": "^1.63.0",
     "tslib": "^2.6.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^5.0.1"
   }
 }

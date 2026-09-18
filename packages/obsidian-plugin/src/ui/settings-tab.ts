@@ -107,18 +107,6 @@ export class LentaSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('Auto-Sync on File Edit')
-      .setDesc('Automatically push changes to Lenta server when editing a tracked Markdown file.')
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoSyncOnEdit || false)
-          .onChange(async (val) => {
-            this.plugin.settings.autoSyncOnEdit = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
       .setName('Last Synced Timestamp')
       .setDesc('ISO timestamp of the last delta synchronization.')
       .addText((text) =>

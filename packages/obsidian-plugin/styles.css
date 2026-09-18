@@ -134,6 +134,38 @@
   margin: 4px 0 0 0;
 }
 
+/* Quick Add Modal Date Inputs */
+.lenta-quick-add-modal input[type="date"],
+.lenta-date-input {
+  min-width: 170px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-family: var(--font-monospace, monospace);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.theme-dark .lenta-quick-add-modal input[type="date"],
+.theme-dark .lenta-date-input {
+  color-scheme: dark;
+}
+
+.theme-light .lenta-quick-add-modal input[type="date"],
+.theme-light .lenta-date-input {
+  color-scheme: light;
+}
+
+.lenta-quick-add-modal input[type="date"]:focus,
+.lenta-date-input:focus {
+  border-color: var(--lenta-lemon, #c9cd58) !important;
+  box-shadow: 0 0 0 2px var(--lenta-lemon-glow, rgba(201, 205, 88, 0.25)) !important;
+  outline: none !important;
+}
+
 /* 3. Action Buttons */
 .lenta-btn-lemon {
   background: var(--lenta-lemon) !important;
@@ -278,6 +310,115 @@
   gap: 6px;
 }
 
+/* 5a. Top-Level Mode Switcher (Notes vs Containers) */
+.lenta-mode-switcher {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  background: var(--background-secondary);
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.lenta-mode-tab {
+  flex: 1;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.lenta-mode-tab:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.lenta-mode-tab.is-active {
+  background: var(--background-primary);
+  color: var(--lenta-lemon);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 5b. Inline Container Key Card */
+.lenta-inline-key-card {
+  flex-shrink: 0;
+  background: var(--background-secondary-alt, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.lenta-key-connected-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lenta-key-badge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--lenta-lemon);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lenta-key-action-btn {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.lenta-key-action-btn:hover {
+  color: var(--text-normal);
+  border-color: var(--text-muted);
+}
+
+.lenta-key-action-btn.mod-warning:hover {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+.lenta-key-input-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lenta-key-input {
+  flex: 1;
+  font-size: 0.74rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.lenta-key-connect-btn {
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .lenta-sidebar-tabs {
   flex-shrink: 0;
   display: flex;
@@ -395,7 +536,8 @@
 }
 
 .lenta-tree-item-folder,
-.lenta-tree-item-feed {
+.lenta-tree-item-feed,
+.lenta-tree-item-container {
   display: flex;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -404,7 +546,8 @@
 }
 
 .lenta-folder-header-row,
-.lenta-feed-header-row {
+.lenta-feed-header-row,
+.lenta-container-header-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -417,13 +560,146 @@
 }
 
 .lenta-folder-header-row:hover,
-.lenta-feed-header-row:hover {
+.lenta-feed-header-row:hover,
+.lenta-container-header-row:hover {
   background: var(--background-modifier-hover);
 }
 
 .lenta-folder-header-row.is-active,
-.lenta-feed-header-row.is-active {
+.lenta-feed-header-row.is-active,
+.lenta-container-header-row.is-active {
   background: rgba(201, 205, 88, 0.12);
+}
+
+.lenta-container-header-row.is-connected {
+  border-left: 3px solid var(--lenta-lemon);
+}
+
+.lenta-container-type-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--background-secondary-alt);
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.lenta-container-tree-pane {
+  padding: 6px 4px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lenta-container-action-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lenta-container-action-btn {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lenta-container-action-btn:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.lenta-container-action-btn.is-active {
+  background: var(--lenta-lemon-glow);
+  color: var(--lenta-lemon);
+  border-color: var(--lenta-lemon);
+}
+
+.lenta-container-action-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lenta-container-action-btn-add:hover {
+  border-color: var(--lenta-lemon);
+  color: var(--lenta-lemon);
+}
+
+.lenta-container-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.1s ease, background 0.15s ease;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.lenta-container-add-btn:hover {
+  opacity: 1;
+  color: var(--lenta-lemon, #c9cd58);
+  background: var(--background-modifier-hover);
+  transform: scale(1.15);
+}
+
+.lenta-container-add-btn svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+.lenta-container-header-row:hover .lenta-container-add-btn {
+  opacity: 0.85;
+}
+
+.lenta-tree-node-folder .lenta-folder-add-note {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.lenta-tree-node-folder:hover .lenta-folder-add-note {
+  opacity: 0.85;
+}
+
+.lenta-container-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lenta-tree-node-folder,
+.lenta-tree-node-file {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-normal);
+  transition: background 0.12s ease;
+}
+
+.lenta-tree-node-folder:hover,
+.lenta-tree-node-file:hover {
+  background: var(--background-modifier-hover);
+}
+
+.lenta-tree-node-folder.is-open {
+  color: var(--lenta-lemon);
 }
 
 .lenta-item-icon {
@@ -470,6 +746,123 @@
   background: var(--background-modifier-border);
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Current Day ("Сегодняшний день") Layer & Timeline Marker
+   ───────────────────────────────────────────────────────────────────────────── */
+.lenta-tree-node-file.lenta-tree-node-today,
+.lenta-tree-node-file.is-today {
+  background: rgba(201, 205, 88, 0.12);
+  border-left: 3px solid var(--lenta-lemon, #c9cd58);
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(201, 205, 88, 0.15);
+  border-radius: 4px;
+}
+
+.lenta-tree-node-file.is-today:hover {
+  background: rgba(201, 205, 88, 0.22);
+}
+
+.lenta-note-icon.is-today {
+  color: var(--lenta-lemon, #c9cd58);
+  filter: drop-shadow(0 0 4px rgba(201, 205, 88, 0.6));
+}
+
+.lenta-note-title.is-today {
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+.lenta-today-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(201, 205, 88, 0.35), rgba(160, 164, 45, 0.25));
+  color: var(--lenta-lemon, #e2e667);
+  border: 1px solid rgba(201, 205, 88, 0.5);
+  margin-left: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(201, 205, 88, 0.2);
+}
+
+/* Timeline Divider / Anchor for Current Day when no notes match */
+.lenta-tree-today-marker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px;
+  margin: 4px 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.lenta-today-marker-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(201, 205, 88, 0.35), rgba(201, 205, 88, 0.05));
+}
+
+.lenta-tree-today-marker .lenta-today-marker-line:last-child {
+  background: linear-gradient(to left, rgba(201, 205, 88, 0.35), rgba(201, 205, 88, 0.05));
+}
+
+.lenta-today-marker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(201, 205, 88, 0.08);
+  border: 1px dashed rgba(201, 205, 88, 0.45);
+  color: var(--lenta-lemon, #c9cd58);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.lenta-today-pill-icon svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.lenta-today-pill-status {
+  opacity: 0.75;
+  font-size: 0.68rem;
+  font-style: italic;
+}
+
+.lenta-today-marker-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--background-modifier-hover);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.lenta-today-marker-add-btn:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+.lenta-today-marker-add-btn svg {
+  width: 11px;
+  height: 11px;
+  display: block;
 }
 
 .lenta-preview-toggle {

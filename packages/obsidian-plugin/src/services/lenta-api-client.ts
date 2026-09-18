@@ -171,12 +171,41 @@ export class LentaApiClient {
 
   // --- Auth & Session Methods ---
 
+  async validateKey(key?: string): Promise<{ valid: boolean; name?: string; userId?: string }> {
+    const targetKey = key || this.containerKey || this.authToken;
+    if (!targetKey || !targetKey.trim()) {
+      return { valid: false };
+    }
+    try {
+      return await this.request<{ valid: boolean; name?: string; userId?: string }>({
+        url: `${this.baseUrl}/keys/validate?key=${encodeURIComponent(targetKey.trim())}`,
+        method: 'GET',
+      });
+    } catch {
+      return { valid: false };
+    }
+  }
+
   async validateToken(token?: string): Promise<{ success: boolean; user?: { email: string; name: string; role: string } }> {
     const activeToken = token || this.authToken;
     if (!activeToken) {
       return { success: false };
     }
-    // Simulation / endpoint check
+    if (activeToken.startsWith('lenta_obs_') || activeToken.startsWith('lenta_api_')) {
+      const keyRes = await this.validateKey(activeToken);
+      if (keyRes.valid) {
+        return {
+          success: true,
+          user: {
+            email: `${keyRes.userId || 'obsidian-user'}@lemon.team`,
+            name: keyRes.name || 'Obsidian Vault User',
+            role: 'user',
+          },
+        };
+      }
+      return { success: false };
+    }
+    // Fallback for JWT / demo tokens
     return {
       success: true,
       user: {
@@ -208,6 +237,14 @@ export class LentaApiClient {
     });
   }
 
+  async createFeed(dto: { title: string; description?: string; slug?: string }): Promise<LentaFeedDto> {
+    return this.request<LentaFeedDto>({
+      url: `${this.baseUrl}/feeds`,
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+  }
+
   async getTaxonomyTree(): Promise<LentaTaxonomyNodeDto[]> {
     return this.request<LentaTaxonomyNodeDto[]>({
       url: `${this.baseUrl}/taxonomy/tree`,
@@ -215,9 +252,18 @@ export class LentaApiClient {
     });
   }
 
-  async getFolders(): Promise<LentaFolderDto[]> {
+  async getFolders(params?: {
+    containerId?: string;
+    scope?: 'external' | 'internal' | 'all';
+    search?: string;
+  }): Promise<LentaFolderDto[]> {
+    const query = new URLSearchParams();
+    if (params?.containerId) query.set('containerId', params.containerId);
+    if (params?.scope) query.set('scope', params.scope);
+    if (params?.search) query.set('search', params.search);
+    const qs = query.toString() ? `?${query.toString()}` : '';
     return this.request<LentaFolderDto[]>({
-      url: `${this.baseUrl}/folders`,
+      url: `${this.baseUrl}/folders${qs}`,
       method: 'GET',
     });
   }
@@ -227,7 +273,7 @@ export class LentaApiClient {
     name?: string;
     icon?: string;
     color?: string;
-    privacy?: 'public' | 'private';
+    privacy?: 'public' | 'private' | 'obsidian';
     containerId?: string | null;
     scope?: 'external' | 'internal';
   }): Promise<LentaFolderDto> {
@@ -441,7 +487,7 @@ export class LentaApiClient {
           name: '🍋 All Feeds (Master Vault)',
           type: 'git',
           scope: { type: 'all' },
-          totalNotes: feeds.reduce((sum, f) => sum + (f._count?.notes || 0), 0),
+          totalNotes: feeds.reduce((sum: number, f: LentaFeedDto) => sum + (f._count?.notes || 0), 0),
           isPublic: true,
           visibility: 'public',
           isFeed: true,
@@ -598,8 +644,8 @@ export class LentaApiClient {
     });
   }
 
-  async getContainerFiles(containerId: string): Promise<Array<{ path: string; content?: string; mtime?: number; size?: number }>> {
-    return this.containerRequest<Array<{ path: string; content?: string; mtime?: number; size?: number }>>({
+  async getContainerFiles(containerId: string): Promise<Array<{ path: string; content?: string; mtime?: number; size?: number; startDate?: string; endDate?: string }>> {
+    return this.containerRequest<Array<{ path: string; content?: string; mtime?: number; size?: number; startDate?: string; endDate?: string }>>({
       url: `${this.containerBaseUrl}/containers/${encodeURIComponent(containerId)}/files`,
       method: 'GET',
     });

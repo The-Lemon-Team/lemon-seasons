@@ -146,10 +146,27 @@ export class LentaSyncEngine {
         let fileMtime = Date.now();
         if (existing instanceof TFile) {
           await vault.modify(existing, markdownContent);
-          fileMtime = existing.stat.mtime || Date.now();
+          fileMtime = existing.stat?.mtime || Date.now();
+        } else if (await vault.adapter.exists(computedPath)) {
+          await vault.adapter.write(computedPath, markdownContent);
+          try {
+            const stat = await vault.adapter.stat(computedPath);
+            fileMtime = stat?.mtime || Date.now();
+          } catch {
+            fileMtime = Date.now();
+          }
         } else {
-          const newFile = await vault.create(computedPath, markdownContent);
-          fileMtime = newFile.stat.mtime || Date.now();
+          try {
+            const newFile = await vault.create(computedPath, markdownContent);
+            fileMtime = newFile.stat?.mtime || Date.now();
+          } catch (err: any) {
+            if (err?.message?.includes('already exists') || err?.message?.includes('EEXIST')) {
+              await vault.adapter.write(computedPath, markdownContent);
+              fileMtime = Date.now();
+            } else {
+              throw err;
+            }
+          }
         }
 
         this.ledgerManager.recordSync(
@@ -261,10 +278,7 @@ export class LentaSyncEngine {
       );
       if (match) feedId = match.id;
     }
-
-    if (!feedId && feeds.length > 0) {
-      feedId = feeds[0].id;
-    }
+    // If no feed is explicitly specified, leave feedId empty so note belongs to user's private container
 
     const noteType = (parsed.frontmatter.type as NoteType) || 'EVENT';
     const startDate =
@@ -305,9 +319,17 @@ export class LentaSyncEngine {
       return { success: true, note: updated };
     } else {
       // Create new note
+      const settings = this.getSettings();
+      let containerId: string | undefined = undefined;
+      if (settings.activeContainerId && !settings.activeContainerId.startsWith('feed-')) {
+        containerId = settings.activeContainerId;
+      }
       const created = await this.apiClient.createNote({
         title: parsed.title,
-        feedId,
+        feedId: feedId || undefined,
+        containerId,
+        folder: parsed.frontmatter.primary_folder || undefined,
+        folders: parsed.frontmatter.folders || (parsed.frontmatter.primary_folder ? [parsed.frontmatter.primary_folder] : undefined),
         description: processedBody,
         type: noteType,
         startDate,
@@ -613,8 +635,18 @@ export class LentaSyncEngine {
 
         if (existingFile instanceof TFile) {
           await vault.modify(existingFile, markdownContent);
+        } else if (await vault.adapter.exists(noteVaultPath)) {
+          await vault.adapter.write(noteVaultPath, markdownContent);
         } else {
-          await vault.create(noteVaultPath, markdownContent);
+          try {
+            await vault.create(noteVaultPath, markdownContent);
+          } catch (err: any) {
+            if (err?.message?.includes('already exists') || err?.message?.includes('EEXIST')) {
+              await vault.adapter.write(noteVaultPath, markdownContent);
+            } else {
+              throw err;
+            }
+          }
         }
         downloadedFiles++;
         downloadedList.push({

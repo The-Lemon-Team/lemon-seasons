@@ -15,7 +15,7 @@ tags:
   - "architecture"
   - "obsidian"
 icon: "sparkles"
-updated_at: "2026-09-15T20:04:17.437Z"
+updated_at: "2026-09-17T16:13:41.946Z"
 deleted: false
 ---
 

@@ -139,7 +139,7 @@ export interface LentaPluginSettings {
   lastSyncedAt: string;
   lastSyncedCommit: string;
   defaultConflictStrategy: ConflictStrategy;
-  autoSyncOnEdit: boolean;
+  autoSyncOnEdit?: boolean;
 
   /** Base URL of the Obsidian Container Sync Server (defaults to backend port 3001). */
   containerServerUrl: string;
