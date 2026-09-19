@@ -3,6 +3,8 @@ import process from "process";
 import builtins from "builtin-modules";
 import { copyFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { dirname } from "path";
+import esbuildSvelte from "esbuild-svelte";
+import sveltePreprocess from "svelte-preprocess";
 
 const banner =
 `/*
@@ -73,7 +75,13 @@ const context = await esbuild.context({
   sourcemap: prod ? false : "inline",
   treeShaking: true,
   outfile,
-  plugins: [syncAssetsPlugin],
+  plugins: [
+    esbuildSvelte({
+      compilerOptions: { css: "injected" },
+      preprocess: sveltePreprocess(),
+    }),
+    syncAssetsPlugin,
+  ],
 });
 
 if (prod) {

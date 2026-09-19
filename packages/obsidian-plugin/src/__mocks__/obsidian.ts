@@ -134,3 +134,58 @@ export class Modal {
   open() {}
   close() {}
 }
+
+export class Component {
+  load() {}
+  unload() {}
+}
+
+export class WorkspaceLeaf {}
+
+export class ItemView {
+  leaf: any;
+  containerEl: any;
+  contentEl: any;
+  constructor(leaf: any) {
+    this.leaf = leaf;
+    const headerEl = { empty: () => {}, createDiv: () => ({}), createEl: () => ({}) };
+    const contentEl = {
+      empty: () => {},
+      addClass: () => {},
+      style: {},
+      scrollTop: 0,
+      querySelector: () => null,
+      createDiv: () => ({
+        createDiv: () => ({}),
+        createEl: () => ({ onclick: null, setAttribute: () => {}, createSpan: () => ({ setText: () => {} }) }),
+        createSpan: () => ({ setText: () => {} }),
+        addEventListener: () => {},
+        scrollTop: 0,
+        style: {},
+        addClass: () => {},
+        setText: () => {},
+      }),
+      createEl: () => ({
+        onclick: null,
+        addEventListener: () => {},
+        createSpan: () => ({ setText: () => {} }),
+        setAttribute: () => {},
+      }),
+    };
+    this.containerEl = {
+      children: [headerEl, contentEl],
+      scrollTop: 0,
+      style: {},
+      querySelector: () => null,
+    };
+    this.contentEl = contentEl;
+  }
+}
+
+export class Menu {
+  addItem(cb: any) { cb({ setTitle: () => ({ setIcon: () => ({ onClick: () => {} }) }) }); return this; }
+  showAtMouseEvent(e: any) {}
+}
+
+export const setIcon = (el: any, iconName: string) => {};
+

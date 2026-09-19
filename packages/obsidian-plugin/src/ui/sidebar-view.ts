@@ -13,6 +13,8 @@ import { LentaCreateFolderModal } from './create-folder-modal';
 import { LentaQuickAddModal } from './quick-add-modal';
 import { isContainerPublic } from '../utils/container-privacy';
 import { getContainerDisplayTitle } from '../utils/container-title';
+import LentaSidebar from './svelte/LentaSidebar.svelte';
+import type { ObsidianBridge } from './svelte/sidebar-store';
 
 export const VIEW_TYPE_LENTA_SIDEBAR = 'lemon-lenta-sidebar-view';
 
@@ -178,11 +180,16 @@ export class LentaSidebarView extends ItemView {
   private loadingContainerFilesFor: Set<string> = new Set();
   private expandedContainerFolders: Set<string> = new Set();
 
+  // Scroll position tracking per view key (mode:tab:filter)
+  private scrollPositions: Map<string, number> = new Map();
+  private currentViewKey = 'notes:folders:my';
+
   // Key connection state
   private isConnectingKey = false;
   private keyInputText = '';
 
   private mdComponent: Component;
+  private svelteComponent: any = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -357,14 +364,156 @@ export class LentaSidebarView extends ItemView {
     return 'calendar-range';
   }
 
+  private createObsidianBridge(): ObsidianBridge {
+    return {
+      openQuickAdd: (fId?: string, fPath?: string) => this.onOpenQuickAdd(fId, fPath),
+      openCreateFolder: (pFId?: string, pFPath?: string, privacy?: any, cId?: string) =>
+        this.openCreateFolderModal(pFId, pFPath, privacy, cId),
+      openQuickAddForContainer: (cId: string, cName?: string, fPath?: string, initDate?: string) =>
+        this.openQuickAddForContainer(cId, cName, fPath, initDate),
+      openCreateFolderForContainer: (cId: string, cName?: string, pFId?: string, pFPath?: string) =>
+        this.openCreateFolderForContainer(cId, cName, pFId, pFPath),
+      openSyncModal: (mode?: 'push' | 'pull') => this.onOpenSyncModal(mode),
+      openConnectionsModal: this.onOpenConnectionsModal ? () => this.onOpenConnectionsModal!() : undefined,
+      openNoteInVault: async (path: string) => {
+        const fileName = path.split('/').pop() || path;
+        await this.openContainerFileInVault(this.getSettings().activeContainerId || this.containers[0]?.id || '', path, fileName);
+      },
+      refreshData: () => this.refreshData(),
+      saveSettings: async () => {
+        if (this.onSaveSettings) await this.onSaveSettings();
+      },
+      loadContainerFiles: async (containerId: string) => {
+        const [files, cFolders] = await Promise.all([
+          this.apiClient.getContainerFiles(containerId).catch(() => []),
+          this.apiClient.getFolders({ containerId, scope: 'all' }).catch(() => []),
+        ]);
+        this.containerFilesList.set(containerId, files);
+        this.containerFoldersList.set(containerId, cFolders);
+        this.updateSvelteProps();
+      },
+      loadFolderNotes: async (folderId: string, folderPath: string) => {
+        const notes = await this.apiClient.getNotes({ folder: folderPath }).catch(() => []);
+        this.folderPreviewNotes.set(folderId, notes);
+        this.updateSvelteProps();
+      },
+      loadFeedNotes: async (feedId: string, feedSlug: string) => {
+        const notes = await this.apiClient.getNotes({ feed: feedSlug }).catch(() => []);
+        this.feedNotesList.set(feedId, notes);
+        this.updateSvelteProps();
+      },
+      connectKey: async (key: string) => {
+        this.keyInputText = key;
+        await this.connectKeyAction();
+        this.updateSvelteProps();
+      },
+      disconnectKey: async () => {
+        const settings = this.getSettings();
+        settings.containerKey = '';
+        settings.activeContainerIds = [];
+        settings.activeContainerId = '';
+        settings.connectedContainerName = '';
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        new Notice('🍋 Container key disconnected');
+        await this.refreshData();
+      },
+      toggleContainerConnect: async (containerId: string) => {
+        const settings = this.getSettings();
+        let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
+        if (currentIds.includes(containerId)) {
+          currentIds = currentIds.filter((id) => id !== containerId);
+          new Notice(`Отключен контейнер: ${containerId}`);
+        } else {
+          currentIds.push(containerId);
+          new Notice(`Подключен контейнер: ${containerId}`);
+        }
+        settings.activeContainerIds = currentIds;
+        settings.activeContainerId = currentIds[0] || '';
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        this.updateSvelteProps();
+      },
+    };
+  }
+
   async onOpen() {
     this.containerEl.style.minWidth = '300px';
     this.mdComponent.load();
+
+    const target = (this.containerEl.children[1] as HTMLElement) || this.contentEl;
+    if (target) {
+      target.empty();
+      try {
+        const bridge = this.createObsidianBridge();
+        this.svelteComponent = new (LentaSidebar as any)({
+          target,
+          props: {
+            settings: this.getSettings(),
+            containers: this.containers,
+            folders: this.folders,
+            feeds: this.feeds,
+            containerFilesList: this.containerFilesList,
+            containerFoldersList: this.containerFoldersList,
+            folderPreviewNotes: this.folderPreviewNotes,
+            feedNotesList: this.feedNotesList,
+            isLoading: this.isLoading,
+            bridge,
+            onOpenQuickAdd: bridge.openQuickAdd,
+            onOpenCreateFolder: bridge.openCreateFolder,
+            onOpenQuickAddForContainer: bridge.openQuickAddForContainer,
+            onOpenCreateFolderForContainer: bridge.openCreateFolderForContainer,
+            onOpenSyncModal: bridge.openSyncModal,
+            onOpenConnectionsModal: bridge.openConnectionsModal,
+            onRefreshData: bridge.refreshData,
+            onSaveSettings: bridge.saveSettings,
+            onOpenNoteInVault: bridge.openNoteInVault,
+            onLoadContainerFiles: bridge.loadContainerFiles,
+            onLoadFolderNotes: bridge.loadFolderNotes,
+            onLoadFeedNotes: bridge.loadFeedNotes,
+          },
+        });
+      } catch (e) {
+        // Fallback to legacy render if Svelte cannot mount
+        this.render();
+      }
+    }
+
     await this.refreshData();
   }
 
   async onClose() {
+    if (this.svelteComponent) {
+      try {
+        this.svelteComponent.$destroy();
+      } catch {
+        // ignore
+      }
+      this.svelteComponent = null;
+    }
     this.mdComponent.unload();
+  }
+
+  public updateSvelteProps() {
+    if (this.svelteComponent) {
+      try {
+        this.svelteComponent.$set({
+          settings: this.getSettings(),
+          containers: this.containers,
+          folders: this.folders,
+          feeds: this.feeds,
+          containerFilesList: this.containerFilesList,
+          containerFoldersList: this.containerFoldersList,
+          folderPreviewNotes: this.folderPreviewNotes,
+          feedNotesList: this.feedNotesList,
+          isLoading: this.isLoading,
+        });
+      } catch {
+        // ignore
+      }
+    }
   }
 
   public invalidateFolderNotes(folderId?: string) {
@@ -381,7 +530,11 @@ export class LentaSidebarView extends ItemView {
 
   async refreshData() {
     this.isLoading = true;
-    this.render();
+    if (this.svelteComponent) {
+      this.updateSvelteProps();
+    } else {
+      this.render();
+    }
 
     try {
       const [feeds, folders, taxonomy, containers] = await Promise.all([
@@ -447,7 +600,11 @@ export class LentaSidebarView extends ItemView {
       new Notice(`Failed to load Lenta data: ${err.message}`);
     } finally {
       this.isLoading = false;
-      this.render();
+      if (this.svelteComponent) {
+        this.updateSvelteProps();
+      } else {
+        this.render();
+      }
     }
   }
 
@@ -503,9 +660,50 @@ export class LentaSidebarView extends ItemView {
     return this.scopeFilter === 'my';
   }
 
+  private getScrollKey(): string {
+    if (this.sidebarMode === 'notes') {
+      return `notes:${this.activeTab}:${this.scopeFilter}`;
+    }
+    return `containers:${this.scopeFilter}`;
+  }
+
+  private setupContentScroll(content: HTMLElement, targetKey: string) {
+    content.addEventListener(
+      'scroll',
+      () => {
+        this.scrollPositions.set(targetKey, content.scrollTop);
+      },
+      { passive: true }
+    );
+
+    const savedScroll = this.scrollPositions.get(targetKey) || 0;
+    if (savedScroll > 0) {
+      content.scrollTop = savedScroll;
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          if (content && savedScroll > 0 && content.scrollTop !== savedScroll) {
+            content.scrollTop = savedScroll;
+          }
+        });
+      }
+    }
+  }
+
   private render() {
     const container = this.containerEl.children[1] as HTMLElement;
     if (!container) return;
+
+    // 1. Preserve scroll position of previous content before clearing
+    const prevContent = container.querySelector('.lenta-sidebar-content') as HTMLElement | null;
+    if (prevContent && !this.isLoading) {
+      this.scrollPositions.set(this.currentViewKey, prevContent.scrollTop);
+    }
+    const prevContainerScrollTop = container.scrollTop;
+    const prevLeafScrollTop = this.containerEl.scrollTop;
+
+    const targetKey = this.getScrollKey();
+    this.currentViewKey = targetKey;
+
     container.empty();
     container.addClass('lenta-sidebar-container');
     container.style.minWidth = '300px';
@@ -575,6 +773,7 @@ export class LentaSidebarView extends ItemView {
     collapseBtn.onclick = () => {
       this.expandedPreviews.clear();
       this.expandedContainerFolders.clear();
+      this.scrollPositions.clear();
       this.render();
       new Notice('🍋 Все папки и контейнеры свернуты');
     };
@@ -605,16 +804,23 @@ export class LentaSidebarView extends ItemView {
 
     // ── 3. Mode Content Rendering ──────────────────────────────────────────
     if (this.sidebarMode === 'notes') {
-      this.renderNotesMode(container);
+      this.renderNotesMode(container, targetKey);
     } else {
-      this.renderContainersMode(container);
+      this.renderContainersMode(container, targetKey);
+    }
+
+    if (prevContainerScrollTop > 0) {
+      container.scrollTop = prevContainerScrollTop;
+    }
+    if (prevLeafScrollTop > 0) {
+      this.containerEl.scrollTop = prevLeafScrollTop;
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Notes Mode: Folders and Feeds
   // ─────────────────────────────────────────────────────────────────────────
-  private renderNotesMode(container: HTMLElement) {
+  private renderNotesMode(container: HTMLElement, targetKey: string) {
     // Sub-Tabs: Folders vs Feeds (Taxonomy disabled for now)
     const tabsRow = container.createDiv({ cls: 'lenta-sidebar-tabs' });
 
@@ -669,6 +875,10 @@ export class LentaSidebarView extends ItemView {
       this.renderFeeds(content);
     }
 
+    if (!this.isLoading) {
+      this.setupContentScroll(content, targetKey);
+    }
+
     // Sticky Bottom Action Footer
     this.renderQuickAddFooter(container);
   }
@@ -676,7 +886,7 @@ export class LentaSidebarView extends ItemView {
   // ─────────────────────────────────────────────────────────────────────────
   // Containers Mode: Direct Obsidian Containers Browser with Key Auth
   // ─────────────────────────────────────────────────────────────────────────
-  private renderContainersMode(container: HTMLElement) {
+  private renderContainersMode(container: HTMLElement, targetKey: string) {
     // 1. Inline Key Authentication Card
     this.renderContainerKeyCard(container);
 
@@ -704,6 +914,10 @@ export class LentaSidebarView extends ItemView {
       content.createDiv({ cls: 'lenta-loading-text', text: '⏳ Loading containers...' });
     } else {
       this.renderContainers(content);
+    }
+
+    if (!this.isLoading) {
+      this.setupContentScroll(content, targetKey);
     }
 
     // 4. Sticky Bottom Action Footer for Containers

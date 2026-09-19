@@ -7,6 +7,7 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -23,6 +24,10 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __publicField = (obj, key, value) => {
+  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  return value;
+};
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/util.js
 var util, objectUtil, ZodParsedType, getParsedType;
@@ -3214,12 +3219,12 @@ var init_types = __esm({
         const valueType = this._def.valueType;
         function finalizeSet(elements2) {
           const parsedSet = /* @__PURE__ */ new Set();
-          for (const element of elements2) {
-            if (element.status === "aborted")
+          for (const element2 of elements2) {
+            if (element2.status === "aborted")
               return INVALID;
-            if (element.status === "dirty")
+            if (element2.status === "dirty")
               status.dirty();
-            parsedSet.add(element.value);
+            parsedSet.add(element2.value);
           }
           return { status: status.value, value: parsedSet };
         }
@@ -4425,11 +4430,11 @@ var init_dist = __esm({
           }
         }
       }
-      static extractInlineTags(text) {
+      static extractInlineTags(text2) {
         const tagRegex = /(?:^|\s)#([a-zA-Z0-9_\-\/]+)(?=\s|$|[.,;:!?])/g;
         const tags = [];
         let match;
-        while ((match = tagRegex.exec(text)) !== null) {
+        while ((match = tagRegex.exec(text2)) !== null) {
           const tag = match[1];
           if (!/^\d+$/.test(tag)) {
             tags.push(tag);
@@ -4495,7 +4500,7 @@ __export(main_exports, {
   default: () => WorkspaceLentaPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian11 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/services/lenta-api-client.ts
 var import_obsidian = require("obsidian");
@@ -5180,8 +5185,8 @@ var LentaSyncLedgerManager = class {
       const root = (0, import_obsidian2.normalizePath)(this.getVaultRoot() || "");
       const ledgerPath = (0, import_obsidian2.normalizePath)(root ? `${root}/${this.ledgerFileName}` : this.ledgerFileName);
       if (await this.app.vault.adapter.exists(ledgerPath)) {
-        const text = await this.app.vault.adapter.read(ledgerPath);
-        this.ledger = JSON.parse(text);
+        const text2 = await this.app.vault.adapter.read(ledgerPath);
+        this.ledger = JSON.parse(text2);
       }
     } catch (err) {
       console.warn("Lenta: Creating fresh sync ledger", err);
@@ -5754,8 +5759,8 @@ var LentaSyncEngine = class {
       const containerFolderObj = vault.getAbstractFileByPath(containerFolderPath);
       if (containerFolderObj instanceof import_obsidian3.TFolder) {
         const cleanExtraneous = async (folder) => {
-          const children = [...folder.children];
-          for (const child of children) {
+          const children2 = [...folder.children];
+          for (const child of children2) {
             if (child instanceof import_obsidian3.TFile) {
               if (!validPathsInContainer.has(child.path)) {
                 await vault.delete(child, true);
@@ -6146,8 +6151,8 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
       cls: "lenta-modal-subtitle",
       text: folderDisplay ? `Target folder: \u{1F4C1} ${folderDisplay}${isContainer ? ` (in \u{1F4E6} ${resolvedContainerName})` : ""}` : isContainer ? `Target container: \u{1F4E6} ${resolvedContainerName}. Add a new record.` : "Add a new time-based record to Project Lenta and your local Obsidian vault."
     });
-    new import_obsidian4.Setting(contentEl).setName("Note Title").setDesc("Headline or milestone name").addText((text) => {
-      text.setPlaceholder("e.g. Project Launch v2.0").setValue(this.title).onChange((val) => {
+    new import_obsidian4.Setting(contentEl).setName("Note Title").setDesc("Headline or milestone name").addText((text2) => {
+      text2.setPlaceholder("e.g. Project Launch v2.0").setValue(this.title).onChange((val) => {
         this.title = val;
       });
     });
@@ -6163,24 +6168,24 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
         }
       });
     });
-    new import_obsidian4.Setting(contentEl).setName("Start Date").setDesc("Start date for this event or period (start_date)").addText((text) => {
-      if (text.inputEl) {
-        text.inputEl.type = "date";
-        text.inputEl.addClass("lenta-date-input");
+    new import_obsidian4.Setting(contentEl).setName("Start Date").setDesc("Start date for this event or period (start_date)").addText((text2) => {
+      if (text2.inputEl) {
+        text2.inputEl.type = "date";
+        text2.inputEl.addClass("lenta-date-input");
       }
-      text.setValue(this.startDate || "");
-      text.onChange((val) => {
+      text2.setValue(this.startDate || "");
+      text2.onChange((val) => {
         this.startDate = val;
       });
     });
-    new import_obsidian4.Setting(contentEl).setName("End Date").setDesc("Optional completion date (end_date, recommended for PERIOD)").addText((text) => {
-      endDateComponent = text;
-      if (text.inputEl) {
-        text.inputEl.type = "date";
-        text.inputEl.addClass("lenta-date-input");
+    new import_obsidian4.Setting(contentEl).setName("End Date").setDesc("Optional completion date (end_date, recommended for PERIOD)").addText((text2) => {
+      endDateComponent = text2;
+      if (text2.inputEl) {
+        text2.inputEl.type = "date";
+        text2.inputEl.addClass("lenta-date-input");
       }
-      text.setValue(this.endDate || "");
-      text.onChange((val) => {
+      text2.setValue(this.endDate || "");
+      text2.onChange((val) => {
         this.endDate = val;
       });
     }).addExtraButton((btn) => {
@@ -6239,11 +6244,11 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
         });
       });
     } else {
-      folderSetting.addText((text) => {
-        text.setPlaceholder("e.g. Work/Sprint-1 or Research").setValue(this.customFolderPath).onChange((val) => {
+      folderSetting.addText((text2) => {
+        text2.setPlaceholder("e.g. Work/Sprint-1 or Research").setValue(this.customFolderPath).onChange((val) => {
           this.customFolderPath = val.trim().replace(/^\/+|\/+$/g, "");
         });
-        text.inputEl.focus();
+        text2.inputEl.focus();
       }).addExtraButton((btn) => {
         btn.setIcon("list").setTooltip("Back to folder list").onClick(() => {
           this.isCustomFolder = false;
@@ -6263,12 +6268,12 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
         });
       });
     }
-    new import_obsidian4.Setting(contentEl).setName("Icon & Source Link").setDesc('Optional icon name (e.g. "rocket", "calendar") and external URL').addText((text) => {
-      text.setPlaceholder("Icon (e.g. rocket)").setValue(this.icon).onChange((val) => {
+    new import_obsidian4.Setting(contentEl).setName("Icon & Source Link").setDesc('Optional icon name (e.g. "rocket", "calendar") and external URL').addText((text2) => {
+      text2.setPlaceholder("Icon (e.g. rocket)").setValue(this.icon).onChange((val) => {
         this.icon = val;
       });
-    }).addText((text) => {
-      text.setPlaceholder("https://...").setValue(this.sourceLink).onChange((val) => {
+    }).addText((text2) => {
+      text2.setPlaceholder("https://...").setValue(this.sourceLink).onChange((val) => {
         this.sourceLink = val;
       });
     });
@@ -6522,12 +6527,12 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
       cls: "lenta-modal-subtitle",
       text: this.targetContainerId ? `Target Container: \u{1F4E6} ${this.targetContainerId}` : "Add a new structured folder in Project Lenta and your local Obsidian vault."
     });
-    new import_obsidian5.Setting(contentEl).setName("Folder Name").setDesc('Enter the name for the new folder (e.g. "Projects", "Sprint-24", "Research")').addText((text) => {
-      text.setPlaceholder("e.g. 02_Projects or Research").setValue(this.folderName).onChange((val) => {
+    new import_obsidian5.Setting(contentEl).setName("Folder Name").setDesc('Enter the name for the new folder (e.g. "Projects", "Sprint-24", "Research")').addText((text2) => {
+      text2.setPlaceholder("e.g. 02_Projects or Research").setValue(this.folderName).onChange((val) => {
         this.folderName = val;
         this.updatePreview();
       });
-      text.inputEl.focus();
+      text2.inputEl.focus();
     });
     const settings = this.getSettings();
     const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || null;
@@ -6578,8 +6583,8 @@ var LentaCreateFolderModal = class extends import_obsidian5.Modal {
         }
       });
     });
-    new import_obsidian5.Setting(contentEl).setName("Icon & Color").setDesc('Optional Lucide icon name (e.g. "folder", "archive", "calendar", "star") and hex color').addText((text) => {
-      text.setPlaceholder("Icon (default: folder)").setValue(this.icon).onChange((val) => {
+    new import_obsidian5.Setting(contentEl).setName("Icon & Color").setDesc('Optional Lucide icon name (e.g. "folder", "archive", "calendar", "star") and hex color').addText((text2) => {
+      text2.setPlaceholder("Icon (default: folder)").setValue(this.icon).onChange((val) => {
         this.icon = val.trim() || "folder";
       });
     }).addColorPicker((picker) => {
@@ -7215,14 +7220,14 @@ var LentaSyncModal = class extends import_obsidian6.Modal {
       emptyCommits.setText("\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0437\u0430\u043F\u0438\u0441\u0435\u0439 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432.");
     } else {
       for (const commit of this.serverCommits.slice(0, 6)) {
-        const hash = commit.shortHash || commit.commitHash?.slice(0, 7) || commit.hash?.slice(0, 7) || "HEAD";
+        const hash2 = commit.shortHash || commit.commitHash?.slice(0, 7) || commit.hash?.slice(0, 7) || "HEAD";
         const card = commitsList.createDiv();
         card.style.cssText = "padding: 8px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.8em; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; overflow: hidden; min-width: 0;";
         const cTop = card.createDiv();
         cTop.style.cssText = "display: flex; justify-content: space-between; align-items: center; font-family: monospace; min-width: 0;";
         const pill = cTop.createSpan();
         pill.style.cssText = "padding: 1px 5px; border-radius: 3px; background: rgba(201, 205, 88, 0.15); color: #e5e971; font-weight: 700; font-size: 0.9em; flex-shrink: 0;";
-        pill.setText(hash);
+        pill.setText(hash2);
         cTop.createSpan({
           text: commit.date ? new Date(commit.date).toLocaleDateString() : ""
         }).style.cssText = "color: var(--text-muted); font-size: 0.85em; flex-shrink: 0;";
@@ -7317,7 +7322,7 @@ var LentaConnectionsModal = class extends import_obsidian7.Modal {
       authStatusEl.innerHTML = `<strong>Status:</strong> Unauthenticated. Enter your User API Key / Personal Access Token below to connect.`;
     }
     new import_obsidian7.Setting(contentEl).setName("User API Key / Personal Access Token").setDesc("Bearer authentication token from your Project Lenta profile.").addText(
-      (text) => text.setPlaceholder("lenta_jwt_...").setValue(this.settings.authToken || "").onChange(async (val) => {
+      (text2) => text2.setPlaceholder("lenta_jwt_...").setValue(this.settings.authToken || "").onChange(async (val) => {
         this.settings.authToken = val.trim();
         this.settings.isPrivateContainerConnected = Boolean(val.trim());
         await this.onSaveSettings();
@@ -7357,19 +7362,19 @@ var LentaConnectionsModal = class extends import_obsidian7.Modal {
     );
     contentEl.createEl("h3", { text: "\u{1F310} Backend & Container Sync Server URLs" });
     new import_obsidian7.Setting(contentEl).setName("Project Lenta Backend URL").setDesc("Base address of the NestJS API (port 3001 by default).").addText(
-      (text) => text.setPlaceholder("http://localhost:3001").setValue(this.settings.serverUrl).onChange(async (val) => {
+      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.serverUrl).onChange(async (val) => {
         this.settings.serverUrl = val.trim();
         await this.onSaveSettings();
       })
     );
     new import_obsidian7.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Backend (port 3001 by default).").addText(
-      (text) => text.setPlaceholder("http://localhost:3001").setValue(this.settings.containerServerUrl || "http://localhost:3001").onChange(async (val) => {
+      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.containerServerUrl || "http://localhost:3001").onChange(async (val) => {
         this.settings.containerServerUrl = val.trim();
         await this.onSaveSettings();
       })
     );
     new import_obsidian7.Setting(contentEl).setName("Container API Key (X-Api-Key)").setDesc("Optional API key sent to the container sync server.").addText(
-      (text) => text.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
+      (text2) => text2.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
         this.settings.containerApiKey = val.trim();
         await this.onSaveSettings();
       })
@@ -7756,7 +7761,7 @@ var LentaContainersFoldersModal = class extends import_obsidian8.Modal {
     const keySection = contentEl.createDiv({ cls: "lenta-key-section" });
     keySection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
     new import_obsidian8.Setting(keySection).setName("Connect Container by Custom Key").setDesc("Add a custom container key or feed key to your selected containers list.").addText(
-      (text) => text.setPlaceholder("e.g. cont-workspace-prod or feed-science").setValue(this.customKeyInput).onChange((val) => {
+      (text2) => text2.setPlaceholder("e.g. cont-workspace-prod or feed-science").setValue(this.customKeyInput).onChange((val) => {
         this.customKeyInput = val.trim();
       })
     ).addButton(
@@ -7780,7 +7785,7 @@ var LentaContainersFoldersModal = class extends import_obsidian8.Modal {
     folderSection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
     folderSection.createEl("h3", { text: "\u{1F4C1} Vault Root & Multi-Container Folders Workspace" });
     new import_obsidian8.Setting(folderSection).setName("Vault Root Directory").setDesc("Base folder in your Obsidian vault where synced notes are saved.").addText(
-      (text) => text.setPlaceholder("Lenta").setValue(this.settings.vaultRootFolder || "Lenta").onChange(async (val) => {
+      (text2) => text2.setPlaceholder("Lenta").setValue(this.settings.vaultRootFolder || "Lenta").onChange(async (val) => {
         this.settings.vaultRootFolder = val.trim() || "Lenta";
         await this.onSaveSettings();
         this.renderFolderMappingInfo(folderMappingEl);
@@ -8081,8 +8086,6914 @@ var LentaContainersFoldersModal = class extends import_obsidian8.Modal {
 };
 
 // src/ui/sidebar-view.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 init_lenta_frontmatter();
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/utils.js
+function noop() {
+}
+var identity = (x) => x;
+function run(fn) {
+  return fn();
+}
+function blank_object() {
+  return /* @__PURE__ */ Object.create(null);
+}
+function run_all(fns) {
+  fns.forEach(run);
+}
+function is_function(thing) {
+  return typeof thing === "function";
+}
+function safe_not_equal(a, b) {
+  return a != a ? b == b : a !== b || a && typeof a === "object" || typeof a === "function";
+}
+function is_empty(obj) {
+  return Object.keys(obj).length === 0;
+}
+function subscribe(store, ...callbacks) {
+  if (store == null) {
+    for (const callback of callbacks) {
+      callback(void 0);
+    }
+    return noop;
+  }
+  const unsub = store.subscribe(...callbacks);
+  return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
+}
+function component_subscribe(component, store, callback) {
+  component.$$.on_destroy.push(subscribe(store, callback));
+}
+function action_destroyer(action_result) {
+  return action_result && is_function(action_result.destroy) ? action_result.destroy : noop;
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/environment.js
+var is_client = typeof window !== "undefined";
+var now = is_client ? () => window.performance.now() : () => Date.now();
+var raf = is_client ? (cb) => requestAnimationFrame(cb) : noop;
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/loop.js
+var tasks = /* @__PURE__ */ new Set();
+function run_tasks(now2) {
+  tasks.forEach((task) => {
+    if (!task.c(now2)) {
+      tasks.delete(task);
+      task.f();
+    }
+  });
+  if (tasks.size !== 0)
+    raf(run_tasks);
+}
+function loop(callback) {
+  let task;
+  if (tasks.size === 0)
+    raf(run_tasks);
+  return {
+    promise: new Promise((fulfill) => {
+      tasks.add(task = { c: callback, f: fulfill });
+    }),
+    abort() {
+      tasks.delete(task);
+    }
+  };
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/globals.js
+var globals = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : (
+  // @ts-ignore Node typings have this
+  global
+);
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/ResizeObserverSingleton.js
+var ResizeObserverSingleton = class _ResizeObserverSingleton {
+  /** @param {ResizeObserverOptions} options */
+  constructor(options) {
+    /**
+     * @private
+     * @readonly
+     * @type {WeakMap<Element, import('./private.js').Listener>}
+     */
+    __publicField(this, "_listeners", "WeakMap" in globals ? /* @__PURE__ */ new WeakMap() : void 0);
+    /**
+     * @private
+     * @type {ResizeObserver}
+     */
+    __publicField(this, "_observer");
+    /** @type {ResizeObserverOptions} */
+    __publicField(this, "options");
+    this.options = options;
+  }
+  /**
+   * @param {Element} element
+   * @param {import('./private.js').Listener} listener
+   * @returns {() => void}
+   */
+  observe(element2, listener) {
+    this._listeners.set(element2, listener);
+    this._getObserver().observe(element2, this.options);
+    return () => {
+      this._listeners.delete(element2);
+      this._observer.unobserve(element2);
+    };
+  }
+  /**
+   * @private
+   */
+  _getObserver() {
+    return this._observer ?? (this._observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        _ResizeObserverSingleton.entries.set(entry.target, entry);
+        this._listeners.get(entry.target)?.(entry);
+      }
+    }));
+  }
+};
+ResizeObserverSingleton.entries = "WeakMap" in globals ? /* @__PURE__ */ new WeakMap() : void 0;
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/dom.js
+var is_hydrating = false;
+function start_hydrating() {
+  is_hydrating = true;
+}
+function end_hydrating() {
+  is_hydrating = false;
+}
+function append(target, node) {
+  target.appendChild(node);
+}
+function append_styles(target, style_sheet_id, styles) {
+  const append_styles_to = get_root_for_style(target);
+  if (!append_styles_to.getElementById(style_sheet_id)) {
+    const style = element("style");
+    style.id = style_sheet_id;
+    style.textContent = styles;
+    append_stylesheet(append_styles_to, style);
+  }
+}
+function get_root_for_style(node) {
+  if (!node)
+    return document;
+  const root = node.getRootNode ? node.getRootNode() : node.ownerDocument;
+  if (root && /** @type {ShadowRoot} */
+  root.host) {
+    return (
+      /** @type {ShadowRoot} */
+      root
+    );
+  }
+  return node.ownerDocument;
+}
+function append_empty_stylesheet(node) {
+  const style_element = element("style");
+  style_element.textContent = "/* empty */";
+  append_stylesheet(get_root_for_style(node), style_element);
+  return style_element.sheet;
+}
+function append_stylesheet(node, style) {
+  append(
+    /** @type {Document} */
+    node.head || node,
+    style
+  );
+  return style.sheet;
+}
+function insert(target, node, anchor) {
+  target.insertBefore(node, anchor || null);
+}
+function detach(node) {
+  if (node.parentNode) {
+    node.parentNode.removeChild(node);
+  }
+}
+function element(name) {
+  return document.createElement(name);
+}
+function text(data) {
+  return document.createTextNode(data);
+}
+function space() {
+  return text(" ");
+}
+function empty() {
+  return text("");
+}
+function listen(node, event, handler, options) {
+  node.addEventListener(event, handler, options);
+  return () => node.removeEventListener(event, handler, options);
+}
+function stop_propagation(fn) {
+  return function(event) {
+    event.stopPropagation();
+    return fn.call(this, event);
+  };
+}
+function attr(node, attribute, value) {
+  if (value == null)
+    node.removeAttribute(attribute);
+  else if (node.getAttribute(attribute) !== value)
+    node.setAttribute(attribute, value);
+}
+function children(element2) {
+  return Array.from(element2.childNodes);
+}
+function set_data(text2, data) {
+  data = "" + data;
+  if (text2.data === data)
+    return;
+  text2.data = /** @type {string} */
+  data;
+}
+function set_input_value(input, value) {
+  input.value = value == null ? "" : value;
+}
+function set_style(node, key, value, important) {
+  if (value == null) {
+    node.style.removeProperty(key);
+  } else {
+    node.style.setProperty(key, value, important ? "important" : "");
+  }
+}
+function custom_event(type, detail, { bubbles = false, cancelable = false } = {}) {
+  return new CustomEvent(type, { detail, bubbles, cancelable });
+}
+function get_custom_elements_slots(element2) {
+  const result = {};
+  element2.childNodes.forEach(
+    /** @param {Element} node */
+    (node) => {
+      result[node.slot || "default"] = true;
+    }
+  );
+  return result;
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/style_manager.js
+var managed_styles = /* @__PURE__ */ new Map();
+var active = 0;
+function hash(str) {
+  let hash2 = 5381;
+  let i = str.length;
+  while (i--)
+    hash2 = (hash2 << 5) - hash2 ^ str.charCodeAt(i);
+  return hash2 >>> 0;
+}
+function create_style_information(doc, node) {
+  const info = { stylesheet: append_empty_stylesheet(node), rules: {} };
+  managed_styles.set(doc, info);
+  return info;
+}
+function create_rule(node, a, b, duration, delay, ease, fn, uid = 0) {
+  const step = 16.666 / duration;
+  let keyframes = "{\n";
+  for (let p = 0; p <= 1; p += step) {
+    const t = a + (b - a) * ease(p);
+    keyframes += p * 100 + `%{${fn(t, 1 - t)}}
+`;
+  }
+  const rule = keyframes + `100% {${fn(b, 1 - b)}}
+}`;
+  const name = `__svelte_${hash(rule)}_${uid}`;
+  const doc = get_root_for_style(node);
+  const { stylesheet, rules } = managed_styles.get(doc) || create_style_information(doc, node);
+  if (!rules[name]) {
+    rules[name] = true;
+    stylesheet.insertRule(`@keyframes ${name} ${rule}`, stylesheet.cssRules.length);
+  }
+  const animation = node.style.animation || "";
+  node.style.animation = `${animation ? `${animation}, ` : ""}${name} ${duration}ms linear ${delay}ms 1 both`;
+  active += 1;
+  return name;
+}
+function delete_rule(node, name) {
+  const previous = (node.style.animation || "").split(", ");
+  const next = previous.filter(
+    name ? (anim) => anim.indexOf(name) < 0 : (anim) => anim.indexOf("__svelte") === -1
+    // remove all Svelte animations
+  );
+  const deleted = previous.length - next.length;
+  if (deleted) {
+    node.style.animation = next.join(", ");
+    active -= deleted;
+    if (!active)
+      clear_rules();
+  }
+}
+function clear_rules() {
+  raf(() => {
+    if (active)
+      return;
+    managed_styles.forEach((info) => {
+      const { ownerNode } = info.stylesheet;
+      if (ownerNode)
+        detach(ownerNode);
+    });
+    managed_styles.clear();
+  });
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/lifecycle.js
+var current_component;
+function set_current_component(component) {
+  current_component = component;
+}
+function get_current_component() {
+  if (!current_component)
+    throw new Error("Function called outside component initialization");
+  return current_component;
+}
+function onMount(fn) {
+  get_current_component().$$.on_mount.push(fn);
+}
+function onDestroy(fn) {
+  get_current_component().$$.on_destroy.push(fn);
+}
+function createEventDispatcher() {
+  const component = get_current_component();
+  return (type, detail, { cancelable = false } = {}) => {
+    const callbacks = component.$$.callbacks[type];
+    if (callbacks) {
+      const event = custom_event(
+        /** @type {string} */
+        type,
+        detail,
+        { cancelable }
+      );
+      callbacks.slice().forEach((fn) => {
+        fn.call(component, event);
+      });
+      return !event.defaultPrevented;
+    }
+    return true;
+  };
+}
+function bubble(component, event) {
+  const callbacks = component.$$.callbacks[event.type];
+  if (callbacks) {
+    callbacks.slice().forEach((fn) => fn.call(this, event));
+  }
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/scheduler.js
+var dirty_components = [];
+var binding_callbacks = [];
+var render_callbacks = [];
+var flush_callbacks = [];
+var resolved_promise = /* @__PURE__ */ Promise.resolve();
+var update_scheduled = false;
+function schedule_update() {
+  if (!update_scheduled) {
+    update_scheduled = true;
+    resolved_promise.then(flush);
+  }
+}
+function add_render_callback(fn) {
+  render_callbacks.push(fn);
+}
+var seen_callbacks = /* @__PURE__ */ new Set();
+var flushidx = 0;
+function flush() {
+  if (flushidx !== 0) {
+    return;
+  }
+  const saved_component = current_component;
+  do {
+    try {
+      while (flushidx < dirty_components.length) {
+        const component = dirty_components[flushidx];
+        flushidx++;
+        set_current_component(component);
+        update(component.$$);
+      }
+    } catch (e) {
+      dirty_components.length = 0;
+      flushidx = 0;
+      throw e;
+    }
+    set_current_component(null);
+    dirty_components.length = 0;
+    flushidx = 0;
+    while (binding_callbacks.length)
+      binding_callbacks.pop()();
+    for (let i = 0; i < render_callbacks.length; i += 1) {
+      const callback = render_callbacks[i];
+      if (!seen_callbacks.has(callback)) {
+        seen_callbacks.add(callback);
+        callback();
+      }
+    }
+    render_callbacks.length = 0;
+  } while (dirty_components.length);
+  while (flush_callbacks.length) {
+    flush_callbacks.pop()();
+  }
+  update_scheduled = false;
+  seen_callbacks.clear();
+  set_current_component(saved_component);
+}
+function update($$) {
+  if ($$.fragment !== null) {
+    $$.update();
+    run_all($$.before_update);
+    const dirty = $$.dirty;
+    $$.dirty = [-1];
+    $$.fragment && $$.fragment.p($$.ctx, dirty);
+    $$.after_update.forEach(add_render_callback);
+  }
+}
+function flush_render_callbacks(fns) {
+  const filtered = [];
+  const targets = [];
+  render_callbacks.forEach((c) => fns.indexOf(c) === -1 ? filtered.push(c) : targets.push(c));
+  targets.forEach((c) => c());
+  render_callbacks = filtered;
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/transitions.js
+var promise;
+function wait() {
+  if (!promise) {
+    promise = Promise.resolve();
+    promise.then(() => {
+      promise = null;
+    });
+  }
+  return promise;
+}
+function dispatch(node, direction, kind) {
+  node.dispatchEvent(custom_event(`${direction ? "intro" : "outro"}${kind}`));
+}
+var outroing = /* @__PURE__ */ new Set();
+var outros;
+function group_outros() {
+  outros = {
+    r: 0,
+    c: [],
+    p: outros
+    // parent group
+  };
+}
+function check_outros() {
+  if (!outros.r) {
+    run_all(outros.c);
+  }
+  outros = outros.p;
+}
+function transition_in(block, local) {
+  if (block && block.i) {
+    outroing.delete(block);
+    block.i(local);
+  }
+}
+function transition_out(block, local, detach2, callback) {
+  if (block && block.o) {
+    if (outroing.has(block))
+      return;
+    outroing.add(block);
+    outros.c.push(() => {
+      outroing.delete(block);
+      if (callback) {
+        if (detach2)
+          block.d(1);
+        callback();
+      }
+    });
+    block.o(local);
+  } else if (callback) {
+    callback();
+  }
+}
+var null_transition = { duration: 0 };
+function create_bidirectional_transition(node, fn, params, intro) {
+  const options = { direction: "both" };
+  let config = fn(node, params, options);
+  let t = intro ? 0 : 1;
+  let running_program = null;
+  let pending_program = null;
+  let animation_name = null;
+  let original_inert_value;
+  function clear_animation() {
+    if (animation_name)
+      delete_rule(node, animation_name);
+  }
+  function init2(program, duration) {
+    const d = (
+      /** @type {Program['d']} */
+      program.b - t
+    );
+    duration *= Math.abs(d);
+    return {
+      a: t,
+      b: program.b,
+      d,
+      duration,
+      start: program.start,
+      end: program.start + duration,
+      group: program.group
+    };
+  }
+  function go(b) {
+    const {
+      delay = 0,
+      duration = 300,
+      easing = identity,
+      tick: tick2 = noop,
+      css
+    } = config || null_transition;
+    const program = {
+      start: now() + delay,
+      b
+    };
+    if (!b) {
+      program.group = outros;
+      outros.r += 1;
+    }
+    if ("inert" in node) {
+      if (b) {
+        if (original_inert_value !== void 0) {
+          node.inert = original_inert_value;
+        }
+      } else {
+        original_inert_value = /** @type {HTMLElement} */
+        node.inert;
+        node.inert = true;
+      }
+    }
+    if (running_program || pending_program) {
+      pending_program = program;
+    } else {
+      if (css) {
+        clear_animation();
+        animation_name = create_rule(node, t, b, duration, delay, easing, css);
+      }
+      if (b)
+        tick2(0, 1);
+      running_program = init2(program, duration);
+      add_render_callback(() => dispatch(node, b, "start"));
+      loop((now2) => {
+        if (pending_program && now2 > pending_program.start) {
+          running_program = init2(pending_program, duration);
+          pending_program = null;
+          dispatch(node, running_program.b, "start");
+          if (css) {
+            clear_animation();
+            animation_name = create_rule(
+              node,
+              t,
+              running_program.b,
+              running_program.duration,
+              0,
+              easing,
+              config.css
+            );
+          }
+        }
+        if (running_program) {
+          if (now2 >= running_program.end) {
+            tick2(t = running_program.b, 1 - t);
+            dispatch(node, running_program.b, "end");
+            if (!pending_program) {
+              if (running_program.b) {
+                clear_animation();
+              } else {
+                if (!--running_program.group.r)
+                  run_all(running_program.group.c);
+              }
+            }
+            running_program = null;
+          } else if (now2 >= running_program.start) {
+            const p = now2 - running_program.start;
+            t = running_program.a + running_program.d * easing(p / running_program.duration);
+            tick2(t, 1 - t);
+          }
+        }
+        return !!(running_program || pending_program);
+      });
+    }
+  }
+  return {
+    run(b) {
+      if (is_function(config)) {
+        wait().then(() => {
+          const opts = { direction: b ? "in" : "out" };
+          config = config(opts);
+          go(b);
+        });
+      } else {
+        go(b);
+      }
+    },
+    end() {
+      clear_animation();
+      running_program = pending_program = null;
+    }
+  };
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/each.js
+function ensure_array_like(array_like_or_iterator) {
+  return array_like_or_iterator?.length !== void 0 ? array_like_or_iterator : Array.from(array_like_or_iterator);
+}
+function destroy_block(block, lookup) {
+  block.d(1);
+  lookup.delete(block.key);
+}
+function outro_and_destroy_block(block, lookup) {
+  transition_out(block, 1, 1, () => {
+    lookup.delete(block.key);
+  });
+}
+function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block3, next, get_context) {
+  let o = old_blocks.length;
+  let n = list.length;
+  let i = o;
+  const old_indexes = {};
+  while (i--)
+    old_indexes[old_blocks[i].key] = i;
+  const new_blocks = [];
+  const new_lookup = /* @__PURE__ */ new Map();
+  const deltas = /* @__PURE__ */ new Map();
+  const updates = [];
+  i = n;
+  while (i--) {
+    const child_ctx = get_context(ctx, list, i);
+    const key = get_key(child_ctx);
+    let block = lookup.get(key);
+    if (!block) {
+      block = create_each_block3(key, child_ctx);
+      block.c();
+    } else if (dynamic) {
+      updates.push(() => block.p(child_ctx, dirty));
+    }
+    new_lookup.set(key, new_blocks[i] = block);
+    if (key in old_indexes)
+      deltas.set(key, Math.abs(i - old_indexes[key]));
+  }
+  const will_move = /* @__PURE__ */ new Set();
+  const did_move = /* @__PURE__ */ new Set();
+  function insert2(block) {
+    transition_in(block, 1);
+    block.m(node, next);
+    lookup.set(block.key, block);
+    next = block.first;
+    n--;
+  }
+  while (o && n) {
+    const new_block = new_blocks[n - 1];
+    const old_block = old_blocks[o - 1];
+    const new_key = new_block.key;
+    const old_key = old_block.key;
+    if (new_block === old_block) {
+      next = new_block.first;
+      o--;
+      n--;
+    } else if (!new_lookup.has(old_key)) {
+      destroy(old_block, lookup);
+      o--;
+    } else if (!lookup.has(new_key) || will_move.has(new_key)) {
+      insert2(new_block);
+    } else if (did_move.has(old_key)) {
+      o--;
+    } else if (deltas.get(new_key) > deltas.get(old_key)) {
+      did_move.add(new_key);
+      insert2(new_block);
+    } else {
+      will_move.add(old_key);
+      o--;
+    }
+  }
+  while (o--) {
+    const old_block = old_blocks[o];
+    if (!new_lookup.has(old_block.key))
+      destroy(old_block, lookup);
+  }
+  while (n)
+    insert2(new_blocks[n - 1]);
+  run_all(updates);
+  return new_blocks;
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/shared/boolean_attributes.js
+var _boolean_attributes = (
+  /** @type {const} */
+  [
+    "allowfullscreen",
+    "allowpaymentrequest",
+    "async",
+    "autofocus",
+    "autoplay",
+    "checked",
+    "controls",
+    "default",
+    "defer",
+    "disabled",
+    "formnovalidate",
+    "hidden",
+    "inert",
+    "ismap",
+    "loop",
+    "multiple",
+    "muted",
+    "nomodule",
+    "novalidate",
+    "open",
+    "playsinline",
+    "readonly",
+    "required",
+    "reversed",
+    "selected"
+  ]
+);
+var boolean_attributes = /* @__PURE__ */ new Set([..._boolean_attributes]);
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/Component.js
+function create_component(block) {
+  block && block.c();
+}
+function mount_component(component, target, anchor) {
+  const { fragment, after_update } = component.$$;
+  fragment && fragment.m(target, anchor);
+  add_render_callback(() => {
+    const new_on_destroy = component.$$.on_mount.map(run).filter(is_function);
+    if (component.$$.on_destroy) {
+      component.$$.on_destroy.push(...new_on_destroy);
+    } else {
+      run_all(new_on_destroy);
+    }
+    component.$$.on_mount = [];
+  });
+  after_update.forEach(add_render_callback);
+}
+function destroy_component(component, detaching) {
+  const $$ = component.$$;
+  if ($$.fragment !== null) {
+    flush_render_callbacks($$.after_update);
+    run_all($$.on_destroy);
+    $$.fragment && $$.fragment.d(detaching);
+    $$.on_destroy = $$.fragment = null;
+    $$.ctx = [];
+  }
+}
+function make_dirty(component, i) {
+  if (component.$$.dirty[0] === -1) {
+    dirty_components.push(component);
+    schedule_update();
+    component.$$.dirty.fill(0);
+  }
+  component.$$.dirty[i / 31 | 0] |= 1 << i % 31;
+}
+function init(component, options, instance5, create_fragment5, not_equal, props, append_styles2 = null, dirty = [-1]) {
+  const parent_component = current_component;
+  set_current_component(component);
+  const $$ = component.$$ = {
+    fragment: null,
+    ctx: [],
+    // state
+    props,
+    update: noop,
+    not_equal,
+    bound: blank_object(),
+    // lifecycle
+    on_mount: [],
+    on_destroy: [],
+    on_disconnect: [],
+    before_update: [],
+    after_update: [],
+    context: new Map(options.context || (parent_component ? parent_component.$$.context : [])),
+    // everything else
+    callbacks: blank_object(),
+    dirty,
+    skip_bound: false,
+    root: options.target || parent_component.$$.root
+  };
+  append_styles2 && append_styles2($$.root);
+  let ready = false;
+  $$.ctx = instance5 ? instance5(component, options.props || {}, (i, ret, ...rest) => {
+    const value = rest.length ? rest[0] : ret;
+    if ($$.ctx && not_equal($$.ctx[i], $$.ctx[i] = value)) {
+      if (!$$.skip_bound && $$.bound[i])
+        $$.bound[i](value);
+      if (ready)
+        make_dirty(component, i);
+    }
+    return ret;
+  }) : [];
+  $$.update();
+  ready = true;
+  run_all($$.before_update);
+  $$.fragment = create_fragment5 ? create_fragment5($$.ctx) : false;
+  if (options.target) {
+    if (options.hydrate) {
+      start_hydrating();
+      const nodes = children(options.target);
+      $$.fragment && $$.fragment.l(nodes);
+      nodes.forEach(detach);
+    } else {
+      $$.fragment && $$.fragment.c();
+    }
+    if (options.intro)
+      transition_in(component.$$.fragment);
+    mount_component(component, options.target, options.anchor);
+    end_hydrating();
+    flush();
+  }
+  set_current_component(parent_component);
+}
+var SvelteElement;
+if (typeof HTMLElement === "function") {
+  SvelteElement = class extends HTMLElement {
+    constructor($$componentCtor, $$slots, use_shadow_dom) {
+      super();
+      /** The Svelte component constructor */
+      __publicField(this, "$$ctor");
+      /** Slots */
+      __publicField(this, "$$s");
+      /** The Svelte component instance */
+      __publicField(this, "$$c");
+      /** Whether or not the custom element is connected */
+      __publicField(this, "$$cn", false);
+      /** Component props data */
+      __publicField(this, "$$d", {});
+      /** `true` if currently in the process of reflecting component props back to attributes */
+      __publicField(this, "$$r", false);
+      /** @type {Record<string, CustomElementPropDefinition>} Props definition (name, reflected, type etc) */
+      __publicField(this, "$$p_d", {});
+      /** @type {Record<string, Function[]>} Event listeners */
+      __publicField(this, "$$l", {});
+      /** @type {Map<Function, Function>} Event listener unsubscribe functions */
+      __publicField(this, "$$l_u", /* @__PURE__ */ new Map());
+      this.$$ctor = $$componentCtor;
+      this.$$s = $$slots;
+      if (use_shadow_dom) {
+        this.attachShadow({ mode: "open" });
+      }
+    }
+    addEventListener(type, listener, options) {
+      this.$$l[type] = this.$$l[type] || [];
+      this.$$l[type].push(listener);
+      if (this.$$c) {
+        const unsub = this.$$c.$on(type, listener);
+        this.$$l_u.set(listener, unsub);
+      }
+      super.addEventListener(type, listener, options);
+    }
+    removeEventListener(type, listener, options) {
+      super.removeEventListener(type, listener, options);
+      if (this.$$c) {
+        const unsub = this.$$l_u.get(listener);
+        if (unsub) {
+          unsub();
+          this.$$l_u.delete(listener);
+        }
+      }
+      if (this.$$l[type]) {
+        const idx = this.$$l[type].indexOf(listener);
+        if (idx >= 0) {
+          this.$$l[type].splice(idx, 1);
+        }
+      }
+    }
+    async connectedCallback() {
+      this.$$cn = true;
+      if (!this.$$c) {
+        let create_slot = function(name) {
+          return () => {
+            let node;
+            const obj = {
+              c: function create() {
+                node = element("slot");
+                if (name !== "default") {
+                  attr(node, "name", name);
+                }
+              },
+              /**
+               * @param {HTMLElement} target
+               * @param {HTMLElement} [anchor]
+               */
+              m: function mount(target, anchor) {
+                insert(target, node, anchor);
+              },
+              d: function destroy(detaching) {
+                if (detaching) {
+                  detach(node);
+                }
+              }
+            };
+            return obj;
+          };
+        };
+        await Promise.resolve();
+        if (!this.$$cn || this.$$c) {
+          return;
+        }
+        const $$slots = {};
+        const existing_slots = get_custom_elements_slots(this);
+        for (const name of this.$$s) {
+          if (name in existing_slots) {
+            $$slots[name] = [create_slot(name)];
+          }
+        }
+        for (const attribute of this.attributes) {
+          const name = this.$$g_p(attribute.name);
+          if (!(name in this.$$d)) {
+            this.$$d[name] = get_custom_element_value(name, attribute.value, this.$$p_d, "toProp");
+          }
+        }
+        for (const key in this.$$p_d) {
+          if (!(key in this.$$d) && this[key] !== void 0) {
+            this.$$d[key] = this[key];
+            delete this[key];
+          }
+        }
+        this.$$c = new this.$$ctor({
+          target: this.shadowRoot || this,
+          props: {
+            ...this.$$d,
+            $$slots,
+            $$scope: {
+              ctx: []
+            }
+          }
+        });
+        const reflect_attributes = () => {
+          this.$$r = true;
+          for (const key in this.$$p_d) {
+            this.$$d[key] = this.$$c.$$.ctx[this.$$c.$$.props[key]];
+            if (this.$$p_d[key].reflect) {
+              const attribute_value = get_custom_element_value(
+                key,
+                this.$$d[key],
+                this.$$p_d,
+                "toAttribute"
+              );
+              if (attribute_value == null) {
+                this.removeAttribute(this.$$p_d[key].attribute || key);
+              } else {
+                this.setAttribute(this.$$p_d[key].attribute || key, attribute_value);
+              }
+            }
+          }
+          this.$$r = false;
+        };
+        this.$$c.$$.after_update.push(reflect_attributes);
+        reflect_attributes();
+        for (const type in this.$$l) {
+          for (const listener of this.$$l[type]) {
+            const unsub = this.$$c.$on(type, listener);
+            this.$$l_u.set(listener, unsub);
+          }
+        }
+        this.$$l = {};
+      }
+    }
+    // We don't need this when working within Svelte code, but for compatibility of people using this outside of Svelte
+    // and setting attributes through setAttribute etc, this is helpful
+    attributeChangedCallback(attr2, _oldValue, newValue) {
+      if (this.$$r)
+        return;
+      attr2 = this.$$g_p(attr2);
+      this.$$d[attr2] = get_custom_element_value(attr2, newValue, this.$$p_d, "toProp");
+      this.$$c?.$set({ [attr2]: this.$$d[attr2] });
+    }
+    disconnectedCallback() {
+      this.$$cn = false;
+      Promise.resolve().then(() => {
+        if (!this.$$cn && this.$$c) {
+          this.$$c.$destroy();
+          this.$$c = void 0;
+        }
+      });
+    }
+    $$g_p(attribute_name) {
+      return Object.keys(this.$$p_d).find(
+        (key) => this.$$p_d[key].attribute === attribute_name || !this.$$p_d[key].attribute && key.toLowerCase() === attribute_name
+      ) || attribute_name;
+    }
+  };
+}
+function get_custom_element_value(prop, value, props_definition, transform) {
+  const type = props_definition[prop]?.type;
+  value = type === "Boolean" && typeof value !== "boolean" ? value != null : value;
+  if (!transform || !props_definition[prop]) {
+    return value;
+  } else if (transform === "toAttribute") {
+    switch (type) {
+      case "Object":
+      case "Array":
+        return value == null ? null : JSON.stringify(value);
+      case "Boolean":
+        return value ? "" : null;
+      case "Number":
+        return value == null ? null : value;
+      default:
+        return value;
+    }
+  } else {
+    switch (type) {
+      case "Object":
+      case "Array":
+        return value && JSON.parse(value);
+      case "Boolean":
+        return value;
+      case "Number":
+        return value != null ? +value : value;
+      default:
+        return value;
+    }
+  }
+}
+var SvelteComponent = class {
+  constructor() {
+    /**
+     * ### PRIVATE API
+     *
+     * Do not use, may change at any time
+     *
+     * @type {any}
+     */
+    __publicField(this, "$$");
+    /**
+     * ### PRIVATE API
+     *
+     * Do not use, may change at any time
+     *
+     * @type {any}
+     */
+    __publicField(this, "$$set");
+  }
+  /** @returns {void} */
+  $destroy() {
+    destroy_component(this, 1);
+    this.$destroy = noop;
+  }
+  /**
+   * @template {Extract<keyof Events, string>} K
+   * @param {K} type
+   * @param {((e: Events[K]) => void) | null | undefined} callback
+   * @returns {() => void}
+   */
+  $on(type, callback) {
+    if (!is_function(callback)) {
+      return noop;
+    }
+    const callbacks = this.$$.callbacks[type] || (this.$$.callbacks[type] = []);
+    callbacks.push(callback);
+    return () => {
+      const index = callbacks.indexOf(callback);
+      if (index !== -1)
+        callbacks.splice(index, 1);
+    };
+  }
+  /**
+   * @param {Partial<Props>} props
+   * @returns {void}
+   */
+  $set(props) {
+    if (this.$$set && !is_empty(props)) {
+      this.$$.skip_bound = true;
+      this.$$set(props);
+      this.$$.skip_bound = false;
+    }
+  }
+};
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/shared/version.js
+var PUBLIC_VERSION = "4";
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/disclose-version/index.js
+if (typeof window !== "undefined")
+  (window.__svelte || (window.__svelte = { v: /* @__PURE__ */ new Set() })).v.add(PUBLIC_VERSION);
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/easing/index.js
+function cubicOut(t) {
+  const f = t - 1;
+  return f * f * f + 1;
+}
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/transition/index.js
+function slide(node, { delay = 0, duration = 400, easing = cubicOut, axis = "y" } = {}) {
+  const style = getComputedStyle(node);
+  const opacity = +style.opacity;
+  const primary_property = axis === "y" ? "height" : "width";
+  const primary_property_value = parseFloat(style[primary_property]);
+  const secondary_properties = axis === "y" ? ["top", "bottom"] : ["left", "right"];
+  const capitalized_secondary_properties = secondary_properties.map(
+    (e) => `${e[0].toUpperCase()}${e.slice(1)}`
+  );
+  const padding_start_value = parseFloat(style[`padding${capitalized_secondary_properties[0]}`]);
+  const padding_end_value = parseFloat(style[`padding${capitalized_secondary_properties[1]}`]);
+  const margin_start_value = parseFloat(style[`margin${capitalized_secondary_properties[0]}`]);
+  const margin_end_value = parseFloat(style[`margin${capitalized_secondary_properties[1]}`]);
+  const border_width_start_value = parseFloat(
+    style[`border${capitalized_secondary_properties[0]}Width`]
+  );
+  const border_width_end_value = parseFloat(
+    style[`border${capitalized_secondary_properties[1]}Width`]
+  );
+  return {
+    delay,
+    duration,
+    easing,
+    css: (t) => `overflow: hidden;opacity: ${Math.min(t * 20, 1) * opacity};${primary_property}: ${t * primary_property_value}px;padding-${secondary_properties[0]}: ${t * padding_start_value}px;padding-${secondary_properties[1]}: ${t * padding_end_value}px;margin-${secondary_properties[0]}: ${t * margin_start_value}px;margin-${secondary_properties[1]}: ${t * margin_end_value}px;border-${secondary_properties[0]}-width: ${t * border_width_start_value}px;border-${secondary_properties[1]}-width: ${t * border_width_end_value}px;`
+  };
+}
+
+// src/ui/svelte/LentaSidebar.svelte
+var import_obsidian11 = require("obsidian");
+
+// src/ui/svelte/ContainerCard.svelte
+var import_obsidian10 = require("obsidian");
+
+// src/ui/svelte/tree-flattener.ts
+function isTodayMatch(node, todayStr) {
+  if (node.dateStr && node.dateStr === todayStr)
+    return true;
+  if (node.startDate && node.startDate.slice(0, 10) === todayStr)
+    return true;
+  return false;
+}
+function flattenTree(nodes, expandedFolders, containerId, todayStr, depth = 0, currentFolderPath = "") {
+  const result = [];
+  const datedFileNodes = nodes.filter((n) => n.type === "file" && (n.dateStr || n.startDate));
+  const hasAnyTodayFile = datedFileNodes.some((f) => isTodayMatch(f, todayStr));
+  let todayMarkerInserted = false;
+  for (const node of nodes) {
+    if (!hasAnyTodayFile && datedFileNodes.length > 0 && !todayMarkerInserted) {
+      if (node.type === "file" && node.dateStr && node.dateStr > todayStr) {
+        result.push({
+          id: `${containerId}:${currentFolderPath}:today-marker`,
+          type: "today-marker",
+          name: todayStr,
+          path: currentFolderPath,
+          depth,
+          folderPath: currentFolderPath
+        });
+        todayMarkerInserted = true;
+      }
+    }
+    if (node.type === "folder") {
+      const folderKey = `${containerId}:${node.path}`;
+      const isExpanded = expandedFolders.has(folderKey);
+      const childCount = node.children ? node.children.length : 0;
+      result.push({
+        id: folderKey,
+        type: "folder",
+        name: node.name,
+        path: node.path,
+        depth,
+        isFolderExpanded: isExpanded,
+        childCount,
+        folderPath: node.path
+      });
+      if (isExpanded) {
+        if (node.children && node.children.length > 0) {
+          const childrenFlat = flattenTree(
+            node.children,
+            expandedFolders,
+            containerId,
+            todayStr,
+            depth + 1,
+            node.path
+          );
+          for (let i = 0; i < childrenFlat.length; i++) {
+            result.push(childrenFlat[i]);
+          }
+        } else {
+          result.push({
+            id: `${folderKey}:empty`,
+            type: "empty-folder",
+            name: "(\u041F\u0443\u0441\u0442\u0430\u044F \u043F\u0430\u043F\u043A\u0430)",
+            path: node.path,
+            depth: depth + 1,
+            folderPath: node.path
+          });
+        }
+      }
+    } else {
+      const isToday = isTodayMatch(node, todayStr);
+      result.push({
+        id: `${containerId}:${node.path}`,
+        type: "file",
+        name: node.name,
+        path: node.path,
+        depth,
+        size: node.size,
+        mtime: node.mtime,
+        dateStr: node.dateStr,
+        startDate: node.startDate,
+        endDate: node.endDate,
+        isToday,
+        folderPath: currentFolderPath
+      });
+    }
+  }
+  if (!hasAnyTodayFile && datedFileNodes.length > 0 && !todayMarkerInserted && depth === 0) {
+    result.push({
+      id: `${containerId}:${currentFolderPath}:today-marker`,
+      type: "today-marker",
+      name: todayStr,
+      path: currentFolderPath,
+      depth,
+      folderPath: currentFolderPath
+    });
+  }
+  return result;
+}
+function computeVirtualWindow(items, scrollTop, viewportHeight, itemHeight = 30, overscan = 5) {
+  const totalHeight = items.length * itemHeight;
+  if (items.length === 0 || viewportHeight <= 0) {
+    return {
+      startIndex: 0,
+      endIndex: 0,
+      offsetY: 0,
+      totalHeight,
+      visibleItems: []
+    };
+  }
+  const rawStart = Math.floor(scrollTop / itemHeight);
+  const startIndex = Math.max(0, rawStart - overscan);
+  const rawEnd = Math.ceil((scrollTop + viewportHeight) / itemHeight);
+  const endIndex = Math.min(items.length, rawEnd + overscan);
+  const offsetY = startIndex * itemHeight;
+  const visibleItems = items.slice(startIndex, endIndex);
+  return {
+    startIndex,
+    endIndex,
+    offsetY,
+    totalHeight,
+    visibleItems
+  };
+}
+
+// src/ui/svelte/TreeNodeRow.svelte
+var import_obsidian9 = require("obsidian");
+function create_if_block_6(ctx) {
+  let div;
+  let span;
+  let t1;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      span = element("span");
+      span.textContent = "\u{1F4C1} (\u041F\u0443\u0441\u0442\u0430\u044F \u043F\u0430\u043F\u043A\u0430)";
+      t1 = space();
+      button = element("button");
+      button.textContent = "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430";
+      attr(button, "class", "lenta-container-action-btn lenta-container-action-btn-add");
+      set_style(button, "padding", "2px 6px");
+      set_style(button, "font-size", "10px");
+      attr(div, "class", "lenta-tree-empty-folder");
+      set_style(
+        div,
+        "padding-left",
+        /*item*/
+        ctx[0].depth * 14 + 10 + "px"
+      );
+      set_style(div, "padding-top", "4px");
+      set_style(div, "padding-bottom", "4px");
+      set_style(div, "font-size", "11px");
+      set_style(div, "opacity", "0.7");
+      set_style(div, "display", "flex");
+      set_style(div, "align-items", "center");
+      set_style(div, "gap", "8px");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span);
+      append(div, t1);
+      append(div, button);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*handleQuickAddInEmpty*/
+          ctx[10]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*item*/
+      1) {
+        set_style(
+          div,
+          "padding-left",
+          /*item*/
+          ctx2[0].depth * 14 + 10 + "px"
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block_5(ctx) {
+  let div1;
+  let div0;
+  let span0;
+  let t0;
+  let t1;
+  let t2;
+  let span1;
+  let t4;
+  let button;
+  let span2;
+  let obsIcon_action;
+  let t5;
+  let span3;
+  let t7;
+  let span4;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div1 = element("div");
+      div0 = element("div");
+      span0 = element("span");
+      t0 = text("\u0421\u0435\u0433\u043E\u0434\u043D\u044F: ");
+      t1 = text(
+        /*todayHumanStr*/
+        ctx[1]
+      );
+      t2 = space();
+      span1 = element("span");
+      span1.textContent = "(\u0441\u043E\u0431\u044B\u0442\u0438\u0439 \u043D\u0435\u0442)";
+      t4 = space();
+      button = element("button");
+      span2 = element("span");
+      t5 = space();
+      span3 = element("span");
+      span3.textContent = "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430";
+      t7 = space();
+      span4 = element("span");
+      attr(span1, "class", "lenta-today-pill-status");
+      attr(span2, "class", "lenta-btn-inline-icon");
+      attr(button, "class", "lenta-today-marker-add-btn");
+      attr(button, "aria-label", "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F \u0432 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435");
+      attr(div0, "class", "lenta-today-pill");
+      attr(span4, "class", "lenta-today-marker-line");
+      attr(div1, "class", "lenta-today-marker-container");
+      set_style(
+        div1,
+        "padding-left",
+        /*item*/
+        ctx[0].depth * 14 + 6 + "px"
+      );
+    },
+    m(target, anchor) {
+      insert(target, div1, anchor);
+      append(div1, div0);
+      append(div0, span0);
+      append(span0, t0);
+      append(span0, t1);
+      append(div0, t2);
+      append(div0, span1);
+      append(div0, t4);
+      append(div0, button);
+      append(button, span2);
+      append(button, t5);
+      append(button, span3);
+      append(div1, t7);
+      append(div1, span4);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[2].call(null, span2, "plus")),
+          listen(
+            button,
+            "click",
+            /*handleAddTodayClick*/
+            ctx[9]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*todayHumanStr*/
+      2)
+        set_data(
+          t1,
+          /*todayHumanStr*/
+          ctx2[1]
+        );
+      if (dirty & /*item*/
+      1) {
+        set_style(
+          div1,
+          "padding-left",
+          /*item*/
+          ctx2[0].depth * 14 + 6 + "px"
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div1);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_2(ctx) {
+  let div;
+  let span0;
+  let span0_class_value;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*item*/
+    ctx[0].name + ""
+  );
+  let t1;
+  let span1_class_value;
+  let t2;
+  let t3;
+  let div_class_value;
+  let div_aria_selected_value;
+  let div_title_value;
+  let mounted;
+  let dispose;
+  let if_block0 = (
+    /*item*/
+    ctx[0].isToday && create_if_block_4(ctx)
+  );
+  let if_block1 = (
+    /*item*/
+    ctx[0].size && create_if_block_3(ctx)
+  );
+  return {
+    c() {
+      div = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      if (if_block0)
+        if_block0.c();
+      t3 = space();
+      if (if_block1)
+        if_block1.c();
+      attr(span0, "class", span0_class_value = "lenta-item-icon lenta-note-icon " + /*item*/
+      (ctx[0].isToday ? "is-today" : ""));
+      attr(span1, "class", span1_class_value = "lenta-note-title " + /*item*/
+      (ctx[0].isToday ? "is-today" : ""));
+      attr(div, "class", div_class_value = "lenta-tree-node-file " + /*item*/
+      (ctx[0].isToday ? "is-today lenta-tree-node-today" : ""));
+      set_style(
+        div,
+        "padding-left",
+        /*item*/
+        ctx[0].depth * 14 + 6 + "px"
+      );
+      attr(div, "role", "treeitem");
+      attr(div, "aria-selected", div_aria_selected_value = !!/*item*/
+      ctx[0].isToday);
+      attr(div, "tabindex", "0");
+      attr(div, "title", div_title_value = /*item*/
+      ctx[0].path);
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t0);
+      append(div, span1);
+      append(span1, t1);
+      append(div, t2);
+      if (if_block0)
+        if_block0.m(div, null);
+      append(div, t3);
+      if (if_block1)
+        if_block1.m(div, null);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[2].call(
+            null,
+            span0,
+            /*item*/
+            ctx[0].isToday ? "calendar-check" : "file-text"
+          )),
+          listen(
+            div,
+            "click",
+            /*handleFileClick*/
+            ctx[5]
+          ),
+          listen(
+            div,
+            "keydown",
+            /*handleFileKeydown*/
+            ctx[6]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*item*/
+      1 && span0_class_value !== (span0_class_value = "lenta-item-icon lenta-note-icon " + /*item*/
+      (ctx2[0].isToday ? "is-today" : ""))) {
+        attr(span0, "class", span0_class_value);
+      }
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty & /*item*/
+      1)
+        obsIcon_action.update.call(
+          null,
+          /*item*/
+          ctx2[0].isToday ? "calendar-check" : "file-text"
+        );
+      if (dirty & /*item*/
+      1 && t1_value !== (t1_value = /*item*/
+      ctx2[0].name + ""))
+        set_data(t1, t1_value);
+      if (dirty & /*item*/
+      1 && span1_class_value !== (span1_class_value = "lenta-note-title " + /*item*/
+      (ctx2[0].isToday ? "is-today" : ""))) {
+        attr(span1, "class", span1_class_value);
+      }
+      if (
+        /*item*/
+        ctx2[0].isToday
+      ) {
+        if (if_block0) {
+        } else {
+          if_block0 = create_if_block_4(ctx2);
+          if_block0.c();
+          if_block0.m(div, t3);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (
+        /*item*/
+        ctx2[0].size
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_3(ctx2);
+          if_block1.c();
+          if_block1.m(div, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (dirty & /*item*/
+      1 && div_class_value !== (div_class_value = "lenta-tree-node-file " + /*item*/
+      (ctx2[0].isToday ? "is-today lenta-tree-node-today" : ""))) {
+        attr(div, "class", div_class_value);
+      }
+      if (dirty & /*item*/
+      1) {
+        set_style(
+          div,
+          "padding-left",
+          /*item*/
+          ctx2[0].depth * 14 + 6 + "px"
+        );
+      }
+      if (dirty & /*item*/
+      1 && div_aria_selected_value !== (div_aria_selected_value = !!/*item*/
+      ctx2[0].isToday)) {
+        attr(div, "aria-selected", div_aria_selected_value);
+      }
+      if (dirty & /*item*/
+      1 && div_title_value !== (div_title_value = /*item*/
+      ctx2[0].path)) {
+        attr(div, "title", div_title_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block(ctx) {
+  let div;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*item*/
+    ctx[0].name + ""
+  );
+  let t1;
+  let t2;
+  let t3;
+  let span2;
+  let span2_aria_label_value;
+  let obsIcon_action_1;
+  let div_class_value;
+  let div_aria_expanded_value;
+  let div_aria_selected_value;
+  let mounted;
+  let dispose;
+  let if_block = (
+    /*item*/
+    ctx[0].childCount && /*item*/
+    ctx[0].childCount > 0 && create_if_block_1(ctx)
+  );
+  return {
+    c() {
+      div = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      if (if_block)
+        if_block.c();
+      t3 = space();
+      span2 = element("span");
+      attr(span0, "class", "lenta-item-icon");
+      attr(span1, "class", "lenta-item-name");
+      attr(span2, "class", "lenta-folder-add-note clickable-icon");
+      attr(span2, "aria-label", span2_aria_label_value = "Add note or subfolder in " + /*item*/
+      ctx[0].name);
+      attr(span2, "role", "button");
+      attr(span2, "tabindex", "0");
+      attr(div, "class", div_class_value = "lenta-tree-node-folder " + /*item*/
+      (ctx[0].isFolderExpanded ? "is-open" : ""));
+      set_style(
+        div,
+        "padding-left",
+        /*item*/
+        ctx[0].depth * 14 + 6 + "px"
+      );
+      attr(div, "role", "treeitem");
+      attr(div, "aria-expanded", div_aria_expanded_value = /*item*/
+      ctx[0].isFolderExpanded);
+      attr(div, "aria-selected", div_aria_selected_value = false);
+      attr(div, "tabindex", "0");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t0);
+      append(div, span1);
+      append(span1, t1);
+      append(div, t2);
+      if (if_block)
+        if_block.m(div, null);
+      append(div, t3);
+      append(div, span2);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[2].call(
+            null,
+            span0,
+            /*item*/
+            ctx[0].isFolderExpanded ? "folder-open" : "folder"
+          )),
+          listen(
+            span2,
+            "click",
+            /*handleAddInFolder*/
+            ctx[7]
+          ),
+          listen(
+            span2,
+            "keydown",
+            /*handleAddInFolderKeydown*/
+            ctx[8]
+          ),
+          action_destroyer(obsIcon_action_1 = /*obsIcon*/
+          ctx[2].call(null, span2, "plus")),
+          listen(
+            div,
+            "click",
+            /*handleFolderClick*/
+            ctx[3]
+          ),
+          listen(
+            div,
+            "keydown",
+            /*handleFolderKeydown*/
+            ctx[4]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty & /*item*/
+      1)
+        obsIcon_action.update.call(
+          null,
+          /*item*/
+          ctx2[0].isFolderExpanded ? "folder-open" : "folder"
+        );
+      if (dirty & /*item*/
+      1 && t1_value !== (t1_value = /*item*/
+      ctx2[0].name + ""))
+        set_data(t1, t1_value);
+      if (
+        /*item*/
+        ctx2[0].childCount && /*item*/
+        ctx2[0].childCount > 0
+      ) {
+        if (if_block) {
+          if_block.p(ctx2, dirty);
+        } else {
+          if_block = create_if_block_1(ctx2);
+          if_block.c();
+          if_block.m(div, t3);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+      if (dirty & /*item*/
+      1 && span2_aria_label_value !== (span2_aria_label_value = "Add note or subfolder in " + /*item*/
+      ctx2[0].name)) {
+        attr(span2, "aria-label", span2_aria_label_value);
+      }
+      if (dirty & /*item*/
+      1 && div_class_value !== (div_class_value = "lenta-tree-node-folder " + /*item*/
+      (ctx2[0].isFolderExpanded ? "is-open" : ""))) {
+        attr(div, "class", div_class_value);
+      }
+      if (dirty & /*item*/
+      1) {
+        set_style(
+          div,
+          "padding-left",
+          /*item*/
+          ctx2[0].depth * 14 + 6 + "px"
+        );
+      }
+      if (dirty & /*item*/
+      1 && div_aria_expanded_value !== (div_aria_expanded_value = /*item*/
+      ctx2[0].isFolderExpanded)) {
+        attr(div, "aria-expanded", div_aria_expanded_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block)
+        if_block.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_4(ctx) {
+  let span;
+  return {
+    c() {
+      span = element("span");
+      span.textContent = "\u{1F4CD} \u0421\u0415\u0413\u041E\u0414\u041D\u042F";
+      attr(span, "class", "lenta-today-badge");
+      attr(span, "title", "\u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441\u0435\u0433\u043E\u0434\u043D\u044F\u0448\u043D\u0435\u0433\u043E \u0434\u043D\u044F");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_3(ctx) {
+  let span;
+  let t0_value = (Math.round(
+    /*item*/
+    ctx[0].size / 1024
+  ) || 1) + "";
+  let t0;
+  let t1;
+  return {
+    c() {
+      span = element("span");
+      t0 = text(t0_value);
+      t1 = text(" KB");
+      attr(span, "class", "lenta-note-date");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t0);
+      append(span, t1);
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*item*/
+      1 && t0_value !== (t0_value = (Math.round(
+        /*item*/
+        ctx2[0].size / 1024
+      ) || 1) + ""))
+        set_data(t0, t0_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_1(ctx) {
+  let span;
+  let t_value = (
+    /*item*/
+    ctx[0].childCount + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "lenta-count-pill");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*item*/
+      1 && t_value !== (t_value = /*item*/
+      ctx2[0].childCount + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_fragment(ctx) {
+  let if_block_anchor;
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*item*/
+      ctx2[0].type === "folder"
+    )
+      return create_if_block;
+    if (
+      /*item*/
+      ctx2[0].type === "file"
+    )
+      return create_if_block_2;
+    if (
+      /*item*/
+      ctx2[0].type === "today-marker"
+    )
+      return create_if_block_5;
+    if (
+      /*item*/
+      ctx2[0].type === "empty-folder"
+    )
+      return create_if_block_6;
+  }
+  let current_block_type = select_block_type(ctx, -1);
+  let if_block = current_block_type && current_block_type(ctx);
+  return {
+    c() {
+      if (if_block)
+        if_block.c();
+      if_block_anchor = empty();
+    },
+    m(target, anchor) {
+      if (if_block)
+        if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+    },
+    p(ctx2, [dirty]) {
+      if (current_block_type === (current_block_type = select_block_type(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if (if_block)
+          if_block.d(1);
+        if_block = current_block_type && current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      }
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(if_block_anchor);
+      }
+      if (if_block) {
+        if_block.d(detaching);
+      }
+    }
+  };
+}
+function instance($$self, $$props, $$invalidate) {
+  let { item } = $$props;
+  let { todayHumanStr } = $$props;
+  const dispatch2 = createEventDispatcher();
+  function obsIcon(node, iconName) {
+    if (iconName) {
+      (0, import_obsidian9.setIcon)(node, iconName);
+    }
+    return {
+      update(newIconName) {
+        node.empty();
+        if (newIconName) {
+          (0, import_obsidian9.setIcon)(node, newIconName);
+        }
+      }
+    };
+  }
+  function handleFolderClick(e) {
+    e.stopPropagation();
+    dispatch2("toggleFolder", { item });
+  }
+  function handleFolderKeydown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch2("toggleFolder", { item });
+    }
+  }
+  function handleFileClick(e) {
+    e.stopPropagation();
+    dispatch2("openNote", { item });
+  }
+  function handleFileKeydown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch2("openNote", { item });
+    }
+  }
+  function handleAddInFolder(e) {
+    e.stopPropagation();
+    dispatch2("addInFolder", { item, mouseEvent: e });
+  }
+  function handleAddInFolderKeydown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleAddInFolder(e);
+    }
+  }
+  function handleAddTodayClick(e) {
+    e.stopPropagation();
+    dispatch2("addTodayNote", { item });
+  }
+  function handleQuickAddInEmpty(e) {
+    e.stopPropagation();
+    dispatch2("quickAddInEmpty", { item });
+  }
+  $$self.$$set = ($$props2) => {
+    if ("item" in $$props2)
+      $$invalidate(0, item = $$props2.item);
+    if ("todayHumanStr" in $$props2)
+      $$invalidate(1, todayHumanStr = $$props2.todayHumanStr);
+  };
+  return [
+    item,
+    todayHumanStr,
+    obsIcon,
+    handleFolderClick,
+    handleFolderKeydown,
+    handleFileClick,
+    handleFileKeydown,
+    handleAddInFolder,
+    handleAddInFolderKeydown,
+    handleAddTodayClick,
+    handleQuickAddInEmpty
+  ];
+}
+var TreeNodeRow = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(this, options, instance, create_fragment, safe_not_equal, { item: 0, todayHumanStr: 1 });
+  }
+};
+var TreeNodeRow_default = TreeNodeRow;
+
+// src/ui/svelte/VirtualTreeList.svelte
+function add_css(target) {
+  append_styles(target, "svelte-12i85gr", ".lenta-virtual-tree-root.svelte-12i85gr{overflow:hidden}.lenta-virtual-tree-slice.svelte-12i85gr{display:flex;flex-direction:column;gap:2px}");
+}
+function get_each_context(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[19] = list[i];
+  return child_ctx;
+}
+function create_each_block(key_1, ctx) {
+  let first;
+  let treenoderow;
+  let current;
+  treenoderow = new TreeNodeRow_default({
+    props: {
+      item: (
+        /*item*/
+        ctx[19]
+      ),
+      todayHumanStr: (
+        /*todayHumanStr*/
+        ctx[0]
+      )
+    }
+  });
+  treenoderow.$on(
+    "toggleFolder",
+    /*toggleFolder_handler*/
+    ctx[7]
+  );
+  treenoderow.$on(
+    "openNote",
+    /*openNote_handler*/
+    ctx[8]
+  );
+  treenoderow.$on(
+    "addInFolder",
+    /*addInFolder_handler*/
+    ctx[9]
+  );
+  treenoderow.$on(
+    "addTodayNote",
+    /*addTodayNote_handler*/
+    ctx[10]
+  );
+  treenoderow.$on(
+    "quickAddInEmpty",
+    /*quickAddInEmpty_handler*/
+    ctx[11]
+  );
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      first = empty();
+      create_component(treenoderow.$$.fragment);
+      this.first = first;
+    },
+    m(target, anchor) {
+      insert(target, first, anchor);
+      mount_component(treenoderow, target, anchor);
+      current = true;
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      const treenoderow_changes = {};
+      if (dirty & /*virtualWindow*/
+      4)
+        treenoderow_changes.item = /*item*/
+        ctx[19];
+      if (dirty & /*todayHumanStr*/
+      1)
+        treenoderow_changes.todayHumanStr = /*todayHumanStr*/
+        ctx[0];
+      treenoderow.$set(treenoderow_changes);
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(treenoderow.$$.fragment, local);
+      current = true;
+    },
+    o(local) {
+      transition_out(treenoderow.$$.fragment, local);
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(first);
+      }
+      destroy_component(treenoderow, detaching);
+    }
+  };
+}
+function create_fragment2(ctx) {
+  let div1;
+  let div0;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let current;
+  let each_value = ensure_array_like(
+    /*virtualWindow*/
+    ctx[2].visibleItems
+  );
+  const get_key = (ctx2) => (
+    /*item*/
+    ctx2[19].id
+  );
+  for (let i = 0; i < each_value.length; i += 1) {
+    let child_ctx = get_each_context(ctx, each_value, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block(key, child_ctx));
+  }
+  return {
+    c() {
+      div1 = element("div");
+      div0 = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div0, "class", "lenta-virtual-tree-slice svelte-12i85gr");
+      set_style(div0, "position", "absolute");
+      set_style(div0, "top", "0");
+      set_style(div0, "left", "0");
+      set_style(div0, "right", "0");
+      set_style(div0, "transform", "translateY(" + /*virtualWindow*/
+      ctx[2].offsetY + "px)");
+      set_style(div0, "will-change", "transform");
+      attr(div1, "class", "lenta-virtual-tree-root svelte-12i85gr");
+      set_style(div1, "position", "relative");
+      set_style(div1, "width", "100%");
+      set_style(
+        div1,
+        "min-height",
+        /*virtualWindow*/
+        ctx[2].totalHeight + "px"
+      );
+    },
+    m(target, anchor) {
+      insert(target, div1, anchor);
+      append(div1, div0);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div0, null);
+        }
+      }
+      ctx[12](div1);
+      current = true;
+    },
+    p(ctx2, [dirty]) {
+      if (dirty & /*virtualWindow, todayHumanStr*/
+      5) {
+        each_value = ensure_array_like(
+          /*virtualWindow*/
+          ctx2[2].visibleItems
+        );
+        group_outros();
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div0, outro_and_destroy_block, create_each_block, null, get_each_context);
+        check_outros();
+      }
+      if (!current || dirty & /*virtualWindow*/
+      4) {
+        set_style(div0, "transform", "translateY(" + /*virtualWindow*/
+        ctx2[2].offsetY + "px)");
+      }
+      if (!current || dirty & /*virtualWindow*/
+      4) {
+        set_style(
+          div1,
+          "min-height",
+          /*virtualWindow*/
+          ctx2[2].totalHeight + "px"
+        );
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      for (let i = 0; i < each_value.length; i += 1) {
+        transition_in(each_blocks[i]);
+      }
+      current = true;
+    },
+    o(local) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        transition_out(each_blocks[i]);
+      }
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div1);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+      ctx[12](null);
+    }
+  };
+}
+function instance2($$self, $$props, $$invalidate) {
+  let { items = [] } = $$props;
+  let { itemHeight = 30 } = $$props;
+  let { overscan = 5 } = $$props;
+  let { todayHumanStr } = $$props;
+  let { scrollContainer = null } = $$props;
+  const dispatch2 = createEventDispatcher();
+  let rootEl;
+  let scrollTop = 0;
+  let viewportHeight = 600;
+  let virtualWindow = {
+    startIndex: 0,
+    endIndex: 0,
+    offsetY: 0,
+    totalHeight: 0,
+    visibleItems: []
+  };
+  function updateWindow() {
+    if (!rootEl)
+      return;
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const rootRect = rootEl.getBoundingClientRect();
+      viewportHeight = containerRect.height || 600;
+      const relativeTop = containerRect.top - rootRect.top;
+      scrollTop = Math.max(0, relativeTop);
+    } else {
+      scrollTop = rootEl.scrollTop || 0;
+      viewportHeight = rootEl.clientHeight || 600;
+    }
+    $$invalidate(2, virtualWindow = computeVirtualWindow(items, scrollTop, viewportHeight, itemHeight, overscan));
+  }
+  let rafId = null;
+  function handleScrollThrottled() {
+    if (rafId !== null)
+      return;
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      updateWindow();
+    });
+  }
+  onMount(() => {
+    updateWindow();
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScrollThrottled, { passive: true });
+    }
+    window.addEventListener("resize", handleScrollThrottled, { passive: true });
+  });
+  onDestroy(() => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+    }
+    if (scrollContainer) {
+      scrollContainer.removeEventListener("scroll", handleScrollThrottled);
+    }
+    window.removeEventListener("resize", handleScrollThrottled);
+  });
+  function toggleFolder_handler(event) {
+    bubble.call(this, $$self, event);
+  }
+  function openNote_handler(event) {
+    bubble.call(this, $$self, event);
+  }
+  function addInFolder_handler(event) {
+    bubble.call(this, $$self, event);
+  }
+  function addTodayNote_handler(event) {
+    bubble.call(this, $$self, event);
+  }
+  function quickAddInEmpty_handler(event) {
+    bubble.call(this, $$self, event);
+  }
+  function div1_binding($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      rootEl = $$value;
+      $$invalidate(1, rootEl);
+    });
+  }
+  $$self.$$set = ($$props2) => {
+    if ("items" in $$props2)
+      $$invalidate(3, items = $$props2.items);
+    if ("itemHeight" in $$props2)
+      $$invalidate(4, itemHeight = $$props2.itemHeight);
+    if ("overscan" in $$props2)
+      $$invalidate(5, overscan = $$props2.overscan);
+    if ("todayHumanStr" in $$props2)
+      $$invalidate(0, todayHumanStr = $$props2.todayHumanStr);
+    if ("scrollContainer" in $$props2)
+      $$invalidate(6, scrollContainer = $$props2.scrollContainer);
+  };
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty & /*items, itemHeight, overscan, scrollContainer*/
+    120) {
+      $:
+        items, itemHeight, overscan, scrollContainer, updateWindow();
+    }
+  };
+  return [
+    todayHumanStr,
+    rootEl,
+    virtualWindow,
+    items,
+    itemHeight,
+    overscan,
+    scrollContainer,
+    toggleFolder_handler,
+    openNote_handler,
+    addInFolder_handler,
+    addTodayNote_handler,
+    quickAddInEmpty_handler,
+    div1_binding
+  ];
+}
+var VirtualTreeList = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(
+      this,
+      options,
+      instance2,
+      create_fragment2,
+      safe_not_equal,
+      {
+        items: 3,
+        itemHeight: 4,
+        overscan: 5,
+        todayHumanStr: 0,
+        scrollContainer: 6
+      },
+      add_css
+    );
+  }
+};
+var VirtualTreeList_default = VirtualTreeList;
+
+// src/ui/svelte/ContainerCard.svelte
+function create_if_block_52(ctx) {
+  let span;
+  return {
+    c() {
+      span = element("span");
+      span.textContent = "PUBLIC";
+      attr(span, "class", "lenta-badge lenta-badge-public");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_42(ctx) {
+  let span;
+  return {
+    c() {
+      span = element("span");
+      span.textContent = "FEED";
+      attr(span, "class", "lenta-badge lenta-badge-feed");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_32(ctx) {
+  let span;
+  let t_value = (
+    /*container*/
+    ctx[0].noteCount + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "lenta-count-pill");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*container*/
+      1 && t_value !== (t_value = /*container*/
+      ctx2[0].noteCount + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block2(ctx) {
+  let div;
+  let current_block_type_index;
+  let if_block;
+  let div_transition;
+  let current;
+  const if_block_creators = [create_if_block_12, create_if_block_22, create_else_block];
+  const if_blocks = [];
+  function select_block_type_1(ctx2, dirty) {
+    if (
+      /*isLoadingFiles*/
+      ctx2[3]
+    )
+      return 0;
+    if (!/*files*/
+    ctx2[4] || /*files*/
+    ctx2[4].length === 0)
+      return 1;
+    return 2;
+  }
+  current_block_type_index = select_block_type_1(ctx, -1);
+  if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-markdown-preview-pane lenta-container-tree-pane");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_blocks[current_block_type_index].m(div, null);
+      current = true;
+    },
+    p(ctx2, dirty) {
+      let previous_block_index = current_block_type_index;
+      current_block_type_index = select_block_type_1(ctx2, dirty);
+      if (current_block_type_index === previous_block_index) {
+        if_blocks[current_block_type_index].p(ctx2, dirty);
+      } else {
+        group_outros();
+        transition_out(if_blocks[previous_block_index], 1, 1, () => {
+          if_blocks[previous_block_index] = null;
+        });
+        check_outros();
+        if_block = if_blocks[current_block_type_index];
+        if (!if_block) {
+          if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block.c();
+        } else {
+          if_block.p(ctx2, dirty);
+        }
+        transition_in(if_block, 1);
+        if_block.m(div, null);
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(if_block);
+      if (local) {
+        add_render_callback(() => {
+          if (!current)
+            return;
+          if (!div_transition)
+            div_transition = create_bidirectional_transition(div, slide, { duration: 180 }, true);
+          div_transition.run(1);
+        });
+      }
+      current = true;
+    },
+    o(local) {
+      transition_out(if_block);
+      if (local) {
+        if (!div_transition)
+          div_transition = create_bidirectional_transition(div, slide, { duration: 180 }, false);
+        div_transition.run(0);
+      }
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_blocks[current_block_type_index].d();
+      if (detaching && div_transition)
+        div_transition.end();
+    }
+  };
+}
+function create_else_block(ctx) {
+  let virtualtreelist;
+  let current;
+  virtualtreelist = new VirtualTreeList_default({
+    props: {
+      items: (
+        /*flatItems*/
+        ctx[7]
+      ),
+      todayHumanStr: (
+        /*todayHumanStr*/
+        ctx[5]
+      ),
+      scrollContainer: (
+        /*scrollContainer*/
+        ctx[6]
+      )
+    }
+  });
+  virtualtreelist.$on(
+    "toggleFolder",
+    /*toggleFolder_handler*/
+    ctx[27]
+  );
+  virtualtreelist.$on(
+    "openNote",
+    /*openNote_handler*/
+    ctx[28]
+  );
+  virtualtreelist.$on(
+    "addInFolder",
+    /*handleFolderAddMenu*/
+    ctx[19]
+  );
+  virtualtreelist.$on(
+    "addTodayNote",
+    /*handleAddTodayNote*/
+    ctx[20]
+  );
+  virtualtreelist.$on(
+    "quickAddInEmpty",
+    /*handleQuickAddInEmpty*/
+    ctx[21]
+  );
+  return {
+    c() {
+      create_component(virtualtreelist.$$.fragment);
+    },
+    m(target, anchor) {
+      mount_component(virtualtreelist, target, anchor);
+      current = true;
+    },
+    p(ctx2, dirty) {
+      const virtualtreelist_changes = {};
+      if (dirty & /*flatItems*/
+      128)
+        virtualtreelist_changes.items = /*flatItems*/
+        ctx2[7];
+      if (dirty & /*todayHumanStr*/
+      32)
+        virtualtreelist_changes.todayHumanStr = /*todayHumanStr*/
+        ctx2[5];
+      if (dirty & /*scrollContainer*/
+      64)
+        virtualtreelist_changes.scrollContainer = /*scrollContainer*/
+        ctx2[6];
+      virtualtreelist.$set(virtualtreelist_changes);
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(virtualtreelist.$$.fragment, local);
+      current = true;
+    },
+    o(local) {
+      transition_out(virtualtreelist.$$.fragment, local);
+      current = false;
+    },
+    d(detaching) {
+      destroy_component(virtualtreelist, detaching);
+    }
+  };
+}
+function create_if_block_22(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u{1F4ED} Empty container. No markdown notes synced yet.";
+      attr(div, "class", "lenta-preview-empty");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_12(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u23F3 Loading files and folders...";
+      attr(div, "class", "lenta-preview-loading");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_fragment3(ctx) {
+  let div2;
+  let div0;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1;
+  let t2;
+  let t3;
+  let t4;
+  let span2;
+  let obsIcon_action_1;
+  let t5;
+  let span3;
+  let span3_aria_label_value;
+  let obsIcon_action_2;
+  let div0_class_value;
+  let t6;
+  let div1;
+  let button0;
+  let t7_value = (
+    /*isActiveContainer*/
+    ctx[2] ? "\u2713 Connected" : "Connect Container"
+  );
+  let t7;
+  let button0_class_value;
+  let t8;
+  let button1;
+  let t10;
+  let button2;
+  let t12;
+  let div2_class_value;
+  let current;
+  let mounted;
+  let dispose;
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*isFeed*/
+      ctx2[9]
+    )
+      return create_if_block_42;
+    if (
+      /*isPublic*/
+      ctx2[10]
+    )
+      return create_if_block_52;
+  }
+  let current_block_type = select_block_type(ctx, -1);
+  let if_block0 = current_block_type && current_block_type(ctx);
+  let if_block1 = (
+    /*container*/
+    ctx[0].noteCount !== void 0 && /*container*/
+    ctx[0].noteCount !== null && create_if_block_32(ctx)
+  );
+  let if_block2 = (
+    /*isExpanded*/
+    ctx[1] && create_if_block2(ctx)
+  );
+  return {
+    c() {
+      div2 = element("div");
+      div0 = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(
+        /*displayTitle*/
+        ctx[8]
+      );
+      t2 = space();
+      if (if_block0)
+        if_block0.c();
+      t3 = space();
+      if (if_block1)
+        if_block1.c();
+      t4 = space();
+      span2 = element("span");
+      t5 = space();
+      span3 = element("span");
+      t6 = space();
+      div1 = element("div");
+      button0 = element("button");
+      t7 = text(t7_value);
+      t8 = space();
+      button1 = element("button");
+      button1.textContent = "+ Note +";
+      t10 = space();
+      button2 = element("button");
+      button2.textContent = "+ Folder \u{1F4C1}";
+      t12 = space();
+      if (if_block2)
+        if_block2.c();
+      attr(span0, "class", "lenta-item-icon");
+      attr(span1, "class", "lenta-item-name");
+      attr(span2, "class", "lenta-container-add-btn clickable-icon");
+      attr(span2, "aria-label", "New Note or Folder in Container");
+      attr(span2, "role", "button");
+      attr(span2, "tabindex", "0");
+      attr(span3, "class", "lenta-preview-toggle clickable-icon");
+      attr(span3, "aria-label", span3_aria_label_value = /*isExpanded*/
+      ctx[1] ? "Collapse container" : "Expand container files");
+      attr(div0, "class", div0_class_value = "lenta-container-header-row " + /*isActiveContainer*/
+      (ctx[2] ? "is-active" : ""));
+      attr(div0, "role", "button");
+      attr(div0, "tabindex", "0");
+      attr(button0, "class", button0_class_value = "lenta-container-action-btn lenta-container-action-btn-connect " + /*isActiveContainer*/
+      (ctx[2] ? "is-active" : ""));
+      attr(button1, "class", "lenta-container-action-btn lenta-container-action-btn-add");
+      attr(button2, "class", "lenta-container-action-btn lenta-container-action-btn-add");
+      attr(div1, "class", "lenta-container-sub-actions");
+      attr(div2, "class", div2_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
+      (ctx[2] ? "is-active" : ""));
+    },
+    m(target, anchor) {
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div0, span0);
+      append(div0, t0);
+      append(div0, span1);
+      append(span1, t1);
+      append(div0, t2);
+      if (if_block0)
+        if_block0.m(div0, null);
+      append(div0, t3);
+      if (if_block1)
+        if_block1.m(div0, null);
+      append(div0, t4);
+      append(div0, span2);
+      append(div0, t5);
+      append(div0, span3);
+      append(div2, t6);
+      append(div2, div1);
+      append(div1, button0);
+      append(button0, t7);
+      append(div1, t8);
+      append(div1, button1);
+      append(div1, t10);
+      append(div1, button2);
+      append(div2, t12);
+      if (if_block2)
+        if_block2.m(div2, null);
+      current = true;
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[12].call(
+            null,
+            span0,
+            /*isFeed*/
+            ctx[9] ? "newspaper" : "box"
+          )),
+          listen(
+            span2,
+            "click",
+            /*handlePlusMenuClick*/
+            ctx[17]
+          ),
+          listen(
+            span2,
+            "keydown",
+            /*handlePlusMenuKeydown*/
+            ctx[18]
+          ),
+          action_destroyer(obsIcon_action_1 = /*obsIcon*/
+          ctx[12].call(null, span2, "plus")),
+          action_destroyer(obsIcon_action_2 = /*obsIcon*/
+          ctx[12].call(
+            null,
+            span3,
+            /*isExpanded*/
+            ctx[1] ? "chevron-up" : "chevron-down"
+          )),
+          listen(
+            div0,
+            "click",
+            /*handleHeaderClick*/
+            ctx[13]
+          ),
+          listen(
+            div0,
+            "keydown",
+            /*keydown_handler*/
+            ctx[26]
+          ),
+          listen(
+            button0,
+            "click",
+            /*handleConnectClick*/
+            ctx[14]
+          ),
+          listen(
+            button1,
+            "click",
+            /*handleAddNoteClick*/
+            ctx[15]
+          ),
+          listen(
+            button2,
+            "click",
+            /*handleAddFolderClick*/
+            ctx[16]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, [dirty]) {
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty & /*isFeed*/
+      512)
+        obsIcon_action.update.call(
+          null,
+          /*isFeed*/
+          ctx2[9] ? "newspaper" : "box"
+        );
+      if (!current || dirty & /*displayTitle*/
+      256)
+        set_data(
+          t1,
+          /*displayTitle*/
+          ctx2[8]
+        );
+      if (current_block_type !== (current_block_type = select_block_type(ctx2, dirty))) {
+        if (if_block0)
+          if_block0.d(1);
+        if_block0 = current_block_type && current_block_type(ctx2);
+        if (if_block0) {
+          if_block0.c();
+          if_block0.m(div0, t3);
+        }
+      }
+      if (
+        /*container*/
+        ctx2[0].noteCount !== void 0 && /*container*/
+        ctx2[0].noteCount !== null
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_32(ctx2);
+          if_block1.c();
+          if_block1.m(div0, t4);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (!current || dirty & /*isExpanded*/
+      2 && span3_aria_label_value !== (span3_aria_label_value = /*isExpanded*/
+      ctx2[1] ? "Collapse container" : "Expand container files")) {
+        attr(span3, "aria-label", span3_aria_label_value);
+      }
+      if (obsIcon_action_2 && is_function(obsIcon_action_2.update) && dirty & /*isExpanded*/
+      2)
+        obsIcon_action_2.update.call(
+          null,
+          /*isExpanded*/
+          ctx2[1] ? "chevron-up" : "chevron-down"
+        );
+      if (!current || dirty & /*isActiveContainer*/
+      4 && div0_class_value !== (div0_class_value = "lenta-container-header-row " + /*isActiveContainer*/
+      (ctx2[2] ? "is-active" : ""))) {
+        attr(div0, "class", div0_class_value);
+      }
+      if ((!current || dirty & /*isActiveContainer*/
+      4) && t7_value !== (t7_value = /*isActiveContainer*/
+      ctx2[2] ? "\u2713 Connected" : "Connect Container"))
+        set_data(t7, t7_value);
+      if (!current || dirty & /*isActiveContainer*/
+      4 && button0_class_value !== (button0_class_value = "lenta-container-action-btn lenta-container-action-btn-connect " + /*isActiveContainer*/
+      (ctx2[2] ? "is-active" : ""))) {
+        attr(button0, "class", button0_class_value);
+      }
+      if (
+        /*isExpanded*/
+        ctx2[1]
+      ) {
+        if (if_block2) {
+          if_block2.p(ctx2, dirty);
+          if (dirty & /*isExpanded*/
+          2) {
+            transition_in(if_block2, 1);
+          }
+        } else {
+          if_block2 = create_if_block2(ctx2);
+          if_block2.c();
+          transition_in(if_block2, 1);
+          if_block2.m(div2, null);
+        }
+      } else if (if_block2) {
+        group_outros();
+        transition_out(if_block2, 1, 1, () => {
+          if_block2 = null;
+        });
+        check_outros();
+      }
+      if (!current || dirty & /*isActiveContainer*/
+      4 && div2_class_value !== (div2_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
+      (ctx2[2] ? "is-active" : ""))) {
+        attr(div2, "class", div2_class_value);
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(if_block2);
+      current = true;
+    },
+    o(local) {
+      transition_out(if_block2);
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div2);
+      }
+      if (if_block0) {
+        if_block0.d();
+      }
+      if (if_block1)
+        if_block1.d();
+      if (if_block2)
+        if_block2.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function instance3($$self, $$props, $$invalidate) {
+  let displayTitle;
+  let isPublic;
+  let isFeed;
+  let { container } = $$props;
+  let { isExpanded } = $$props;
+  let { isActiveContainer } = $$props;
+  let { isLoadingFiles } = $$props;
+  let { files } = $$props;
+  let { folders } = $$props;
+  let { expandedFolders } = $$props;
+  let { todayStr } = $$props;
+  let { todayHumanStr } = $$props;
+  let { scrollContainer = null } = $$props;
+  const dispatch2 = createEventDispatcher();
+  function obsIcon(node, iconName) {
+    if (iconName) {
+      (0, import_obsidian10.setIcon)(node, iconName);
+    }
+    return {
+      update(newIconName) {
+        node.empty();
+        if (newIconName) {
+          (0, import_obsidian10.setIcon)(node, newIconName);
+        }
+      }
+    };
+  }
+  let fileTree = [];
+  let flatItems = [];
+  function handleHeaderClick() {
+    dispatch2("toggleExpand", { containerId: container.id });
+  }
+  function handleConnectClick(e) {
+    e.stopPropagation();
+    dispatch2("toggleConnect", { containerId: container.id });
+  }
+  function handleAddNoteClick(e) {
+    e.stopPropagation();
+    dispatch2("addNote", {
+      containerId: container.id,
+      containerName: displayTitle
+    });
+  }
+  function handleAddFolderClick(e) {
+    e.stopPropagation();
+    dispatch2("addFolder", {
+      containerId: container.id,
+      containerName: displayTitle
+    });
+  }
+  function handlePlusMenuClick(e) {
+    e.stopPropagation();
+    const menu = new import_obsidian10.Menu();
+    menu.addItem((item) => {
+      item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
+        dispatch2("addNote", {
+          containerId: container.id,
+          containerName: displayTitle
+        });
+      });
+    });
+    menu.addItem((item) => {
+      item.setTitle("\u{1F4C1} New Folder in Container").setIcon("folder-plus").onClick(() => {
+        dispatch2("addFolder", {
+          containerId: container.id,
+          containerName: displayTitle
+        });
+      });
+    });
+    if ("clientX" in e && e.clientX !== void 0) {
+      menu.showAtMouseEvent(e);
+    } else {
+      menu.showAtPosition({ x: 100, y: 100 });
+    }
+  }
+  function handlePlusMenuKeydown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handlePlusMenuClick(e);
+    }
+  }
+  function handleFolderAddMenu(e) {
+    const { item, mouseEvent } = e.detail;
+    const menu = new import_obsidian10.Menu();
+    menu.addItem((mItem) => {
+      mItem.setTitle(`\u{1F4DD} New Note in "${item.name}"`).setIcon("file-plus").onClick(() => {
+        dispatch2("addNote", {
+          containerId: container.id,
+          containerName: displayTitle,
+          folderPath: item.path
+        });
+      });
+    });
+    menu.addItem((mItem) => {
+      mItem.setTitle(`\u{1F4C1} New Subfolder in "${item.name}"`).setIcon("folder-plus").onClick(() => {
+        dispatch2("addFolder", {
+          containerId: container.id,
+          containerName: displayTitle,
+          parentFolderPath: item.path
+        });
+      });
+    });
+    menu.showAtMouseEvent(mouseEvent);
+  }
+  function handleAddTodayNote(e) {
+    const { item } = e.detail;
+    dispatch2("addNote", {
+      containerId: container.id,
+      containerName: displayTitle,
+      folderPath: item.folderPath || void 0,
+      initialDate: todayStr
+    });
+  }
+  function handleQuickAddInEmpty(e) {
+    const { item } = e.detail;
+    dispatch2("addNote", {
+      containerId: container.id,
+      containerName: displayTitle,
+      folderPath: item.folderPath || void 0
+    });
+  }
+  const keydown_handler = (e) => {
+    if (e.key === "Enter" || e.key === " ")
+      handleHeaderClick();
+  };
+  const toggleFolder_handler = (e) => dispatch2("toggleFolder", e.detail);
+  const openNote_handler = (e) => dispatch2("openNote", e.detail);
+  $$self.$$set = ($$props2) => {
+    if ("container" in $$props2)
+      $$invalidate(0, container = $$props2.container);
+    if ("isExpanded" in $$props2)
+      $$invalidate(1, isExpanded = $$props2.isExpanded);
+    if ("isActiveContainer" in $$props2)
+      $$invalidate(2, isActiveContainer = $$props2.isActiveContainer);
+    if ("isLoadingFiles" in $$props2)
+      $$invalidate(3, isLoadingFiles = $$props2.isLoadingFiles);
+    if ("files" in $$props2)
+      $$invalidate(4, files = $$props2.files);
+    if ("folders" in $$props2)
+      $$invalidate(22, folders = $$props2.folders);
+    if ("expandedFolders" in $$props2)
+      $$invalidate(23, expandedFolders = $$props2.expandedFolders);
+    if ("todayStr" in $$props2)
+      $$invalidate(24, todayStr = $$props2.todayStr);
+    if ("todayHumanStr" in $$props2)
+      $$invalidate(5, todayHumanStr = $$props2.todayHumanStr);
+    if ("scrollContainer" in $$props2)
+      $$invalidate(6, scrollContainer = $$props2.scrollContainer);
+  };
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty & /*container*/
+    1) {
+      $:
+        $$invalidate(8, displayTitle = getContainerDisplayTitle2(container.id, container.name));
+    }
+    if ($$self.$$.dirty & /*container*/
+    1) {
+      $:
+        $$invalidate(10, isPublic = isContainerPublic(container));
+    }
+    if ($$self.$$.dirty & /*container*/
+    1) {
+      $:
+        $$invalidate(9, isFeed = container.id.startsWith("feed-"));
+    }
+    if ($$self.$$.dirty & /*files, folders, fileTree, expandedFolders, container, todayStr*/
+    62914577) {
+      $: {
+        if (files && files.length > 0) {
+          $$invalidate(25, fileTree = buildFileTree(files, folders || []));
+          $$invalidate(7, flatItems = flattenTree(fileTree, expandedFolders, container.id, todayStr));
+        } else {
+          $$invalidate(25, fileTree = []);
+          $$invalidate(7, flatItems = []);
+        }
+      }
+    }
+  };
+  return [
+    container,
+    isExpanded,
+    isActiveContainer,
+    isLoadingFiles,
+    files,
+    todayHumanStr,
+    scrollContainer,
+    flatItems,
+    displayTitle,
+    isFeed,
+    isPublic,
+    dispatch2,
+    obsIcon,
+    handleHeaderClick,
+    handleConnectClick,
+    handleAddNoteClick,
+    handleAddFolderClick,
+    handlePlusMenuClick,
+    handlePlusMenuKeydown,
+    handleFolderAddMenu,
+    handleAddTodayNote,
+    handleQuickAddInEmpty,
+    folders,
+    expandedFolders,
+    todayStr,
+    fileTree,
+    keydown_handler,
+    toggleFolder_handler,
+    openNote_handler
+  ];
+}
+var ContainerCard = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(this, options, instance3, create_fragment3, safe_not_equal, {
+      container: 0,
+      isExpanded: 1,
+      isActiveContainer: 2,
+      isLoadingFiles: 3,
+      files: 4,
+      folders: 22,
+      expandedFolders: 23,
+      todayStr: 24,
+      todayHumanStr: 5,
+      scrollContainer: 6
+    });
+  }
+};
+var ContainerCard_default = ContainerCard;
+
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/store/index.js
+var subscriber_queue = [];
+function writable(value, start = noop) {
+  let stop;
+  const subscribers = /* @__PURE__ */ new Set();
+  function set(new_value) {
+    if (safe_not_equal(value, new_value)) {
+      value = new_value;
+      if (stop) {
+        const run_queue = !subscriber_queue.length;
+        for (const subscriber of subscribers) {
+          subscriber[1]();
+          subscriber_queue.push(subscriber, value);
+        }
+        if (run_queue) {
+          for (let i = 0; i < subscriber_queue.length; i += 2) {
+            subscriber_queue[i][0](subscriber_queue[i + 1]);
+          }
+          subscriber_queue.length = 0;
+        }
+      }
+    }
+  }
+  function update2(fn) {
+    set(fn(value));
+  }
+  function subscribe2(run2, invalidate = noop) {
+    const subscriber = [run2, invalidate];
+    subscribers.add(subscriber);
+    if (subscribers.size === 1) {
+      stop = start(set, update2) || noop;
+    }
+    run2(value);
+    return () => {
+      subscribers.delete(subscriber);
+      if (subscribers.size === 0 && stop) {
+        stop();
+        stop = null;
+      }
+    };
+  }
+  return { set, update: update2, subscribe: subscribe2 };
+}
+
+// src/ui/svelte/sidebar-store.ts
+function createSetStore(initialItems = []) {
+  const store = writable(new Set(initialItems));
+  let currentSet = new Set(initialItems);
+  store.subscribe((val) => {
+    currentSet = val;
+  });
+  return {
+    subscribe: store.subscribe,
+    set: (val) => {
+      currentSet = val;
+      store.set(val);
+    },
+    update: store.update,
+    add: (item) => {
+      store.update((s) => {
+        s.add(item);
+        return new Set(s);
+      });
+    },
+    delete: (item) => {
+      store.update((s) => {
+        s.delete(item);
+        return new Set(s);
+      });
+    },
+    toggle: (item) => {
+      store.update((s) => {
+        if (s.has(item)) {
+          s.delete(item);
+        } else {
+          s.add(item);
+        }
+        return new Set(s);
+      });
+    },
+    clear: () => {
+      store.set(/* @__PURE__ */ new Set());
+    },
+    has: (item) => currentSet.has(item)
+  };
+}
+
+// src/ui/svelte/LentaSidebar.svelte
+var { Map: Map_1 } = globals;
+function add_css2(target) {
+  append_styles(target, "svelte-173hj10", ".lenta-sidebar-container.svelte-173hj10{min-width:300px;height:100%;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;box-sizing:border-box;font-size:var(--font-ui-small)}.lenta-sidebar-header.svelte-173hj10{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.lenta-sidebar-title.svelte-173hj10{display:flex;align-items:center;gap:8px}.lenta-title-text.svelte-173hj10{margin:0;font-size:1rem;font-weight:700;color:var(--lenta-lemon, #f9c74f)}.lenta-badge.svelte-173hj10{font-size:0.7rem;background:var(--interactive-accent);color:var(--text-on-accent);padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap}.lenta-sidebar-toolbar.svelte-173hj10{display:flex;gap:4px;align-items:center}.lenta-search-container.svelte-173hj10{flex-shrink:0;margin-bottom:8px}.lenta-search-input-wrap.svelte-173hj10{position:relative;display:flex;align-items:center;background:var(--background-modifier-form-field);border:1px solid var(--background-modifier-border);border-radius:6px;padding:0 8px}.lenta-search-input-wrap.svelte-173hj10:focus-within{border-color:var(--interactive-accent)}.lenta-search-icon.svelte-173hj10{display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;margin-right:6px}.lenta-search-input.svelte-173hj10{flex:1;border:none;background:transparent;padding:6px 0;font-size:0.82rem;color:var(--text-normal);outline:none}.lenta-search-clear.svelte-173hj10{background:transparent;border:none;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;color:var(--text-muted)}.lenta-search-clear.svelte-173hj10:hover{color:var(--text-normal)}.lenta-mode-switcher.svelte-173hj10{flex-shrink:0;display:flex;gap:4px;background:var(--background-secondary);padding:3px;border-radius:8px;margin-bottom:8px}.lenta-mode-tab.svelte-173hj10{flex:1;text-align:center;padding:5px 8px;font-size:0.8rem;font-weight:600;border:none;background:transparent;border-radius:6px;color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-mode-tab.svelte-173hj10:hover{color:var(--text-normal)}.lenta-mode-tab.is-active.svelte-173hj10{background:var(--interactive-accent);color:var(--text-on-accent);box-shadow:0 1px 3px rgba(0, 0, 0, 0.15)}.lenta-sidebar-tabs.svelte-173hj10{flex-shrink:0;display:flex;gap:4px;margin-bottom:6px}.lenta-tab.svelte-173hj10{flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);color:var(--text-muted);cursor:pointer;font-size:0.8rem;font-weight:500;transition:all 0.15s ease}.lenta-tab.active.svelte-173hj10{background:var(--interactive-accent);color:var(--text-on-accent);border-color:var(--interactive-accent)}.lenta-scope-filter-bar.svelte-173hj10{flex-shrink:0;display:flex;gap:6px;margin-bottom:8px}.lenta-scope-pill.svelte-173hj10{flex:1;padding:4px 6px;font-size:0.75rem;font-weight:500;border-radius:5px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-scope-pill.active.svelte-173hj10{border-color:var(--interactive-accent);color:var(--text-normal);background:var(--background-modifier-active-hover);font-weight:600}.lenta-inline-key-card.svelte-173hj10{flex-shrink:0;margin-bottom:8px}.lenta-key-connected-row.svelte-173hj10{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 10px;background:var(--background-secondary);border-radius:6px;border:1px solid var(--background-modifier-border)}.lenta-key-badge.svelte-173hj10{font-size:0.78rem;font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-key-action-btn.svelte-173hj10{padding:3px 8px;font-size:0.75rem;border-radius:4px;border:1px solid var(--background-modifier-border);cursor:pointer}.lenta-key-action-btn.mod-warning.svelte-173hj10{color:var(--text-error, #f05252);background:transparent}.lenta-key-action-btn.mod-warning.svelte-173hj10:hover{background:var(--background-modifier-error-hover, rgba(240, 82, 82, 0.1))}.lenta-key-input-wrap.svelte-173hj10{display:flex;gap:6px}.lenta-key-input.svelte-173hj10{flex:1;padding:5px 8px;font-size:0.8rem;border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-modifier-form-field);color:var(--text-normal)}.lenta-key-submit-btn.svelte-173hj10{padding:5px 12px;font-size:0.8rem;font-weight:600;border-radius:6px;border:none;background:var(--interactive-accent);color:var(--text-on-accent);cursor:pointer}.lenta-sidebar-content.svelte-173hj10{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;min-height:0;padding-right:4px;display:flex;flex-direction:column;gap:4px}.lenta-sidebar-footer.svelte-173hj10{flex-shrink:0;margin-top:auto;padding-top:8px;border-top:1px solid var(--background-modifier-border);display:flex;gap:6px}.lenta-footer-action-btn.svelte-173hj10{flex:1;padding:6px 10px;font-size:0.8rem;font-weight:600;background:var(--interactive-normal);border-radius:6px;border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer;transition:background 0.15s ease}.lenta-footer-action-btn.svelte-173hj10:hover{background:var(--interactive-hover)}.lenta-tree-list.svelte-173hj10{display:flex;flex-direction:column;gap:4px}.lenta-tree-item.svelte-173hj10{border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);overflow:hidden}.lenta-folder-header-row.svelte-173hj10,.lenta-feed-header-row.svelte-173hj10{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none}.lenta-folder-header-row.svelte-173hj10:hover,.lenta-feed-header-row.svelte-173hj10:hover{background:var(--background-modifier-hover)}.lenta-item-name.svelte-173hj10{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-count-pill.svelte-173hj10{font-size:0.72rem;background:var(--background-modifier-border);color:var(--text-muted);padding:1px 6px;border-radius:10px}.lenta-folder-add-note.svelte-173hj10{background:transparent;border:none;cursor:pointer;padding:2px}.lenta-markdown-preview-pane.svelte-173hj10{padding:6px 10px;background:var(--background-primary);border-top:1px solid var(--background-modifier-border)}.lenta-notes-list.svelte-173hj10{display:flex;flex-direction:column;gap:3px}.lenta-note-row.svelte-173hj10{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer}.lenta-note-row.svelte-173hj10:hover{background:var(--background-modifier-hover)}.lenta-note-title.svelte-173hj10{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.82rem}.lenta-note-date.svelte-173hj10{font-size:0.72rem;color:var(--text-muted)}.lenta-loading-text.svelte-173hj10,.lenta-preview-loading.svelte-173hj10{padding:12px;text-align:center;color:var(--text-muted);font-style:italic}.lenta-preview-empty.svelte-173hj10{padding:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;display:flex;flex-direction:column;align-items:center;gap:8px}.lenta-empty-action-link.svelte-173hj10{background:transparent;border:none;color:var(--interactive-accent);cursor:pointer;text-decoration:underline;font-size:0.8rem}");
+}
+function get_each_context_3(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[112] = list[i];
+  return child_ctx;
+}
+function get_each_context_4(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[109] = list[i];
+  return child_ctx;
+}
+function get_each_context_1(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[106] = list[i];
+  return child_ctx;
+}
+function get_each_context_2(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[109] = list[i];
+  return child_ctx;
+}
+function get_each_context2(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[103] = list[i];
+  return child_ctx;
+}
+function create_if_block_21(ctx) {
+  let span;
+  let t0;
+  let t1;
+  let span_title_value;
+  return {
+    c() {
+      span = element("span");
+      t0 = text("CONTAINERS: ");
+      t1 = text(
+        /*selectedCount*/
+        ctx[19]
+      );
+      attr(span, "class", "lenta-badge svelte-173hj10");
+      attr(span, "title", span_title_value = "Connected containers (" + /*selectedCount*/
+      ctx[19] + "): " + /*settings*/
+      ctx[0].activeContainerIds?.join(", "));
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t0);
+      append(span, t1);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*selectedCount*/
+      524288)
+        set_data(
+          t1,
+          /*selectedCount*/
+          ctx2[19]
+        );
+      if (dirty[0] & /*selectedCount, settings*/
+      524289 && span_title_value !== (span_title_value = "Connected containers (" + /*selectedCount*/
+      ctx2[19] + "): " + /*settings*/
+      ctx2[0].activeContainerIds?.join(", "))) {
+        attr(span, "title", span_title_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_20(ctx) {
+  let button;
+  let obsIcon_action;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button = element("button");
+      attr(button, "type", "button");
+      attr(button, "class", "clickable-icon");
+      attr(button, "aria-label", "Connections & Auth");
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button,
+            "click",
+            /*click_handler_5*/
+            ctx[62]
+          ),
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(null, button, "link-2"))
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_19(ctx) {
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button = element("button");
+      button.textContent = "\xD7";
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-search-clear clickable-icon svelte-173hj10");
+      attr(button, "aria-label", "Clear search");
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*click_handler_7*/
+          ctx[65]
+        );
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block_3(ctx) {
+  let div0;
+  let button0;
+  let t0;
+  let button0_aria_selected_value;
+  let button0_class_value;
+  let t1;
+  let button1;
+  let t2;
+  let button1_aria_selected_value;
+  let button1_class_value;
+  let t3;
+  let div1;
+  let button2;
+  let t4_value = (
+    /*activeTab*/
+    ctx[12] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"
+  );
+  let t4;
+  let button2_aria_checked_value;
+  let button2_class_value;
+  let t5;
+  let button3;
+  let t6_value = (
+    /*activeTab*/
+    ctx[12] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"
+  );
+  let t6;
+  let button3_aria_checked_value;
+  let button3_class_value;
+  let t7;
+  let div2;
+  let t8;
+  let footer;
+  let button4;
+  let t10;
+  let button5;
+  let t12;
+  let button6;
+  let mounted;
+  let dispose;
+  function select_block_type_4(ctx2, dirty) {
+    if (
+      /*isLoading*/
+      ctx2[6]
+    )
+      return create_if_block_53;
+    if (
+      /*activeTab*/
+      ctx2[12] === "folders"
+    )
+      return create_if_block_62;
+    return create_else_block_7;
+  }
+  let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div0 = element("div");
+      button0 = element("button");
+      t0 = text("Folders");
+      t1 = space();
+      button1 = element("button");
+      t2 = text("Feeds");
+      t3 = space();
+      div1 = element("div");
+      button2 = element("button");
+      t4 = text(t4_value);
+      t5 = space();
+      button3 = element("button");
+      t6 = text(t6_value);
+      t7 = space();
+      div2 = element("div");
+      if_block.c();
+      t8 = space();
+      footer = element("footer");
+      button4 = element("button");
+      button4.textContent = "\u26A1 Sync";
+      t10 = space();
+      button5 = element("button");
+      button5.textContent = "+ \u041F\u0430\u043F\u043A\u0430 \u{1F4C1}";
+      t12 = space();
+      button6 = element("button");
+      button6.textContent = "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430 +";
+      attr(button0, "type", "button");
+      attr(button0, "role", "tab");
+      attr(button0, "aria-selected", button0_aria_selected_value = /*activeTab*/
+      ctx[12] === "folders");
+      attr(button0, "class", button0_class_value = "lenta-tab " + /*activeTab*/
+      (ctx[12] === "folders" ? "active" : "") + " svelte-173hj10");
+      attr(button1, "type", "button");
+      attr(button1, "role", "tab");
+      attr(button1, "aria-selected", button1_aria_selected_value = /*activeTab*/
+      ctx[12] === "feeds");
+      attr(button1, "class", button1_class_value = "lenta-tab " + /*activeTab*/
+      (ctx[12] === "feeds" ? "active" : "") + " svelte-173hj10");
+      attr(div0, "class", "lenta-sidebar-tabs svelte-173hj10");
+      attr(div0, "role", "tablist");
+      attr(div0, "aria-label", "Notes sub-navigation");
+      attr(button2, "type", "button");
+      attr(button2, "role", "radio");
+      attr(button2, "aria-checked", button2_aria_checked_value = /*scopeFilter*/
+      ctx[9] === "my");
+      attr(button2, "class", button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx[9] === "my" ? "active" : "") + " svelte-173hj10");
+      attr(button3, "type", "button");
+      attr(button3, "role", "radio");
+      attr(button3, "aria-checked", button3_aria_checked_value = /*scopeFilter*/
+      ctx[9] === "public");
+      attr(button3, "class", button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx[9] === "public" ? "active" : "") + " svelte-173hj10");
+      attr(div1, "class", "lenta-scope-filter-bar svelte-173hj10");
+      attr(div1, "role", "radiogroup");
+      attr(div1, "aria-label", "Scope filter");
+      attr(div2, "class", "lenta-sidebar-content svelte-173hj10");
+      attr(button4, "type", "button");
+      attr(button4, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button5, "type", "button");
+      attr(button5, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button6, "type", "button");
+      attr(button6, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(footer, "class", "lenta-sidebar-footer svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div0, anchor);
+      append(div0, button0);
+      append(button0, t0);
+      append(div0, t1);
+      append(div0, button1);
+      append(button1, t2);
+      insert(target, t3, anchor);
+      insert(target, div1, anchor);
+      append(div1, button2);
+      append(button2, t4);
+      append(div1, t5);
+      append(div1, button3);
+      append(button3, t6);
+      insert(target, t7, anchor);
+      insert(target, div2, anchor);
+      if_block.m(div2, null);
+      ctx[98](div2);
+      insert(target, t8, anchor);
+      insert(target, footer, anchor);
+      append(footer, button4);
+      append(footer, t10);
+      append(footer, button5);
+      append(footer, t12);
+      append(footer, button6);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_16*/
+            ctx[83]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_17*/
+            ctx[84]
+          ),
+          listen(
+            button2,
+            "click",
+            /*click_handler_18*/
+            ctx[85]
+          ),
+          listen(
+            button3,
+            "click",
+            /*click_handler_19*/
+            ctx[86]
+          ),
+          listen(
+            button4,
+            "click",
+            /*click_handler_27*/
+            ctx[99]
+          ),
+          listen(
+            button5,
+            "click",
+            /*click_handler_28*/
+            ctx[100]
+          ),
+          listen(
+            button6,
+            "click",
+            /*click_handler_29*/
+            ctx[101]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeTab*/
+      4096 && button0_aria_selected_value !== (button0_aria_selected_value = /*activeTab*/
+      ctx2[12] === "folders")) {
+        attr(button0, "aria-selected", button0_aria_selected_value);
+      }
+      if (dirty[0] & /*activeTab*/
+      4096 && button0_class_value !== (button0_class_value = "lenta-tab " + /*activeTab*/
+      (ctx2[12] === "folders" ? "active" : "") + " svelte-173hj10")) {
+        attr(button0, "class", button0_class_value);
+      }
+      if (dirty[0] & /*activeTab*/
+      4096 && button1_aria_selected_value !== (button1_aria_selected_value = /*activeTab*/
+      ctx2[12] === "feeds")) {
+        attr(button1, "aria-selected", button1_aria_selected_value);
+      }
+      if (dirty[0] & /*activeTab*/
+      4096 && button1_class_value !== (button1_class_value = "lenta-tab " + /*activeTab*/
+      (ctx2[12] === "feeds" ? "active" : "") + " svelte-173hj10")) {
+        attr(button1, "class", button1_class_value);
+      }
+      if (dirty[0] & /*activeTab*/
+      4096 && t4_value !== (t4_value = /*activeTab*/
+      ctx2[12] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"))
+        set_data(t4, t4_value);
+      if (dirty[0] & /*scopeFilter*/
+      512 && button2_aria_checked_value !== (button2_aria_checked_value = /*scopeFilter*/
+      ctx2[9] === "my")) {
+        attr(button2, "aria-checked", button2_aria_checked_value);
+      }
+      if (dirty[0] & /*scopeFilter*/
+      512 && button2_class_value !== (button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[9] === "my" ? "active" : "") + " svelte-173hj10")) {
+        attr(button2, "class", button2_class_value);
+      }
+      if (dirty[0] & /*activeTab*/
+      4096 && t6_value !== (t6_value = /*activeTab*/
+      ctx2[12] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"))
+        set_data(t6, t6_value);
+      if (dirty[0] & /*scopeFilter*/
+      512 && button3_aria_checked_value !== (button3_aria_checked_value = /*scopeFilter*/
+      ctx2[9] === "public")) {
+        attr(button3, "aria-checked", button3_aria_checked_value);
+      }
+      if (dirty[0] & /*scopeFilter*/
+      512 && button3_class_value !== (button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[9] === "public" ? "active" : "") + " svelte-173hj10")) {
+        attr(button3, "class", button3_class_value);
+      }
+      if (current_block_type === (current_block_type = select_block_type_4(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div2, null);
+        }
+      }
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div0);
+        detach(t3);
+        detach(div1);
+        detach(t7);
+        detach(div2);
+        detach(t8);
+        detach(footer);
+      }
+      if_block.d();
+      ctx[98](null);
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block3(ctx) {
+  let div0;
+  let t0;
+  let div1;
+  let button0;
+  let t1;
+  let button0_aria_checked_value;
+  let button0_class_value;
+  let t2;
+  let button1;
+  let t3;
+  let button1_aria_checked_value;
+  let button1_class_value;
+  let t4;
+  let div2;
+  let current_block_type_index;
+  let if_block1;
+  let t5;
+  let footer;
+  let button2;
+  let t7;
+  let button3;
+  let t9;
+  let button4;
+  let current;
+  let mounted;
+  let dispose;
+  function select_block_type_1(ctx2, dirty) {
+    if (
+      /*currentKey*/
+      ctx2[18]
+    )
+      return create_if_block_43;
+    return create_else_block_2;
+  }
+  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
+  let if_block0 = current_block_type(ctx);
+  const if_block_creators = [create_if_block_110, create_if_block_23, create_else_block_1];
+  const if_blocks = [];
+  function select_block_type_2(ctx2, dirty) {
+    if (
+      /*isLoading*/
+      ctx2[6]
+    )
+      return 0;
+    if (
+      /*displayedContainers*/
+      ctx2[17].length === 0
+    )
+      return 1;
+    return 2;
+  }
+  current_block_type_index = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  return {
+    c() {
+      div0 = element("div");
+      if_block0.c();
+      t0 = space();
+      div1 = element("div");
+      button0 = element("button");
+      t1 = text("\u{1F512} My Containers");
+      t2 = space();
+      button1 = element("button");
+      t3 = text("\u{1F310} Public Containers");
+      t4 = space();
+      div2 = element("div");
+      if_block1.c();
+      t5 = space();
+      footer = element("footer");
+      button2 = element("button");
+      button2.textContent = "\u26A1 Sync";
+      t7 = space();
+      button3 = element("button");
+      button3.textContent = "+ Folder \u{1F4C1}";
+      t9 = space();
+      button4 = element("button");
+      button4.textContent = "+ Note +";
+      attr(div0, "class", "lenta-inline-key-card svelte-173hj10");
+      attr(button0, "type", "button");
+      attr(button0, "role", "radio");
+      attr(button0, "aria-checked", button0_aria_checked_value = /*scopeFilter*/
+      ctx[9] === "my");
+      attr(button0, "class", button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx[9] === "my" ? "active" : "") + " svelte-173hj10");
+      attr(button1, "type", "button");
+      attr(button1, "role", "radio");
+      attr(button1, "aria-checked", button1_aria_checked_value = /*scopeFilter*/
+      ctx[9] === "public");
+      attr(button1, "class", button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx[9] === "public" ? "active" : "") + " svelte-173hj10");
+      attr(div1, "class", "lenta-scope-filter-bar svelte-173hj10");
+      attr(div1, "role", "radiogroup");
+      attr(div1, "aria-label", "Container privacy filter");
+      attr(div2, "class", "lenta-sidebar-content svelte-173hj10");
+      attr(button2, "type", "button");
+      attr(button2, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button3, "type", "button");
+      attr(button3, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button4, "type", "button");
+      attr(button4, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(footer, "class", "lenta-sidebar-footer svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div0, anchor);
+      if_block0.m(div0, null);
+      insert(target, t0, anchor);
+      insert(target, div1, anchor);
+      append(div1, button0);
+      append(button0, t1);
+      append(div1, t2);
+      append(div1, button1);
+      append(button1, t3);
+      insert(target, t4, anchor);
+      insert(target, div2, anchor);
+      if_blocks[current_block_type_index].m(div2, null);
+      ctx[79](div2);
+      insert(target, t5, anchor);
+      insert(target, footer, anchor);
+      append(footer, button2);
+      append(footer, t7);
+      append(footer, button3);
+      append(footer, t9);
+      append(footer, button4);
+      current = true;
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_10*/
+            ctx[70]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_11*/
+            ctx[71]
+          ),
+          listen(
+            button2,
+            "click",
+            /*click_handler_13*/
+            ctx[80]
+          ),
+          listen(
+            button3,
+            "click",
+            /*click_handler_14*/
+            ctx[81]
+          ),
+          listen(
+            button4,
+            "click",
+            /*click_handler_15*/
+            ctx[82]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_1(ctx2, dirty)) && if_block0) {
+        if_block0.p(ctx2, dirty);
+      } else {
+        if_block0.d(1);
+        if_block0 = current_block_type(ctx2);
+        if (if_block0) {
+          if_block0.c();
+          if_block0.m(div0, null);
+        }
+      }
+      if (!current || dirty[0] & /*scopeFilter*/
+      512 && button0_aria_checked_value !== (button0_aria_checked_value = /*scopeFilter*/
+      ctx2[9] === "my")) {
+        attr(button0, "aria-checked", button0_aria_checked_value);
+      }
+      if (!current || dirty[0] & /*scopeFilter*/
+      512 && button0_class_value !== (button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[9] === "my" ? "active" : "") + " svelte-173hj10")) {
+        attr(button0, "class", button0_class_value);
+      }
+      if (!current || dirty[0] & /*scopeFilter*/
+      512 && button1_aria_checked_value !== (button1_aria_checked_value = /*scopeFilter*/
+      ctx2[9] === "public")) {
+        attr(button1, "aria-checked", button1_aria_checked_value);
+      }
+      if (!current || dirty[0] & /*scopeFilter*/
+      512 && button1_class_value !== (button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[9] === "public" ? "active" : "") + " svelte-173hj10")) {
+        attr(button1, "class", button1_class_value);
+      }
+      let previous_block_index = current_block_type_index;
+      current_block_type_index = select_block_type_2(ctx2, dirty);
+      if (current_block_type_index === previous_block_index) {
+        if_blocks[current_block_type_index].p(ctx2, dirty);
+      } else {
+        group_outros();
+        transition_out(if_blocks[previous_block_index], 1, 1, () => {
+          if_blocks[previous_block_index] = null;
+        });
+        check_outros();
+        if_block1 = if_blocks[current_block_type_index];
+        if (!if_block1) {
+          if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block1.c();
+        } else {
+          if_block1.p(ctx2, dirty);
+        }
+        transition_in(if_block1, 1);
+        if_block1.m(div2, null);
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(if_block1);
+      current = true;
+    },
+    o(local) {
+      transition_out(if_block1);
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div0);
+        detach(t0);
+        detach(div1);
+        detach(t4);
+        detach(div2);
+        detach(t5);
+        detach(footer);
+      }
+      if_block0.d();
+      if_blocks[current_block_type_index].d();
+      ctx[79](null);
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_else_block_7(ctx) {
+  let div;
+  function select_block_type_8(ctx2, dirty) {
+    if (
+      /*displayedFeeds*/
+      ctx2[15].length === 0
+    )
+      return create_if_block_14;
+    return create_else_block_9;
+  }
+  let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-tree-list svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_8(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_if_block_62(ctx) {
+  let div;
+  function select_block_type_5(ctx2, dirty) {
+    if (
+      /*displayedFolders*/
+      ctx2[16].length === 0
+    )
+      return create_if_block_7;
+    return create_else_block_5;
+  }
+  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-tree-list svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_5(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_if_block_53(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u23F3 Loading hierarchy...";
+      attr(div, "class", "lenta-loading-text svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_else_block_9(ctx) {
+  let each_blocks = [];
+  let each_1_lookup = new Map_1();
+  let each_1_anchor;
+  let each_value_3 = ensure_array_like(
+    /*displayedFeeds*/
+    ctx[15]
+  );
+  const get_key = (ctx2) => (
+    /*feed*/
+    ctx2[112].id
+  );
+  for (let i = 0; i < each_value_3.length; i += 1) {
+    let child_ctx = get_each_context_3(ctx, each_value_3, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_3(key, child_ctx));
+  }
+  return {
+    c() {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      each_1_anchor = empty();
+    },
+    m(target, anchor) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(target, anchor);
+        }
+      }
+      insert(target, each_1_anchor, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$loadingPreviewNotes, displayedFeeds, feedNotesList, api, $expandedPreviews*/
+      36732960 | dirty[1] & /*handleToggleFeedNotes*/
+      64) {
+        each_value_3 = ensure_array_like(
+          /*displayedFeeds*/
+          ctx2[15]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_3, each_1_anchor, get_each_context_3);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(each_1_anchor);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d(detaching);
+      }
+    }
+  };
+}
+function create_if_block_14(ctx) {
+  let div;
+  function select_block_type_9(ctx2, dirty) {
+    if (
+      /*searchQuery*/
+      ctx2[10]
+    )
+      return create_if_block_15;
+    return create_else_block_8;
+  }
+  let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_9(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_if_block_16(ctx) {
+  let div;
+  let show_if;
+  let show_if_1;
+  let div_transition;
+  let current;
+  function select_block_type_10(ctx2, dirty) {
+    if (dirty[0] & /*$loadingPreviewNotes, displayedFeeds*/
+    1081344)
+      show_if = null;
+    if (dirty[0] & /*feedNotesList, displayedFeeds*/
+    32800)
+      show_if_1 = null;
+    if (show_if == null)
+      show_if = !!/*$loadingPreviewNotes*/
+      ctx2[20].has(
+        /*feed*/
+        ctx2[112].id
+      );
+    if (show_if)
+      return create_if_block_17;
+    if (show_if_1 == null)
+      show_if_1 = !!(!/*feedNotesList*/
+      ctx2[5].get(
+        /*feed*/
+        ctx2[112].id
+      ) || /*feedNotesList*/
+      ctx2[5].get(
+        /*feed*/
+        ctx2[112].id
+      )?.length === 0);
+    if (show_if_1)
+      return create_if_block_18;
+    return create_else_block_10;
+  }
+  let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-markdown-preview-pane svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+      current = true;
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_10(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      if (local) {
+        add_render_callback(() => {
+          if (!current)
+            return;
+          if (!div_transition)
+            div_transition = create_bidirectional_transition(div, slide, { duration: 150 }, true);
+          div_transition.run(1);
+        });
+      }
+      current = true;
+    },
+    o(local) {
+      if (local) {
+        if (!div_transition)
+          div_transition = create_bidirectional_transition(div, slide, { duration: 150 }, false);
+        div_transition.run(0);
+      }
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+      if (detaching && div_transition)
+        div_transition.end();
+    }
+  };
+}
+function create_else_block_10(ctx) {
+  let div;
+  let each_blocks = [];
+  let each_1_lookup = new Map_1();
+  let each_value_4 = ensure_array_like(
+    /*feedNotesList*/
+    (ctx[5].get(
+      /*feed*/
+      ctx[112].id
+    ) || []).slice(0, 50)
+  );
+  const get_key = (ctx2) => (
+    /*note*/
+    ctx2[109].id
+  );
+  for (let i = 0; i < each_value_4.length; i += 1) {
+    let child_ctx = get_each_context_4(ctx, each_value_4, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_4(key, child_ctx));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "lenta-notes-list svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*api, feedNotesList, displayedFeeds*/
+      33587232) {
+        each_value_4 = ensure_array_like(
+          /*feedNotesList*/
+          (ctx2[5].get(
+            /*feed*/
+            ctx2[112].id
+          ) || []).slice(0, 50)
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_4, each_1_lookup, div, destroy_block, create_each_block_4, null, get_each_context_4);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+    }
+  };
+}
+function create_if_block_18(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u{1F4ED} No notes in this feed yet.";
+      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_17(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u23F3 Loading notes in feed...";
+      attr(div, "class", "lenta-preview-loading svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_each_block_4(key_1, ctx) {
+  let div;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*note*/
+    ctx[109].title + ""
+  );
+  let t1;
+  let t2;
+  let mounted;
+  let dispose;
+  function click_handler_26() {
+    return (
+      /*click_handler_26*/
+      ctx[96](
+        /*note*/
+        ctx[109]
+      )
+    );
+  }
+  function keydown_handler_4(...args) {
+    return (
+      /*keydown_handler_4*/
+      ctx[97](
+        /*note*/
+        ctx[109],
+        ...args
+      )
+    );
+  }
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      attr(span0, "class", "lenta-item-icon lenta-note-icon");
+      attr(span1, "class", "lenta-note-title svelte-173hj10");
+      attr(div, "class", "lenta-note-row svelte-173hj10");
+      attr(div, "role", "button");
+      attr(div, "tabindex", "0");
+      this.first = div;
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t0);
+      append(div, span1);
+      append(span1, t1);
+      append(div, t2);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(
+            null,
+            span0,
+            /*note*/
+            ctx[109].icon || "file-text"
+          )),
+          listen(div, "click", click_handler_26),
+          listen(div, "keydown", keydown_handler_4)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*feedNotesList, displayedFeeds*/
+      32800)
+        obsIcon_action.update.call(
+          null,
+          /*note*/
+          ctx[109].icon || "file-text"
+        );
+      if (dirty[0] & /*feedNotesList, displayedFeeds*/
+      32800 && t1_value !== (t1_value = /*note*/
+      ctx[109].title + ""))
+        set_data(t1, t1_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_each_block_3(key_1, ctx) {
+  let div1;
+  let div0;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*feed*/
+    ctx[112].title + ""
+  );
+  let t1;
+  let t2;
+  let span2;
+  let obsIcon_action_1;
+  let t3;
+  let show_if = (
+    /*$expandedPreviews*/
+    ctx[21].has(`feed-${/*feed*/
+    ctx[112].id}`)
+  );
+  let t4;
+  let mounted;
+  let dispose;
+  function click_handler_25() {
+    return (
+      /*click_handler_25*/
+      ctx[94](
+        /*feed*/
+        ctx[112]
+      )
+    );
+  }
+  function keydown_handler_3(...args) {
+    return (
+      /*keydown_handler_3*/
+      ctx[95](
+        /*feed*/
+        ctx[112],
+        ...args
+      )
+    );
+  }
+  let if_block = show_if && create_if_block_16(ctx);
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div1 = element("div");
+      div0 = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      span2 = element("span");
+      t3 = space();
+      if (if_block)
+        if_block.c();
+      t4 = space();
+      attr(span0, "class", "lenta-item-icon");
+      attr(span1, "class", "lenta-item-name svelte-173hj10");
+      attr(span2, "class", "lenta-preview-toggle clickable-icon");
+      attr(div0, "class", "lenta-feed-header-row svelte-173hj10");
+      attr(div0, "role", "button");
+      attr(div0, "tabindex", "0");
+      attr(div1, "class", "lenta-tree-item lenta-tree-item-feed svelte-173hj10");
+      this.first = div1;
+    },
+    m(target, anchor) {
+      insert(target, div1, anchor);
+      append(div1, div0);
+      append(div0, span0);
+      append(div0, t0);
+      append(div0, span1);
+      append(span1, t1);
+      append(div0, t2);
+      append(div0, span2);
+      append(div1, t3);
+      if (if_block)
+        if_block.m(div1, null);
+      append(div1, t4);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(null, span0, "rss")),
+          action_destroyer(obsIcon_action_1 = /*obsIcon*/
+          ctx[33].call(
+            null,
+            span2,
+            /*$expandedPreviews*/
+            ctx[21].has(`feed-${/*feed*/
+            ctx[112].id}`) ? "chevron-up" : "chevron-down"
+          )),
+          listen(div0, "click", click_handler_25),
+          listen(div0, "keydown", keydown_handler_3)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*displayedFeeds*/
+      32768 && t1_value !== (t1_value = /*feed*/
+      ctx[112].title + ""))
+        set_data(t1, t1_value);
+      if (obsIcon_action_1 && is_function(obsIcon_action_1.update) && dirty[0] & /*$expandedPreviews, displayedFeeds*/
+      2129920)
+        obsIcon_action_1.update.call(
+          null,
+          /*$expandedPreviews*/
+          ctx[21].has(`feed-${/*feed*/
+          ctx[112].id}`) ? "chevron-up" : "chevron-down"
+        );
+      if (dirty[0] & /*$expandedPreviews, displayedFeeds*/
+      2129920)
+        show_if = /*$expandedPreviews*/
+        ctx[21].has(`feed-${/*feed*/
+        ctx[112].id}`);
+      if (show_if) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+          if (dirty[0] & /*$expandedPreviews, displayedFeeds*/
+          2129920) {
+            transition_in(if_block, 1);
+          }
+        } else {
+          if_block = create_if_block_16(ctx);
+          if_block.c();
+          transition_in(if_block, 1);
+          if_block.m(div1, t4);
+        }
+      } else if (if_block) {
+        group_outros();
+        transition_out(if_block, 1, 1, () => {
+          if_block = null;
+        });
+        check_outros();
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div1);
+      }
+      if (if_block)
+        if_block.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_else_block_8(ctx) {
+  let t;
+  return {
+    c() {
+      t = text("\u{1F4E1} No feeds found.");
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_15(ctx) {
+  let t0;
+  let t1;
+  let t2;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      t0 = text('\u{1F50D} No feeds match "');
+      t1 = text(
+        /*searchQuery*/
+        ctx[10]
+      );
+      t2 = text('"\n                ');
+      button = element("button");
+      button.textContent = "Clear search";
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, t0, anchor);
+      insert(target, t1, anchor);
+      insert(target, t2, anchor);
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*click_handler_24*/
+          ctx[93]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*searchQuery*/
+      1024)
+        set_data(
+          t1,
+          /*searchQuery*/
+          ctx2[10]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t0);
+        detach(t1);
+        detach(t2);
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block_5(ctx) {
+  let each_blocks = [];
+  let each_1_lookup = new Map_1();
+  let each_1_anchor;
+  let each_value_1 = ensure_array_like(
+    /*displayedFolders*/
+    ctx[16]
+  );
+  const get_key = (ctx2) => (
+    /*folder*/
+    ctx2[106].id
+  );
+  for (let i = 0; i < each_value_1.length; i += 1) {
+    let child_ctx = get_each_context_1(ctx, each_value_1, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_1(key, child_ctx));
+  }
+  return {
+    c() {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      each_1_anchor = empty();
+    },
+    m(target, anchor) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(target, anchor);
+        }
+      }
+      insert(target, each_1_anchor, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedFolders, $loadingFolderNotes, folderPreviewNotes, api, $expandedPreviews*/
+      39911440 | dirty[1] & /*handleToggleFolderNotes*/
+      32) {
+        each_value_1 = ensure_array_like(
+          /*displayedFolders*/
+          ctx2[16]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_1, each_1_anchor, get_each_context_1);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(each_1_anchor);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d(detaching);
+      }
+    }
+  };
+}
+function create_if_block_7(ctx) {
+  let div;
+  function select_block_type_6(ctx2, dirty) {
+    if (
+      /*searchQuery*/
+      ctx2[10]
+    )
+      return create_if_block_8;
+    return create_else_block_4;
+  }
+  let current_block_type = select_block_type_6(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_6(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_if_block_13(ctx) {
+  let span;
+  let t_value = (
+    /*folder*/
+    ctx[106].noteCount + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "lenta-count-pill svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedFolders*/
+      65536 && t_value !== (t_value = /*folder*/
+      ctx2[106].noteCount + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_9(ctx) {
+  let div;
+  let show_if;
+  let show_if_1;
+  let div_transition;
+  let current;
+  function select_block_type_7(ctx2, dirty) {
+    if (dirty[0] & /*$loadingFolderNotes, displayedFolders*/
+    4259840)
+      show_if = null;
+    if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
+    65552)
+      show_if_1 = null;
+    if (show_if == null)
+      show_if = !!/*$loadingFolderNotes*/
+      ctx2[22].has(
+        /*folder*/
+        ctx2[106].id
+      );
+    if (show_if)
+      return create_if_block_10;
+    if (show_if_1 == null)
+      show_if_1 = !!(!/*folderPreviewNotes*/
+      ctx2[4].get(
+        /*folder*/
+        ctx2[106].id
+      ) || /*folderPreviewNotes*/
+      ctx2[4].get(
+        /*folder*/
+        ctx2[106].id
+      )?.length === 0);
+    if (show_if_1)
+      return create_if_block_11;
+    return create_else_block_6;
+  }
+  let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-markdown-preview-pane svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+      current = true;
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_7(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      if (local) {
+        add_render_callback(() => {
+          if (!current)
+            return;
+          if (!div_transition)
+            div_transition = create_bidirectional_transition(div, slide, { duration: 150 }, true);
+          div_transition.run(1);
+        });
+      }
+      current = true;
+    },
+    o(local) {
+      if (local) {
+        if (!div_transition)
+          div_transition = create_bidirectional_transition(div, slide, { duration: 150 }, false);
+        div_transition.run(0);
+      }
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+      if (detaching && div_transition)
+        div_transition.end();
+    }
+  };
+}
+function create_else_block_6(ctx) {
+  let div;
+  let each_blocks = [];
+  let each_1_lookup = new Map_1();
+  let each_value_2 = ensure_array_like(
+    /*folderPreviewNotes*/
+    (ctx[4].get(
+      /*folder*/
+      ctx[106].id
+    ) || []).slice(0, 50)
+  );
+  const get_key = (ctx2) => (
+    /*note*/
+    ctx2[109].id
+  );
+  for (let i = 0; i < each_value_2.length; i += 1) {
+    let child_ctx = get_each_context_2(ctx, each_value_2, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_2(key, child_ctx));
+  }
+  return {
+    c() {
+      div = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(div, "class", "lenta-notes-list svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*api, folderPreviewNotes, displayedFolders*/
+      33619984) {
+        each_value_2 = ensure_array_like(
+          /*folderPreviewNotes*/
+          (ctx2[4].get(
+            /*folder*/
+            ctx2[106].id
+          ) || []).slice(0, 50)
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_2, each_1_lookup, div, destroy_block, create_each_block_2, null, get_each_context_2);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+    }
+  };
+}
+function create_if_block_11(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u{1F4ED} No notes in this folder yet.";
+      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_10(ctx) {
+  let div;
+  let t0;
+  let t1_value = (
+    /*folder*/
+    ctx[106].name + ""
+  );
+  let t1;
+  let t2;
+  return {
+    c() {
+      div = element("div");
+      t0 = text('\u23F3 Loading notes in "');
+      t1 = text(t1_value);
+      t2 = text('"...');
+      attr(div, "class", "lenta-preview-loading svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, t0);
+      append(div, t1);
+      append(div, t2);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedFolders*/
+      65536 && t1_value !== (t1_value = /*folder*/
+      ctx2[106].name + ""))
+        set_data(t1, t1_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_122(ctx) {
+  let span;
+  let t_value = (
+    /*note*/
+    ctx[109].startDate.slice(0, 10) + ""
+  );
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(t_value);
+      attr(span, "class", "lenta-note-date svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
+      65552 && t_value !== (t_value = /*note*/
+      ctx2[109].startDate.slice(0, 10) + ""))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_each_block_2(key_1, ctx) {
+  let div;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*note*/
+    ctx[109].title + ""
+  );
+  let t1;
+  let t2;
+  let t3;
+  let mounted;
+  let dispose;
+  let if_block = (
+    /*note*/
+    ctx[109].startDate && create_if_block_122(ctx)
+  );
+  function click_handler_23() {
+    return (
+      /*click_handler_23*/
+      ctx[91](
+        /*note*/
+        ctx[109]
+      )
+    );
+  }
+  function keydown_handler_2(...args) {
+    return (
+      /*keydown_handler_2*/
+      ctx[92](
+        /*note*/
+        ctx[109],
+        ...args
+      )
+    );
+  }
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      if (if_block)
+        if_block.c();
+      t3 = space();
+      attr(span0, "class", "lenta-item-icon lenta-note-icon");
+      attr(span1, "class", "lenta-note-title svelte-173hj10");
+      attr(div, "class", "lenta-note-row svelte-173hj10");
+      attr(div, "role", "button");
+      attr(div, "tabindex", "0");
+      this.first = div;
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t0);
+      append(div, span1);
+      append(span1, t1);
+      append(div, t2);
+      if (if_block)
+        if_block.m(div, null);
+      append(div, t3);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(
+            null,
+            span0,
+            /*note*/
+            ctx[109].icon || "file-text"
+          )),
+          listen(div, "click", click_handler_23),
+          listen(div, "keydown", keydown_handler_2)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*folderPreviewNotes, displayedFolders*/
+      65552)
+        obsIcon_action.update.call(
+          null,
+          /*note*/
+          ctx[109].icon || "file-text"
+        );
+      if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
+      65552 && t1_value !== (t1_value = /*note*/
+      ctx[109].title + ""))
+        set_data(t1, t1_value);
+      if (
+        /*note*/
+        ctx[109].startDate
+      ) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+        } else {
+          if_block = create_if_block_122(ctx);
+          if_block.c();
+          if_block.m(div, t3);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block)
+        if_block.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_each_block_1(key_1, ctx) {
+  let div1;
+  let div0;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let t1_value = (
+    /*folder*/
+    ctx[106].path + ""
+  );
+  let t1;
+  let t2;
+  let t3;
+  let button;
+  let button_aria_label_value;
+  let obsIcon_action_1;
+  let t4;
+  let span2;
+  let obsIcon_action_2;
+  let t5;
+  let show_if = (
+    /*$expandedPreviews*/
+    ctx[21].has(`folder-${/*folder*/
+    ctx[106].id}`)
+  );
+  let t6;
+  let mounted;
+  let dispose;
+  let if_block0 = (
+    /*folder*/
+    ctx[106].noteCount !== void 0 && /*folder*/
+    ctx[106].noteCount !== null && create_if_block_13(ctx)
+  );
+  function click_handler_21() {
+    return (
+      /*click_handler_21*/
+      ctx[88](
+        /*folder*/
+        ctx[106]
+      )
+    );
+  }
+  function click_handler_22() {
+    return (
+      /*click_handler_22*/
+      ctx[89](
+        /*folder*/
+        ctx[106]
+      )
+    );
+  }
+  function keydown_handler_1(...args) {
+    return (
+      /*keydown_handler_1*/
+      ctx[90](
+        /*folder*/
+        ctx[106],
+        ...args
+      )
+    );
+  }
+  let if_block1 = show_if && create_if_block_9(ctx);
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div1 = element("div");
+      div0 = element("div");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      t1 = text(t1_value);
+      t2 = space();
+      if (if_block0)
+        if_block0.c();
+      t3 = space();
+      button = element("button");
+      t4 = space();
+      span2 = element("span");
+      t5 = space();
+      if (if_block1)
+        if_block1.c();
+      t6 = space();
+      attr(span0, "class", "lenta-item-icon");
+      attr(span1, "class", "lenta-item-name svelte-173hj10");
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-folder-add-note clickable-icon svelte-173hj10");
+      attr(button, "aria-label", button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
+      ctx[106].path);
+      attr(span2, "class", "lenta-preview-toggle clickable-icon");
+      attr(div0, "class", "lenta-folder-header-row svelte-173hj10");
+      attr(div0, "role", "button");
+      attr(div0, "tabindex", "0");
+      attr(div1, "class", "lenta-tree-item lenta-tree-item-folder svelte-173hj10");
+      this.first = div1;
+    },
+    m(target, anchor) {
+      insert(target, div1, anchor);
+      append(div1, div0);
+      append(div0, span0);
+      append(div0, t0);
+      append(div0, span1);
+      append(span1, t1);
+      append(div0, t2);
+      if (if_block0)
+        if_block0.m(div0, null);
+      append(div0, t3);
+      append(div0, button);
+      append(div0, t4);
+      append(div0, span2);
+      append(div1, t5);
+      if (if_block1)
+        if_block1.m(div1, null);
+      append(div1, t6);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(
+            null,
+            span0,
+            /*folder*/
+            ctx[106].icon || "folder"
+          )),
+          listen(button, "click", stop_propagation(click_handler_21)),
+          action_destroyer(obsIcon_action_1 = /*obsIcon*/
+          ctx[33].call(null, button, "plus")),
+          action_destroyer(obsIcon_action_2 = /*obsIcon*/
+          ctx[33].call(
+            null,
+            span2,
+            /*$expandedPreviews*/
+            ctx[21].has(`folder-${/*folder*/
+            ctx[106].id}`) ? "chevron-up" : "chevron-down"
+          )),
+          listen(div0, "click", click_handler_22),
+          listen(div0, "keydown", keydown_handler_1)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*displayedFolders*/
+      65536)
+        obsIcon_action.update.call(
+          null,
+          /*folder*/
+          ctx[106].icon || "folder"
+        );
+      if (dirty[0] & /*displayedFolders*/
+      65536 && t1_value !== (t1_value = /*folder*/
+      ctx[106].path + ""))
+        set_data(t1, t1_value);
+      if (
+        /*folder*/
+        ctx[106].noteCount !== void 0 && /*folder*/
+        ctx[106].noteCount !== null
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx, dirty);
+        } else {
+          if_block0 = create_if_block_13(ctx);
+          if_block0.c();
+          if_block0.m(div0, t3);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (dirty[0] & /*displayedFolders*/
+      65536 && button_aria_label_value !== (button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
+      ctx[106].path)) {
+        attr(button, "aria-label", button_aria_label_value);
+      }
+      if (obsIcon_action_2 && is_function(obsIcon_action_2.update) && dirty[0] & /*$expandedPreviews, displayedFolders*/
+      2162688)
+        obsIcon_action_2.update.call(
+          null,
+          /*$expandedPreviews*/
+          ctx[21].has(`folder-${/*folder*/
+          ctx[106].id}`) ? "chevron-up" : "chevron-down"
+        );
+      if (dirty[0] & /*$expandedPreviews, displayedFolders*/
+      2162688)
+        show_if = /*$expandedPreviews*/
+        ctx[21].has(`folder-${/*folder*/
+        ctx[106].id}`);
+      if (show_if) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+          if (dirty[0] & /*$expandedPreviews, displayedFolders*/
+          2162688) {
+            transition_in(if_block1, 1);
+          }
+        } else {
+          if_block1 = create_if_block_9(ctx);
+          if_block1.c();
+          transition_in(if_block1, 1);
+          if_block1.m(div1, t6);
+        }
+      } else if (if_block1) {
+        group_outros();
+        transition_out(if_block1, 1, 1, () => {
+          if_block1 = null;
+        });
+        check_outros();
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div1);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_else_block_4(ctx) {
+  let t;
+  return {
+    c() {
+      t = text("\u{1F4C1} No folders found.");
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_8(ctx) {
+  let t0;
+  let t1;
+  let t2;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      t0 = text('\u{1F50D} No folders match "');
+      t1 = text(
+        /*searchQuery*/
+        ctx[10]
+      );
+      t2 = text('"\n                ');
+      button = element("button");
+      button.textContent = "Clear search";
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, t0, anchor);
+      insert(target, t1, anchor);
+      insert(target, t2, anchor);
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*click_handler_20*/
+          ctx[87]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*searchQuery*/
+      1024)
+        set_data(
+          t1,
+          /*searchQuery*/
+          ctx2[10]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t0);
+        detach(t1);
+        detach(t2);
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block_2(ctx) {
+  let div;
+  let input;
+  let t0;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      input = element("input");
+      t0 = space();
+      button = element("button");
+      button.textContent = "Connect";
+      attr(input, "type", "text");
+      attr(input, "placeholder", "\u{1F511} Enter private container key...");
+      attr(input, "class", "lenta-key-input svelte-173hj10");
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-key-submit-btn svelte-173hj10");
+      attr(div, "class", "lenta-key-input-wrap svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, input);
+      set_input_value(
+        input,
+        /*keyInputText*/
+        ctx[13]
+      );
+      append(div, t0);
+      append(div, button);
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "input",
+            /*input_input_handler_1*/
+            ctx[68]
+          ),
+          listen(
+            input,
+            "keydown",
+            /*keydown_handler*/
+            ctx[69]
+          ),
+          listen(
+            button,
+            "click",
+            /*handleConnectKeySubmit*/
+            ctx[39]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*keyInputText*/
+      8192 && input.value !== /*keyInputText*/
+      ctx2[13]) {
+        set_input_value(
+          input,
+          /*keyInputText*/
+          ctx2[13]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_43(ctx) {
+  let div;
+  let span;
+  let t0;
+  let t1_value = (
+    /*settings*/
+    (ctx[0].connectedContainerName || /*currentKey*/
+    ctx[18].slice(0, 18)) + ""
+  );
+  let t1;
+  let span_title_value;
+  let t2;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      span = element("span");
+      t0 = text("\u{1F511} Connected: ");
+      t1 = text(t1_value);
+      t2 = space();
+      button = element("button");
+      button.textContent = "Disconnect Key";
+      attr(span, "class", "lenta-key-badge svelte-173hj10");
+      attr(span, "title", span_title_value = "Active container key: " + /*currentKey*/
+      ctx[18]);
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-key-action-btn mod-warning svelte-173hj10");
+      attr(div, "class", "lenta-key-connected-row svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span);
+      append(span, t0);
+      append(span, t1);
+      append(div, t2);
+      append(div, button);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*handleDisconnectKey*/
+          ctx[40]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*settings, currentKey*/
+      262145 && t1_value !== (t1_value = /*settings*/
+      (ctx2[0].connectedContainerName || /*currentKey*/
+      ctx2[18].slice(0, 18)) + ""))
+        set_data(t1, t1_value);
+      if (dirty[0] & /*currentKey*/
+      262144 && span_title_value !== (span_title_value = "Active container key: " + /*currentKey*/
+      ctx2[18])) {
+        attr(span, "title", span_title_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block_1(ctx) {
+  let each_blocks = [];
+  let each_1_lookup = new Map_1();
+  let each_1_anchor;
+  let current;
+  let each_value = ensure_array_like(
+    /*displayedContainers*/
+    ctx[17]
+  );
+  const get_key = (ctx2) => (
+    /*c*/
+    ctx2[103].id
+  );
+  for (let i = 0; i < each_value.length; i += 1) {
+    let child_ctx = get_each_context2(ctx, each_value, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block2(key, child_ctx));
+  }
+  return {
+    c() {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      each_1_anchor = empty();
+    },
+    m(target, anchor) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(target, anchor);
+        }
+      }
+      insert(target, each_1_anchor, anchor);
+      current = true;
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*displayedContainers, $expandedPreviews, settings, $loadingContainerFiles, containerFilesList, containerFoldersList, $expandedContainerFolders, scrollContainerEl, api*/
+      60964877 | dirty[1] & /*todayStr, todayHumanStr, handleToggleContainerExpand, handleToggleFolder*/
+      27) {
+        each_value = ensure_array_like(
+          /*displayedContainers*/
+          ctx2[17]
+        );
+        group_outros();
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block2, each_1_anchor, get_each_context2);
+        check_outros();
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      for (let i = 0; i < each_value.length; i += 1) {
+        transition_in(each_blocks[i]);
+      }
+      current = true;
+    },
+    o(local) {
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        transition_out(each_blocks[i]);
+      }
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(each_1_anchor);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d(detaching);
+      }
+    }
+  };
+}
+function create_if_block_23(ctx) {
+  let div;
+  function select_block_type_3(ctx2, dirty) {
+    if (
+      /*searchQuery*/
+      ctx2[10]
+    )
+      return create_if_block_33;
+    return create_else_block2;
+  }
+  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
+  let if_block = current_block_type(ctx);
+  return {
+    c() {
+      div = element("div");
+      if_block.c();
+      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if_block.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (current_block_type === (current_block_type = select_block_type_3(ctx2, dirty)) && if_block) {
+        if_block.p(ctx2, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx2);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div, null);
+        }
+      }
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if_block.d();
+    }
+  };
+}
+function create_if_block_110(ctx) {
+  let div;
+  return {
+    c() {
+      div = element("div");
+      div.textContent = "\u23F3 Loading containers...";
+      attr(div, "class", "lenta-loading-text svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+    },
+    p: noop,
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_each_block2(key_1, ctx) {
+  let first;
+  let containercard;
+  let current;
+  function toggleExpand_handler() {
+    return (
+      /*toggleExpand_handler*/
+      ctx[73](
+        /*c*/
+        ctx[103]
+      )
+    );
+  }
+  function toggleConnect_handler() {
+    return (
+      /*toggleConnect_handler*/
+      ctx[74](
+        /*c*/
+        ctx[103]
+      )
+    );
+  }
+  containercard = new ContainerCard_default({
+    props: {
+      container: (
+        /*c*/
+        ctx[103]
+      ),
+      isExpanded: (
+        /*$expandedPreviews*/
+        ctx[21].has(`container-${/*c*/
+        ctx[103].id}`)
+      ),
+      isActiveContainer: Array.isArray(
+        /*settings*/
+        ctx[0].activeContainerIds
+      ) && /*settings*/
+      ctx[0].activeContainerIds.includes(
+        /*c*/
+        ctx[103].id
+      ),
+      isLoadingFiles: (
+        /*$loadingContainerFiles*/
+        ctx[23].has(
+          /*c*/
+          ctx[103].id
+        )
+      ),
+      files: (
+        /*containerFilesList*/
+        ctx[2].get(
+          /*c*/
+          ctx[103].id
+        )
+      ),
+      folders: (
+        /*containerFoldersList*/
+        ctx[3].get(
+          /*c*/
+          ctx[103].id
+        )
+      ),
+      expandedFolders: (
+        /*$expandedContainerFolders*/
+        ctx[24]
+      ),
+      todayStr: (
+        /*todayStr*/
+        ctx[31]
+      ),
+      todayHumanStr: (
+        /*todayHumanStr*/
+        ctx[32]
+      ),
+      scrollContainer: (
+        /*scrollContainerEl*/
+        ctx[14]
+      )
+    }
+  });
+  containercard.$on("toggleExpand", toggleExpand_handler);
+  containercard.$on("toggleConnect", toggleConnect_handler);
+  containercard.$on(
+    "addNote",
+    /*addNote_handler*/
+    ctx[75]
+  );
+  containercard.$on(
+    "addFolder",
+    /*addFolder_handler*/
+    ctx[76]
+  );
+  containercard.$on(
+    "openNote",
+    /*openNote_handler*/
+    ctx[77]
+  );
+  containercard.$on(
+    "toggleFolder",
+    /*toggleFolder_handler*/
+    ctx[78]
+  );
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      first = empty();
+      create_component(containercard.$$.fragment);
+      this.first = first;
+    },
+    m(target, anchor) {
+      insert(target, first, anchor);
+      mount_component(containercard, target, anchor);
+      current = true;
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      const containercard_changes = {};
+      if (dirty[0] & /*displayedContainers*/
+      131072)
+        containercard_changes.container = /*c*/
+        ctx[103];
+      if (dirty[0] & /*$expandedPreviews, displayedContainers*/
+      2228224)
+        containercard_changes.isExpanded = /*$expandedPreviews*/
+        ctx[21].has(`container-${/*c*/
+        ctx[103].id}`);
+      if (dirty[0] & /*settings, displayedContainers*/
+      131073)
+        containercard_changes.isActiveContainer = Array.isArray(
+          /*settings*/
+          ctx[0].activeContainerIds
+        ) && /*settings*/
+        ctx[0].activeContainerIds.includes(
+          /*c*/
+          ctx[103].id
+        );
+      if (dirty[0] & /*$loadingContainerFiles, displayedContainers*/
+      8519680)
+        containercard_changes.isLoadingFiles = /*$loadingContainerFiles*/
+        ctx[23].has(
+          /*c*/
+          ctx[103].id
+        );
+      if (dirty[0] & /*containerFilesList, displayedContainers*/
+      131076)
+        containercard_changes.files = /*containerFilesList*/
+        ctx[2].get(
+          /*c*/
+          ctx[103].id
+        );
+      if (dirty[0] & /*containerFoldersList, displayedContainers*/
+      131080)
+        containercard_changes.folders = /*containerFoldersList*/
+        ctx[3].get(
+          /*c*/
+          ctx[103].id
+        );
+      if (dirty[0] & /*$expandedContainerFolders*/
+      16777216)
+        containercard_changes.expandedFolders = /*$expandedContainerFolders*/
+        ctx[24];
+      if (dirty[0] & /*scrollContainerEl*/
+      16384)
+        containercard_changes.scrollContainer = /*scrollContainerEl*/
+        ctx[14];
+      containercard.$set(containercard_changes);
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(containercard.$$.fragment, local);
+      current = true;
+    },
+    o(local) {
+      transition_out(containercard.$$.fragment, local);
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(first);
+      }
+      destroy_component(containercard, detaching);
+    }
+  };
+}
+function create_else_block2(ctx) {
+  let t_value = (
+    /*scopeFilter*/
+    ctx[9] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."
+  );
+  let t;
+  return {
+    c() {
+      t = text(t_value);
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*scopeFilter*/
+      512 && t_value !== (t_value = /*scopeFilter*/
+      ctx2[9] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."))
+        set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_33(ctx) {
+  let t0;
+  let t1;
+  let t2;
+  let button;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      t0 = text('\u{1F50D} No containers match "');
+      t1 = text(
+        /*searchQuery*/
+        ctx[10]
+      );
+      t2 = text('"\n            ');
+      button = element("button");
+      button.textContent = "Clear search";
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, t0, anchor);
+      insert(target, t1, anchor);
+      insert(target, t2, anchor);
+      insert(target, button, anchor);
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*click_handler_12*/
+          ctx[72]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*searchQuery*/
+      1024)
+        set_data(
+          t1,
+          /*searchQuery*/
+          ctx2[10]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t0);
+        detach(t1);
+        detach(t2);
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_fragment4(ctx) {
+  let div4;
+  let header;
+  let div0;
+  let h4;
+  let t1;
+  let t2;
+  let nav;
+  let button0;
+  let obsIcon_action;
+  let t3;
+  let button1;
+  let obsIcon_action_1;
+  let t4;
+  let button2;
+  let obsIcon_action_2;
+  let t5;
+  let button3;
+  let obsIcon_action_3;
+  let t6;
+  let button4;
+  let obsIcon_action_4;
+  let t7;
+  let t8;
+  let button5;
+  let obsIcon_action_5;
+  let t9;
+  let button6;
+  let obsIcon_action_6;
+  let t10;
+  let div2;
+  let div1;
+  let span;
+  let obsIcon_action_7;
+  let t11;
+  let input;
+  let t12;
+  let t13;
+  let div3;
+  let button7;
+  let t14;
+  let button7_aria_selected_value;
+  let button7_class_value;
+  let t15;
+  let button8;
+  let t16;
+  let button8_aria_selected_value;
+  let button8_class_value;
+  let t17;
+  let current_block_type_index;
+  let if_block3;
+  let current;
+  let mounted;
+  let dispose;
+  let if_block0 = (
+    /*selectedCount*/
+    ctx[19] > 0 && create_if_block_21(ctx)
+  );
+  let if_block1 = (
+    /*bridge*/
+    (ctx[7]?.openConnectionsModal || /*onOpenConnectionsModal*/
+    ctx[8]) && create_if_block_20(ctx)
+  );
+  let if_block2 = (
+    /*searchQuery*/
+    ctx[10] && create_if_block_19(ctx)
+  );
+  const if_block_creators = [create_if_block3, create_else_block_3];
+  const if_blocks = [];
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*sidebarMode*/
+      ctx2[11] === "containers"
+    )
+      return 0;
+    return 1;
+  }
+  current_block_type_index = select_block_type(ctx, [-1, -1, -1, -1]);
+  if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  return {
+    c() {
+      div4 = element("div");
+      header = element("header");
+      div0 = element("div");
+      h4 = element("h4");
+      h4.textContent = "\u{1F34B} Project Lenta";
+      t1 = space();
+      if (if_block0)
+        if_block0.c();
+      t2 = space();
+      nav = element("nav");
+      button0 = element("button");
+      t3 = space();
+      button1 = element("button");
+      t4 = space();
+      button2 = element("button");
+      t5 = space();
+      button3 = element("button");
+      t6 = space();
+      button4 = element("button");
+      t7 = space();
+      if (if_block1)
+        if_block1.c();
+      t8 = space();
+      button5 = element("button");
+      t9 = space();
+      button6 = element("button");
+      t10 = space();
+      div2 = element("div");
+      div1 = element("div");
+      span = element("span");
+      t11 = space();
+      input = element("input");
+      t12 = space();
+      if (if_block2)
+        if_block2.c();
+      t13 = space();
+      div3 = element("div");
+      button7 = element("button");
+      t14 = text("\u{1F4DD} Notes");
+      t15 = space();
+      button8 = element("button");
+      t16 = text("\u{1F4E6} Containers");
+      t17 = space();
+      if_block3.c();
+      attr(h4, "class", "lenta-title-text svelte-173hj10");
+      attr(div0, "class", "lenta-sidebar-title svelte-173hj10");
+      attr(button0, "type", "button");
+      attr(button0, "class", "clickable-icon");
+      attr(button0, "aria-label", "Quick Add Note");
+      attr(button1, "type", "button");
+      attr(button1, "class", "clickable-icon");
+      attr(button1, "aria-label", "New Folder");
+      attr(button2, "type", "button");
+      attr(button2, "class", "clickable-icon");
+      attr(button2, "aria-label", "Pull from Lenta Server (\u2B07)");
+      attr(button3, "type", "button");
+      attr(button3, "class", "clickable-icon");
+      attr(button3, "aria-label", "Push Changed to Server (\u2B06)");
+      attr(button4, "type", "button");
+      attr(button4, "class", "clickable-icon");
+      attr(button4, "aria-label", "Sync Hub");
+      attr(button5, "type", "button");
+      attr(button5, "class", "clickable-icon");
+      attr(button5, "aria-label", "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)");
+      attr(button6, "type", "button");
+      attr(button6, "class", "clickable-icon");
+      attr(button6, "aria-label", "Refresh Data");
+      attr(nav, "class", "lenta-sidebar-toolbar svelte-173hj10");
+      attr(nav, "aria-label", "Lenta actions");
+      attr(header, "class", "lenta-sidebar-header svelte-173hj10");
+      attr(span, "class", "lenta-search-icon svelte-173hj10");
+      attr(input, "type", "text");
+      attr(input, "class", "lenta-search-input svelte-173hj10");
+      attr(input, "placeholder", "Search notes, folders, containers...");
+      attr(div1, "class", "lenta-search-input-wrap svelte-173hj10");
+      attr(div2, "class", "lenta-search-container svelte-173hj10");
+      attr(button7, "type", "button");
+      attr(button7, "role", "tab");
+      attr(button7, "aria-selected", button7_aria_selected_value = /*sidebarMode*/
+      ctx[11] === "notes");
+      attr(button7, "class", button7_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx[11] === "notes" ? "is-active" : "") + " svelte-173hj10");
+      attr(button8, "type", "button");
+      attr(button8, "role", "tab");
+      attr(button8, "aria-selected", button8_aria_selected_value = /*sidebarMode*/
+      ctx[11] === "containers");
+      attr(button8, "class", button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx[11] === "containers" ? "is-active" : "") + " svelte-173hj10");
+      attr(div3, "class", "lenta-mode-switcher svelte-173hj10");
+      attr(div3, "role", "tablist");
+      attr(div3, "aria-label", "Sidebar view mode");
+      attr(div4, "class", "lenta-sidebar-container svelte-173hj10");
+    },
+    m(target, anchor) {
+      insert(target, div4, anchor);
+      append(div4, header);
+      append(header, div0);
+      append(div0, h4);
+      append(div0, t1);
+      if (if_block0)
+        if_block0.m(div0, null);
+      append(header, t2);
+      append(header, nav);
+      append(nav, button0);
+      append(nav, t3);
+      append(nav, button1);
+      append(nav, t4);
+      append(nav, button2);
+      append(nav, t5);
+      append(nav, button3);
+      append(nav, t6);
+      append(nav, button4);
+      append(nav, t7);
+      if (if_block1)
+        if_block1.m(nav, null);
+      append(nav, t8);
+      append(nav, button5);
+      append(nav, t9);
+      append(nav, button6);
+      append(div4, t10);
+      append(div4, div2);
+      append(div2, div1);
+      append(div1, span);
+      append(div1, t11);
+      append(div1, input);
+      set_input_value(
+        input,
+        /*searchQuery*/
+        ctx[10]
+      );
+      append(div1, t12);
+      if (if_block2)
+        if_block2.m(div1, null);
+      append(div4, t13);
+      append(div4, div3);
+      append(div3, button7);
+      append(button7, t14);
+      append(div3, t15);
+      append(div3, button8);
+      append(button8, t16);
+      append(div4, t17);
+      if_blocks[current_block_type_index].m(div4, null);
+      current = true;
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler*/
+            ctx[57]
+          ),
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[33].call(null, button0, "plus")),
+          listen(
+            button1,
+            "click",
+            /*click_handler_1*/
+            ctx[58]
+          ),
+          action_destroyer(obsIcon_action_1 = /*obsIcon*/
+          ctx[33].call(null, button1, "folder-plus")),
+          listen(
+            button2,
+            "click",
+            /*click_handler_2*/
+            ctx[59]
+          ),
+          action_destroyer(obsIcon_action_2 = /*obsIcon*/
+          ctx[33].call(null, button2, "download")),
+          listen(
+            button3,
+            "click",
+            /*click_handler_3*/
+            ctx[60]
+          ),
+          action_destroyer(obsIcon_action_3 = /*obsIcon*/
+          ctx[33].call(null, button3, "upload")),
+          listen(
+            button4,
+            "click",
+            /*click_handler_4*/
+            ctx[61]
+          ),
+          action_destroyer(obsIcon_action_4 = /*obsIcon*/
+          ctx[33].call(null, button4, "zap")),
+          listen(
+            button5,
+            "click",
+            /*handleCollapseAll*/
+            ctx[38]
+          ),
+          action_destroyer(obsIcon_action_5 = /*obsIcon*/
+          ctx[33].call(null, button5, "chevrons-down-up")),
+          listen(
+            button6,
+            "click",
+            /*click_handler_6*/
+            ctx[63]
+          ),
+          action_destroyer(obsIcon_action_6 = /*obsIcon*/
+          ctx[33].call(null, button6, "refresh-cw")),
+          action_destroyer(obsIcon_action_7 = /*obsIcon*/
+          ctx[33].call(null, span, "search")),
+          listen(
+            input,
+            "input",
+            /*input_input_handler*/
+            ctx[64]
+          ),
+          listen(
+            button7,
+            "click",
+            /*click_handler_8*/
+            ctx[66]
+          ),
+          listen(
+            button8,
+            "click",
+            /*click_handler_9*/
+            ctx[67]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (
+        /*selectedCount*/
+        ctx2[19] > 0
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx2, dirty);
+        } else {
+          if_block0 = create_if_block_21(ctx2);
+          if_block0.c();
+          if_block0.m(div0, null);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (
+        /*bridge*/
+        ctx2[7]?.openConnectionsModal || /*onOpenConnectionsModal*/
+        ctx2[8]
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_20(ctx2);
+          if_block1.c();
+          if_block1.m(nav, t8);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (dirty[0] & /*searchQuery*/
+      1024 && input.value !== /*searchQuery*/
+      ctx2[10]) {
+        set_input_value(
+          input,
+          /*searchQuery*/
+          ctx2[10]
+        );
+      }
+      if (
+        /*searchQuery*/
+        ctx2[10]
+      ) {
+        if (if_block2) {
+          if_block2.p(ctx2, dirty);
+        } else {
+          if_block2 = create_if_block_19(ctx2);
+          if_block2.c();
+          if_block2.m(div1, null);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button7_aria_selected_value !== (button7_aria_selected_value = /*sidebarMode*/
+      ctx2[11] === "notes")) {
+        attr(button7, "aria-selected", button7_aria_selected_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button7_class_value !== (button7_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx2[11] === "notes" ? "is-active" : "") + " svelte-173hj10")) {
+        attr(button7, "class", button7_class_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button8_aria_selected_value !== (button8_aria_selected_value = /*sidebarMode*/
+      ctx2[11] === "containers")) {
+        attr(button8, "aria-selected", button8_aria_selected_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button8_class_value !== (button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx2[11] === "containers" ? "is-active" : "") + " svelte-173hj10")) {
+        attr(button8, "class", button8_class_value);
+      }
+      let previous_block_index = current_block_type_index;
+      current_block_type_index = select_block_type(ctx2, dirty);
+      if (current_block_type_index === previous_block_index) {
+        if_blocks[current_block_type_index].p(ctx2, dirty);
+      } else {
+        group_outros();
+        transition_out(if_blocks[previous_block_index], 1, 1, () => {
+          if_blocks[previous_block_index] = null;
+        });
+        check_outros();
+        if_block3 = if_blocks[current_block_type_index];
+        if (!if_block3) {
+          if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block3.c();
+        } else {
+          if_block3.p(ctx2, dirty);
+        }
+        transition_in(if_block3, 1);
+        if_block3.m(div4, null);
+      }
+    },
+    i(local) {
+      if (current)
+        return;
+      transition_in(if_block3);
+      current = true;
+    },
+    o(local) {
+      transition_out(if_block3);
+      current = false;
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div4);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      if (if_block2)
+        if_block2.d();
+      if_blocks[current_block_type_index].d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function onKeyAction(e, action) {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    action();
+  }
+}
+function instance4($$self, $$props, $$invalidate) {
+  let selectedCount;
+  let currentKey;
+  let myContainers;
+  let publicContainers;
+  let scopedContainers;
+  let displayedContainers;
+  let displayedFolders;
+  let displayedFeeds;
+  let $loadingPreviewNotes;
+  let $expandedPreviews;
+  let $loadingFolderNotes;
+  let $loadingContainerFiles;
+  let $expandedContainerFolders;
+  let { settings } = $$props;
+  let { containers = [] } = $$props;
+  let { folders = [] } = $$props;
+  let { feeds = [] } = $$props;
+  let { containerFilesList = /* @__PURE__ */ new Map() } = $$props;
+  let { containerFoldersList = /* @__PURE__ */ new Map() } = $$props;
+  let { folderPreviewNotes = /* @__PURE__ */ new Map() } = $$props;
+  let { feedNotesList = /* @__PURE__ */ new Map() } = $$props;
+  let { isLoading = false } = $$props;
+  let { bridge = void 0 } = $$props;
+  let { onOpenQuickAdd = void 0 } = $$props;
+  let { onOpenCreateFolder = void 0 } = $$props;
+  let { onOpenQuickAddForContainer = void 0 } = $$props;
+  let { onOpenCreateFolderForContainer = void 0 } = $$props;
+  let { onOpenSyncModal = void 0 } = $$props;
+  let { onOpenConnectionsModal = void 0 } = $$props;
+  let { onRefreshData = void 0 } = $$props;
+  let { onSaveSettings = void 0 } = $$props;
+  let { onOpenNoteInVault = void 0 } = $$props;
+  let { onLoadContainerFiles = void 0 } = $$props;
+  let { onLoadFolderNotes = void 0 } = $$props;
+  let { onLoadFeedNotes = void 0 } = $$props;
+  const api = {
+    quickAdd: (fId, fPath) => bridge?.openQuickAdd ? bridge.openQuickAdd(fId, fPath) : onOpenQuickAdd?.(fId, fPath),
+    createFolder: (pFId, pFPath, p, cId) => bridge?.openCreateFolder ? bridge.openCreateFolder(pFId, pFPath, p, cId) : onOpenCreateFolder?.(pFId, pFPath, p, cId),
+    quickAddContainer: (cId, name, path, d) => bridge?.openQuickAddForContainer ? bridge.openQuickAddForContainer(cId, name, path, d) : onOpenQuickAddForContainer?.(cId, name, path, d),
+    createFolderContainer: (cId, name, pId, pPath) => bridge?.openCreateFolderForContainer ? bridge.openCreateFolderForContainer(cId, name, pId, pPath) : onOpenCreateFolderForContainer?.(cId, name, pId, pPath),
+    syncModal: (mode) => bridge?.openSyncModal ? bridge.openSyncModal(mode) : onOpenSyncModal?.(mode),
+    connectionsModal: () => bridge?.openConnectionsModal ? bridge.openConnectionsModal() : onOpenConnectionsModal?.(),
+    openNote: (path) => bridge?.openNoteInVault ? bridge.openNoteInVault(path) : onOpenNoteInVault?.(path),
+    refresh: () => bridge?.refreshData ? bridge.refreshData() : onRefreshData?.(),
+    loadFiles: (cId) => bridge?.loadContainerFiles ? bridge.loadContainerFiles(cId) : onLoadContainerFiles?.(cId),
+    loadFolderNotes: (fId, path) => bridge?.loadFolderNotes ? bridge.loadFolderNotes(fId, path) : onLoadFolderNotes?.(fId, path),
+    loadFeedNotes: (fId, slug) => bridge?.loadFeedNotes ? bridge.loadFeedNotes(fId, slug) : onLoadFeedNotes?.(fId, slug),
+    connectKey: async (k) => {
+      if (bridge?.connectKey) {
+        await bridge.connectKey(k);
+      } else {
+        $$invalidate(0, settings.containerKey = k, settings);
+        if (!settings.activeContainerIds)
+          $$invalidate(0, settings.activeContainerIds = [], settings);
+        if (!settings.activeContainerIds.includes(k))
+          settings.activeContainerIds.unshift(k);
+        $$invalidate(0, settings.activeContainerId = k, settings);
+        if (onSaveSettings)
+          await onSaveSettings();
+        if (onRefreshData)
+          await onRefreshData();
+      }
+    },
+    disconnectKey: async () => {
+      if (bridge?.disconnectKey) {
+        await bridge.disconnectKey();
+      } else {
+        $$invalidate(0, settings.containerKey = "", settings);
+        $$invalidate(0, settings.activeContainerIds = [], settings);
+        $$invalidate(0, settings.activeContainerId = "", settings);
+        $$invalidate(0, settings.connectedContainerName = "", settings);
+        if (onSaveSettings)
+          await onSaveSettings();
+        if (onRefreshData)
+          await onRefreshData();
+      }
+    },
+    toggleConnect: async (containerId) => {
+      if (bridge?.toggleContainerConnect) {
+        await bridge.toggleContainerConnect(containerId);
+      } else {
+        let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
+        if (currentIds.includes(containerId)) {
+          currentIds = currentIds.filter((id) => id !== containerId);
+          new import_obsidian11.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+        } else {
+          currentIds.push(containerId);
+          new import_obsidian11.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+        }
+        $$invalidate(0, settings.activeContainerIds = currentIds, settings);
+        $$invalidate(0, settings.activeContainerId = currentIds[0] || "", settings);
+        if (onSaveSettings)
+          await onSaveSettings();
+      }
+    }
+  };
+  const expandedPreviews = createSetStore();
+  component_subscribe($$self, expandedPreviews, (value) => $$invalidate(21, $expandedPreviews = value));
+  const expandedContainerFolders = createSetStore();
+  component_subscribe($$self, expandedContainerFolders, (value) => $$invalidate(24, $expandedContainerFolders = value));
+  const loadingContainerFiles = createSetStore();
+  component_subscribe($$self, loadingContainerFiles, (value) => $$invalidate(23, $loadingContainerFiles = value));
+  const loadingFolderNotes = createSetStore();
+  component_subscribe($$self, loadingFolderNotes, (value) => $$invalidate(22, $loadingFolderNotes = value));
+  const loadingPreviewNotes = createSetStore();
+  component_subscribe($$self, loadingPreviewNotes, (value) => $$invalidate(20, $loadingPreviewNotes = value));
+  let sidebarMode = "containers";
+  let activeTab = "folders";
+  let scopeFilter = "my";
+  let searchQuery = "";
+  let keyInputText = "";
+  let scrollContainerEl;
+  const today = /* @__PURE__ */ new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const todayHumanStr = today.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  function obsIcon(node, iconName) {
+    if (iconName)
+      (0, import_obsidian11.setIcon)(node, iconName);
+    return {
+      update(newIconName) {
+        node.empty();
+        if (newIconName)
+          (0, import_obsidian11.setIcon)(node, newIconName);
+      }
+    };
+  }
+  async function handleToggleContainerExpand(containerId) {
+    const previewKey = `container-${containerId}`;
+    if ($expandedPreviews.has(previewKey)) {
+      expandedPreviews.delete(previewKey);
+    } else {
+      expandedPreviews.add(previewKey);
+      if (!containerFilesList.has(containerId) && !$loadingContainerFiles.has(containerId)) {
+        loadingContainerFiles.add(containerId);
+        try {
+          await api.loadFiles(containerId);
+        } finally {
+          loadingContainerFiles.delete(containerId);
+        }
+      }
+    }
+  }
+  async function handleToggleFolder(item) {
+    expandedContainerFolders.toggle(item.id);
+  }
+  async function handleToggleFolderNotes(folder) {
+    const previewKey = `folder-${folder.id}`;
+    if ($expandedPreviews.has(previewKey)) {
+      expandedPreviews.delete(previewKey);
+    } else {
+      expandedPreviews.add(previewKey);
+      if (!folderPreviewNotes.has(folder.id) && !$loadingFolderNotes.has(folder.id)) {
+        loadingFolderNotes.add(folder.id);
+        try {
+          await api.loadFolderNotes(folder.id, folder.path);
+        } finally {
+          loadingFolderNotes.delete(folder.id);
+        }
+      }
+    }
+  }
+  async function handleToggleFeedNotes(feed) {
+    const previewKey = `feed-${feed.id}`;
+    if ($expandedPreviews.has(previewKey)) {
+      expandedPreviews.delete(previewKey);
+    } else {
+      expandedPreviews.add(previewKey);
+      if (!feedNotesList.has(feed.id) && !$loadingPreviewNotes.has(feed.id)) {
+        loadingPreviewNotes.add(feed.id);
+        try {
+          await api.loadFeedNotes(feed.id, feed.slug);
+        } finally {
+          loadingPreviewNotes.delete(feed.id);
+        }
+      }
+    }
+  }
+  function handleCollapseAll() {
+    expandedPreviews.clear();
+    expandedContainerFolders.clear();
+    new import_obsidian11.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+  }
+  async function handleConnectKeySubmit() {
+    const key = keyInputText.trim();
+    if (!key) {
+      new import_obsidian11.Notice("Please enter a container key");
+      return;
+    }
+    await api.connectKey(key);
+    $$invalidate(13, keyInputText = "");
+  }
+  async function handleDisconnectKey() {
+    await api.disconnectKey();
+  }
+  const click_handler = () => api.quickAdd();
+  const click_handler_1 = () => api.createFolder();
+  const click_handler_2 = () => api.syncModal("pull");
+  const click_handler_3 = () => api.syncModal("push");
+  const click_handler_4 = () => api.syncModal("push");
+  const click_handler_5 = () => api.connectionsModal();
+  const click_handler_6 = () => api.refresh();
+  function input_input_handler() {
+    searchQuery = this.value;
+    $$invalidate(10, searchQuery);
+  }
+  const click_handler_7 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_8 = () => $$invalidate(11, sidebarMode = "notes");
+  const click_handler_9 = () => $$invalidate(11, sidebarMode = "containers");
+  function input_input_handler_1() {
+    keyInputText = this.value;
+    $$invalidate(13, keyInputText);
+  }
+  const keydown_handler = (e) => {
+    if (e.key === "Enter")
+      handleConnectKeySubmit();
+  };
+  const click_handler_10 = () => $$invalidate(9, scopeFilter = "my");
+  const click_handler_11 = () => $$invalidate(9, scopeFilter = "public");
+  const click_handler_12 = () => $$invalidate(10, searchQuery = "");
+  const toggleExpand_handler = (c) => handleToggleContainerExpand(c.id);
+  const toggleConnect_handler = (c) => api.toggleConnect(c.id);
+  const addNote_handler = (e) => api.quickAddContainer(e.detail.containerId, e.detail.containerName, e.detail.folderPath, e.detail.initialDate);
+  const addFolder_handler = (e) => api.createFolderContainer(e.detail.containerId, e.detail.containerName, void 0, e.detail.parentFolderPath);
+  const openNote_handler = (e) => api.openNote(e.detail.item.path);
+  const toggleFolder_handler = (e) => handleToggleFolder(e.detail.item);
+  function div2_binding($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      scrollContainerEl = $$value;
+      $$invalidate(14, scrollContainerEl);
+    });
+  }
+  const click_handler_13 = () => api.syncModal("push");
+  const click_handler_14 = () => api.createFolder(void 0, void 0, "obsidian", settings.activeContainerId || containers[0]?.id);
+  const click_handler_15 = () => {
+    const activeContainer = containers.find((c) => c.id === settings.activeContainerId) || containers[0];
+    if (activeContainer) {
+      api.quickAddContainer(activeContainer.id, activeContainer.name);
+    } else {
+      api.quickAdd();
+    }
+  };
+  const click_handler_16 = () => $$invalidate(12, activeTab = "folders");
+  const click_handler_17 = () => $$invalidate(12, activeTab = "feeds");
+  const click_handler_18 = () => $$invalidate(9, scopeFilter = "my");
+  const click_handler_19 = () => $$invalidate(9, scopeFilter = "public");
+  const click_handler_20 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_21 = (folder) => api.quickAdd(folder.id, folder.path);
+  const click_handler_22 = (folder) => handleToggleFolderNotes(folder);
+  const keydown_handler_1 = (folder, e) => onKeyAction(e, () => handleToggleFolderNotes(folder));
+  const click_handler_23 = (note) => api.openNote(note.filePath || note.title + ".md");
+  const keydown_handler_2 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
+  const click_handler_24 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_25 = (feed) => handleToggleFeedNotes(feed);
+  const keydown_handler_3 = (feed, e) => onKeyAction(e, () => handleToggleFeedNotes(feed));
+  const click_handler_26 = (note) => api.openNote(note.filePath || note.title + ".md");
+  const keydown_handler_4 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
+  function div2_binding_1($$value) {
+    binding_callbacks[$$value ? "unshift" : "push"](() => {
+      scrollContainerEl = $$value;
+      $$invalidate(14, scrollContainerEl);
+    });
+  }
+  const click_handler_27 = () => api.syncModal("push");
+  const click_handler_28 = () => api.createFolder();
+  const click_handler_29 = () => api.quickAdd();
+  $$self.$$set = ($$props2) => {
+    if ("settings" in $$props2)
+      $$invalidate(0, settings = $$props2.settings);
+    if ("containers" in $$props2)
+      $$invalidate(1, containers = $$props2.containers);
+    if ("folders" in $$props2)
+      $$invalidate(41, folders = $$props2.folders);
+    if ("feeds" in $$props2)
+      $$invalidate(42, feeds = $$props2.feeds);
+    if ("containerFilesList" in $$props2)
+      $$invalidate(2, containerFilesList = $$props2.containerFilesList);
+    if ("containerFoldersList" in $$props2)
+      $$invalidate(3, containerFoldersList = $$props2.containerFoldersList);
+    if ("folderPreviewNotes" in $$props2)
+      $$invalidate(4, folderPreviewNotes = $$props2.folderPreviewNotes);
+    if ("feedNotesList" in $$props2)
+      $$invalidate(5, feedNotesList = $$props2.feedNotesList);
+    if ("isLoading" in $$props2)
+      $$invalidate(6, isLoading = $$props2.isLoading);
+    if ("bridge" in $$props2)
+      $$invalidate(7, bridge = $$props2.bridge);
+    if ("onOpenQuickAdd" in $$props2)
+      $$invalidate(43, onOpenQuickAdd = $$props2.onOpenQuickAdd);
+    if ("onOpenCreateFolder" in $$props2)
+      $$invalidate(44, onOpenCreateFolder = $$props2.onOpenCreateFolder);
+    if ("onOpenQuickAddForContainer" in $$props2)
+      $$invalidate(45, onOpenQuickAddForContainer = $$props2.onOpenQuickAddForContainer);
+    if ("onOpenCreateFolderForContainer" in $$props2)
+      $$invalidate(46, onOpenCreateFolderForContainer = $$props2.onOpenCreateFolderForContainer);
+    if ("onOpenSyncModal" in $$props2)
+      $$invalidate(47, onOpenSyncModal = $$props2.onOpenSyncModal);
+    if ("onOpenConnectionsModal" in $$props2)
+      $$invalidate(8, onOpenConnectionsModal = $$props2.onOpenConnectionsModal);
+    if ("onRefreshData" in $$props2)
+      $$invalidate(48, onRefreshData = $$props2.onRefreshData);
+    if ("onSaveSettings" in $$props2)
+      $$invalidate(49, onSaveSettings = $$props2.onSaveSettings);
+    if ("onOpenNoteInVault" in $$props2)
+      $$invalidate(50, onOpenNoteInVault = $$props2.onOpenNoteInVault);
+    if ("onLoadContainerFiles" in $$props2)
+      $$invalidate(51, onLoadContainerFiles = $$props2.onLoadContainerFiles);
+    if ("onLoadFolderNotes" in $$props2)
+      $$invalidate(52, onLoadFolderNotes = $$props2.onLoadFolderNotes);
+    if ("onLoadFeedNotes" in $$props2)
+      $$invalidate(53, onLoadFeedNotes = $$props2.onLoadFeedNotes);
+  };
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty[0] & /*settings*/
+    1) {
+      $:
+        $$invalidate(19, selectedCount = Array.isArray(settings?.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds.length : settings?.activeContainerId ? 1 : 0);
+    }
+    if ($$self.$$.dirty[0] & /*settings*/
+    1) {
+      $:
+        $$invalidate(18, currentKey = settings?.containerKey || settings?.activeContainerIds && settings.activeContainerIds[0] || "");
+    }
+    if ($$self.$$.dirty[0] & /*containers*/
+    2) {
+      $:
+        $$invalidate(56, myContainers = containers.filter((c) => !isContainerPublic(c)));
+    }
+    if ($$self.$$.dirty[0] & /*containers*/
+    2) {
+      $:
+        $$invalidate(55, publicContainers = containers.filter((c) => isContainerPublic(c)));
+    }
+    if ($$self.$$.dirty[0] & /*scopeFilter*/
+    512 | $$self.$$.dirty[1] & /*myContainers, publicContainers*/
+    50331648) {
+      $:
+        $$invalidate(54, scopedContainers = scopeFilter === "my" ? myContainers : publicContainers);
+    }
+    if ($$self.$$.dirty[0] & /*searchQuery*/
+    1024 | $$self.$$.dirty[1] & /*scopedContainers*/
+    8388608) {
+      $:
+        $$invalidate(17, displayedContainers = searchQuery.trim() ? scopedContainers.filter((c) => c.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || c.id.toLowerCase().includes(searchQuery.trim().toLowerCase())) : scopedContainers);
+    }
+    if ($$self.$$.dirty[0] & /*searchQuery*/
+    1024 | $$self.$$.dirty[1] & /*folders*/
+    1024) {
+      $:
+        $$invalidate(16, displayedFolders = searchQuery.trim() ? folders.filter((f) => f.path.toLowerCase().includes(searchQuery.trim().toLowerCase()) || f.name.toLowerCase().includes(searchQuery.trim().toLowerCase())) : folders);
+    }
+    if ($$self.$$.dirty[0] & /*searchQuery*/
+    1024 | $$self.$$.dirty[1] & /*feeds*/
+    2048) {
+      $:
+        $$invalidate(15, displayedFeeds = searchQuery.trim() ? feeds.filter((feed) => feed.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) || feed.slug.toLowerCase().includes(searchQuery.trim().toLowerCase())) : feeds);
+    }
+  };
+  return [
+    settings,
+    containers,
+    containerFilesList,
+    containerFoldersList,
+    folderPreviewNotes,
+    feedNotesList,
+    isLoading,
+    bridge,
+    onOpenConnectionsModal,
+    scopeFilter,
+    searchQuery,
+    sidebarMode,
+    activeTab,
+    keyInputText,
+    scrollContainerEl,
+    displayedFeeds,
+    displayedFolders,
+    displayedContainers,
+    currentKey,
+    selectedCount,
+    $loadingPreviewNotes,
+    $expandedPreviews,
+    $loadingFolderNotes,
+    $loadingContainerFiles,
+    $expandedContainerFolders,
+    api,
+    expandedPreviews,
+    expandedContainerFolders,
+    loadingContainerFiles,
+    loadingFolderNotes,
+    loadingPreviewNotes,
+    todayStr,
+    todayHumanStr,
+    obsIcon,
+    handleToggleContainerExpand,
+    handleToggleFolder,
+    handleToggleFolderNotes,
+    handleToggleFeedNotes,
+    handleCollapseAll,
+    handleConnectKeySubmit,
+    handleDisconnectKey,
+    folders,
+    feeds,
+    onOpenQuickAdd,
+    onOpenCreateFolder,
+    onOpenQuickAddForContainer,
+    onOpenCreateFolderForContainer,
+    onOpenSyncModal,
+    onRefreshData,
+    onSaveSettings,
+    onOpenNoteInVault,
+    onLoadContainerFiles,
+    onLoadFolderNotes,
+    onLoadFeedNotes,
+    scopedContainers,
+    publicContainers,
+    myContainers,
+    click_handler,
+    click_handler_1,
+    click_handler_2,
+    click_handler_3,
+    click_handler_4,
+    click_handler_5,
+    click_handler_6,
+    input_input_handler,
+    click_handler_7,
+    click_handler_8,
+    click_handler_9,
+    input_input_handler_1,
+    keydown_handler,
+    click_handler_10,
+    click_handler_11,
+    click_handler_12,
+    toggleExpand_handler,
+    toggleConnect_handler,
+    addNote_handler,
+    addFolder_handler,
+    openNote_handler,
+    toggleFolder_handler,
+    div2_binding,
+    click_handler_13,
+    click_handler_14,
+    click_handler_15,
+    click_handler_16,
+    click_handler_17,
+    click_handler_18,
+    click_handler_19,
+    click_handler_20,
+    click_handler_21,
+    click_handler_22,
+    keydown_handler_1,
+    click_handler_23,
+    keydown_handler_2,
+    click_handler_24,
+    click_handler_25,
+    keydown_handler_3,
+    click_handler_26,
+    keydown_handler_4,
+    div2_binding_1,
+    click_handler_27,
+    click_handler_28,
+    click_handler_29
+  ];
+}
+var LentaSidebar = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(
+      this,
+      options,
+      instance4,
+      create_fragment4,
+      safe_not_equal,
+      {
+        settings: 0,
+        containers: 1,
+        folders: 41,
+        feeds: 42,
+        containerFilesList: 2,
+        containerFoldersList: 3,
+        folderPreviewNotes: 4,
+        feedNotesList: 5,
+        isLoading: 6,
+        bridge: 7,
+        onOpenQuickAdd: 43,
+        onOpenCreateFolder: 44,
+        onOpenQuickAddForContainer: 45,
+        onOpenCreateFolderForContainer: 46,
+        onOpenSyncModal: 47,
+        onOpenConnectionsModal: 8,
+        onRefreshData: 48,
+        onSaveSettings: 49,
+        onOpenNoteInVault: 50,
+        onLoadContainerFiles: 51,
+        onLoadFolderNotes: 52,
+        onLoadFeedNotes: 53
+      },
+      add_css2,
+      [-1, -1, -1, -1]
+    );
+  }
+};
+var LentaSidebar_default = LentaSidebar;
+
+// src/ui/sidebar-view.ts
 var VIEW_TYPE_LENTA_SIDEBAR = "lemon-lenta-sidebar-view";
 function buildFileTree(files, folders = []) {
   const rootChildren = [];
@@ -8174,7 +15085,7 @@ function buildFileTree(files, folders = []) {
   sortNodes(rootChildren);
   return rootChildren;
 }
-var LentaSidebarView = class extends import_obsidian9.ItemView {
+var LentaSidebarView = class extends import_obsidian12.ItemView {
   constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder, onSaveSettings) {
     super(leaf);
     this.onQuickPull = onQuickPull;
@@ -8203,9 +15114,13 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.containerFoldersList = /* @__PURE__ */ new Map();
     this.loadingContainerFilesFor = /* @__PURE__ */ new Set();
     this.expandedContainerFolders = /* @__PURE__ */ new Set();
+    // Scroll position tracking per view key (mode:tab:filter)
+    this.scrollPositions = /* @__PURE__ */ new Map();
+    this.currentViewKey = "notes:folders:my";
     // Key connection state
     this.isConnectingKey = false;
     this.keyInputText = "";
+    this.svelteComponent = null;
     this.apiClient = apiClient;
     this.getSettings = getSettings;
     this.onOpenQuickAdd = onOpenQuickAdd;
@@ -8214,7 +15129,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.onOpenCreateFolder = onOpenCreateFolder;
     this.onSaveSettings = onSaveSettings;
-    this.mdComponent = new import_obsidian9.Component();
+    this.mdComponent = new import_obsidian12.Component();
   }
   selectFolder(folderId, folderPath) {
     this.selectedFolderId = folderId;
@@ -8331,13 +15246,146 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
   getIcon() {
     return "calendar-range";
   }
+  createObsidianBridge() {
+    return {
+      openQuickAdd: (fId, fPath) => this.onOpenQuickAdd(fId, fPath),
+      openCreateFolder: (pFId, pFPath, privacy, cId) => this.openCreateFolderModal(pFId, pFPath, privacy, cId),
+      openQuickAddForContainer: (cId, cName, fPath, initDate) => this.openQuickAddForContainer(cId, cName, fPath, initDate),
+      openCreateFolderForContainer: (cId, cName, pFId, pFPath) => this.openCreateFolderForContainer(cId, cName, pFId, pFPath),
+      openSyncModal: (mode) => this.onOpenSyncModal(mode),
+      openConnectionsModal: this.onOpenConnectionsModal ? () => this.onOpenConnectionsModal() : void 0,
+      openNoteInVault: async (path) => {
+        const fileName = path.split("/").pop() || path;
+        await this.openContainerFileInVault(this.getSettings().activeContainerId || this.containers[0]?.id || "", path, fileName);
+      },
+      refreshData: () => this.refreshData(),
+      saveSettings: async () => {
+        if (this.onSaveSettings)
+          await this.onSaveSettings();
+      },
+      loadContainerFiles: async (containerId) => {
+        const [files, cFolders] = await Promise.all([
+          this.apiClient.getContainerFiles(containerId).catch(() => []),
+          this.apiClient.getFolders({ containerId, scope: "all" }).catch(() => [])
+        ]);
+        this.containerFilesList.set(containerId, files);
+        this.containerFoldersList.set(containerId, cFolders);
+        this.updateSvelteProps();
+      },
+      loadFolderNotes: async (folderId, folderPath) => {
+        const notes = await this.apiClient.getNotes({ folder: folderPath }).catch(() => []);
+        this.folderPreviewNotes.set(folderId, notes);
+        this.updateSvelteProps();
+      },
+      loadFeedNotes: async (feedId, feedSlug) => {
+        const notes = await this.apiClient.getNotes({ feed: feedSlug }).catch(() => []);
+        this.feedNotesList.set(feedId, notes);
+        this.updateSvelteProps();
+      },
+      connectKey: async (key) => {
+        this.keyInputText = key;
+        await this.connectKeyAction();
+        this.updateSvelteProps();
+      },
+      disconnectKey: async () => {
+        const settings = this.getSettings();
+        settings.containerKey = "";
+        settings.activeContainerIds = [];
+        settings.activeContainerId = "";
+        settings.connectedContainerName = "";
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        new import_obsidian12.Notice("\u{1F34B} Container key disconnected");
+        await this.refreshData();
+      },
+      toggleContainerConnect: async (containerId) => {
+        const settings = this.getSettings();
+        let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
+        if (currentIds.includes(containerId)) {
+          currentIds = currentIds.filter((id) => id !== containerId);
+          new import_obsidian12.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+        } else {
+          currentIds.push(containerId);
+          new import_obsidian12.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+        }
+        settings.activeContainerIds = currentIds;
+        settings.activeContainerId = currentIds[0] || "";
+        if (this.onSaveSettings) {
+          await this.onSaveSettings();
+        }
+        this.updateSvelteProps();
+      }
+    };
+  }
   async onOpen() {
     this.containerEl.style.minWidth = "300px";
     this.mdComponent.load();
+    const target = this.containerEl.children[1] || this.contentEl;
+    if (target) {
+      target.empty();
+      try {
+        const bridge = this.createObsidianBridge();
+        this.svelteComponent = new LentaSidebar_default({
+          target,
+          props: {
+            settings: this.getSettings(),
+            containers: this.containers,
+            folders: this.folders,
+            feeds: this.feeds,
+            containerFilesList: this.containerFilesList,
+            containerFoldersList: this.containerFoldersList,
+            folderPreviewNotes: this.folderPreviewNotes,
+            feedNotesList: this.feedNotesList,
+            isLoading: this.isLoading,
+            bridge,
+            onOpenQuickAdd: bridge.openQuickAdd,
+            onOpenCreateFolder: bridge.openCreateFolder,
+            onOpenQuickAddForContainer: bridge.openQuickAddForContainer,
+            onOpenCreateFolderForContainer: bridge.openCreateFolderForContainer,
+            onOpenSyncModal: bridge.openSyncModal,
+            onOpenConnectionsModal: bridge.openConnectionsModal,
+            onRefreshData: bridge.refreshData,
+            onSaveSettings: bridge.saveSettings,
+            onOpenNoteInVault: bridge.openNoteInVault,
+            onLoadContainerFiles: bridge.loadContainerFiles,
+            onLoadFolderNotes: bridge.loadFolderNotes,
+            onLoadFeedNotes: bridge.loadFeedNotes
+          }
+        });
+      } catch (e) {
+        this.render();
+      }
+    }
     await this.refreshData();
   }
   async onClose() {
+    if (this.svelteComponent) {
+      try {
+        this.svelteComponent.$destroy();
+      } catch {
+      }
+      this.svelteComponent = null;
+    }
     this.mdComponent.unload();
+  }
+  updateSvelteProps() {
+    if (this.svelteComponent) {
+      try {
+        this.svelteComponent.$set({
+          settings: this.getSettings(),
+          containers: this.containers,
+          folders: this.folders,
+          feeds: this.feeds,
+          containerFilesList: this.containerFilesList,
+          containerFoldersList: this.containerFoldersList,
+          folderPreviewNotes: this.folderPreviewNotes,
+          feedNotesList: this.feedNotesList,
+          isLoading: this.isLoading
+        });
+      } catch {
+      }
+    }
   }
   invalidateFolderNotes(folderId) {
     if (folderId) {
@@ -8351,7 +15399,11 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
   }
   async refreshData() {
     this.isLoading = true;
-    this.render();
+    if (this.svelteComponent) {
+      this.updateSvelteProps();
+    } else {
+      this.render();
+    }
     try {
       const [feeds, folders, taxonomy, containers] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
@@ -8407,10 +15459,14 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         })
       );
     } catch (err) {
-      new import_obsidian9.Notice(`Failed to load Lenta data: ${err.message}`);
+      new import_obsidian12.Notice(`Failed to load Lenta data: ${err.message}`);
     } finally {
       this.isLoading = false;
-      this.render();
+      if (this.svelteComponent) {
+        this.updateSvelteProps();
+      } else {
+        this.render();
+      }
     }
   }
   isMyFolder(folder) {
@@ -8467,10 +15523,44 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
     return this.scopeFilter === "my";
   }
+  getScrollKey() {
+    if (this.sidebarMode === "notes") {
+      return `notes:${this.activeTab}:${this.scopeFilter}`;
+    }
+    return `containers:${this.scopeFilter}`;
+  }
+  setupContentScroll(content, targetKey) {
+    content.addEventListener(
+      "scroll",
+      () => {
+        this.scrollPositions.set(targetKey, content.scrollTop);
+      },
+      { passive: true }
+    );
+    const savedScroll = this.scrollPositions.get(targetKey) || 0;
+    if (savedScroll > 0) {
+      content.scrollTop = savedScroll;
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => {
+          if (content && savedScroll > 0 && content.scrollTop !== savedScroll) {
+            content.scrollTop = savedScroll;
+          }
+        });
+      }
+    }
+  }
   render() {
     const container = this.containerEl.children[1];
     if (!container)
       return;
+    const prevContent = container.querySelector(".lenta-sidebar-content");
+    if (prevContent && !this.isLoading) {
+      this.scrollPositions.set(this.currentViewKey, prevContent.scrollTop);
+    }
+    const prevContainerScrollTop = container.scrollTop;
+    const prevLeafScrollTop = this.containerEl.scrollTop;
+    const targetKey = this.getScrollKey();
+    this.currentViewKey = targetKey;
     container.empty();
     container.addClass("lenta-sidebar-container");
     container.style.minWidth = "300px";
@@ -8486,7 +15576,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
     const toolbar = header.createDiv({ cls: "lenta-sidebar-toolbar" });
     const addBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Quick Add Note" } });
-    (0, import_obsidian9.setIcon)(addBtn, "plus");
+    (0, import_obsidian12.setIcon)(addBtn, "plus");
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -8494,45 +15584,46 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       cls: "clickable-icon",
       attr: { "aria-label": "New Folder" }
     });
-    (0, import_obsidian9.setIcon)(addFolderToolbarBtn, "folder-plus");
+    (0, import_obsidian12.setIcon)(addFolderToolbarBtn, "folder-plus");
     addFolderToolbarBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
     const pullBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Pull from Lenta Server (\u2B07)" } });
-    (0, import_obsidian9.setIcon)(pullBtn, "download");
+    (0, import_obsidian12.setIcon)(pullBtn, "download");
     pullBtn.onclick = () => {
       this.onOpenSyncModal("pull");
     };
     const pushBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Push Changed to Server (\u2B06)" } });
-    (0, import_obsidian9.setIcon)(pushBtn, "upload");
+    (0, import_obsidian12.setIcon)(pushBtn, "upload");
     pushBtn.onclick = () => {
       if (!this.isMyScopeActive()) {
-        new import_obsidian9.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
+        new import_obsidian12.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
         return;
       }
       this.onOpenSyncModal("push");
     };
     const syncBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Sync Hub" } });
-    (0, import_obsidian9.setIcon)(syncBtn, "zap");
+    (0, import_obsidian12.setIcon)(syncBtn, "zap");
     syncBtn.onclick = () => this.onOpenSyncModal("push");
     if (this.onOpenConnectionsModal) {
       const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Auth" } });
-      (0, import_obsidian9.setIcon)(connBtn, "link-2");
+      (0, import_obsidian12.setIcon)(connBtn, "link-2");
       connBtn.onclick = () => this.onOpenConnectionsModal();
     }
     const collapseBtn = toolbar.createEl("button", {
       cls: "clickable-icon",
       attr: { "aria-label": "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)" }
     });
-    (0, import_obsidian9.setIcon)(collapseBtn, "chevrons-down-up");
+    (0, import_obsidian12.setIcon)(collapseBtn, "chevrons-down-up");
     collapseBtn.onclick = () => {
       this.expandedPreviews.clear();
       this.expandedContainerFolders.clear();
+      this.scrollPositions.clear();
       this.render();
-      new import_obsidian9.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+      new import_obsidian12.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
     };
     const refreshBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Refresh Data" } });
-    (0, import_obsidian9.setIcon)(refreshBtn, "refresh-cw");
+    (0, import_obsidian12.setIcon)(refreshBtn, "refresh-cw");
     refreshBtn.onclick = () => this.refreshData();
     const modeSwitcher = container.createDiv({ cls: "lenta-mode-switcher" });
     const notesTab = modeSwitcher.createDiv({
@@ -8552,15 +15643,21 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       this.render();
     };
     if (this.sidebarMode === "notes") {
-      this.renderNotesMode(container);
+      this.renderNotesMode(container, targetKey);
     } else {
-      this.renderContainersMode(container);
+      this.renderContainersMode(container, targetKey);
+    }
+    if (prevContainerScrollTop > 0) {
+      container.scrollTop = prevContainerScrollTop;
+    }
+    if (prevLeafScrollTop > 0) {
+      this.containerEl.scrollTop = prevLeafScrollTop;
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
   // Notes Mode: Folders and Feeds
   // ─────────────────────────────────────────────────────────────────────────
-  renderNotesMode(container) {
+  renderNotesMode(container, targetKey) {
     const tabsRow = container.createDiv({ cls: "lenta-sidebar-tabs" });
     const tabFolders = tabsRow.createDiv({
       cls: `lenta-tab ${this.activeTab === "folders" ? "active" : ""}`,
@@ -8604,12 +15701,15 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     } else {
       this.renderFeeds(content);
     }
+    if (!this.isLoading) {
+      this.setupContentScroll(content, targetKey);
+    }
     this.renderQuickAddFooter(container);
   }
   // ─────────────────────────────────────────────────────────────────────────
   // Containers Mode: Direct Obsidian Containers Browser with Key Auth
   // ─────────────────────────────────────────────────────────────────────────
-  renderContainersMode(container) {
+  renderContainersMode(container, targetKey) {
     this.renderContainerKeyCard(container);
     const filterBar = container.createDiv({ cls: "lenta-scope-filter-bar" });
     const filterOptions = [
@@ -8631,6 +15731,9 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       content.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers..." });
     } else {
       this.renderContainers(content);
+    }
+    if (!this.isLoading) {
+      this.setupContentScroll(content, targetKey);
     }
     this.renderContainersFooter(container);
   }
@@ -8655,7 +15758,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian9.Notice("\u{1F34B} Container key disconnected");
+        new import_obsidian12.Notice("\u{1F34B} Container key disconnected");
         await this.refreshData();
       };
     } else {
@@ -8687,7 +15790,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
   async connectKeyAction() {
     const key = this.keyInputText.trim();
     if (!key) {
-      new import_obsidian9.Notice("Please enter a container key");
+      new import_obsidian12.Notice("Please enter a container key");
       return;
     }
     this.isConnectingKey = true;
@@ -8709,13 +15812,13 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
           await this.onSaveSettings();
         }
         this.keyInputText = "";
-        new import_obsidian9.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
+        new import_obsidian12.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
         await this.refreshData();
       } else {
-        new import_obsidian9.Notice("Could not connect container with provided key");
+        new import_obsidian12.Notice("Could not connect container with provided key");
       }
     } catch (err) {
-      new import_obsidian9.Notice(`Connection failed: ${err.message}`);
+      new import_obsidian12.Notice(`Connection failed: ${err.message}`);
     } finally {
       this.isConnectingKey = false;
       this.render();
@@ -8730,15 +15833,15 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     const publicContainers = this.containers.filter((c) => isContainerPublic(c));
     const displayed = this.scopeFilter === "my" ? myContainers : publicContainers;
     if (displayed.length === 0) {
-      const empty = container.createDiv({ cls: "lenta-empty-state" });
+      const empty2 = container.createDiv({ cls: "lenta-empty-state" });
       if (this.scopeFilter === "my") {
-        empty.createEl("div", { text: "\u{1F512} No private containers found." });
-        empty.createEl("p", {
+        empty2.createEl("div", { text: "\u{1F512} No private containers found." });
+        empty2.createEl("p", {
           cls: "setting-item-description",
           text: "Enter your container key above to unlock private user vaults."
         });
       } else {
-        empty.createEl("div", { text: "\u{1F310} No public containers found." });
+        empty2.createEl("div", { text: "\u{1F310} No public containers found." });
       }
       return;
     }
@@ -8757,7 +15860,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       cls: `lenta-container-header-row ${isExpanded ? "is-active" : ""} ${isActiveContainer ? "is-connected" : ""}`
     });
     const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
-    (0, import_obsidian9.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
+    (0, import_obsidian12.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
     const nameSpan = headerRow.createSpan({ text: getContainerDisplayTitle2(c), cls: "lenta-item-name" });
     if (isActiveContainer) {
       nameSpan.title = "Active connected container";
@@ -8771,10 +15874,10 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       cls: "lenta-container-add-btn clickable-icon",
       attr: { "aria-label": `Create Note or Folder in "${c.name}"` }
     });
-    (0, import_obsidian9.setIcon)(addBtn, "plus");
+    (0, import_obsidian12.setIcon)(addBtn, "plus");
     addBtn.onclick = (e) => {
       e.stopPropagation();
-      const menu = new import_obsidian9.Menu();
+      const menu = new import_obsidian12.Menu();
       menu.addItem((item) => {
         item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
           this.openQuickAddForContainer(c.id, c.name);
@@ -8791,7 +15894,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse container" : "Expand container files" }
     });
-    (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -8838,7 +15941,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian9.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
+        new import_obsidian12.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
         this.render();
       };
       const addNoteBtn = actionToolbar.createEl("button", {
@@ -8846,7 +15949,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         text: "+ Note",
         attr: { "aria-label": `Create note in "${c.name}"` }
       });
-      (0, import_obsidian9.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian12.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(c.id, c.name);
@@ -8856,7 +15959,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         text: "+ Folder",
         attr: { "aria-label": `Create folder in "${c.name}"` }
       });
-      (0, import_obsidian9.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
+      (0, import_obsidian12.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
       addFolderBtn.onclick = (e) => {
         e.stopPropagation();
         this.openCreateFolderForContainer(c.id, c.name);
@@ -8877,10 +15980,10 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
   }
   renderFileTreeNodes(parentEl, nodes, containerId, depth = 0, currentFolderPath = "") {
-    const now = /* @__PURE__ */ new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
+    const now2 = /* @__PURE__ */ new Date();
+    const yyyy = now2.getFullYear();
+    const mm = String(now2.getMonth() + 1).padStart(2, "0");
+    const dd = String(now2.getDate()).padStart(2, "0");
     const todayStr = `${yyyy}-${mm}-${dd}`;
     const monthsRu = [
       "\u044F\u043D\u0432\u0430\u0440\u044F",
@@ -8896,8 +15999,8 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       "\u043D\u043E\u044F\u0431\u0440\u044F",
       "\u0434\u0435\u043A\u0430\u0431\u0440\u044F"
     ];
-    const todayHumanStr = `${now.getDate()} ${monthsRu[now.getMonth()]} ${yyyy} \u0433.`;
-    const isTodayMatch = (n) => {
+    const todayHumanStr = `${now2.getDate()} ${monthsRu[now2.getMonth()]} ${yyyy} \u0433.`;
+    const isTodayMatch2 = (n) => {
       if (n.type !== "file")
         return false;
       if (n.dateStr === todayStr)
@@ -8909,7 +16012,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       }
       return false;
     };
-    const hasAnyTodayFile = nodes.some((n) => isTodayMatch(n));
+    const hasAnyTodayFile = nodes.some((n) => isTodayMatch2(n));
     const datedFileNodes = nodes.filter((n) => n.type === "file" && n.dateStr);
     let todayMarkerInserted = false;
     const renderTodayMarker = () => {
@@ -8923,7 +16026,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
       markerEl.createSpan({ cls: "lenta-today-marker-line" });
       const pill = markerEl.createSpan({ cls: "lenta-today-marker-pill" });
       const iconSpan = pill.createSpan({ cls: "lenta-today-pill-icon" });
-      (0, import_obsidian9.setIcon)(iconSpan, "calendar");
+      (0, import_obsidian12.setIcon)(iconSpan, "calendar");
       pill.createSpan({ text: `\u0421\u0435\u0433\u043E\u0434\u043D\u044F: ${todayHumanStr}` });
       pill.createSpan({ cls: "lenta-today-pill-status", text: "(\u0441\u043E\u0431\u044B\u0442\u0438\u0439 \u043D\u0435\u0442)" });
       const addBtn = markerEl.createEl("button", {
@@ -8931,7 +16034,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
         text: "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430",
         attr: { "aria-label": `\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F (${todayStr}) \u0432 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435` }
       });
-      (0, import_obsidian9.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian12.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(containerId, void 0, currentFolderPath || void 0, todayStr);
@@ -8952,7 +16055,7 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = folderRow.createSpan({ cls: "lenta-item-icon" });
-        (0, import_obsidian9.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
+        (0, import_obsidian12.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
         folderRow.createSpan({ text: node.name, cls: "lenta-item-name" });
         if (node.children && node.children.length > 0) {
           folderRow.createSpan({ text: `${node.children.length}`, cls: "lenta-count-pill" });
@@ -8961,10 +16064,10 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
           cls: "lenta-folder-add-note clickable-icon",
           attr: { "aria-label": `Add note or subfolder in ${node.name}` }
         });
-        (0, import_obsidian9.setIcon)(folderAddBtn, "plus");
+        (0, import_obsidian12.setIcon)(folderAddBtn, "plus");
         folderAddBtn.onclick = (e) => {
           e.stopPropagation();
-          const menu = new import_obsidian9.Menu();
+          const menu = new import_obsidian12.Menu();
           menu.addItem((item) => {
             item.setTitle(`\u{1F4DD} New Note in "${node.name}"`).setIcon("file-plus").onClick(() => {
               this.openQuickAddForContainer(containerId, void 0, node.path);
@@ -9007,13 +16110,13 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
           }
         }
       } else {
-        const isToday = isTodayMatch(node);
+        const isToday = isTodayMatch2(node);
         const fileRow = parentEl.createDiv({
           cls: `lenta-tree-node-file ${isToday ? "is-today lenta-tree-node-today" : ""}`,
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = fileRow.createSpan({ cls: `lenta-item-icon lenta-note-icon ${isToday ? "is-today" : ""}` });
-        (0, import_obsidian9.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
+        (0, import_obsidian12.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
         const nameSpan = fileRow.createSpan({ text: node.name, cls: `lenta-note-title ${isToday ? "is-today" : ""}` });
         nameSpan.title = node.path;
         if (isToday) {
@@ -9050,11 +16153,11 @@ var LentaSidebarView = class extends import_obsidian9.ItemView {
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian9.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian12.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian9.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
+      new import_obsidian12.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
       const cachedFiles = this.containerFilesList.get(containerId) || [];
       const fileEntry = cachedFiles.find((f) => f.path === filePath);
       let content = fileEntry?.content;
@@ -9081,9 +16184,9 @@ Downloaded from container \`${containerId}\`.
       }
       const newFile = await this.app.vault.create(targetPath, content);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian9.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian12.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian9.Notice(`Failed to open file: ${err.message}`);
+      new import_obsidian12.Notice(`Failed to open file: ${err.message}`);
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -9128,7 +16231,7 @@ Downloaded from container \`${containerId}\`.
       const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
       const fIcon = folder.icon || "folder";
       if (fIcon.match(/^[a-z0-9-]+$/)) {
-        (0, import_obsidian9.setIcon)(iconSpan, fIcon);
+        (0, import_obsidian12.setIcon)(iconSpan, fIcon);
       } else {
         iconSpan.setText(fIcon);
       }
@@ -9143,7 +16246,7 @@ Downloaded from container \`${containerId}\`.
           title: `\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 \u043F\u0430\u043F\u043A\u0443 ${folder.path || folder.name}`
         }
       });
-      (0, import_obsidian9.setIcon)(addNoteBtn, "plus");
+      (0, import_obsidian12.setIcon)(addNoteBtn, "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.selectedFolderId = folder.id;
@@ -9154,7 +16257,7 @@ Downloaded from container \`${containerId}\`.
         cls: "lenta-preview-toggle clickable-icon",
         attr: { "aria-label": isExpanded ? "Collapse folder" : "Expand folder notes" }
       });
-      (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+      (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
       headerRow.onclick = async () => {
         this.selectedFolderId = folder.id;
         this.selectedFolderPath = folder.path;
@@ -9193,7 +16296,7 @@ Downloaded from container \`${containerId}\`.
               const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
               const nIcon = note.icon || "file-text";
               if (nIcon.match(/^[a-z0-9-]+$/)) {
-                (0, import_obsidian9.setIcon)(noteIconSpan, nIcon);
+                (0, import_obsidian12.setIcon)(noteIconSpan, nIcon);
               } else {
                 noteIconSpan.setText(nIcon);
               }
@@ -9216,14 +16319,14 @@ Downloaded from container \`${containerId}\`.
     const publicFeeds = this.feeds.filter((f) => !this.isMyFeed(f));
     const displayed = this.scopeFilter === "my" ? myFeeds : publicFeeds;
     if (displayed.length === 0) {
-      const empty = container.createDiv({ cls: "lenta-empty-state" });
+      const empty2 = container.createDiv({ cls: "lenta-empty-state" });
       if (this.scopeFilter === "my") {
-        empty.createEl("div", { text: "\u{1F512} No personal (My) feeds found." });
-        empty.createEl("p", {
+        empty2.createEl("div", { text: "\u{1F512} No personal (My) feeds found." });
+        empty2.createEl("p", {
           cls: "setting-item-description",
           text: "Personal feeds let you publish private notes without moderation."
         });
-        const createBtn = empty.createEl("button", {
+        const createBtn = empty2.createEl("button", {
           cls: "lenta-btn-lemon",
           text: "+ Create Personal Feed"
         });
@@ -9235,14 +16338,14 @@ Downloaded from container \`${containerId}\`.
               slug: "my-notes",
               description: "Personal notes and reflections feed"
             });
-            new import_obsidian9.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
+            new import_obsidian12.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
             await this.refreshData();
           } catch (err) {
-            new import_obsidian9.Notice(`Failed to create feed: ${err.message}`);
+            new import_obsidian12.Notice(`Failed to create feed: ${err.message}`);
           }
         };
       } else {
-        empty.createEl("div", { text: "\u{1F310} No public feeds configured." });
+        empty2.createEl("div", { text: "\u{1F310} No public feeds configured." });
       }
       return;
     }
@@ -9266,7 +16369,7 @@ Downloaded from container \`${containerId}\`.
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse feed" : "Show feed notes" }
     });
-    (0, import_obsidian9.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -9303,7 +16406,7 @@ Downloaded from container \`${containerId}\`.
             const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
             const nIcon = note.icon || "file-text";
             if (nIcon.match(/^[a-z0-9-]+$/)) {
-              (0, import_obsidian9.setIcon)(noteIconSpan, nIcon);
+              (0, import_obsidian12.setIcon)(noteIconSpan, nIcon);
             } else {
               noteIconSpan.setText(nIcon);
             }
@@ -9345,11 +16448,11 @@ Downloaded from container \`${containerId}\`.
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian9.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian12.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian9.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
+      new import_obsidian12.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
       const root = this.getSettings().vaultRootFolder || "Lemon-Seasons";
       const folderPath = note.folders && note.folders.length > 0 && note.folders[0].folder ? note.folders[0].folder.path : "01_Daily_Logs";
       const safeTitle = note.title.replace(/[:\/\\*?"<>|]/g, "-").trim();
@@ -9361,9 +16464,9 @@ Downloaded from container \`${containerId}\`.
       const mdContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
       const newFile = await this.app.vault.create(targetPath, mdContent);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian9.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian12.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian9.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
+      new import_obsidian12.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
     }
   }
   renderQuickAddFooter(container) {
@@ -9378,12 +16481,12 @@ Downloaded from container \`${containerId}\`.
     });
     pushCurrentBtn.onclick = () => {
       if (!isMyActive) {
-        new import_obsidian9.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
+        new import_obsidian12.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
         return;
       }
       const file = this.app.workspace.getActiveFile();
       if (!file) {
-        new import_obsidian9.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
+        new import_obsidian12.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
         return;
       }
       this.onOpenSyncModal();
@@ -9395,7 +16498,7 @@ Downloaded from container \`${containerId}\`.
         "aria-label": this.selectedFolderPath ? `Create new folder inside "${this.selectedFolderPath}"` : "Create new folder in Lenta & Vault"
       }
     });
-    (0, import_obsidian9.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian12.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -9407,7 +16510,7 @@ Downloaded from container \`${containerId}\`.
       }
     });
     if (isMyActive) {
-      (0, import_obsidian9.setIcon)(addBtn.createSpan(), "plus");
+      (0, import_obsidian12.setIcon)(addBtn.createSpan(), "plus");
     }
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
@@ -9438,10 +16541,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create folder in container "${containerName}"` : "Create folder in container"
       }
     });
-    (0, import_obsidian9.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian12.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian9.Notice("Please select or connect a container first");
+        new import_obsidian12.Notice("Please select or connect a container first");
         return;
       }
       this.openCreateFolderForContainer(activeId, containerName);
@@ -9453,10 +16556,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create note in container "${containerName}"` : "Create note in container"
       }
     });
-    (0, import_obsidian9.setIcon)(addNoteBtn.createSpan(), "plus");
+    (0, import_obsidian12.setIcon)(addNoteBtn.createSpan(), "plus");
     addNoteBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian9.Notice("Please select or connect a container first");
+        new import_obsidian12.Notice("Please select or connect a container first");
         return;
       }
       this.openQuickAddForContainer(activeId, containerName);
@@ -9465,8 +16568,8 @@ Downloaded from container \`${containerId}\`.
 };
 
 // src/ui/settings-tab.ts
-var import_obsidian10 = require("obsidian");
-var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
+var import_obsidian13 = require("obsidian");
+var LentaSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -9509,19 +16612,19 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
       this.plugin.openConnectionsModal();
     };
     containerEl.createEl("h3", { text: "\u2699\uFE0F Core Server & Sync Settings" });
-    new import_obsidian10.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
-      (text) => text.setPlaceholder("http://localhost:3001").setValue(this.plugin.settings.serverUrl).onChange(async (val) => {
+    new import_obsidian13.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
+      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.plugin.settings.serverUrl).onChange(async (val) => {
         this.plugin.settings.serverUrl = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian10.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
-      (text) => text.setPlaceholder("e.g. tech-strategy").setValue(this.plugin.settings.defaultFeedSlug).onChange(async (val) => {
+    new import_obsidian13.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
+      (text2) => text2.setPlaceholder("e.g. tech-strategy").setValue(this.plugin.settings.defaultFeedSlug).onChange(async (val) => {
         this.plugin.settings.defaultFeedSlug = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian10.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
+    new import_obsidian13.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
       dropdown.addOption("create_backup_fork", "Create Backup (.local-backup.md)");
       dropdown.addOption("client_wins", "Keep Local (Client Wins)");
       dropdown.addOption("server_wins", "Keep Remote (Server Wins)");
@@ -9532,14 +16635,14 @@ var LentaSettingTab = class extends import_obsidian10.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian10.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
-      (text) => text.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
+    new import_obsidian13.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
+      (text2) => text2.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
     );
   }
 };
 
 // src/main.ts
-var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
+var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
   async onload() {
     await this.loadSettings();
     this.apiClient = new LentaApiClient(
@@ -9585,7 +16688,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       this.activateSidebarView();
       if (isVisible && leaves[0].view instanceof LentaSidebarView) {
         leaves[0].view.refreshData();
-        new import_obsidian11.Notice("\u{1F34B} Lenta Hub refreshed");
+        new import_obsidian14.Notice("\u{1F34B} Lenta Hub refreshed");
       }
     });
     sidebarRibbonIcon.addClass("lenta-ribbon-btn");
@@ -9668,16 +16771,16 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new import_obsidian11.Notice("No active markdown file open.");
+          new import_obsidian14.Notice("No active markdown file open.");
           return;
         }
         try {
           const res = await this.syncEngine.pushLocalNote(file);
           if (res.success) {
-            new import_obsidian11.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
+            new import_obsidian14.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
           }
         } catch (err) {
-          new import_obsidian11.Notice(`Push failed: ${err.message}`);
+          new import_obsidian14.Notice(`Push failed: ${err.message}`);
         }
       }
     });
@@ -9691,7 +16794,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     this.addSettingTab(new LentaSettingTab(this.app, this));
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
-        if (file instanceof import_obsidian11.TFile) {
+        if (file instanceof import_obsidian14.TFile) {
           await this.syncEngine.handleFileRename(file, oldPath);
         }
       })
@@ -9710,7 +16813,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
           this.settings.containerKey = "";
           this.settings.connectedContainerName = "";
           await this.saveSettings();
-          new import_obsidian11.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
+          new import_obsidian14.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
         }
       })
     );
@@ -9729,7 +16832,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
     const { scanChangedFiles: scanChangedFiles2 } = await Promise.resolve().then(() => (init_changed_files_scanner(), changed_files_scanner_exports));
     const changed = await scanChangedFiles2(this.app, this.settings);
     if (changed.length === 0) {
-      new import_obsidian11.Notice("\u{1F34B} No local changes since last sync.");
+      new import_obsidian14.Notice("\u{1F34B} No local changes since last sync.");
       return;
     }
     this.updateStatusBar(`Pushing ${changed.length} files...`);
@@ -9743,7 +16846,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
         console.warn("Push failed for", item.relPath, err?.message);
       }
     }
-    new import_obsidian11.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
+    new import_obsidian14.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
     this.updateStatusBar("Synced \u2713");
     setTimeout(() => this.updateStatusBar("Ready"), 3e3);
   }
@@ -9845,9 +16948,9 @@ var WorkspaceLentaPlugin = class extends import_obsidian11.Plugin {
       (mode) => this.openSyncModal(mode)
     ).open();
   }
-  updateStatusBar(text) {
+  updateStatusBar(text2) {
     if (this.statusBarItemEl) {
-      this.statusBarItemEl.setText(`\u{1F34B} Lenta: ${text}`);
+      this.statusBarItemEl.setText(`\u{1F34B} Lenta: ${text2}`);
     }
   }
   async loadSettings() {

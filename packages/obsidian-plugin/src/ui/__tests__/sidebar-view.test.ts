@@ -1,12 +1,53 @@
 import { describe, it, expect, vi } from 'vitest';
-import { buildFileTree } from '../sidebar-view';
+import { buildFileTree, LentaSidebarView } from '../sidebar-view';
 
 vi.mock('obsidian', () => ({
-  ItemView: class {},
+  ItemView: class {
+    leaf: any;
+    containerEl: any;
+    contentEl: any;
+    constructor(leaf: any) {
+      this.leaf = leaf;
+      const headerEl = { empty: vi.fn(), createDiv: vi.fn(), createEl: vi.fn() };
+      const mainContainer = {
+        empty: vi.fn(),
+        addClass: vi.fn(),
+        style: {},
+        scrollTop: 0,
+        querySelector: vi.fn(),
+        createDiv: vi.fn(() => ({
+          createDiv: vi.fn(),
+          createEl: vi.fn(() => ({ onclick: null, setAttribute: vi.fn(), createSpan: vi.fn() })),
+          createSpan: vi.fn(() => ({ setText: vi.fn() })),
+          addEventListener: vi.fn(),
+          scrollTop: 0,
+          style: {},
+          addClass: vi.fn(),
+          setText: vi.fn(),
+        })),
+        createEl: vi.fn(() => ({
+          onclick: null,
+          addEventListener: vi.fn(),
+          createSpan: vi.fn(),
+          setAttribute: vi.fn(),
+        })),
+      };
+      this.containerEl = {
+        children: [headerEl, mainContainer],
+        scrollTop: 0,
+        style: {},
+        querySelector: vi.fn(),
+      };
+      this.contentEl = mainContainer;
+    }
+  },
   WorkspaceLeaf: class {},
   Notice: vi.fn(),
   setIcon: vi.fn(),
-  Component: class {},
+  Component: class {
+    load() {}
+    unload() {}
+  },
   TFile: class {},
   TFolder: class {},
   Menu: class {},
@@ -147,3 +188,103 @@ describe('LentaSidebarView - File Tree & Current Day Logic', () => {
     expect(sprint2?.children).toHaveLength(0);
   });
 });
+
+describe('LentaSidebarView - Scroll Preservation', () => {
+  function createTestView() {
+    const mockLeaf: any = {};
+    const mockApiClient: any = {
+      getFeeds: vi.fn().mockResolvedValue([]),
+      getFolders: vi.fn().mockResolvedValue([]),
+      getTaxonomyTree: vi.fn().mockResolvedValue([]),
+      listContainers: vi.fn().mockResolvedValue([]),
+      getContainerFiles: vi.fn().mockResolvedValue([]),
+      getNotes: vi.fn().mockResolvedValue([]),
+    };
+    const mockSettings: any = () => ({
+      activeContainerIds: ['cont-1'],
+      activeContainerId: 'cont-1',
+      connectedContainerName: 'Test Container',
+    });
+
+    const view = new LentaSidebarView(
+      mockLeaf,
+      mockApiClient,
+      mockSettings,
+      vi.fn(),
+      vi.fn()
+    );
+
+    return { view, mockApiClient };
+  }
+
+  it('preserves content scrollTop across render cycles when toggling items', () => {
+    const { view } = createTestView();
+    const container = (view as any).containerEl.children[1];
+
+    // Mock querySelector so it returns our fake content element
+    let currentContent: any = {
+      scrollTop: 350,
+      addEventListener: vi.fn(),
+      createDiv: vi.fn(),
+      empty: vi.fn(),
+      addClass: vi.fn(),
+    };
+    container.querySelector = vi.fn().mockImplementation((sel: string) => {
+      if (sel === '.lenta-sidebar-content') return currentContent;
+      return null;
+    });
+
+    function createMockElement(opts?: any) {
+      const el: any = {
+        cls: opts?.cls,
+        text: opts?.text,
+        scrollTop: 0,
+        style: {},
+        createDiv: vi.fn((childOpts) => createMockElement(childOpts)),
+        createEl: vi.fn((tag, childOpts) => createMockElement(childOpts)),
+        createSpan: vi.fn((childOpts) => createMockElement(childOpts)),
+        setText: vi.fn(),
+        empty: vi.fn(),
+        addClass: vi.fn(),
+        removeClass: vi.fn(),
+        addEventListener: vi.fn(),
+        querySelector: vi.fn(),
+        setAttribute: vi.fn(),
+      };
+      return el;
+    }
+
+    let newlyCreatedContent: any = null;
+    container.createDiv = vi.fn().mockImplementation((opts: any) => {
+      const el = createMockElement(opts);
+      if (opts?.cls === 'lenta-sidebar-content') {
+        newlyCreatedContent = el;
+      }
+      return el;
+    });
+
+    // Run render (simulating folder click or toggle)
+    (view as any).render();
+
+    // Verify the newly created content's scrollTop was restored to 350!
+    expect(newlyCreatedContent).not.toBeNull();
+    expect(newlyCreatedContent.scrollTop).toBe(350);
+  });
+
+  it('keeps scroll position isolated per view key (mode/tab/filter)', () => {
+    const { view } = createTestView();
+    (view as any).scrollPositions.set('containers:my', 500);
+    (view as any).scrollPositions.set('notes:folders:my', 150);
+
+    (view as any).sidebarMode = 'containers';
+    (view as any).scopeFilter = 'my';
+    expect((view as any).getScrollKey()).toBe('containers:my');
+    expect((view as any).scrollPositions.get((view as any).getScrollKey())).toBe(500);
+
+    (view as any).sidebarMode = 'notes';
+    (view as any).activeTab = 'folders';
+    expect((view as any).getScrollKey()).toBe('notes:folders:my');
+    expect((view as any).scrollPositions.get((view as any).getScrollKey())).toBe(150);
+  });
+});
+
