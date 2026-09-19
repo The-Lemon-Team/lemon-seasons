@@ -146,6 +146,8 @@ export interface Note {
   id: string;
   feedId: string;
   feed?: Feed;
+  containerId?: string | null;
+  filePath?: string | null;
   title: string;
   description: string | null;
   type: NoteType;

@@ -282,6 +282,15 @@ export function useObsidianContainerTreeQuery(containerId: string | null) {
   });
 }
 
+export function useObsidianContainerFilesQuery(containerId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.obsidianContainerTree(containerId || ''),
+    queryFn: () => (containerId ? containersApi.getContainerFiles(containerId) : []),
+    enabled: Boolean(containerId),
+    staleTime: 15_000,
+  });
+}
+
 export function useObsidianContainerCommitsQuery(containerId: string | null) {
   return useQuery({
     queryKey: queryKeys.obsidianContainerCommits(containerId || ''),

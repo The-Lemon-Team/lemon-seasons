@@ -24,6 +24,7 @@ import { useObsidianContainers, ObsidianContainersProvider } from './context/Obs
 import { FoldersProvider } from './context/FoldersContext';
 import { UserKeysProvider } from './context/UserKeysContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { parseObsidianRoute, navigateObsidian } from './utils/obsidianRouting';
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -76,12 +77,35 @@ const CalendarAppInner: React.FC = () => {
   const [isPrivateContainersOpen, setIsPrivateContainersOpen] = useState(false);
   const [isKeysModalOpen, setIsKeysModalOpen] = useState(false);
 
-  const [selectedSingleContainerId, setSelectedSingleContainerId] = useState<string | null>(null);
+  const [selectedSingleContainerId, setSelectedSingleContainerId] = useState<string | null>(() => {
+    return parseObsidianRoute().containerId;
+  });
+
+  // Sync selected container with URL back/forward navigation
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseObsidianRoute();
+      setSelectedSingleContainerId(parsed.containerId);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleSelectContainer = (containerId: string | null) => {
+    setSelectedSingleContainerId(containerId);
+    if (containerId) {
+      navigateObsidian({ containerId, tab: 'files' });
+    } else {
+      navigateObsidian({ containerId: null });
+    }
+  };
 
   const isCalendarView = ['timeline', 'month', 'gantt'].includes(filters.view);
 
   const handleSetView = (newView: CalendarViewMode) => {
-    setSelectedSingleContainerId(null);
+    if (newView !== 'obsidian') {
+      setSelectedSingleContainerId(null);
+    }
     if (!['timeline', 'month', 'gantt'].includes(newView)) {
       setIsFilterOpen(false);
     }
@@ -293,7 +317,7 @@ const CalendarAppInner: React.FC = () => {
                 onSelectOnlyContainer={selectOnlyContainer}
                 onClearContainers={clearContainers}
                 selectedSingleContainerId={selectedSingleContainerId}
-                onSelectSingleContainer={setSelectedSingleContainerId}
+                onSelectSingleContainer={handleSelectContainer}
               />
             )}
           </ErrorBoundary>

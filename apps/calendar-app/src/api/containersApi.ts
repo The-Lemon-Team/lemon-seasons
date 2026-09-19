@@ -48,6 +48,7 @@ export interface SyncStatusDto {
 export interface CommitSummaryDto {
   hash: string;
   shortHash: string;
+  commitHash?: string;
   author: string;
   authorEmail?: string;
   date: string;
@@ -83,6 +84,15 @@ export interface SyncPullResponseDto {
   isFullSync: boolean;
 }
 
+export interface ContainerFileItemDto {
+  path: string;
+  content?: string;
+  mtime?: number;
+  size?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
 export const containersApi = {
   // Check health / server readiness
   checkServerHealth: async (): Promise<boolean> => {
@@ -94,7 +104,7 @@ export const containersApi = {
     }
   },
 
-  // List all registered containers from backend
+  // List all registered containers
   listContainers: async (): Promise<ContainerSummaryDto[]> => {
     const res = await containersApiClient.get<ContainerSummaryDto[]>('/containers');
     return res.data;
@@ -124,9 +134,14 @@ export const containersApi = {
     return res.data;
   },
 
-  // Container File Tree
-  getContainerTree: async (id: string): Promise<any> => {
-    const res = await containersApiClient.get(`/containers/${id}/tree`);
+  // Container File Tree / List
+  getContainerFiles: async (id: string): Promise<ContainerFileItemDto[]> => {
+    const res = await containersApiClient.get<ContainerFileItemDto[]>(`/containers/${id}/files`);
+    return res.data;
+  },
+
+  getContainerTree: async (id: string): Promise<ContainerFileItemDto[]> => {
+    const res = await containersApiClient.get<ContainerFileItemDto[]>(`/containers/${id}/files`);
     return res.data;
   },
 

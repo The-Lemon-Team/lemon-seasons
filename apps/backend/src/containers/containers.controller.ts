@@ -59,6 +59,11 @@ export class ContainersController {
     return this.containersService.getContainerFiles(id);
   }
 
+  @Get(':id/tree')
+  async getContainerTree(@Param('id') id: string): Promise<FileItemDto[]> {
+    return this.containersService.getContainerFiles(id);
+  }
+
   @Get(':id/commits')
   async getCommits(
     @Param('id') id: string,

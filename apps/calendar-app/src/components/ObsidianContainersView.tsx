@@ -256,7 +256,7 @@ export const ObsidianContainersView: React.FC<ObsidianContainersViewProps> = ({
     }
   };
 
-  const [initialDetailTab, setInitialDetailTab] = useState<'history' | 'folders' | 'preview' | 'settings'>('history');
+  const [initialDetailTab, setInitialDetailTab] = useState<'files' | 'history' | 'folders' | 'settings'>('files');
   const [expandedAccordionId, setExpandedAccordionId] = useState<string | null>(null);
 
   // Modals state

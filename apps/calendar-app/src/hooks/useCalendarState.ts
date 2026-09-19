@@ -30,6 +30,9 @@ export function getPathForView(view: CalendarViewMode): string {
     case 'folders':
       return '/folders';
     case 'obsidian':
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/obsidian')) {
+        return window.location.pathname;
+      }
       return '/obsidian';
     case 'timeline':
     default:
@@ -43,7 +46,7 @@ export function getViewFromPath(pathname: string = window.location.pathname, vie
   if (path.endsWith('/gantt') || path.endsWith('/gantts') || path.endsWith('/gannts')) return 'gantt';
   if (path.endsWith('/feeds')) return 'feeds';
   if (path.endsWith('/folders')) return 'folders';
-  if (path.endsWith('/obsidian')) return 'obsidian';
+  if (path.startsWith('/obsidian') || path === '/obsidian' || path.split('/').includes('obsidian')) return 'obsidian';
 
   if (viewQueryParam) {
     if (

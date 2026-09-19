@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useObsidianContainers, ContainerPrivacyImpact } from '../context/ObsidianContainersContext';
 import { useFoldersContext } from '../context/FoldersContext';
 import { useObsidianContainerCommitsQuery, useObsidianContainerTreeQuery } from '../api/queries';
@@ -34,18 +34,20 @@ import {
   Zap,
   Layers,
 } from 'lucide-react';
+import { ObsidianContainerFileManager } from './ObsidianContainerFileManager';
+import { parseObsidianRoute, navigateObsidian } from '../utils/obsidianRouting';
 import dayjs from 'dayjs';
 
 interface SingleContainerDetailViewProps {
   containerId: string;
   onBack: () => void;
-  initialTab?: 'history' | 'folders' | 'preview' | 'settings';
+  initialTab?: 'files' | 'history' | 'folders' | 'settings';
 }
 
 export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps> = ({
   containerId,
   onBack,
-  initialTab = 'history',
+  initialTab = 'files',
 }) => {
   const { t } = useI18n();
   const {
@@ -69,7 +71,35 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
 
   const container = containers.find((c) => c.id === containerId);
 
-  const [activeTab, setActiveTab] = useState<'history' | 'folders' | 'preview' | 'settings'>(initialTab);
+  const initialRoute = parseObsidianRoute();
+  const [activeTab, setActiveTab] = useState<'files' | 'history' | 'folders' | 'settings'>(() => {
+    if (initialRoute.containerId === containerId && initialRoute.tab) {
+      return initialRoute.tab;
+    }
+    return initialTab;
+  });
+
+  // Sync tab with browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseObsidianRoute();
+      if (parsed.containerId === containerId && parsed.tab !== activeTab) {
+        setActiveTab(parsed.tab);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [containerId, activeTab]);
+
+  const handleTabChange = (tab: 'files' | 'history' | 'folders' | 'settings') => {
+    setActiveTab(tab);
+    navigateObsidian({ containerId, tab });
+  };
+
+  const handleBack = () => {
+    navigateObsidian({ containerId: null });
+    onBack();
+  };
   const [copiedToken, setCopiedToken] = useState(false);
   const [warningContainerImpact, setWarningContainerImpact] = useState<ContainerPrivacyImpact | null>(null);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
@@ -231,12 +261,12 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#121414] text-[#e2e2e2]">
+    <div className="flex-1 w-full min-w-0 flex flex-col h-full overflow-hidden bg-[#121414] text-[#e2e2e2]">
       {/* 1. Top Navigation & Container Header */}
       <div className="bg-[#181a1a] border-b border-[#242828] px-4 lg:px-8 py-4 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 min-w-0">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#121414] hover:bg-[#242828] border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:text-white transition-colors shrink-0"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -311,7 +341,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
             onClick={() => {
               if (window.confirm(t.deleteContainerConfirm || 'Удалить этот контейнер?')) {
                 deleteContainer(container.id);
-                onBack();
+                handleBack();
               }
             }}
             className="p-2 rounded-lg bg-[#121414] hover:bg-[#2a1a1a] border border-[#242828] hover:border-[#ef4444] text-[#93927e] hover:text-[#f87171] transition-colors"
@@ -325,7 +355,19 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
       {/* 2. Workspace Navigation Tabs */}
       <div className="bg-[#181a1a]/60 border-b border-[#242828] px-4 lg:px-8 flex items-center gap-2 shrink-0">
         <button
-          onClick={() => setActiveTab('history')}
+          onClick={() => handleTabChange('files')}
+          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
+            activeTab === 'files'
+              ? 'border-[#c9cd58] text-[#e5e971] font-bold'
+              : 'border-transparent text-[#93927e] hover:text-[#e2e2e2]'
+          }`}
+        >
+          <Folder className="w-3.5 h-3.5 text-[#c9cd58]" />
+          <span>Файлы & Git Explorer</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('history')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
             activeTab === 'history'
               ? 'border-[#a855f7] text-white font-bold'
@@ -333,11 +375,11 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
           }`}
         >
           <Clock className="w-3.5 h-3.5 text-[#a855f7]" />
-          <span>История изменений (Time Machine)</span>
+          <span>История коммитов (Time Machine)</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('folders')}
+          onClick={() => handleTabChange('folders')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
             activeTab === 'folders'
               ? 'border-[#a855f7] text-white font-bold'
@@ -349,19 +391,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
         </button>
 
         <button
-          onClick={() => setActiveTab('preview')}
-          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
-            activeTab === 'preview'
-              ? 'border-[#a855f7] text-white font-bold'
-              : 'border-transparent text-[#93927e] hover:text-[#e2e2e2]'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5 text-[#3b82f6]" />
-          <span>Предпросмотр заметок</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('settings')}
+          onClick={() => handleTabChange('settings')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
             activeTab === 'settings'
               ? 'border-[#a855f7] text-white font-bold'
@@ -374,10 +404,22 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
       </div>
 
       {/* 3. Tab Body Contents */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* TAB 1: Change History (Time Machine) */}
-          {activeTab === 'history' && (
+      {activeTab === 'files' ? (
+        <div className="flex-1 w-full min-w-0 flex flex-col overflow-hidden">
+          <ObsidianContainerFileManager
+            containerId={container.id}
+            initialPath={initialRoute.containerId === container.id ? initialRoute.folderPath : undefined}
+            initialFilePath={initialRoute.containerId === container.id ? initialRoute.filePath : undefined}
+            onNavigatePath={(folderPath, filePath) => {
+              navigateObsidian({ containerId: container.id, tab: 'files', folderPath, filePath });
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+          <div className="max-w-5xl mx-auto space-y-6">
+            {/* TAB 1: Change History (Time Machine) */}
+            {activeTab === 'history' && (
             <div className="space-y-4">
               <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-4">
                 <div className="flex items-center justify-between border-b border-[#242828] pb-3">
@@ -688,67 +730,6 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
             </div>
           )}
 
-          {/* TAB 3: Markdown Notes Preview */}
-          {activeTab === 'preview' && (
-            <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-4">
-                <div className="border-b border-[#242828] pb-3">
-                  <h3 className="font-sans font-bold text-base text-white flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#3b82f6]" />
-                    <span>Предпросмотр файлов Markdown</span>
-                  </h3>
-                  <p className="text-xs text-[#93927e] mt-0.5">
-                    Инспекция рендеринга заметок хранилища Obsidian.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {mockNotesPreview.map((note, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-xl bg-[#121414] border border-[#242828] overflow-hidden"
-                    >
-                      <button
-                        onClick={() => setExpandedNoteIdx(expandedNoteIdx === idx ? null : idx)}
-                        className="w-full p-3.5 flex items-center justify-between hover:bg-[#181a1a] transition-colors text-left"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#a855f7]/20 text-[#d8b4fe] border border-[#a855f7]/30">
-                            {note.type}
-                          </span>
-                          <div>
-                            <h4 className="font-sans font-bold text-sm text-[#e2e2e2]">
-                              {note.title}
-                            </h4>
-                            <p className="font-mono text-[11px] text-[#93927e]">
-                              {note.path}
-                            </p>
-                          </div>
-                        </div>
-
-                        {expandedNoteIdx === idx ? (
-                          <ChevronUp className="w-4 h-4 text-[#93927e]" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-[#93927e]" />
-                        )}
-                      </button>
-
-                      {expandedNoteIdx === idx && (
-                        <div className="p-4 border-t border-[#242828] bg-[#0f1111] text-[#c9c7b2]">
-                          <div className="prose prose-invert prose-xs max-w-none text-xs leading-relaxed [&_h2]:text-[#e5e971] [&_h2]:text-sm [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:text-[#c9c7b2] [&_h3]:text-xs [&_strong]:text-[#f3e8ff] [&_table]:text-xs [&_blockquote]:border-l-[#a855f7] [&_blockquote]:text-[#93927e]">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {note.content}
-                            </ReactMarkdown>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* TAB 4: Container Settings & Token */}
           {activeTab === 'settings' && (
             <div className="space-y-4">
@@ -828,6 +809,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
           )}
         </div>
       </div>
+      )}
 
       {/* Privacy Warning Modal */}
       <PrivacyChangeWarningModal

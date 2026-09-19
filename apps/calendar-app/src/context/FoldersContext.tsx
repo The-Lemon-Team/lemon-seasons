@@ -292,11 +292,11 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [scopeFilter, setScopeFilter] = useState<'all' | 'external' | 'internal'>('all');
 
   const externalFolders = useMemo(() => {
-    return folders.filter((f) => f.scope === 'external' || !f.containerId);
+    return folders.filter((f) => (f.scope === 'external' || !f.containerId) && f.privacy !== 'obsidian');
   }, [folders]);
 
   const internalFolders = useMemo(() => {
-    return folders.filter((f) => f.scope === 'internal' || Boolean(f.containerId));
+    return folders.filter((f) => f.scope === 'internal' || Boolean(f.containerId) || f.privacy === 'obsidian');
   }, [folders]);
 
   const getInternalFoldersForContainer = useCallback(
@@ -495,69 +495,42 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getNotesForFolder = useCallback(
     (folderPath: string, recursive = true): Note[] => {
       const normalized = normalizePath(folderPath).toLowerCase();
-      const lastPart = getFolderName(normalized).toLowerCase();
+      const matchedFolder = folders.find((f) => f.path.toLowerCase() === normalized);
 
       return allNotes.filter((n) => {
-        // 1. Direct match in note.folders
+        // If folder is scoped to a container, exclude notes that belong to a different container
+        if (matchedFolder?.containerId && n.containerId && n.containerId !== matchedFolder.containerId) {
+          return false;
+        }
+
+        // 1. Match via note.folders assignments
         const hasDirectFolder = n.folders?.some((f) => {
+          if (matchedFolder && (f.folderId === matchedFolder.id || f.folder?.id === matchedFolder.id)) {
+            return true;
+          }
           const fp = normalizePath(f.folder?.path || '').toLowerCase();
-          const fn = (f.folder?.name || '').toLowerCase();
           if (recursive) {
-            return fp === normalized || fp.startsWith(`${normalized}/`) || fn === lastPart;
+            return fp === normalized || fp.startsWith(`${normalized}/`);
           }
           return fp === normalized;
         });
         if (hasDirectFolder) return true;
 
-        // 2. Semantic matching with sample datasets for rich exploration
-        if (normalized.includes('daily_logs') && (n.startDate || n.createdAt)) {
-          return n.type === 'SINGLE' || n.type === 'EVENT';
-        }
-        if (normalized.includes('thoughts') || normalized.includes('archive')) {
-          return (
-            n.tags?.some((t) => t.path.includes('thought') || t.path.includes('philosophy') || t.path.includes('sync')) ||
-            n.hashtags?.some((h) => h.name.toLowerCase().includes('thought')) ||
-            n.title.toLowerCase().includes('reflection') ||
-            n.title.toLowerCase().includes('thought') ||
-            n.title.toLowerCase().includes('mental')
-          );
-        }
-        if (normalized.includes('bookmarks')) {
-          return Boolean(n.sourceLink) || n.hashtags?.some((h) => h.name.toLowerCase().includes('bookmark'));
-        }
-        if (normalized.includes('lenta') || normalized.includes('projects')) {
-          return (
-            n.tags?.some((t) => t.path.includes('lenta') || t.path.includes('project')) ||
-            n.title.toLowerCase().includes('lenta')
-          );
-        }
-        if (normalized.includes('cinema') || normalized.includes('marvel')) {
-          return (
-            n.type === 'FILM_RELEASE' ||
-            n.title.toLowerCase().includes('marvel') ||
-            n.title.toLowerCase().includes('cinema') ||
-            n.feed?.slug?.includes('cinema') ||
-            n.feed?.slug?.includes('mcu')
-          );
-        }
-        if (normalized.includes('research') || normalized.includes('ai')) {
-          return (
-            n.tags?.some((t) => t.path.includes('ai') || t.path.includes('research')) ||
-            n.title.toLowerCase().includes('ai') ||
-            n.title.toLowerCase().includes('модель')
-          );
-        }
-        if (normalized.includes('strategy') || normalized.includes('financials')) {
-          return (
-            n.tags?.some((t) => t.path.includes('politics') || t.path.includes('biz') || t.path.includes('financial') || t.path.includes('strategy')) ||
-            n.type === 'PERIOD'
-          );
+        // 2. Match via note.filePath (if note was synced from a container or has filePath)
+        if (n.filePath) {
+          const nfp = normalizePath(n.filePath).toLowerCase();
+          if (recursive) {
+            if (nfp === normalized || nfp.startsWith(`${normalized}/`)) return true;
+          } else {
+            const dir = nfp.includes('/') ? nfp.substring(0, nfp.lastIndexOf('/')) : '';
+            if (dir === normalized) return true;
+          }
         }
 
         return false;
       });
     },
-    [allNotes]
+    [allNotes, folders]
   );
 
   // Refresh folders from backend API

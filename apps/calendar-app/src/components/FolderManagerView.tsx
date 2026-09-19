@@ -41,8 +41,10 @@ import {
   Download,
   Upload,
   RefreshCw,
+  Box,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import { ObsidianContainerFileManager } from './ObsidianContainerFileManager';
 
 interface FolderTreeNodeItemProps {
   node: FolderTreeNode;
@@ -104,6 +106,8 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
   const hasChildren = node.children && node.children.length > 0;
 
   const nodeScope = node.scope || (node.containerId ? 'internal' : 'external');
+  const isInternalObsidian = nodeScope === 'internal' || Boolean(node.containerId) || node.privacy === 'obsidian';
+  if (isInternalObsidian) return null;
 
   // Filter check
   const matchesPrivacy =
@@ -117,6 +121,9 @@ const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
 
   const hasMatchingChild = (n: FolderTreeNode): boolean => {
     const childScope = n.scope || (n.containerId ? 'internal' : 'external');
+    if (childScope === 'internal' || Boolean(n.containerId) || n.privacy === 'obsidian') {
+      return false;
+    }
     const childMatchesPrivacy = privacyFilter === 'all' || (n.privacy || 'public') === privacyFilter;
     const childMatchesScope = scopeFilter === 'all' || childScope === scopeFilter;
     const childMatchesSearch =
@@ -341,6 +348,21 @@ export const FolderManagerView: React.FC = () => {
 
   const [warningImpact, setWarningImpact] = useState<PrivacyImpact | null>(null);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+
+  // View mode: standard project folders vs obsidian containers file manager
+  const [managerMode, setManagerMode] = useState<'folders' | 'containers'>('folders');
+  const [selectedContainerId, setSelectedContainerId] = useState<string | null>(() => containers[0]?.id || null);
+  const [containerSearchTerm, setContainerSearchTerm] = useState('');
+
+  const filteredContainers = useMemo(() => {
+    if (!containerSearchTerm.trim()) return containers;
+    const q = containerSearchTerm.toLowerCase();
+    return containers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.vaultPath && c.vaultPath.toLowerCase().includes(q))
+    );
+  }, [containers, containerSearchTerm]);
 
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
@@ -574,131 +596,195 @@ export const FolderManagerView: React.FC = () => {
 
       {/* Main Split-Pane Explorer Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Pane: Folder Tree & Filters */}
+        {/* Left Pane: Folder Tree / Containers List */}
         <aside className="w-84 border-r border-[#242828] bg-[#161818] flex flex-col shrink-0">
-          {/* Filter & Search Bar */}
+          {/* Top Mode Switcher: Project Folders vs Obsidian Containers */}
           <div className="p-3 border-b border-[#242828] space-y-2">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#93927e]" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t.searchFolders}
-                className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded pl-8 pr-3 py-1.5 text-xs font-mono text-[#e2e2e2] outline-none transition-colors"
-              />
-            </div>
-
-            {/* Scope Filter Tabs */}
-            <div className="flex items-center gap-1 p-0.5 bg-[#121414] rounded border border-[#2d3030] text-[10px] font-mono">
+            <div className="flex items-center gap-1 p-1 bg-[#121414] rounded-xl border border-[#2d3030] text-xs font-mono font-bold">
               <button
                 type="button"
-                onClick={() => setScopeFilter('all')}
-                className={`flex-1 py-1 rounded transition-colors text-center ${
-                  scopeFilter === 'all' ? 'bg-[#242828] text-[#e2e2e2] font-bold' : 'text-[#93927e] hover:text-white'
+                onClick={() => setManagerMode('folders')}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  managerMode === 'folders'
+                    ? 'bg-[#c9cd58] text-[#121414] shadow-glow-lemon'
+                    : 'text-[#93927e] hover:text-white'
                 }`}
               >
-                Все ({totalFoldersCount})
+                <FolderIcon className="w-3.5 h-3.5" />
+                <span>Папки проекта</span>
               </button>
               <button
                 type="button"
-                onClick={() => setScopeFilter('external')}
-                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
-                  scopeFilter === 'external' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'text-[#93927e] hover:text-[#e5e971]'
+                onClick={() => {
+                  setManagerMode('containers');
+                  if (!selectedContainerId && containers[0]) {
+                    setSelectedContainerId(containers[0].id);
+                  }
+                }}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  managerMode === 'containers'
+                    ? 'bg-[#a855f7] text-white shadow-[0_0_12px_rgba(168,85,247,0.35)]'
+                    : 'text-[#93927e] hover:text-white'
                 }`}
-                title={t.folderScopeExternalDesc}
               >
-                <Globe className="w-2.5 h-2.5" />
-                <span>{t.filterExternal} ({externalFoldersCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setScopeFilter('internal')}
-                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
-                  scopeFilter === 'internal' ? 'bg-[#3b82f6]/20 text-[#93c5fd] font-bold' : 'text-[#93927e] hover:text-[#93c5fd]'
-                }`}
-                title={t.folderScopeInternalDesc}
-              >
-                <Layers className="w-2.5 h-2.5" />
-                <span>{t.filterInternal} ({internalFoldersCount})</span>
+                <Box className="w-3.5 h-3.5" />
+                <span>Obsidian Vaults</span>
               </button>
             </div>
 
-            {/* Privacy Filter Tabs */}
-            <div className="flex items-center gap-1 p-0.5 bg-[#121414] rounded border border-[#2d3030] text-[10px] font-mono">
-              <button
-                type="button"
-                onClick={() => setPrivacyFilter('all')}
-                className={`flex-1 py-1 rounded transition-colors text-center ${
-                  privacyFilter === 'all' ? 'bg-[#242828] text-[#e2e2e2] font-bold' : 'text-[#93927e] hover:text-white'
-                }`}
-              >
-                Все
-              </button>
-              <button
-                type="button"
-                onClick={() => setPrivacyFilter('public')}
-                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
-                  privacyFilter === 'public' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'text-[#93927e] hover:text-[#e5e971]'
-                }`}
-              >
-                <Globe className="w-2.5 h-2.5" />
-                <span>Публ ({publicFoldersCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPrivacyFilter('private')}
-                className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
-                  privacyFilter === 'private' ? 'bg-[#a855f7]/20 text-[#d8b4fe] font-bold' : 'text-[#93927e] hover:text-[#d8b4fe]'
-                }`}
-              >
-                <Lock className="w-2.5 h-2.5" />
-                <span>Прив ({privateFoldersCount})</span>
-              </button>
-            </div>
-          </div>
+            {/* Mode 1 Controls: Project Folders */}
+            {managerMode === 'folders' && (
+              <>
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#93927e]" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={t.searchFolders}
+                    className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded pl-8 pr-3 py-1.5 text-xs font-mono text-[#e2e2e2] outline-none transition-colors"
+                  />
+                </div>
 
-          {/* Hierarchical Folder Tree List */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[#93927e] px-2 py-1 flex items-center justify-between">
-              <span>{t.folderTreeTitle}</span>
-              <span>{t.activeFoldersCount(folders.length)}</span>
-            </div>
+                {/* Privacy Filter Tabs */}
+                <div className="flex items-center gap-1 p-0.5 bg-[#121414] rounded border border-[#2d3030] text-[10px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyFilter('all')}
+                    className={`flex-1 py-1 rounded transition-colors text-center ${
+                      privacyFilter === 'all' ? 'bg-[#242828] text-[#e2e2e2] font-bold' : 'text-[#93927e] hover:text-white'
+                    }`}
+                  >
+                    Все
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyFilter('public')}
+                    className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
+                      privacyFilter === 'public' ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold' : 'text-[#93927e] hover:text-[#e5e971]'
+                    }`}
+                  >
+                    <Globe className="w-2.5 h-2.5" />
+                    <span>Публ ({publicFoldersCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyFilter('private')}
+                    className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 ${
+                      privacyFilter === 'private' ? 'bg-[#a855f7]/20 text-[#d8b4fe] font-bold' : 'text-[#93927e] hover:text-[#d8b4fe]'
+                    }`}
+                  >
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>Прив ({privateFoldersCount})</span>
+                  </button>
+                </div>
+              </>
+            )}
 
-            {folderTree.length === 0 ? (
-              <div className="p-6 text-center text-xs font-mono text-[#93927e]">
-                Папки не найдены
-              </div>
-            ) : (
-              folderTree.map((rootNode) => (
-                <FolderTreeNodeItem
-                  key={rootNode.id}
-                  node={rootNode}
-                  selectedId={selectedFolderId}
-                  onSelect={setSelectedFolderId}
-                  onAddSubfolder={handleAddSubfolder}
-                  onAddNote={(folderPath, folderId) => {
-                    setSelectedFolderId(folderId);
-                    setCreateNoteFolderPath(folderPath);
-                    setIsCreateNoteModalOpen(true);
-                  }}
-                  onTogglePrivacyRequest={handleTogglePrivacyRequest}
-                  onDeleteRequest={deleteFolder}
-                  expandedMap={expandedMap}
-                  onToggleExpand={handleToggleExpand}
-                  searchFilter={searchTerm}
-                  privacyFilter={privacyFilter}
-                  scopeFilter={scopeFilter}
+            {/* Mode 2 Controls: Obsidian Containers */}
+            {managerMode === 'containers' && (
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#93927e]" />
+                <input
+                  type="text"
+                  value={containerSearchTerm}
+                  onChange={(e) => setContainerSearchTerm(e.target.value)}
+                  placeholder="Поиск контейнеров..."
+                  className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#a855f7] rounded pl-8 pr-3 py-1.5 text-xs font-mono text-[#e2e2e2] outline-none transition-colors"
                 />
-              ))
+              </div>
             )}
           </div>
+
+          {/* List Canvas: Folder Tree OR Containers List */}
+          {managerMode === 'folders' ? (
+            <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-[#93927e] px-2 py-1 flex items-center justify-between">
+                <span>{t.folderTreeTitle}</span>
+                <span>{externalFoldersCount} папок</span>
+              </div>
+
+              {folderTree.length === 0 ? (
+                <div className="p-6 text-center text-xs font-mono text-[#93927e]">
+                  Папки не найдены
+                </div>
+              ) : (
+                folderTree.map((rootNode) => (
+                  <FolderTreeNodeItem
+                    key={rootNode.id}
+                    node={rootNode}
+                    selectedId={selectedFolderId}
+                    onSelect={setSelectedFolderId}
+                    onAddSubfolder={handleAddSubfolder}
+                    onAddNote={(folderPath, folderId) => {
+                      setSelectedFolderId(folderId);
+                      setCreateNoteFolderPath(folderPath);
+                      setIsCreateNoteModalOpen(true);
+                    }}
+                    onTogglePrivacyRequest={handleTogglePrivacyRequest}
+                    onDeleteRequest={deleteFolder}
+                    expandedMap={expandedMap}
+                    onToggleExpand={handleToggleExpand}
+                    searchFilter={searchTerm}
+                    privacyFilter={privacyFilter}
+                    scopeFilter="external"
+                  />
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-[#93927e] px-2 py-1 flex items-center justify-between">
+                <span>Хранилища Obsidian</span>
+                <span>{filteredContainers.length} шт.</span>
+              </div>
+
+              {filteredContainers.map((c) => {
+                const isSelected = selectedContainerId === c.id;
+                const isPriv = c.privacy === 'private';
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedContainerId(c.id)}
+                    className={`p-2.5 rounded-xl cursor-pointer border transition-all ${
+                      isSelected
+                        ? 'bg-[#a855f7]/20 border-[#a855f7]/60 text-white shadow-[0_0_12px_rgba(168,85,247,0.2)]'
+                        : 'bg-[#141616] border-[#242828] text-[#c9c7b2] hover:bg-[#1c1f1f] hover:border-[#383d3d]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <Box className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#d8b4fe]' : 'text-[#a855f7]'}`} />
+                        <span className="font-sans font-bold text-xs truncate">{c.name}</span>
+                      </div>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-mono shrink-0 flex items-center gap-0.5 ${
+                          isPriv ? 'bg-[#a855f7]/20 text-[#d8b4fe]' : 'bg-[#c9cd58]/15 text-[#e5e971]'
+                        }`}
+                      >
+                        {isPriv ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
+                        <span>{isPriv ? 'Private' : 'Public'}</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-[#93927e] mt-1.5 pl-6">
+                      <span className="truncate">{c.vaultPath || 'Vault'}</span>
+                      <span className="shrink-0 text-[#e5e971]">{c.notesCount || 0} заметок</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </aside>
 
-        {/* Right Pane: Selected Folder Inspector & Notes View */}
+        {/* Right Pane: Selected Folder Inspector OR Obsidian Container File Manager */}
         <main className="flex-1 flex flex-col bg-[#121414] overflow-hidden">
-          {selectedFolder ? (
+          {managerMode === 'containers' ? (
+            <ObsidianContainerFileManager
+              containerId={selectedContainerId || containers[0]?.id || ''}
+            />
+          ) : selectedFolder ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Folder Details Banner */}
               <div className="p-5 border-b border-[#242828] bg-[#181a1a] space-y-4 shrink-0">
