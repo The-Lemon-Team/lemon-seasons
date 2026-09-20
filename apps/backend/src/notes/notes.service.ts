@@ -9,6 +9,8 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { UpdateNoteImageDto, ImageOrderItemDto } from './dto/image.dto';
 import { CreateNoteLinkDto, UpdateNoteLinkDto, LinkOrderItemDto } from './dto/link.dto';
+import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
+import { AiQuickAddService } from './ai-quick-add.service';
 import { Prisma } from '@prisma/client';
 import { suggestFolderPathFromTaxonomyPath } from '@lenta/shared';
 
@@ -19,6 +21,7 @@ export class NotesService {
     private storageService: StorageService,
     private hashtagsService: HashtagsService,
     private foldersService: FoldersService,
+    private aiQuickAddService: AiQuickAddService,
   ) {}
 
   private async resolveTagIds(tagIdentifiers?: string[]): Promise<string[]> {
@@ -196,7 +199,34 @@ export class NotesService {
     });
   }
 
+  async parseAiNotes(dto: ParseNotesDto) {
+    return this.aiQuickAddService.parseNotes(dto);
+  }
+
+  async createBatch(dto: BatchCreateNotesDto) {
+    if (!dto.notes || !Array.isArray(dto.notes) || dto.notes.length === 0) {
+      return { createdCount: 0, notes: [] };
+    }
+
+    const createdNotes: any[] = [];
+    for (const noteDto of dto.notes) {
+      try {
+        const created = await this.create(noteDto);
+        createdNotes.push(created);
+      } catch (err: any) {
+        // Continue creating others if one fails, but log error
+        console.error(`Failed to create batch note "${noteDto.title}":`, err?.message || err);
+      }
+    }
+
+    return {
+      createdCount: createdNotes.length,
+      notes: createdNotes,
+    };
+  }
+
   async findAll(query: QueryNotesDto) {
+
     const {
       feedId,
       feedSlug,

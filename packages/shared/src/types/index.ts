@@ -482,4 +482,55 @@ export interface PrivateContainer {
   notesCount: number;
 }
 
+// AI Quick Add & Chat Parse Types
+export interface ParsedNoteCard {
+  tempId: string;
+  title: string;
+  type: NoteType;
+  displayType: string;
+  startDate: string;
+  endDate?: string | null;
+  feedId?: string;
+  feedSlug?: string;
+  feedTitle?: string;
+  folder?: string;
+  taxonomyPath?: string;
+  tagIds?: string[];
+  hashtags?: string[];
+  icon?: string;
+  sourceLink?: string;
+  description?: string;
+  selected?: boolean;
+}
+
+export interface ParseNotesContext {
+  defaultDate?: string;
+  defaultFeedId?: string;
+  defaultFeedSlug?: string;
+  defaultContainerId?: string;
+  defaultFolder?: string;
+  availableTaxonomy?: string[];
+  availableFeeds?: Array<{ id: string; title: string; slug: string }>;
+}
+
+export interface ParseNotesInput {
+  text: string;
+  context?: ParseNotesContext;
+}
+
+export interface ParseNotesResponse {
+  cards: ParsedNoteCard[];
+  rawText?: string;
+}
+
+export interface BatchCreateNotesInput {
+  notes: CreateNoteInput[];
+}
+
+export interface BatchCreateNotesResponse {
+  createdCount: number;
+  notes: Note[];
+}
+
+
 

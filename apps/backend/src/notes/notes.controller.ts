@@ -23,11 +23,26 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
 import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
+import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 
 @ApiTags('Notes')
 @Controller('notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
+
+  @Post('ai/parse')
+  @ApiOperation({ summary: 'Parse natural language text into calendar cards (supports Trend, Event, Period, Done)' })
+  @ApiResponse({ status: 200, description: 'Cards parsed successfully' })
+  parseAiNotes(@Body() parseNotesDto: ParseNotesDto) {
+    return this.notesService.parseAiNotes(parseNotesDto);
+  }
+
+  @Post('batch')
+  @ApiOperation({ summary: 'Batch create multiple calendar notes at once' })
+  @ApiResponse({ status: 201, description: 'Notes created successfully' })
+  createBatch(@Body() batchDto: BatchCreateNotesDto) {
+    return this.notesService.createBatch(batchDto);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new note' })

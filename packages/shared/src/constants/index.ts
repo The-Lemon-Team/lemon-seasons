@@ -48,7 +48,19 @@ export function getNoteTypeLabel(type: NoteType, lang: Language = 'ru'): string 
   return NoteTypeLabelsEn[type] || type;
 }
 
+export const TREND_LABEL_RU = 'Тренд';
+export const TREND_LABEL_EN = 'Trend';
+
+/**
+ * Resolves physical NoteType for a Trend:
+ * If an endDate is provided, maps to PERIOD; otherwise maps to SINGLE (point note).
+ */
+export function resolveTrendNoteType(endDate?: string | null): NoteType {
+  return endDate && endDate.trim() ? NoteType.PERIOD : NoteType.SINGLE;
+}
+
 export const NoteTypeColors: Record<NoteType, { bg: string; text: string; border: string; accent: string }> = {
+
   SINGLE: { bg: '#232924', text: '#d4e157', border: '#384435', accent: '#c9cd58' },
   PERIOD: { bg: '#1c2833', text: '#5dade2', border: '#2e4053', accent: '#3498db' },
   EVENT: { bg: '#2c2233', text: '#bb8fce', border: '#4a3b53', accent: '#9b59b6' },
