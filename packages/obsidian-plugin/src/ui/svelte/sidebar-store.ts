@@ -57,6 +57,7 @@ export function createSetStore(initialItems: string[] = []): SetStore {
 }
 
 export interface ObsidianBridge {
+  openAiQuickAdd?(folderPath?: string, date?: string): void;
   openQuickAdd(folderId?: string, folderPath?: string): void;
   openCreateFolder(parentFolderId?: string, parentFolderPath?: string, defaultPrivacy?: any, containerId?: string): void;
   openQuickAddForContainer(containerId: string, containerName?: string, folderPath?: string, initialDate?: string): void;

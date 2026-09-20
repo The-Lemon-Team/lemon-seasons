@@ -5,30 +5,49 @@
  * 3. container.description (if present, non-empty, and not equal to container.id)
  * 4. Human-formatted fallback based on container ID pattern (UUID, feed-, cont-, lenta_obs_)
  * 5. container.id / fallback string
+ *
+ * Supports both object signature `getContainerDisplayTitle(container)`
+ * and legacy two-argument signature `getContainerDisplayTitle(id, name)`.
  */
-export function getContainerDisplayTitle(container?: {
-  title?: string;
-  name?: string;
-  description?: string;
-  id?: string;
-} | null): string {
-  if (!container) return 'Untitled Container';
+export function getContainerDisplayTitle(
+  containerOrId?: {
+    title?: string;
+    name?: string;
+    description?: string;
+    id?: string;
+  } | string | null,
+  fallbackName?: string
+): string {
+  if (!containerOrId) return fallbackName || 'Untitled Container';
 
-  // 1. Explicit title property
-  if (container.title && container.title.trim()) {
-    return container.title.trim();
+  let id = '';
+  let title = '';
+  let name = '';
+  let description = '';
+
+  if (typeof containerOrId === 'string') {
+    id = containerOrId.trim();
+    name = fallbackName ? fallbackName.trim() : '';
+  } else if (typeof containerOrId === 'object') {
+    id = containerOrId.id ? containerOrId.id.trim() : '';
+    title = containerOrId.title ? containerOrId.title.trim() : '';
+    name = containerOrId.name ? containerOrId.name.trim() : (fallbackName ? fallbackName.trim() : '');
+    description = containerOrId.description ? containerOrId.description.trim() : '';
   }
 
-  const id = container.id || '';
+  // 1. Explicit title property
+  if (title) {
+    return title;
+  }
 
-  // 2. Explicit name property (if present & not equal to raw UUID/id)
-  if (container.name && container.name.trim() && container.name.trim() !== id) {
-    return container.name.trim();
+  // 2. Explicit name property (if present & not equal to raw UUID/id and not generic "Untitled Container")
+  if (name && name !== id && name.toLowerCase() !== 'untitled container') {
+    return name;
   }
 
   // 3. Fallback description property
-  if (container.description && container.description.trim() && container.description.trim() !== id) {
-    return container.description.trim();
+  if (description && description !== id && description.toLowerCase() !== 'untitled container') {
+    return description;
   }
 
   // 4. Formatted title from ID patterns
@@ -47,11 +66,14 @@ export function getContainerDisplayTitle(container?: {
 
   // Check for standard UUID (8-4-4-4-12) or long hash string (>16 chars)
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id) || id.length > 20) {
+    if (name && name !== id) {
+      return name;
+    }
     return `Obsidian Vault (${id.slice(0, 8)})`;
   }
 
-  if (container.name && container.name.trim()) {
-    return container.name.trim();
+  if (name) {
+    return name;
   }
 
   return id || 'Untitled Container';

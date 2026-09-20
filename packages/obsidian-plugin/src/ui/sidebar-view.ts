@@ -11,7 +11,9 @@ import {
 } from '../types';
 import { LentaCreateFolderModal } from './create-folder-modal';
 import { LentaQuickAddModal } from './quick-add-modal';
+import { LentaAiQuickAddModal } from './ai-quick-add-modal';
 import { isContainerPublic } from '../utils/container-privacy';
+
 import { getContainerDisplayTitle } from '../utils/container-title';
 import LentaSidebar from './svelte/LentaSidebar.svelte';
 import type { ObsidianBridge } from './svelte/sidebar-store';
@@ -352,7 +354,27 @@ export class LentaSidebarView extends ItemView {
     ).open();
   }
 
+  public openAiQuickAddModal(initialFolder?: string, initialDate?: string) {
+    const modal = new LentaAiQuickAddModal(
+      this.app,
+      this.apiClient,
+      this.getSettings,
+      async (createdPaths) => {
+        await this.refreshData();
+        if (createdPaths.length > 0) {
+          await this.openNoteInVault(createdPaths[0]);
+        }
+      },
+      this.getSettings().activeContainerId || undefined,
+      this.getSettings().connectedContainerName || undefined,
+      initialFolder,
+      initialDate,
+    );
+    modal.open();
+  }
+
   getViewType(): string {
+
     return VIEW_TYPE_LENTA_SIDEBAR;
   }
 
@@ -366,6 +388,7 @@ export class LentaSidebarView extends ItemView {
 
   private createObsidianBridge(): ObsidianBridge {
     return {
+      openAiQuickAdd: (fPath?: string, date?: string) => this.openAiQuickAddModal(fPath, date),
       openQuickAdd: (fId?: string, fPath?: string) => this.onOpenQuickAdd(fId, fPath),
       openCreateFolder: (pFId?: string, pFPath?: string, privacy?: any, cId?: string) =>
         this.openCreateFolderModal(pFId, pFPath, privacy, cId),

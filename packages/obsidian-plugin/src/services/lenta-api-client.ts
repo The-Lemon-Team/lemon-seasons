@@ -10,8 +10,11 @@ import {
   CommitSummaryDto,
   CommitDetailDto,
   FileVersionDto,
+  ParsedNoteCard,
+  ParseNotesContext,
 } from '../types';
 import { isContainerPublic } from '../utils/container-privacy';
+
 
 export interface UploadAttachmentResult {
   url: string;
@@ -361,6 +364,26 @@ export class LentaApiClient {
       body: JSON.stringify(dto),
     });
   }
+
+  async parseAiNotes(
+    text: string,
+    context?: ParseNotesContext,
+  ): Promise<{ cards: ParsedNoteCard[] }> {
+    return this.request<{ cards: ParsedNoteCard[] }>({
+      url: `${this.baseUrl}/notes/ai/parse`,
+      method: 'POST',
+      body: JSON.stringify({ text, context }),
+    });
+  }
+
+  async createNotesBatch(notes: any[]): Promise<{ createdCount: number; notes: LentaNoteDto[] }> {
+    return this.request<{ createdCount: number; notes: LentaNoteDto[] }>({
+      url: `${this.baseUrl}/notes/batch`,
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
 
   async updateNote(id: string, dto: Partial<LentaNoteDto> & { tagIds?: string[]; folderIds?: string[] }): Promise<LentaNoteDto> {
     return this.request<LentaNoteDto>({

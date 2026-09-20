@@ -4,7 +4,9 @@ import { LentaSyncEngine } from './services/lenta-sync-engine';
 import { LentaFrontmatterUtil } from './services/lenta-frontmatter';
 import { LentaPluginSettings, DEFAULT_SETTINGS } from './types';
 import { LentaQuickAddModal } from './ui/quick-add-modal';
+import { LentaAiQuickAddModal } from './ui/ai-quick-add-modal';
 import { LentaCreateFolderModal } from './ui/create-folder-modal';
+
 import { LentaSyncModal } from './ui/sync-modal';
 import { LentaConnectionsModal } from './ui/connections-modal';
 import { LentaContainersFoldersModal } from './ui/containers-folders-modal';
@@ -137,12 +139,21 @@ export default class WorkspaceLentaPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'lenta-ai-quick-add',
+      name: '✨ AI Quick Add Cards (Natural Language Chat)',
+      callback: () => {
+        this.openAiQuickAddModal();
+      },
+    });
+
+    this.addCommand({
       id: 'lenta-quick-add-note',
       name: 'Quick Add Chronological Note',
       callback: () => {
         this.openQuickAddModal();
       },
     });
+
 
     this.addCommand({
       id: 'lenta-create-folder',
@@ -300,7 +311,31 @@ export default class WorkspaceLentaPlugin extends Plugin {
     }
   }
 
+  openAiQuickAddModal(initialFolder?: string, initialDate?: string) {
+    new LentaAiQuickAddModal(
+      this.app,
+      this.apiClient,
+      () => this.settings,
+      (createdPaths) => {
+        if (createdPaths.length > 0) {
+          this.app.workspace.openLinkText(createdPaths[0], '', false);
+        }
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            leaf.view.refreshData();
+          }
+        }
+      },
+      this.settings.activeContainerId || undefined,
+      this.settings.connectedContainerName || undefined,
+      initialFolder,
+      initialDate
+    ).open();
+  }
+
   openQuickAddModal(initialFolderId?: string, initialFolderPath?: string) {
+
     new LentaQuickAddModal(
       this.app,
       this.apiClient,

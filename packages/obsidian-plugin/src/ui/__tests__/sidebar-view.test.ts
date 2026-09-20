@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildFileTree, LentaSidebarView } from '../sidebar-view';
+import { getContainerDisplayTitle } from '../../utils/container-title';
 
 vi.mock('obsidian', () => ({
   ItemView: class {
@@ -287,4 +288,57 @@ describe('LentaSidebarView - Scroll Preservation', () => {
     expect((view as any).scrollPositions.get((view as any).getScrollKey())).toBe(150);
   });
 });
+
+describe('getContainerDisplayTitle - Container Title Resolution', () => {
+  it('returns explicit name if provided in container object', () => {
+    expect(
+      getContainerDisplayTitle({
+        id: '21579c74-0d8e-40d6-ab6c-91db91a2dd0f',
+        name: 'Web UI Generated Obsidian Key',
+      })
+    ).toBe('Web UI Generated Obsidian Key');
+  });
+
+  it('supports legacy 2-argument call (id, name)', () => {
+    expect(
+      getContainerDisplayTitle(
+        '21579c74-0d8e-40d6-ab6c-91db91a2dd0f',
+        'Personal Vault 2026'
+      )
+    ).toBe('Personal Vault 2026');
+  });
+
+  it('prioritizes explicit title over name and description', () => {
+    expect(
+      getContainerDisplayTitle({
+        id: 'cont-12345',
+        title: 'Work Project Workspace',
+        name: 'cont-12345',
+      })
+    ).toBe('Work Project Workspace');
+  });
+
+  it('formats feed containers cleanly', () => {
+    expect(
+      getContainerDisplayTitle({
+        id: 'feed-christian-holidays',
+      })
+    ).toBe('Feed: Christian-holidays');
+  });
+
+  it('formats UUID containers when name is missing or equals id', () => {
+    expect(
+      getContainerDisplayTitle({
+        id: 'c742c68f-abc7-473b-95fe-6b49ba8374a0',
+        name: 'c742c68f-abc7-473b-95fe-6b49ba8374a0',
+      })
+    ).toBe('Obsidian Vault (c742c68f)');
+  });
+
+  it('handles empty or null safely', () => {
+    expect(getContainerDisplayTitle(null)).toBe('Untitled Container');
+    expect(getContainerDisplayTitle(undefined)).toBe('Untitled Container');
+  });
+});
+
 

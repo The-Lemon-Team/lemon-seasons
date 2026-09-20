@@ -28,6 +28,7 @@
   export let bridge: ObsidianBridge | undefined = undefined;
 
   // Backwards-compatible legacy props (used if bridge is not provided)
+  export let onOpenAiQuickAdd: ((folderPath?: string, date?: string) => void) | undefined = undefined;
   export let onOpenQuickAdd: ((folderId?: string, folderPath?: string) => void) | undefined = undefined;
   export let onOpenCreateFolder: ((parentFolderId?: string, parentFolderPath?: string, defaultPrivacy?: any, containerId?: string) => void) | undefined = undefined;
   export let onOpenQuickAddForContainer: ((containerId: string, containerName?: string, folderPath?: string, initialDate?: string) => void) | undefined = undefined;
@@ -43,9 +44,12 @@
 
   // Bridge dispatch helpers
   const api = {
+    aiQuickAdd: (folderPath?: string, date?: string) =>
+      bridge?.openAiQuickAdd ? bridge.openAiQuickAdd(folderPath, date) : onOpenAiQuickAdd?.(folderPath, date),
     quickAdd: (fId?: string, fPath?: string) =>
       bridge?.openQuickAdd ? bridge.openQuickAdd(fId, fPath) : onOpenQuickAdd?.(fId, fPath),
     createFolder: (pFId?: string, pFPath?: string, p?: any, cId?: string) =>
+
       bridge?.openCreateFolder ? bridge.openCreateFolder(pFId, pFPath, p, cId) : onOpenCreateFolder?.(pFId, pFPath, p, cId),
     quickAddContainer: (cId: string, name?: string, path?: string, d?: string) =>
       bridge?.openQuickAddForContainer ? bridge.openQuickAddForContainer(cId, name, path, d) : onOpenQuickAddForContainer?.(cId, name, path, d),
@@ -267,11 +271,21 @@
     <nav class="lenta-sidebar-toolbar" aria-label="Lenta actions">
       <button
         type="button"
+        class="clickable-icon lenta-ai-sparkle-btn"
+        aria-label="✨ AI Быстрое добавление карточек"
+        title="✨ AI Быстрое добавление карточек"
+        on:click={() => api.aiQuickAdd()}
+        use:obsIcon={'sparkles'}
+      ></button>
+
+      <button
+        type="button"
         class="clickable-icon"
         aria-label="Quick Add Note"
         on:click={() => api.quickAdd()}
         use:obsIcon={'plus'}
       ></button>
+
 
       <button
         type="button"
@@ -1127,4 +1141,15 @@
     text-decoration: underline;
     font-size: 0.8rem;
   }
+
+  :global(.lenta-ai-sparkle-btn) {
+    color: #c084fc !important;
+    transition: transform 0.15s ease, color 0.15s ease;
+  }
+
+  :global(.lenta-ai-sparkle-btn:hover) {
+    color: #e879f9 !important;
+    transform: scale(1.18);
+  }
 </style>
+

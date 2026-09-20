@@ -43,7 +43,7 @@
     };
   }
 
-  $: displayTitle = getContainerDisplayTitle(container.id, container.name);
+  $: displayTitle = getContainerDisplayTitle(container);
   $: isPublic = isContainerPublic(container);
   $: isFeed = container.id.startsWith('feed-');
 
@@ -184,6 +184,16 @@
       <span class="lenta-count-pill">{container.noteCount}</span>
     {/if}
 
+    <!-- Mini Connect Button in Header -->
+    <button
+      type="button"
+      class="lenta-mini-connect-btn {isActiveContainer ? 'is-connected' : ''}"
+      title={isActiveContainer ? 'Connected container (click to disconnect)' : 'Connect container'}
+      on:click|stopPropagation={handleConnectClick}
+    >
+      {isActiveContainer ? '✓ Connected' : 'Connect'}
+    </button>
+
     <span
       class="lenta-container-add-btn clickable-icon"
       aria-label="New Note or Folder in Container"
@@ -199,28 +209,6 @@
       aria-label={isExpanded ? 'Collapse container' : 'Expand container files'}
       use:obsIcon={isExpanded ? 'chevron-up' : 'chevron-down'}
     ></span>
-  </div>
-
-  <!-- Sub actions bar -->
-  <div class="lenta-container-sub-actions">
-    <button
-      class="lenta-container-action-btn lenta-container-action-btn-connect {isActiveContainer ? 'is-active' : ''}"
-      on:click={handleConnectClick}
-    >
-      {isActiveContainer ? '✓ Connected' : 'Connect Container'}
-    </button>
-    <button
-      class="lenta-container-action-btn lenta-container-action-btn-add"
-      on:click={handleAddNoteClick}
-    >
-      + Note +
-    </button>
-    <button
-      class="lenta-container-action-btn lenta-container-action-btn-add"
-      on:click={handleAddFolderClick}
-    >
-      + Folder 📁
-    </button>
   </div>
 
   <!-- Expanded accordion body -->
@@ -245,3 +233,37 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .lenta-mini-connect-btn {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    user-select: none;
+  }
+
+  .lenta-mini-connect-btn:hover {
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+    background: var(--background-modifier-hover);
+  }
+
+  .lenta-mini-connect-btn.is-connected {
+    background: var(--lenta-lemon-glow, rgba(249, 199, 79, 0.15));
+    color: var(--lenta-lemon, #f9c74f);
+    border-color: var(--lenta-lemon, #f9c74f);
+    font-weight: 700;
+  }
+</style>

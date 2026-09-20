@@ -218,3 +218,13 @@ export interface RestoreFileVersionRequestDto {
   message?: string;
 }
 
+export type {
+  ParsedNoteCard,
+  ParseNotesContext,
+  ParseNotesInput,
+  ParseNotesResponse,
+  BatchCreateNotesInput,
+  BatchCreateNotesResponse,
+} from '@lenta/shared';
+
+

@@ -3351,12 +3351,12 @@ var init_types = __esm({
           returns: returnType
         });
       }
-      implement(func) {
-        const validatedFunc = this.parse(func);
+      implement(func2) {
+        const validatedFunc = this.parse(func2);
         return validatedFunc;
       }
-      strictImplement(func) {
-        const validatedFunc = this.parse(func);
+      strictImplement(func2) {
+        const validatedFunc = this.parse(func2);
         return validatedFunc;
       }
       static create(args, returns, params) {
@@ -4500,7 +4500,7 @@ __export(main_exports, {
   default: () => WorkspaceLentaPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian14 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/services/lenta-api-client.ts
 var import_obsidian = require("obsidian");
@@ -4775,6 +4775,20 @@ var LentaApiClient = class {
       url: `${this.baseUrl}/notes`,
       method: "POST",
       body: JSON.stringify(dto)
+    });
+  }
+  async parseAiNotes(text2, context) {
+    return this.request({
+      url: `${this.baseUrl}/notes/ai/parse`,
+      method: "POST",
+      body: JSON.stringify({ text: text2, context })
+    });
+  }
+  async createNotesBatch(notes) {
+    return this.request({
+      url: `${this.baseUrl}/notes/batch`,
+      method: "POST",
+      body: JSON.stringify({ notes })
     });
   }
   async updateNote(id, dto) {
@@ -6441,1653 +6455,8 @@ _LentaQuickAddModal.DEFAULT_OBSIDIAN_FOLDERS = [
 ];
 var LentaQuickAddModal = _LentaQuickAddModal;
 
-// src/ui/create-folder-modal.ts
-var import_obsidian5 = require("obsidian");
-var LentaCreateFolderModal = class extends import_obsidian5.Modal {
-  constructor(app, apiClient, getSettings, onSuccess, initialParentFolderId, initialParentFolderPath, defaultPrivacy, targetContainerId) {
-    super(app);
-    this.targetContainerId = targetContainerId;
-    this.folders = [];
-    this.folderName = "";
-    this.selectedParentPath = "";
-    this.privacy = "obsidian";
-    this.icon = "folder";
-    this.color = "#c9cd58";
-    this.apiClient = apiClient;
-    this.getSettings = getSettings;
-    this.onSuccess = onSuccess;
-    this.initialParentFolderId = initialParentFolderId;
-    this.initialParentFolderPath = initialParentFolderPath;
-    this.targetContainerId = targetContainerId;
-    if (initialParentFolderPath) {
-      this.selectedParentPath = initialParentFolderPath;
-    }
-    if (targetContainerId) {
-      this.privacy = defaultPrivacy || "obsidian";
-    } else if (defaultPrivacy) {
-      this.privacy = defaultPrivacy;
-    } else {
-      this.privacy = "public";
-    }
-    if (this.privacy === "obsidian") {
-      this.color = "#3b82f6";
-      this.icon = "box";
-    } else if (this.privacy === "private") {
-      this.color = "#a855f7";
-      this.icon = "lock";
-    } else {
-      this.color = "#c9cd58";
-      this.icon = "folder";
-    }
-  }
-  async onOpen() {
-    this.modalEl.addClass("lenta-create-folder-modal");
-    this.renderLoading();
-    try {
-      const settings = this.getSettings();
-      const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0];
-      this.folders = await this.apiClient.getFolders({
-        containerId: activeContainerId || void 0,
-        scope: "all"
-      }).catch(() => []);
-      this.render();
-    } catch (err) {
-      new import_obsidian5.Notice(`Failed to load Lenta folders: ${err.message}`);
-      this.render();
-    }
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-  renderLoading() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: "\u{1F4C1} Create Lenta Folder" });
-    contentEl.createEl("p", { text: "Loading existing folders from Lenta server..." });
-  }
-  getFullComputedPath() {
-    const cleanName = this.folderName.trim().replace(/^\/+|\/+$/g, "");
-    if (!cleanName)
-      return this.selectedParentPath ? `${this.selectedParentPath}/...` : "...";
-    if (!this.selectedParentPath)
-      return cleanName;
-    return `${this.selectedParentPath}/${cleanName}`;
-  }
-  updatePreview() {
-    if (this.previewEl) {
-      this.previewEl.setText(`\u{1F4C1} Path: ${this.getFullComputedPath()}`);
-    }
-  }
-  render() {
-    const { contentEl } = this;
-    contentEl.empty();
-    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
-    header.createEl("h2", { text: "\u{1F4C1} Create New Folder" });
-    header.createEl("p", {
-      cls: "lenta-modal-subtitle",
-      text: this.targetContainerId ? `Target Container: \u{1F4E6} ${this.targetContainerId}` : "Add a new structured folder in Project Lenta and your local Obsidian vault."
-    });
-    new import_obsidian5.Setting(contentEl).setName("Folder Name").setDesc('Enter the name for the new folder (e.g. "Projects", "Sprint-24", "Research")').addText((text2) => {
-      text2.setPlaceholder("e.g. 02_Projects or Research").setValue(this.folderName).onChange((val) => {
-        this.folderName = val;
-        this.updatePreview();
-      });
-      text2.inputEl.focus();
-    });
-    const settings = this.getSettings();
-    const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || null;
-    const localFolders = [];
-    const otherFolders = [];
-    for (const f of this.folders) {
-      const isLocal = activeContainerId && f.containerId === activeContainerId || f.privacy === "obsidian" || f.scope === "internal";
-      if (isLocal) {
-        localFolders.push(f);
-      } else {
-        otherFolders.push(f);
-      }
-    }
-    localFolders.sort((a, b) => a.path.localeCompare(b.path));
-    otherFolders.sort((a, b) => a.path.localeCompare(b.path));
-    new import_obsidian5.Setting(contentEl).setName("Parent Folder").setDesc("Choose whether to place at root (/) or nest inside an existing folder (local container folders shown first)").addDropdown((dropdown) => {
-      dropdown.addOption("", "\u{1F4C1} / (Root)");
-      if (localFolders.length > 0) {
-        for (const f of localFolders) {
-          dropdown.addOption(f.path, `\u{1F4E6} ${f.path} (Local / Container)`);
-        }
-      }
-      for (const f of otherFolders) {
-        dropdown.addOption(f.path, `\u{1F4C1} ${f.path}`);
-      }
-      dropdown.setValue(this.selectedParentPath);
-      dropdown.onChange((val) => {
-        this.selectedParentPath = val;
-        this.updatePreview();
-      });
-    });
-    new import_obsidian5.Setting(contentEl).setName("Folder Type & Privacy").setDesc("Obsidian Container folders are isolated locally; Private folders stay private; Public folders can be shared across feeds").addDropdown((dropdown) => {
-      dropdown.addOption("obsidian", "\u{1F4E6} Obsidian Folder (Local Container Scope)");
-      dropdown.addOption("private", "\u{1F512} Private (My Folders / Personal Vault)");
-      dropdown.addOption("public", "\u{1F310} Public (Shared Project Folders / Feeds)");
-      dropdown.setValue(this.privacy);
-      dropdown.onChange((val) => {
-        this.privacy = val;
-        if (val === "obsidian") {
-          this.color = "#3b82f6";
-          this.icon = "box";
-        } else if (val === "private") {
-          this.color = "#a855f7";
-          this.icon = "lock";
-        } else if (val === "public") {
-          this.color = "#c9cd58";
-          this.icon = "folder";
-        }
-      });
-    });
-    new import_obsidian5.Setting(contentEl).setName("Icon & Color").setDesc('Optional Lucide icon name (e.g. "folder", "archive", "calendar", "star") and hex color').addText((text2) => {
-      text2.setPlaceholder("Icon (default: folder)").setValue(this.icon).onChange((val) => {
-        this.icon = val.trim() || "folder";
-      });
-    }).addColorPicker((picker) => {
-      picker.setValue(this.color).onChange((val) => {
-        this.color = val;
-      });
-    });
-    const previewBox = contentEl.createDiv({
-      cls: "lenta-sync-status-box",
-      attr: { style: "margin-top: 14px; font-weight: 500;" }
-    });
-    this.previewEl = previewBox.createDiv({
-      cls: "lenta-folder-path-preview",
-      text: `\u{1F4C1} Path: ${this.getFullComputedPath()}`
-    });
-    const footer = contentEl.createDiv({ cls: "lenta-modal-footer" });
-    const cancelBtn = footer.createEl("button", { text: "Cancel", cls: "mod-cancel" });
-    cancelBtn.onclick = () => this.close();
-    const submitBtn = footer.createEl("button", {
-      text: "Create Folder",
-      cls: "mod-cta lenta-btn-lemon"
-    });
-    submitBtn.onclick = async () => {
-      const cleanName = this.folderName.trim().replace(/^\/+|\/+$/g, "");
-      if (!cleanName) {
-        new import_obsidian5.Notice("Please specify a folder name.");
-        return;
-      }
-      if (cleanName.includes(":") || cleanName.includes("*") || cleanName.includes("?") || cleanName.includes('"') || cleanName.includes("<") || cleanName.includes(">") || cleanName.includes("|")) {
-        new import_obsidian5.Notice('Folder name contains illegal characters (: * ? " < > |)');
-        return;
-      }
-      const fullPath = this.selectedParentPath ? `${this.selectedParentPath}/${cleanName}` : cleanName;
-      submitBtn.disabled = true;
-      submitBtn.setText("Creating...");
-      try {
-        const settings2 = this.getSettings();
-        const activeContainerId2 = this.targetContainerId || settings2.activeContainerId || settings2.activeContainerIds && settings2.activeContainerIds[0] || null;
-        const created = await this.apiClient.createFolder({
-          path: fullPath,
-          name: cleanName.split("/").pop() || cleanName,
-          icon: this.icon,
-          color: this.color,
-          privacy: this.privacy,
-          containerId: activeContainerId2,
-          scope: this.privacy === "public" ? "external" : "internal"
-        });
-        const configuredRoot = settings2.vaultRootFolder !== void 0 && settings2.vaultRootFolder !== null ? settings2.vaultRootFolder.trim() : "Lemon-Seasons";
-        const vaultFolderPath = configuredRoot ? (0, import_obsidian5.normalizePath)(`${configuredRoot}/${fullPath}`) : (0, import_obsidian5.normalizePath)(fullPath);
-        const parts = vaultFolderPath.split("/");
-        let cur = "";
-        for (const p of parts) {
-          cur = cur ? `${cur}/${p}` : p;
-          const norm = (0, import_obsidian5.normalizePath)(cur);
-          if (!this.app.vault.getAbstractFileByPath(norm)) {
-            try {
-              await this.app.vault.createFolder(norm);
-            } catch (vErr) {
-              console.warn(`[Lenta] vault.createFolder for ${norm}:`, vErr);
-            }
-          }
-        }
-        new import_obsidian5.Notice(`\u{1F34B} Folder "${created.path}" created successfully!`);
-        this.onSuccess(created);
-        this.close();
-      } catch (err) {
-        new import_obsidian5.Notice(`Failed to create folder: ${err.message || err}`);
-        submitBtn.disabled = false;
-        submitBtn.setText("Create Folder");
-      }
-    };
-  }
-};
-
-// src/ui/sync-modal.ts
+// src/ui/ai-quick-add-modal.ts
 var import_obsidian6 = require("obsidian");
-init_changed_files_scanner();
-function getContainerDisplayTitle(c) {
-  if (c.name && c.name !== "Main Git Vault" && c.name !== "Simple Notes Vault") {
-    return c.name;
-  }
-  return c.id;
-}
-var LentaSyncModal = class extends import_obsidian6.Modal {
-  constructor(app, apiClient, syncEngine, settings, onSaveSettings, initialMode = "push", targetContainerId) {
-    super(app);
-    this.activeMode = "push";
-    this.containers = [];
-    this.activeContainerId = "";
-    this.selectedContainerFilter = "all";
-    // 'all' or specific containerId
-    this.isLoading = false;
-    this.isPushing = false;
-    this.isPulling = false;
-    this.pushStep = 0;
-    this.pullStep = 0;
-    this.statusMessage = "";
-    // Local changes since last sync
-    this.changedFiles = [];
-    this.stagedFilePaths = /* @__PURE__ */ new Set();
-    this.isLoadingChanges = false;
-    this.pushingFilePath = null;
-    this.commitMessage = "";
-    this.pushSuccess = null;
-    this.expandedSnippetPath = null;
-    // Pull result & delta
-    this.lastPullStats = null;
-    this.downloadedFiles = [];
-    this.expandedFileIndex = null;
-    this.copiedFileIndex = null;
-    // Server commits history
-    this.serverCommits = [];
-    this.isLoadingCommits = false;
-    this.apiClient = apiClient;
-    this.syncEngine = syncEngine;
-    this.settings = settings;
-    this.onSaveSettings = onSaveSettings;
-    this.activeMode = initialMode;
-    this.targetContainerId = targetContainerId;
-    this.activeContainerId = targetContainerId || settings.activeContainerId || settings.activeContainerIds?.[0] || "main-vault";
-    if (targetContainerId) {
-      this.selectedContainerFilter = targetContainerId;
-    }
-  }
-  async onOpen() {
-    this.modalEl.addClass("lenta-sync-modal-frame");
-    this.modalEl.style.cssText = "max-width: 860px; width: 92vw; max-height: 88vh; box-sizing: border-box; overflow-x: hidden !important;";
-    this.contentEl.style.cssText = "overflow-x: hidden !important; box-sizing: border-box; width: 100%; max-width: 100%;";
-    await this.loadContainers();
-    await this.loadChangedFiles();
-    await this.loadServerCommits();
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-  getActiveContainerIds() {
-    if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
-      return this.settings.activeContainerIds;
-    }
-    if (this.settings.activeContainerId) {
-      return [this.settings.activeContainerId];
-    }
-    return [];
-  }
-  async loadContainers() {
-    this.isLoading = true;
-    this.render();
-    try {
-      this.containers = await this.apiClient.listContainers({ fetchAll: true }).catch(() => []);
-      const activeIds = this.getActiveContainerIds();
-      if (activeIds.length > 0 && !activeIds.includes(this.activeContainerId)) {
-        this.activeContainerId = activeIds[0];
-      }
-    } catch (err) {
-      this.statusMessage = `Connection error: ${err.message}`;
-    } finally {
-      this.isLoading = false;
-      this.render();
-    }
-  }
-  async loadChangedFiles() {
-    this.isLoadingChanges = true;
-    this.render();
-    try {
-      this.changedFiles = await scanChangedFiles(this.app, this.settings);
-      this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
-    } catch {
-      this.changedFiles = [];
-      this.stagedFilePaths = /* @__PURE__ */ new Set();
-    } finally {
-      this.isLoadingChanges = false;
-      this.render();
-    }
-  }
-  async loadServerCommits() {
-    this.isLoadingCommits = true;
-    try {
-      const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
-      this.serverCommits = await this.apiClient.getContainerCommits(targetId, 20).catch(() => []);
-    } catch {
-      this.serverCommits = [];
-    } finally {
-      this.isLoadingCommits = false;
-      this.render();
-    }
-  }
-  // Smart Auto-generate Commit Message
-  autoGenerateCommitMessage() {
-    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
-    if (staged.length === 0) {
-      this.commitMessage = "chore(sync): \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 \u0438 \u0437\u0430\u043C\u0435\u0442\u043E\u043A";
-      this.render();
-      return;
-    }
-    const titles = staged.map((f) => `"${f.title}"`).slice(0, 2).join(", ");
-    const more = staged.length > 2 ? ` \u0438 \u0435\u0449\u0451 ${staged.length - 2}` : "";
-    if (staged.length === 1) {
-      this.commitMessage = `feat(note): \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438 "${staged[0].title}"`;
-    } else {
-      this.commitMessage = `feat(vault): \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F ${staged.length} \u0437\u0430\u043C\u0435\u0442\u043E\u043A (${titles}${more})`;
-    }
-    this.render();
-  }
-  // Execute Push of Staged Files
-  async executePush() {
-    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
-    if (staged.length === 0 && !this.commitMessage.trim()) {
-      new import_obsidian6.Notice("\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0445\u043E\u0442\u044F \u0431\u044B \u043E\u0434\u0438\u043D \u0444\u0430\u0439\u043B \u0434\u043B\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430.");
-      return;
-    }
-    this.isPushing = true;
-    this.pushStep = 1;
-    this.statusMessage = "\u23F3 \u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u0434\u0435\u043B\u044C\u0442\u044B \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439...";
-    this.pushSuccess = null;
-    this.render();
-    try {
-      await new Promise((r) => setTimeout(r, 300));
-      this.pushStep = 2;
-      this.statusMessage = `\u23F3 \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 ${staged.length} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440...`;
-      this.render();
-      let pushed = 0;
-      const pushedFilesPayload = [];
-      for (const item of staged) {
-        try {
-          const content = await this.app.vault.read(item.file);
-          pushedFilesPayload.push({ path: item.relPath, content });
-          const res = await this.syncEngine.pushLocalNote(item.file);
-          if (res.success)
-            pushed++;
-        } catch (e) {
-          console.warn(`Failed to push note ${item.title}:`, e);
-        }
-      }
-      this.pushStep = 3;
-      const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
-      const finalMsg = this.commitMessage.trim() || `feat(sync): push ${pushed} notes from Obsidian vault`;
-      const pushRes = await this.apiClient.pushContainer(targetId, {
-        message: finalMsg,
-        files: pushedFilesPayload
-      }).catch(() => ({
-        success: true,
-        newCommit: `rev-${Date.now().toString(16).slice(2, 8)}`,
-        filesChanged: pushed,
-        message: finalMsg
-      }));
-      this.pushSuccess = {
-        commit: pushRes.newCommit,
-        message: finalMsg,
-        count: pushed
-      };
-      this.statusMessage = `\u2705 \u0423\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E! \u0417\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u0440\u0435\u0432\u0438\u0437\u0438\u044F ${pushRes.newCommit}.`;
-      new import_obsidian6.Notice(`\u{1F34B} Lenta Push: ${pushed} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440!`);
-      const completionTime = new Date(Date.now() + 1e3).toISOString();
-      this.settings.lastSyncedAt = completionTime;
-      await this.onSaveSettings();
-      this.commitMessage = "";
-      await this.loadChangedFiles();
-      await this.loadServerCommits();
-    } catch (err) {
-      this.statusMessage = `\u274C \u041E\u0448\u0438\u0431\u043A\u0430 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438: ${err.message}`;
-      new import_obsidian6.Notice(`Push failed: ${err.message}`);
-    } finally {
-      this.isPushing = false;
-      this.render();
-    }
-  }
-  // Execute Pull of Server Changes
-  async executePull() {
-    this.isPulling = true;
-    this.pullStep = 1;
-    this.statusMessage = "\u23F3 \u0417\u0430\u043F\u0440\u043E\u0441 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0439 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430...";
-    this.render();
-    try {
-      await new Promise((r) => setTimeout(r, 350));
-      this.pullStep = 2;
-      this.statusMessage = "\u23F3 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0438 \u043E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0434\u0435\u043B\u044C\u0442\u044B (LWW)...";
-      this.render();
-      const activeContainerIds = this.getActiveContainerIds();
-      const containerNameMap = /* @__PURE__ */ new Map();
-      for (const c of this.containers) {
-        containerNameMap.set(c.id, getContainerDisplayTitle(c));
-      }
-      let res;
-      if (this.selectedContainerFilter === "all" && activeContainerIds.length > 1) {
-        res = await this.syncEngine.pullAllContainers(activeContainerIds, containerNameMap);
-      } else {
-        const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
-        const targetName = containerNameMap.get(targetId) || targetId;
-        const syncRes = await this.syncEngine.syncContainerFiles(targetId, targetName).catch(() => ({ downloadedFiles: 0, createdFolders: 0, files: [] }));
-        res = await this.syncEngine.pullChanges();
-        if (syncRes && Array.isArray(syncRes.files) && syncRes.files.length > 0) {
-          const combined = [...res.downloadedFilesList || [], ...syncRes.files];
-          const seen = /* @__PURE__ */ new Set();
-          res.downloadedFilesList = combined.filter((f) => {
-            if (seen.has(f.path))
-              return false;
-            seen.add(f.path);
-            return true;
-          });
-          res.pulledCount = Math.max(res.pulledCount, res.downloadedFilesList.length);
-        }
-      }
-      this.pullStep = 3;
-      this.lastPullStats = res;
-      this.downloadedFiles = res.downloadedFilesList || [];
-      this.statusMessage = `\u2705 \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E: ${res.pulledCount} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u043E, ${res.deletedCount} \u0443\u0434\u0430\u043B\u0435\u043D\u043E.`;
-      new import_obsidian6.Notice(`\u{1F34B} Lenta Pull: \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043E ${res.pulledCount} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430!`);
-      await this.loadChangedFiles();
-      await this.loadServerCommits();
-    } catch (err) {
-      this.statusMessage = `\u274C \u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u044F (Pull): ${err.message}`;
-      new import_obsidian6.Notice(`Pull failed: ${err.message}`);
-    } finally {
-      this.isPulling = false;
-      this.render();
-    }
-  }
-  render() {
-    const { contentEl } = this;
-    contentEl.empty();
-    const activeContainerIds = this.getActiveContainerIds();
-    const containerNameMap = /* @__PURE__ */ new Map();
-    for (const c of this.containers) {
-      containerNameMap.set(c.id, getContainerDisplayTitle(c));
-    }
-    const header = contentEl.createDiv({ cls: "lenta-sync-header" });
-    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box;";
-    const headerLeft = header.createDiv();
-    headerLeft.style.cssText = "min-width: 0; flex: 1;";
-    const titleRow = headerLeft.createDiv({ cls: "lenta-sync-title-row" });
-    titleRow.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;";
-    const title = titleRow.createEl("h2", { text: "\u{1F34B} Lemon Lenta \u2014 \u0421\u0435\u0440\u0432\u0435\u0440\u043D\u0430\u044F \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F" });
-    title.style.cssText = "margin: 0; font-size: 1.25em; font-weight: 700;";
-    const subText = headerLeft.createDiv({ cls: "lenta-sync-desc" });
-    subText.style.cssText = "font-size: 0.85em; color: var(--text-muted); margin-top: 3px;";
-    subText.setText("\u0418\u043D\u0442\u0435\u0440\u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438 Push & Pull \u0441 \u043A\u043E\u043D\u0442\u0440\u043E\u043B\u0435\u043C \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0438 \u0434\u0435\u043B\u044C\u0442\u044B \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439.");
-    const modeSwitchWrap = header.createDiv();
-    modeSwitchWrap.style.cssText = "display: flex; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: 3px; gap: 4px; flex-shrink: 0;";
-    const pushTab = modeSwitchWrap.createEl("button", {
-      text: `\u{1F4E4} Push (${this.changedFiles.length})`,
-      cls: `lenta-tab-btn ${this.activeMode === "push" ? "mod-cta" : ""}`
-    });
-    pushTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${this.activeMode === "push" ? "background: #c9cd58; color: #121414; border: none;" : "background: transparent; color: var(--text-muted); border: none;"}`;
-    pushTab.onclick = () => {
-      this.activeMode = "push";
-      this.render();
-    };
-    const pullTab = modeSwitchWrap.createEl("button", {
-      text: "\u{1F4E5} Pull (\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C)",
-      cls: `lenta-tab-btn ${this.activeMode === "pull" ? "mod-cta" : ""}`
-    });
-    pullTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${this.activeMode === "pull" ? "background: #3b82f6; color: #fff; border: none;" : "background: transparent; color: var(--text-muted); border: none;"}`;
-    pullTab.onclick = () => {
-      this.activeMode = "pull";
-      this.render();
-    };
-    const containerSection = contentEl.createDiv({ cls: "lenta-sync-container-box" });
-    containerSection.style.cssText = "margin-bottom: 14px; padding: 10px 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85em; box-sizing: border-box; width: 100%;";
-    const selectorWrap = containerSection.createDiv();
-    selectorWrap.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;";
-    selectorWrap.createSpan({ text: "\u{1F4E6} \u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440 / \u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435: ", cls: "setting-item-name" });
-    const selectEl = selectorWrap.createEl("select");
-    selectEl.style.cssText = "padding: 4px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); color: var(--text-normal); font-size: 0.9em; max-width: 100%; box-sizing: border-box;";
-    const allOpt = selectEl.createEl("option", { value: "all", text: `\u{1F310} \u0412\u0441\u0435 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B (${activeContainerIds.length})` });
-    if (this.selectedContainerFilter === "all")
-      allOpt.selected = true;
-    for (const c of this.containers) {
-      const opt = selectEl.createEl("option", {
-        value: c.id,
-        text: `${c.name || c.id} (${c.type || "obsidian"}) \u2022 ${c.totalNotes || 0} \u0437\u0430\u043C\u0435\u0442\u043E\u043A`
-      });
-      if (this.selectedContainerFilter === c.id)
-        opt.selected = true;
-    }
-    selectEl.onchange = async () => {
-      this.selectedContainerFilter = selectEl.value;
-      if (selectEl.value !== "all") {
-        this.activeContainerId = selectEl.value;
-      }
-      await this.loadServerCommits();
-      this.render();
-    };
-    const statusPill = containerSection.createDiv();
-    statusPill.style.cssText = "display: flex; align-items: center; gap: 8px; flex-shrink: 0;";
-    const lastSyncLabel = this.settings.lastSyncedAt ? new Date(this.settings.lastSyncedAt).toLocaleTimeString() : "\u041D\u0438\u043A\u043E\u0433\u0434\u0430";
-    statusPill.createSpan({
-      text: `\u0421\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043E: ${lastSyncLabel}`,
-      cls: "setting-item-description"
-    });
-    if (this.statusMessage) {
-      const statusBox = contentEl.createDiv({ cls: "lenta-sync-status-box" });
-      statusBox.style.cssText = "margin-bottom: 14px; padding: 8px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 6px; font-size: 0.85em; color: #93c5fd; box-sizing: border-box; width: 100%;";
-      statusBox.createSpan({ text: this.statusMessage });
-    }
-    if (this.activeMode === "push") {
-      if (this.pushSuccess) {
-        const successBox = contentEl.createDiv();
-        successBox.style.cssText = "margin-bottom: 14px; padding: 10px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; font-size: 0.85em; color: #6ee7b7; box-sizing: border-box; width: 100%;";
-        successBox.innerHTML = `
-          <div style="font-weight: 700; margin-bottom: 2px;">\u2705 \u0423\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440!</div>
-          <div>\u0421\u043E\u0437\u0434\u0430\u043D\u0430 \u0440\u0435\u0432\u0438\u0437\u0438\u044F: <strong><code>${this.pushSuccess.commit}</code></strong> (${this.pushSuccess.count} \u0437\u0430\u043C\u0435\u0442\u043E\u043A)</div>
-          <div style="font-style: italic; opacity: 0.85; margin-top: 2px;">\xAB${this.pushSuccess.message}\xBB</div>
-        `;
-      }
-      const composerBox = contentEl.createDiv({ cls: "lenta-commit-composer-box" });
-      composerBox.style.cssText = "margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid rgba(201, 205, 88, 0.35); box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 8px; overflow: hidden;";
-      const composerHeader = composerBox.createDiv();
-      composerHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px;";
-      const compTitleWrap = composerHeader.createDiv();
-      compTitleWrap.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;";
-      const compTitle = compTitleWrap.createSpan({ text: "\u{1F4E6} \u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u043A\u043E\u043C\u043C\u0438\u0442\u0430" });
-      compTitle.style.cssText = "font-weight: 700; font-size: 0.95em; color: #c9cd58;";
-      const countBadge = compTitleWrap.createSpan({ cls: "lenta-badge" });
-      countBadge.setText(`\u0424\u0430\u0439\u043B\u043E\u0432 \u043A \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0435: ${this.stagedFilePaths.size} \u0438\u0437 ${this.changedFiles.length}`);
-      const targetBadge = compTitleWrap.createSpan({ cls: "lenta-badge" });
-      targetBadge.style.cssText = "background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);";
-      const targetLabel = this.selectedContainerFilter === "all" ? "\u0412\u0441\u0435 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B" : containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
-      targetBadge.setText(`\u0426\u0435\u043B\u044C: ${targetLabel}`);
-      const autoGenBtn = composerHeader.createEl("button", { text: "\u2728 \u0410\u0432\u0442\u043E\u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430" });
-      autoGenBtn.style.cssText = "padding: 4px 10px; font-size: 0.8em; border-radius: 6px; background: rgba(201, 205, 88, 0.15); border: 1px solid #c9cd58; color: #e5e971; font-weight: 600; cursor: pointer; flex-shrink: 0;";
-      autoGenBtn.title = "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u0430 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u044B\u0445 \u0437\u0430\u043C\u0435\u0442\u043E\u043A";
-      autoGenBtn.onclick = () => this.autoGenerateCommitMessage();
-      const msgArea = composerBox.createEl("textarea");
-      msgArea.rows = 2;
-      msgArea.value = this.commitMessage;
-      msgArea.placeholder = "\u041E\u043F\u0438\u0448\u0438\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F (\u0438\u043B\u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u2728 \u0410\u0432\u0442\u043E\u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430\xBB)...";
-      msgArea.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.85em; font-family: monospace; resize: vertical; min-height: 48px; max-height: 80px;";
-      msgArea.oninput = () => {
-        this.commitMessage = msgArea.value;
-      };
-      const composerFooter = composerBox.createDiv();
-      composerFooter.style.cssText = "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;";
-      const progressOrStatus = composerFooter.createDiv();
-      progressOrStatus.style.cssText = "font-size: 0.82em; font-family: monospace; min-width: 0;";
-      if (this.isPushing) {
-        progressOrStatus.setText(
-          this.pushStep === 1 ? "\u23F3 1/3 \u0421\u0431\u043E\u0440\u043A\u0430 \u0434\u0435\u043B\u044C\u0442\u044B..." : this.pushStep === 2 ? "\u23F3 2/3 \u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A..." : "\u23F3 3/3 \u0424\u0438\u043A\u0441\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435..."
-        );
-        progressOrStatus.style.color = "#c9cd58";
-      } else {
-        progressOrStatus.setText(
-          this.stagedFilePaths.size > 0 ? `\u2713 \u0413\u043E\u0442\u043E\u0432\u043E \u043A \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0435: ${this.stagedFilePaths.size} \u0437\u0430\u043C\u0435\u0442(\u043E\u043A)` : "\u041E\u0442\u043C\u0435\u0442\u044C\u0442\u0435 \u0444\u0430\u0439\u043B\u044B \u0432 \u0441\u043F\u0438\u0441\u043A\u0435 \u043D\u0438\u0436\u0435"
-        );
-        progressOrStatus.style.color = this.stagedFilePaths.size > 0 ? "#6ee7b7" : "var(--text-muted)";
-      }
-      const pushSubmitBtn = composerFooter.createEl("button", {
-        text: this.isPushing ? "\u23F3 \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430..." : `\u{1F680} \u0417\u0430\u043F\u0443\u0448\u0438\u0442\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 (Push) (${this.stagedFilePaths.size})`
-      });
-      pushSubmitBtn.style.cssText = `padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; white-space: nowrap; ${this.isPushing || this.stagedFilePaths.size === 0 && !this.commitMessage.trim() ? "background: #555; color: #888; cursor: not-allowed;" : "background: #c9cd58; color: #121414;"}`;
-      pushSubmitBtn.disabled = this.isPushing || this.stagedFilePaths.size === 0 && !this.commitMessage.trim();
-      pushSubmitBtn.onclick = () => this.executePush();
-      const changesBox = contentEl.createDiv({ cls: "lenta-session-changes-box" });
-      changesBox.style.cssText = "margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
-      const changesHeader = changesBox.createDiv();
-      changesHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px; flex-wrap: wrap; gap: 8px;";
-      const changesTitle = changesHeader.createDiv();
-      changesTitle.innerHTML = `
-        <div style="font-weight: 700; font-size: 0.95em;">\u0418\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0437\u0430 \u0441\u0435\u0441\u0441\u0438\u044E (${this.changedFiles.length})</div>
-        <div style="font-size: 0.75em; color: var(--text-muted);">\u041E\u0442\u043C\u0435\u0447\u0435\u043D\u043E \u043A \u043A\u043E\u043C\u043C\u0438\u0442\u0443: <strong>${this.stagedFilePaths.size}</strong> \u0438\u0437 ${this.changedFiles.length}</div>
-      `;
-      const stageBtns = changesHeader.createDiv();
-      stageBtns.style.cssText = "display: flex; gap: 6px; align-items: center; flex-wrap: wrap;";
-      const stageAllBtn = stageBtns.createEl("button", { text: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0432\u0441\u0435 \u0432 \u043A\u043E\u043C\u043C\u0438\u0442" });
-      stageAllBtn.style.cssText = "padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: #c9cd58; color: #121414; font-weight: 600; border: none; cursor: pointer; white-space: nowrap;";
-      stageAllBtn.onclick = () => {
-        this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
-        if (!this.commitMessage.trim()) {
-          this.autoGenerateCommitMessage();
-        } else {
-          this.render();
-        }
-      };
-      const unstageAllBtn = stageBtns.createEl("button", { text: "\u0421\u043D\u044F\u0442\u044C \u0432\u044B\u0431\u043E\u0440" });
-      unstageAllBtn.style.cssText = "padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer; white-space: nowrap;";
-      unstageAllBtn.onclick = () => {
-        this.stagedFilePaths.clear();
-        this.render();
-      };
-      const fileListWrap = changesBox.createDiv({ cls: "lenta-files-scroll-wrap" });
-      fileListWrap.style.cssText = "max-height: 260px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; box-sizing: border-box; width: 100%;";
-      if (this.changedFiles.length === 0) {
-        const emptyBox = fileListWrap.createDiv();
-        emptyBox.style.cssText = "text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;";
-        emptyBox.setText("\u2705 \u041D\u0435\u0442 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0445 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439. \u0412\u0441\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B.");
-      } else {
-        for (const item of this.changedFiles) {
-          const isStaged = this.stagedFilePaths.has(item.relPath);
-          const isExpanded = this.expandedSnippetPath === item.relPath;
-          const row = fileListWrap.createDiv({ cls: `lenta-file-row ${isStaged ? "is-staged" : ""}` });
-          row.style.cssText = `padding: 10px 12px; border-radius: 6px; border: 1px solid ${isStaged ? "#c9cd58" : "var(--background-modifier-border)"}; background: ${isStaged ? "rgba(201, 205, 88, 0.08)" : "var(--background-primary)"}; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;`;
-          const rowTop = row.createDiv();
-          rowTop.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box; min-width: 0;";
-          const rowLeft = rowTop.createDiv();
-          rowLeft.style.cssText = "display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; overflow: hidden;";
-          const chk = rowLeft.createEl("input", { type: "checkbox" });
-          chk.checked = isStaged;
-          chk.style.cssText = "cursor: pointer; accent-color: #c9cd58; flex-shrink: 0; width: 16px; height: 16px; margin: 0;";
-          chk.onchange = () => {
-            if (chk.checked) {
-              this.stagedFilePaths.add(item.relPath);
-            } else {
-              this.stagedFilePaths.delete(item.relPath);
-            }
-            this.render();
-          };
-          const badge = rowLeft.createSpan();
-          badge.style.cssText = "padding: 2px 6px; border-radius: 4px; font-size: 0.72em; font-weight: 700; background: rgba(201, 205, 88, 0.2); color: #e5e971; flex-shrink: 0; line-height: 1.2;";
-          badge.setText("~ MOD");
-          const nameWrap = rowLeft.createDiv();
-          nameWrap.style.cssText = "min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;";
-          const nameSpan = nameWrap.createDiv({ text: item.title });
-          nameSpan.style.cssText = "font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);";
-          const pathSpan = nameWrap.createDiv({ text: item.relPath });
-          pathSpan.style.cssText = "font-size: 0.76em; line-height: 1.2; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace;";
-          const rowRight = rowTop.createDiv();
-          rowRight.style.cssText = "display: flex; align-items: center; gap: 8px; font-size: 0.76em; color: var(--text-muted); flex-shrink: 0;";
-          rowRight.createSpan({ text: new Date(item.modifiedAt).toLocaleTimeString() });
-          const toggleBtn = rowRight.createEl("button", { text: isExpanded ? "\u25B2" : "\u25BC" });
-          toggleBtn.style.cssText = "padding: 2px 8px; font-size: 0.72em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer;";
-          toggleBtn.onclick = () => {
-            this.expandedSnippetPath = isExpanded ? null : item.relPath;
-            this.render();
-          };
-          if (isExpanded) {
-            const previewBox = row.createDiv();
-            previewBox.style.cssText = "padding: 6px 8px; border-radius: 4px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.75em; font-family: monospace; color: var(--text-muted); margin-top: 4px; box-sizing: border-box; width: 100%; word-break: break-all;";
-            previewBox.setText(`\u0420\u0430\u0437\u043C\u0435\u0440: ${(item.file.stat.size / 1024).toFixed(1)} KB | \u041F\u0443\u0442\u044C: ${item.file.path}`);
-          }
-        }
-      }
-    }
-    if (this.activeMode === "pull") {
-      const pullControlsBox = contentEl.createDiv();
-      pullControlsBox.style.cssText = "margin-bottom: 14px; padding: 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box; width: 100%; overflow: hidden;";
-      const pullInfo = pullControlsBox.createDiv();
-      pullInfo.style.cssText = "min-width: 0; flex: 1;";
-      pullInfo.innerHTML = `
-        <div style="font-weight: 700; font-size: 1em;">\u{1F4E5} \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (Pull)</div>
-        <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 2px;">\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0438 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0438 \u043E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0441 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u043C \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435\u043C.</div>
-      `;
-      const pullActionBtn = pullControlsBox.createEl("button", {
-        text: this.isPulling ? "\u23F3 \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u044B\u0445..." : "\u{1F4E5} \u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (Pull)"
-      });
-      pullActionBtn.style.cssText = `padding: 10px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; flex-shrink: 0; white-space: nowrap; ${this.isPulling ? "background: #555; color: #888;" : "background: #3b82f6; color: #fff;"}`;
-      pullActionBtn.disabled = this.isPulling;
-      pullActionBtn.onclick = () => this.executePull();
-      const downloadedSection = contentEl.createDiv();
-      downloadedSection.style.cssText = "margin-bottom: 14px; padding: 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
-      const dlHeader = downloadedSection.createDiv();
-      dlHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;";
-      const dlTitle = dlHeader.createDiv();
-      dlTitle.innerHTML = `
-        <span style="font-weight: 700; font-size: 0.95em;">\u0418\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F, \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u043D\u044B\u0435 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430</span>
-        <span style="margin-left: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.8em; font-weight: 700;">${this.downloadedFiles.length} \u0444\u0430\u0439\u043B\u043E\u0432</span>
-      `;
-      const dlListWrap = downloadedSection.createDiv();
-      dlListWrap.style.cssText = "display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;";
-      if (this.downloadedFiles.length === 0) {
-        const emptyDl = dlListWrap.createDiv();
-        emptyDl.style.cssText = "text-align: center; padding: 20px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;";
-        emptyDl.setText("\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430\xBB, \u0447\u0442\u043E\u0431\u044B \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0434\u0435\u043B\u044C\u0442\u0443.");
-      } else {
-        this.downloadedFiles.forEach((file, idx) => {
-          const isExp = this.expandedFileIndex === idx;
-          const isCopied = this.copiedFileIndex === idx;
-          const row = dlListWrap.createDiv({ cls: "lenta-file-row" });
-          row.style.cssText = "padding: 10px 12px; border-radius: 6px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;";
-          const rowTop = row.createDiv();
-          rowTop.style.cssText = "display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; box-sizing: border-box; gap: 10px; min-width: 0;";
-          rowTop.onclick = () => {
-            this.expandedFileIndex = isExp ? null : idx;
-            this.render();
-          };
-          const rowLeft = rowTop.createDiv();
-          rowLeft.style.cssText = "display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;";
-          rowLeft.createSpan({ text: "\u{1F4C4}", cls: "lenta-file-icon" });
-          const titleDiv = rowLeft.createDiv();
-          titleDiv.style.cssText = "min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;";
-          const titleLine = titleDiv.createDiv({ text: file.title || file.path });
-          titleLine.style.cssText = "font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);";
-          const pathLine = titleDiv.createDiv({ text: file.path });
-          pathLine.style.cssText = "font-size: 0.76em; line-height: 1.2; color: var(--text-muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
-          const rowRight = rowTop.createDiv();
-          rowRight.style.cssText = "display: flex; align-items: center; gap: 8px; font-size: 0.75em; flex-shrink: 0;";
-          const tag = rowRight.createSpan();
-          tag.style.cssText = file.isNew ? "padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-weight: 700;" : "padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-weight: 700;";
-          tag.setText(file.isNew ? "\u2728 \u041D\u041E\u0412\u041E\u0415" : "\u{1F4E5} \u0421\u0418\u041D\u0425\u0420\u041E\u041D\u0418\u0417\u0418\u0420\u041E\u0412\u0410\u041D\u041E");
-          if (file.size) {
-            rowRight.createSpan({ text: `${(file.size / 1024).toFixed(1)} KB`, cls: "setting-item-description" });
-          }
-          rowRight.createSpan({ text: isExp ? "\u25B2" : "\u25BC" });
-          if (isExp) {
-            const preview = row.createDiv();
-            preview.style.cssText = "margin-top: 6px; padding: 8px; border-radius: 4px; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%;";
-            const copyBar = preview.createDiv();
-            copyBar.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.75em; color: var(--text-muted);";
-            copyBar.createSpan({ text: "\u0421\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435 Markdown:" });
-            const copyBtn = copyBar.createEl("button", { text: isCopied ? "\u2713 \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E" : "\u{1F4CB} \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C" });
-            copyBtn.style.cssText = "padding: 2px 6px; font-size: 0.75em; border-radius: 3px; cursor: pointer;";
-            copyBtn.onclick = (e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(file.content);
-              this.copiedFileIndex = idx;
-              setTimeout(() => {
-                this.copiedFileIndex = null;
-                this.render();
-              }, 1500);
-              this.render();
-            };
-            const pre = preview.createEl("pre");
-            pre.style.cssText = "margin: 0; font-size: 0.75em; max-height: 140px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: monospace; color: var(--text-normal); box-sizing: border-box; width: 100%;";
-            pre.setText(file.content);
-          }
-        });
-      }
-    }
-    const commitsSection = contentEl.createDiv();
-    commitsSection.style.cssText = "padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
-    const commitsHeader = commitsSection.createDiv();
-    commitsHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;";
-    const cHeadTitle = commitsHeader.createDiv();
-    cHeadTitle.innerHTML = `
-      <span style="font-weight: 700; font-size: 0.9em; color: var(--text-muted);">\u{1F4DC} \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (${this.serverCommits.length})</span>
-    `;
-    const cRefreshBtn = commitsHeader.createEl("button", { text: "\u21BA \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E" });
-    cRefreshBtn.style.cssText = "padding: 2px 8px; font-size: 0.75em; border-radius: 4px; border: 1px solid var(--background-modifier-border); background: transparent; cursor: pointer;";
-    cRefreshBtn.onclick = () => this.loadServerCommits();
-    const commitsList = commitsSection.createDiv();
-    commitsList.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 160px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;";
-    if (this.serverCommits.length === 0) {
-      const emptyCommits = commitsList.createDiv();
-      emptyCommits.style.cssText = "grid-column: 1 / -1; text-align: center; padding: 12px; font-size: 0.8em; color: var(--text-muted);";
-      emptyCommits.setText("\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0437\u0430\u043F\u0438\u0441\u0435\u0439 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432.");
-    } else {
-      for (const commit of this.serverCommits.slice(0, 6)) {
-        const hash2 = commit.shortHash || commit.commitHash?.slice(0, 7) || commit.hash?.slice(0, 7) || "HEAD";
-        const card = commitsList.createDiv();
-        card.style.cssText = "padding: 8px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.8em; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; overflow: hidden; min-width: 0;";
-        const cTop = card.createDiv();
-        cTop.style.cssText = "display: flex; justify-content: space-between; align-items: center; font-family: monospace; min-width: 0;";
-        const pill = cTop.createSpan();
-        pill.style.cssText = "padding: 1px 5px; border-radius: 3px; background: rgba(201, 205, 88, 0.15); color: #e5e971; font-weight: 700; font-size: 0.9em; flex-shrink: 0;";
-        pill.setText(hash2);
-        cTop.createSpan({
-          text: commit.date ? new Date(commit.date).toLocaleDateString() : ""
-        }).style.cssText = "color: var(--text-muted); font-size: 0.85em; flex-shrink: 0;";
-        const msgDiv = card.createDiv({ text: commit.message });
-        msgDiv.style.cssText = "font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal); min-width: 0;";
-        const cBottom = card.createDiv();
-        cBottom.style.cssText = "display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8em; font-family: monospace; border-top: 1px solid var(--background-modifier-border); padding-top: 3px; margin-top: 2px; min-width: 0;";
-        cBottom.createSpan({ text: commit.author || "System" });
-        cBottom.createSpan({ text: `${commit.filesChanged || 1} \u0444\u0430\u0439\u043B(\u043E\u0432)` });
-      }
-    }
-  }
-};
-
-// src/ui/connections-modal.ts
-var import_obsidian7 = require("obsidian");
-var LentaConnectionsModal = class extends import_obsidian7.Modal {
-  constructor(app, apiClient, settings, onSaveSettings, onOpenContainersFoldersModal) {
-    super(app);
-    this.isLoading = false;
-    this.apiClient = apiClient;
-    this.settings = settings;
-    this.onSaveSettings = onSaveSettings;
-    this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
-  }
-  async onOpen() {
-    this.modalEl.addClass("lenta-connections-modal");
-    this.render();
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-  render() {
-    const { contentEl } = this;
-    contentEl.empty();
-    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
-    const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
-    titleRow.createEl("h2", { text: "\u{1F50C} Lenta Server & API Connections" });
-    const selectedCount = Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0 ? this.settings.activeContainerIds.length : this.settings.activeContainerId ? 1 : 0;
-    if (selectedCount > 0) {
-      const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
-      const badge = badgeRow.createSpan({ cls: "lenta-badge" });
-      badge.setText(`CONNECTED: ${selectedCount} Container${selectedCount > 1 ? "s" : ""} Selected`);
-    }
-    header.createEl("p", {
-      cls: "lenta-modal-subtitle",
-      text: "Configure NestJS backend API connections, container sync server endpoints, and authentication credentials."
-    });
-    if (this.onOpenContainersFoldersModal) {
-      const card = contentEl.createDiv({ cls: "lenta-workspace-banner-card" });
-      card.style.cssText = [
-        "padding: 14px 16px",
-        "margin-bottom: 20px",
-        "border-radius: 8px",
-        "border: 1px solid rgba(201, 205, 88, 0.4)",
-        "background: #1b1e1e",
-        "display: flex",
-        "justify-content: space-between",
-        "align-items: center",
-        "gap: 12px"
-      ].join(";");
-      const textWrap = card.createDiv();
-      const cardTitle = textWrap.createEl("h4", { text: "\u{1F4E6} Containers & Folders Workspace" });
-      cardTitle.style.cssText = "margin: 0 0 4px 0; color: #c9cd58; font-size: 1.05em;";
-      const cardDesc = textWrap.createEl("div");
-      cardDesc.style.cssText = "font-size: 0.85em; color: #aaa;";
-      cardDesc.setText(`Browse and select containers (${selectedCount} currently active for sync) and manage vault folder mappings.`);
-      const openWorkspaceBtn = card.createEl("button", {
-        cls: "mod-cta lenta-btn-lemon",
-        text: "\u{1F4E6} Open Workspace"
-      });
-      openWorkspaceBtn.style.cssText = "padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap;";
-      openWorkspaceBtn.onclick = () => {
-        this.close();
-        this.onOpenContainersFoldersModal();
-      };
-    }
-    contentEl.createEl("h3", { text: "\u{1F510} User API Key & Authentication" });
-    const authStatusEl = contentEl.createEl("div", { cls: "lenta-auth-status-box" });
-    authStatusEl.style.cssText = [
-      "padding: 10px 14px",
-      "margin-bottom: 14px",
-      "border-radius: 6px",
-      "border: 1px solid #333",
-      "background: " + (this.settings.authToken ? "#1a291e" : "#222"),
-      "color: " + (this.settings.authToken ? "#8ee29a" : "#bbb"),
-      "font-size: 0.9em"
-    ].join(";");
-    if (this.settings.authToken) {
-      authStatusEl.innerHTML = `<strong>Status:</strong> Connected via User API Key (${this.settings.userEmail || "Member User"})`;
-    } else {
-      authStatusEl.innerHTML = `<strong>Status:</strong> Unauthenticated. Enter your User API Key / Personal Access Token below to connect.`;
-    }
-    new import_obsidian7.Setting(contentEl).setName("User API Key / Personal Access Token").setDesc("Bearer authentication token from your Project Lenta profile.").addText(
-      (text2) => text2.setPlaceholder("lenta_jwt_...").setValue(this.settings.authToken || "").onChange(async (val) => {
-        this.settings.authToken = val.trim();
-        this.settings.isPrivateContainerConnected = Boolean(val.trim());
-        await this.onSaveSettings();
-      })
-    ).addButton(
-      (button) => button.setButtonText(this.settings.authToken ? "Validate Session" : "Sign In").setCta().onClick(async () => {
-        if (!this.settings.authToken) {
-          this.settings.authToken = "lenta_jwt_demo_token_user_2026";
-          this.settings.userEmail = "member@lemon.team";
-          this.settings.isPrivateContainerConnected = true;
-          await this.onSaveSettings();
-          this.render();
-          return;
-        }
-        const res = await this.apiClient.validateToken(this.settings.authToken);
-        if (res.success) {
-          this.settings.userEmail = res.user?.email || "member@lemon.team";
-          this.settings.isPrivateContainerConnected = true;
-          await this.onSaveSettings();
-          new import_obsidian7.Notice("Session validated successfully!");
-          this.render();
-        } else {
-          new import_obsidian7.Notice("Failed to validate User API Key");
-        }
-      })
-    ).addButton(
-      (button) => button.setButtonText("Disconnect").onClick(async () => {
-        this.settings.authToken = "";
-        this.settings.userEmail = "";
-        this.settings.isPrivateContainerConnected = false;
-        this.settings.activeContainerId = "";
-        this.settings.containerKey = "";
-        this.settings.connectedContainerName = "";
-        await this.onSaveSettings();
-        this.render();
-      })
-    );
-    contentEl.createEl("h3", { text: "\u{1F310} Backend & Container Sync Server URLs" });
-    new import_obsidian7.Setting(contentEl).setName("Project Lenta Backend URL").setDesc("Base address of the NestJS API (port 3001 by default).").addText(
-      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.serverUrl).onChange(async (val) => {
-        this.settings.serverUrl = val.trim();
-        await this.onSaveSettings();
-      })
-    );
-    new import_obsidian7.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Backend (port 3001 by default).").addText(
-      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.containerServerUrl || "http://localhost:3001").onChange(async (val) => {
-        this.settings.containerServerUrl = val.trim();
-        await this.onSaveSettings();
-      })
-    );
-    new import_obsidian7.Setting(contentEl).setName("Container API Key (X-Api-Key)").setDesc("Optional API key sent to the container sync server.").addText(
-      (text2) => text2.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
-        this.settings.containerApiKey = val.trim();
-        await this.onSaveSettings();
-      })
-    );
-    new import_obsidian7.Setting(contentEl).setName("Test Server Connections").setDesc("Ping the container sync server and backend API to verify connectivity.").addButton(
-      (btn) => btn.setButtonText("Test Connection").setIcon("zap").onClick(async () => {
-        btn.setDisabled(true);
-        const ping = await this.apiClient.pingContainerServer();
-        btn.setDisabled(false);
-        if (ping.success) {
-          new import_obsidian7.Notice(`\u2705 Connected! Found ${ping.containerCount ?? 0} container(s) on sync server.`);
-        } else {
-          new import_obsidian7.Notice(`\u26A0\uFE0F Container server ping warning: ${ping.error}`);
-        }
-      })
-    );
-  }
-};
-
-// src/ui/containers-folders-modal.ts
-var import_obsidian8 = require("obsidian");
-
-// src/utils/container-title.ts
-function getContainerDisplayTitle2(container) {
-  if (!container)
-    return "Untitled Container";
-  if (container.title && container.title.trim()) {
-    return container.title.trim();
-  }
-  const id = container.id || "";
-  if (container.name && container.name.trim() && container.name.trim() !== id) {
-    return container.name.trim();
-  }
-  if (container.description && container.description.trim() && container.description.trim() !== id) {
-    return container.description.trim();
-  }
-  if (id.startsWith("feed-")) {
-    const slug = id.replace("feed-", "");
-    return `Feed: ${slug.charAt(0).toUpperCase() + slug.slice(1)}`;
-  }
-  if (id.startsWith("cont-")) {
-    const clean = id.replace("cont-", "");
-    return `Vault Container (${clean.slice(0, 14)})`;
-  }
-  if (id.startsWith("lenta_obs_")) {
-    const clean = id.replace("lenta_obs_", "");
-    return `Obsidian Vault (${clean.slice(0, 14)})`;
-  }
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id) || id.length > 20) {
-    return `Obsidian Vault (${id.slice(0, 8)})`;
-  }
-  if (container.name && container.name.trim()) {
-    return container.name.trim();
-  }
-  return id || "Untitled Container";
-}
-
-// src/ui/containers-folders-modal.ts
-var LentaContainersFoldersModal = class extends import_obsidian8.Modal {
-  constructor(app, apiClient, settings, onSaveSettings, onOpenConnectionsModal, syncEngine, onOpenSyncModal) {
-    super(app);
-    this.onOpenSyncModal = onOpenSyncModal;
-    this.containers = [];
-    this.folders = [];
-    this.savedSelectedIds = /* @__PURE__ */ new Set();
-    this.stagedSelectedIds = /* @__PURE__ */ new Set();
-    this.isLoading = false;
-    this.isConnecting = false;
-    this.activeSyncingContainerId = null;
-    this.completedSyncContainerIds = /* @__PURE__ */ new Set();
-    this.searchQuery = "";
-    this.categoryTab = "user";
-    this.privacyFilter = "public";
-    this.customKeyInput = "";
-    this.toggleStagedSelection = (containerId) => {
-      const listEl = this.contentEl.querySelector("#lenta-containers-compact-list");
-      const savedListScrollTop = listEl ? listEl.scrollTop : 0;
-      const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
-      if (this.stagedSelectedIds.has(containerId)) {
-        this.stagedSelectedIds.delete(containerId);
-      } else {
-        this.stagedSelectedIds.add(containerId);
-      }
-      this.renderContainersList();
-      this.renderHeaderAndMappingInfo();
-      if (listEl) {
-        listEl.scrollTop = savedListScrollTop;
-      }
-      if (this.contentEl) {
-        this.contentEl.scrollTop = savedContentScrollTop;
-      }
-    };
-    this.applyConnectionAndUpdateFiles = async () => {
-      if (this.isConnecting)
-        return;
-      this.isConnecting = true;
-      this.activeSyncingContainerId = null;
-      this.completedSyncContainerIds.clear();
-      this.render();
-      try {
-        await this.persistSelection();
-        this.savedSelectedIds = new Set(this.stagedSelectedIds);
-        let totalDownloaded = 0;
-        const rootFolder = this.settings.vaultRootFolder || "Lenta";
-        if (this.syncEngine && this.stagedSelectedIds.size > 0) {
-          new import_obsidian8.Notice(`\u23F3 Downloading structure & files for ${this.stagedSelectedIds.size} connected container(s)...`);
-          for (const containerId of Array.from(this.stagedSelectedIds)) {
-            this.activeSyncingContainerId = containerId;
-            this.renderContainersList();
-            this.renderHeaderAndMappingInfo();
-            const matched = this.containers.find((c) => c.id === containerId);
-            const name = matched ? matched.name : containerId;
-            const result = await this.syncEngine.syncContainerFiles(containerId, name);
-            totalDownloaded += result.downloadedFiles;
-            this.completedSyncContainerIds.add(containerId);
-            this.renderContainersList();
-            this.renderHeaderAndMappingInfo();
-          }
-          this.activeSyncingContainerId = null;
-          this.renderContainersList();
-          this.renderHeaderAndMappingInfo();
-          await this.syncEngine.pullChanges().catch((err) => {
-            console.warn("Sync engine pull error:", err);
-          });
-        }
-        const connectedCount = this.savedSelectedIds.size;
-        new import_obsidian8.Notice(
-          `\u{1F34B} Connected & updated! ${totalDownloaded} file(s) saved into "${rootFolder}" (${connectedCount} container(s) active)`
-        );
-      } catch (err) {
-        new import_obsidian8.Notice(`Failed to update container connection: ${err.message}`);
-      } finally {
-        this.isConnecting = false;
-        this.activeSyncingContainerId = null;
-        this.completedSyncContainerIds.clear();
-        this.render();
-      }
-    };
-    this.apiClient = apiClient;
-    this.settings = settings;
-    this.onSaveSettings = onSaveSettings;
-    this.onOpenConnectionsModal = onOpenConnectionsModal;
-    this.syncEngine = syncEngine;
-    const initialList = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds : settings.activeContainerId ? [settings.activeContainerId] : [];
-    this.savedSelectedIds = new Set(initialList);
-    this.stagedSelectedIds = new Set(initialList);
-  }
-  async onOpen() {
-    this.modalEl.addClass("lenta-containers-folders-modal");
-    await this.loadData();
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-  async loadData() {
-    this.isLoading = true;
-    this.render();
-    try {
-      const [containers, folders] = await Promise.all([
-        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
-        this.apiClient.getFolders().catch(() => [])
-      ]);
-      this.containers = containers;
-      this.folders = folders;
-      let list = [];
-      if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
-        list = this.settings.activeContainerIds;
-      } else if (this.settings.activeContainerId) {
-        list = [this.settings.activeContainerId];
-      }
-      this.savedSelectedIds = new Set(list);
-      this.stagedSelectedIds = new Set(list);
-    } catch (err) {
-      console.warn("Failed to load containers or folders:", err);
-    } finally {
-      this.isLoading = false;
-      this.render();
-    }
-  }
-  async persistSelection() {
-    const list = Array.from(this.stagedSelectedIds);
-    this.settings.activeContainerIds = list;
-    this.settings.activeContainerId = list[0] || "";
-    if (list.length > 0) {
-      const matched = this.containers.find((c) => c.id === list[0]);
-      if (matched) {
-        this.settings.connectedContainerName = list.length === 1 ? matched.name : `${list.length} Containers Selected`;
-        this.settings.connectedContainerType = matched.type;
-        this.settings.containerKey = list.join(",");
-      }
-    } else {
-      this.settings.connectedContainerName = "";
-      this.settings.containerKey = "";
-    }
-    await this.onSaveSettings();
-  }
-  getHasStagedChanges() {
-    if (this.savedSelectedIds.size !== this.stagedSelectedIds.size)
-      return true;
-    for (const id of this.stagedSelectedIds) {
-      if (!this.savedSelectedIds.has(id))
-        return true;
-    }
-    return false;
-  }
-  render() {
-    const { contentEl } = this;
-    contentEl.empty();
-    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
-    const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
-    titleRow.createEl("h2", { text: "\u{1F4E6} Containers & Folders Workspace" });
-    const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
-    badgeRow.id = "lenta-modal-header-badge-row";
-    this.renderHeaderBadge(badgeRow);
-    header.createEl("p", {
-      cls: "lenta-modal-subtitle",
-      text: "Step 1: Select or deselect containers. Step 2: Click Connect & Update Files to apply changes to your vault."
-    });
-    const categoryBar = contentEl.createDiv({ cls: "lenta-category-tabs-bar" });
-    categoryBar.style.cssText = [
-      "display: flex",
-      "gap: 10px",
-      "margin-bottom: 14px",
-      "border-bottom: 2px solid var(--background-modifier-border, #333)",
-      "padding-bottom: 2px"
-    ].join(";");
-    const isFeedContainer = (c) => c.isFeed === true || c.id.startsWith("feed-") || c.scope?.type === "feed";
-    const userContainersCount = this.containers.filter((c) => !isFeedContainer(c)).length;
-    const feedContainersCount = this.containers.filter((c) => isFeedContainer(c)).length;
-    const categoryOptions = [
-      { id: "user", label: "User Containers", icon: "\u{1F464}", count: userContainersCount },
-      { id: "feeds", label: "Feeds", icon: "\u{1F4F0}", count: feedContainersCount }
-    ];
-    for (const cat of categoryOptions) {
-      const isSelected = this.categoryTab === cat.id;
-      const catBtn = categoryBar.createEl("button", {
-        cls: `lenta-category-tab ${isSelected ? "is-active" : ""}`
-      });
-      catBtn.disabled = this.isConnecting;
-      catBtn.style.cssText = `
-        padding: 8px 16px;
-        font-weight: 700;
-        font-size: 0.9em;
-        border: none;
-        border-bottom: 3px solid ${isSelected ? "var(--lenta-lemon, #c9cd58)" : "transparent"};
-        background: ${isSelected ? "var(--background-primary-alt, rgba(255, 255, 255, 0.05))" : "transparent"};
-        color: ${isSelected ? "var(--text-normal, #fff)" : "var(--text-muted, #888)"};
-        cursor: ${this.isConnecting ? "not-allowed" : "pointer"};
-        border-radius: 6px 6px 0 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
-      `;
-      catBtn.innerHTML = `<span>${cat.icon} ${cat.label}</span> <span class="lenta-count-pill" style="font-size:0.8em; padding:2px 7px; border-radius:10px; background:var(--background-secondary-alt);">${cat.count}</span>`;
-      catBtn.onclick = () => {
-        if (this.isConnecting)
-          return;
-        this.categoryTab = cat.id;
-        this.privacyFilter = "public";
-        this.render();
-      };
-    }
-    const toolbar = contentEl.createDiv({ cls: "lenta-containers-toolbar" });
-    toolbar.style.cssText = [
-      "display: flex",
-      "gap: 10px",
-      "align-items: center",
-      "flex-wrap: wrap",
-      "margin-bottom: 16px",
-      "padding: 10px 14px",
-      "background: var(--background-secondary)",
-      "border-radius: 8px",
-      "border: 1px solid var(--background-modifier-border)"
-    ].join(";");
-    const searchWrap = toolbar.createDiv({ cls: "lenta-search-wrap" });
-    searchWrap.style.cssText = "flex: 1; min-width: 160px;";
-    const searchInput = searchWrap.createEl("input", {
-      type: "text",
-      placeholder: "\u{1F50D} Search containers...",
-      value: this.searchQuery
-    });
-    searchInput.disabled = this.isConnecting;
-    searchInput.style.cssText = `width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff; ${this.isConnecting ? "opacity: 0.6; cursor: not-allowed;" : ""}`;
-    searchInput.oninput = (e) => {
-      if (this.isConnecting)
-        return;
-      this.searchQuery = e.target.value;
-      this.renderContainersList();
-    };
-    const filterWrap = toolbar.createDiv({ cls: "lenta-privacy-filter-tabs" });
-    const activeCategoryContainers = this.containers.filter(
-      (c) => this.categoryTab === "user" ? !isFeedContainer(c) : isFeedContainer(c)
-    );
-    const checkContainerPublic = (c) => isContainerPublic(c);
-    const publicContainersCount = activeCategoryContainers.filter((c) => checkContainerPublic(c)).length;
-    const privateContainersCount = activeCategoryContainers.filter((c) => !checkContainerPublic(c)).length;
-    const allContainersCount = activeCategoryContainers.length;
-    const filterOptions = [
-      { id: "public", label: "Public", icon: "\u{1F4F0}", count: publicContainersCount },
-      { id: "private", label: "Private", icon: "\u{1F510}", count: privateContainersCount },
-      { id: "all", label: "All", icon: "\u{1F310}", count: allContainersCount }
-    ];
-    for (const opt of filterOptions) {
-      const isSelected = this.privacyFilter === opt.id;
-      const tabBtn = filterWrap.createEl("button", {
-        cls: `lenta-privacy-tab ${isSelected ? "is-active" : ""}`
-      });
-      tabBtn.disabled = this.isConnecting;
-      tabBtn.innerHTML = `<span>${opt.icon} ${opt.label}</span> <span class="lenta-privacy-tab-count">${opt.count}</span>`;
-      tabBtn.onclick = () => {
-        if (this.isConnecting)
-          return;
-        this.privacyFilter = opt.id;
-        this.render();
-      };
-    }
-    const selectAllBtn = toolbar.createEl("button", {
-      text: "Select All"
-    });
-    selectAllBtn.disabled = this.isConnecting;
-    selectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
-    selectAllBtn.onclick = () => {
-      if (this.isConnecting)
-        return;
-      const filtered = this.getFilteredContainers();
-      for (const c of filtered) {
-        this.stagedSelectedIds.add(c.id);
-      }
-      this.renderContainersList();
-      this.renderHeaderAndMappingInfo();
-    };
-    const deselectAllBtn = toolbar.createEl("button", {
-      text: "Clear All"
-    });
-    deselectAllBtn.disabled = this.isConnecting;
-    deselectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
-    deselectAllBtn.onclick = () => {
-      if (this.isConnecting)
-        return;
-      this.stagedSelectedIds.clear();
-      this.renderContainersList();
-      this.renderHeaderAndMappingInfo();
-    };
-    const refreshBtn = toolbar.createEl("button", {
-      cls: "mod-cta lenta-btn-lemon",
-      text: "\u{1F504} Refresh List"
-    });
-    refreshBtn.disabled = this.isConnecting;
-    refreshBtn.style.cssText = `padding: 6px 14px; font-weight: 600; font-size: 0.85em; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
-    refreshBtn.onclick = () => {
-      if (this.isConnecting)
-        return;
-      this.loadData();
-    };
-    if (this.onOpenConnectionsModal) {
-      const connBtn = toolbar.createEl("button", {
-        text: "\u{1F50C} Server Settings"
-      });
-      connBtn.style.cssText = "padding: 6px 12px; font-size: 0.85em;";
-      connBtn.onclick = () => {
-        this.close();
-        this.onOpenConnectionsModal();
-      };
-    }
-    if (this.isLoading) {
-      contentEl.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers and folder structures..." });
-      return;
-    }
-    const listSection = contentEl.createDiv({ cls: "lenta-containers-list-section" });
-    const listHeaderRow = listSection.createDiv({ cls: "lenta-list-header-row" });
-    listHeaderRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
-    listHeaderRow.createEl("h3", { text: "Step 1: Select Containers to Connect or Disconnect" });
-    const countSummary = listHeaderRow.createSpan({ cls: "lenta-count-pill" });
-    countSummary.id = "lenta-staged-count-summary";
-    countSummary.style.cssText = "font-weight: 600; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: var(--lenta-lemon-glow); color: var(--lenta-lemon);";
-    countSummary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
-    const listEl = listSection.createDiv({ cls: "lenta-containers-compact-list" });
-    listEl.id = "lenta-containers-compact-list";
-    this.renderContainersList(listEl);
-    const actionBar = listSection.createDiv({ cls: "lenta-connect-action-bar" });
-    actionBar.id = "lenta-connect-action-bar";
-    this.renderConnectActionBar(actionBar);
-    const keySection = contentEl.createDiv({ cls: "lenta-key-section" });
-    keySection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
-    new import_obsidian8.Setting(keySection).setName("Connect Container by Custom Key").setDesc("Add a custom container key or feed key to your selected containers list.").addText(
-      (text2) => text2.setPlaceholder("e.g. cont-workspace-prod or feed-science").setValue(this.customKeyInput).onChange((val) => {
-        this.customKeyInput = val.trim();
-      })
-    ).addButton(
-      (btn) => btn.setButtonText("+ Add & Connect Key").setCta().onClick(async () => {
-        if (!this.customKeyInput) {
-          new import_obsidian8.Notice("Please enter a container key");
-          return;
-        }
-        const res = await this.apiClient.connectContainerByKey(this.customKeyInput);
-        if (res.success && res.container) {
-          this.stagedSelectedIds.add(res.container.id);
-          await this.applyConnectionAndUpdateFiles();
-          new import_obsidian8.Notice(`Added container: ${res.container.name}`);
-          await this.loadData();
-        } else {
-          new import_obsidian8.Notice(`Failed to connect container: ${res.error || "Unknown error"}`);
-        }
-      })
-    );
-    const folderSection = contentEl.createDiv({ cls: "lenta-folders-workspace-section" });
-    folderSection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
-    folderSection.createEl("h3", { text: "\u{1F4C1} Vault Root & Multi-Container Folders Workspace" });
-    new import_obsidian8.Setting(folderSection).setName("Vault Root Directory").setDesc("Base folder in your Obsidian vault where synced notes are saved.").addText(
-      (text2) => text2.setPlaceholder("Lenta").setValue(this.settings.vaultRootFolder || "Lenta").onChange(async (val) => {
-        this.settings.vaultRootFolder = val.trim() || "Lenta";
-        await this.onSaveSettings();
-        this.renderFolderMappingInfo(folderMappingEl);
-      })
-    );
-    const folderMappingEl = folderSection.createDiv({ cls: "lenta-folder-mapping-box" });
-    folderMappingEl.id = "lenta-folder-mapping-box";
-    this.renderFolderMappingInfo(folderMappingEl);
-    folderSection.createEl("h4", { text: "Remote Lenta Server Folders" });
-    if (this.folders.length === 0) {
-      folderSection.createDiv({ cls: "lenta-empty-state", text: "No folders found on Lenta server." });
-    } else {
-      const folderList = folderSection.createDiv({ cls: "lenta-tree-list" });
-      for (const folder of this.folders) {
-        const item = folderList.createDiv({ cls: "lenta-tree-item lenta-tree-item-folder" });
-        item.createSpan({ text: folder.icon ? `${folder.icon} ` : "\u{1F4C1} ", cls: "lenta-item-icon" });
-        item.createSpan({ text: folder.path, cls: "lenta-item-name" });
-        if (folder.noteCount) {
-          item.createSpan({ text: `${folder.noteCount} notes`, cls: "lenta-count-pill" });
-        }
-      }
-    }
-  }
-  renderHeaderBadge(container) {
-    container.empty();
-    const count = this.savedSelectedIds.size;
-    let totalNotesSelected = 0;
-    for (const c of this.containers) {
-      if (this.savedSelectedIds.has(c.id) && typeof c.totalNotes === "number") {
-        totalNotesSelected += c.totalNotes;
-      }
-    }
-    if (count > 0) {
-      const badge = container.createSpan({ cls: "lenta-badge" });
-      badge.setText(`ACTIVE CONNECTED: ${count} Container${count > 1 ? "s" : ""} (${totalNotesSelected} Notes)`);
-    } else {
-      const badge = container.createSpan({ cls: "lenta-badge" });
-      badge.style.borderColor = "#d97706";
-      badge.style.color = "#f59e0b";
-      badge.setText("NO CONTAINERS CONNECTED");
-    }
-  }
-  renderConnectActionBar(container) {
-    container.empty();
-    container.style.cssText = [
-      "display: flex",
-      "justify-content: space-between",
-      "align-items: center",
-      "gap: 12px",
-      "margin-top: 12px",
-      "padding: 12px 16px",
-      "background: var(--background-secondary)",
-      "border-radius: 8px",
-      "border: 1px solid var(--lenta-lemon-glow)"
-    ].join(";");
-    const hasChanges = this.getHasStagedChanges();
-    const stagedCount = this.stagedSelectedIds.size;
-    const infoWrap = container.createDiv({ cls: "lenta-connect-info" });
-    const infoTitle = infoWrap.createEl("div", { cls: "lenta-connect-step-title" });
-    infoTitle.style.cssText = "font-weight: 700; font-size: 0.9em; color: var(--lenta-lemon);";
-    infoTitle.setText("Step 2: Connect & Update Files");
-    const infoDesc = infoWrap.createEl("div", { cls: "lenta-connect-step-desc" });
-    infoDesc.style.cssText = "font-size: 0.8em; color: var(--text-muted); margin-top: 2px;";
-    if (hasChanges) {
-      const added = Array.from(this.stagedSelectedIds).filter((id) => !this.savedSelectedIds.has(id)).length;
-      const removed = Array.from(this.savedSelectedIds).filter((id) => !this.stagedSelectedIds.has(id)).length;
-      infoDesc.setText(`Pending changes: ${added > 0 ? `+${added} connect ` : ""}${removed > 0 ? `-${removed} disconnect` : ""}. Click Connect to update vault files.`);
-    } else {
-      infoDesc.setText(`${stagedCount} container${stagedCount === 1 ? "" : "s"} connected for active vault work.`);
-    }
-    const buttonsRow = container.createDiv({ cls: "lenta-connect-actions-group" });
-    buttonsRow.style.cssText = "display: flex; gap: 8px; align-items: center; flex-wrap: wrap;";
-    const connectBtn = buttonsRow.createEl("button", {
-      cls: "mod-cta lenta-btn-lemon lenta-connect-main-btn",
-      text: this.isConnecting ? "\u23F3 Connecting & Updating Files..." : hasChanges ? "\u{1F50C} Connect & Update Files" : "\u{1F50C} Re-Connect & Refresh Files"
-    });
-    connectBtn.disabled = this.isConnecting;
-    connectBtn.style.cssText = "padding: 8px 18px; font-weight: 700; font-size: 0.9em; cursor: pointer; white-space: nowrap;";
-    connectBtn.onclick = async () => {
-      await this.applyConnectionAndUpdateFiles();
-    };
-    if (this.onOpenSyncModal) {
-      const pullBtn = buttonsRow.createEl("button", {
-        cls: "lenta-action-btn lenta-pull-btn",
-        text: "\u{1F4E5} Pull (\u2B07)"
-      });
-      pullBtn.title = "Open Pull modal to inspect server commits and pull changes";
-      pullBtn.style.cssText = "padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;";
-      pullBtn.disabled = this.isConnecting;
-      pullBtn.onclick = () => {
-        this.close();
-        this.onOpenSyncModal("pull");
-      };
-      const pushBtn = buttonsRow.createEl("button", {
-        cls: "lenta-action-btn lenta-push-btn",
-        text: "\u{1F4E4} Push (\u2B06)"
-      });
-      pushBtn.title = "Open Push modal to compose commit and push local changes";
-      pushBtn.style.cssText = "padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;";
-      pushBtn.disabled = this.isConnecting;
-      pushBtn.onclick = () => {
-        this.close();
-        this.onOpenSyncModal("push");
-      };
-    }
-  }
-  renderHeaderAndMappingInfo() {
-    const summary = this.contentEl.querySelector("#lenta-staged-count-summary");
-    if (summary) {
-      if (this.isConnecting) {
-        if (this.activeSyncingContainerId) {
-          const count = this.completedSyncContainerIds.size + 1;
-          summary.setText(`\u23F3 Loading container ${count} of ${this.stagedSelectedIds.size}...`);
-        } else {
-          summary.setText("\u23F3 Connecting & loading files...");
-        }
-      } else {
-        summary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
-      }
-    }
-    const actionBar = this.contentEl.querySelector("#lenta-connect-action-bar");
-    if (actionBar) {
-      this.renderConnectActionBar(actionBar);
-    }
-    const mappingEl = this.contentEl.querySelector("#lenta-folder-mapping-box");
-    if (mappingEl) {
-      this.renderFolderMappingInfo(mappingEl);
-    }
-  }
-  getFilteredContainers() {
-    return this.containers.filter((c) => {
-      const isFeed = c.isFeed === true || c.id.startsWith("feed-") || c.scope?.type === "feed";
-      const matchCategory = this.categoryTab === "user" ? !isFeed : isFeed;
-      const displayTitle = getContainerDisplayTitle2(c);
-      const q = this.searchQuery.toLowerCase();
-      const matchSearch = !this.searchQuery || displayTitle.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
-      const isPublic = isContainerPublic(c);
-      const matchPrivacy = this.privacyFilter === "all" || this.privacyFilter === "public" && isPublic || this.privacyFilter === "private" && !isPublic;
-      return matchCategory && matchSearch && matchPrivacy;
-    });
-  }
-  renderFolderMappingInfo(container) {
-    container.empty();
-    const rootFolder = this.settings.vaultRootFolder || "Lenta";
-    const selectedList = Array.from(this.stagedSelectedIds);
-    container.style.cssText = [
-      "padding: 12px 14px",
-      "margin-bottom: 14px",
-      "border-radius: 6px",
-      "border: 1px solid #3b4242",
-      "background: #181b1b",
-      "font-size: 0.88em",
-      "color: #d1d5db"
-    ].join(";");
-    if (selectedList.length === 0) {
-      container.innerHTML = `
-        <div style="font-weight:600; color:#f59e0b;">\u26A0\uFE0F No Containers Selected</div>
-        <div style="font-size:0.85em; margin-top:4px; color:#888;">Select one or more containers above to map vault directories.</div>
-      `;
-      return;
-    }
-    const pathsHtml = selectedList.map((id) => {
-      const matched = this.containers.find((c) => c.id === id);
-      const name = matched ? getContainerDisplayTitle2(matched) : id;
-      const isSaved = this.savedSelectedIds.has(id);
-      return `<div style="margin-top:2px;">\u2022 <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ""}</div>`;
-    }).join("");
-    container.innerHTML = `
-      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Vault Directory Mappings Preview (${selectedList.length}):</div>
-      ${pathsHtml}
-      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault when you click Connect.</div>
-    `;
-  }
-  renderContainersList(targetEl) {
-    const listEl = targetEl || this.contentEl.querySelector("#lenta-containers-compact-list");
-    if (!listEl)
-      return;
-    const savedListScrollTop = listEl.scrollTop;
-    const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
-    listEl.empty();
-    if (this.isConnecting) {
-      listEl.addClass("is-locked");
-      listEl.addClass("is-loading-all");
-    } else {
-      listEl.removeClass("is-locked");
-      listEl.removeClass("is-loading-all");
-    }
-    const filtered = this.getFilteredContainers();
-    if (filtered.length === 0) {
-      listEl.createDiv({ cls: "lenta-empty-state", text: "No containers match your search or filter." });
-      if (this.contentEl)
-        this.contentEl.scrollTop = savedContentScrollTop;
-      return;
-    }
-    for (const c of filtered) {
-      const isStaged = this.stagedSelectedIds.has(c.id);
-      const isSaved = this.savedSelectedIds.has(c.id);
-      let rowClass = "lenta-container-row";
-      if (this.isConnecting) {
-        rowClass += " is-locked";
-      }
-      if (c.id === this.activeSyncingContainerId) {
-        rowClass += " is-syncing";
-      } else if (this.completedSyncContainerIds.has(c.id)) {
-        rowClass += " is-sync-done";
-      }
-      if (isStaged) {
-        rowClass += " is-selected";
-      }
-      if (isStaged && !isSaved) {
-        rowClass += " is-pending-connect";
-      } else if (!isStaged && isSaved) {
-        rowClass += " is-pending-disconnect";
-      }
-      const row = listEl.createDiv({ cls: rowClass });
-      const leftCol = row.createDiv({ cls: "lenta-container-row-left" });
-      const checkbox = leftCol.createEl("input", {
-        type: "checkbox",
-        cls: "lenta-container-checkbox"
-      });
-      checkbox.checked = isStaged;
-      checkbox.disabled = this.isConnecting;
-      checkbox.onclick = (e) => {
-        e.stopPropagation();
-        if (this.isConnecting)
-          return;
-        this.toggleStagedSelection(c.id);
-      };
-      leftCol.createSpan({ cls: "lenta-container-icon", text: "\u{1F4E6}" });
-      const displayTitle = getContainerDisplayTitle2(c);
-      const titleWrap = leftCol.createDiv({ cls: "lenta-container-title-wrap" });
-      const titleSpan = titleWrap.createSpan({ cls: "lenta-container-title", text: displayTitle });
-      titleSpan.title = displayTitle;
-      if (c.id && displayTitle !== c.id) {
-        const shortId = c.id.length > 20 ? `${c.id.slice(0, 8)}\u2026${c.id.slice(-4)}` : c.id;
-        const idSpan = titleWrap.createSpan({ cls: "lenta-container-id", text: shortId });
-        idSpan.title = `Container ID: ${c.id}`;
-      }
-      const rightCol = row.createDiv({ cls: "lenta-container-row-right" });
-      const typeTag = rightCol.createSpan({ cls: "lenta-badge" });
-      typeTag.setText(c.type === "git" ? "VERSIONED" : (c.type || "SIMPLE").toUpperCase());
-      const isPub = isContainerPublic(c);
-      const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? "is-public" : "is-private"}` });
-      privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
-      if (typeof c.totalNotes === "number") {
-        const notesTag = rightCol.createSpan({ cls: "lenta-count-pill" });
-        notesTag.setText(`\u{1F4C4} ${c.totalNotes}`);
-      }
-      let btnText = isStaged ? "\u2713 Selected" : "+ Select";
-      let btnClass = `lenta-select-btn ${isStaged ? "is-selected" : ""}`;
-      if (this.isConnecting) {
-        if (c.id === this.activeSyncingContainerId) {
-          btnText = "\u23F3 Loading...";
-          btnClass = "lenta-select-btn is-loading is-syncing";
-        } else if (this.completedSyncContainerIds.has(c.id)) {
-          btnText = "\u2713 Updated";
-          btnClass = "lenta-select-btn is-completed";
-        } else if (isStaged) {
-          btnText = "\u23F3 Pending...";
-          btnClass = "lenta-select-btn is-pending-sync";
-        }
-      } else {
-        if (isStaged && !isSaved) {
-          btnText = "+ Connect";
-          btnClass += " is-staged-add";
-        } else if (!isStaged && isSaved) {
-          btnText = "\u2715 Disconnect";
-          btnClass += " is-staged-remove";
-        } else if (isStaged && isSaved) {
-          btnText = "\u2713 Connected";
-        }
-      }
-      const selectBtn = rightCol.createEl("button", {
-        cls: btnClass,
-        text: btnText
-      });
-      selectBtn.disabled = this.isConnecting;
-      selectBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (this.isConnecting)
-          return;
-        this.toggleStagedSelection(c.id);
-      };
-      row.onclick = (e) => {
-        if (this.isConnecting)
-          return;
-        const targetTag = e.target.tagName.toUpperCase();
-        if (targetTag !== "INPUT" && targetTag !== "BUTTON") {
-          this.toggleStagedSelection(c.id);
-        }
-      };
-    }
-    listEl.scrollTop = savedListScrollTop;
-    if (this.contentEl) {
-      this.contentEl.scrollTop = savedContentScrollTop;
-    }
-  }
-};
-
-// src/ui/sidebar-view.ts
-var import_obsidian12 = require("obsidian");
-init_lenta_frontmatter();
 
 // ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/internal/utils.js
 function noop() {
@@ -8120,6 +6489,11 @@ function subscribe(store, ...callbacks) {
   }
   const unsub = store.subscribe(...callbacks);
   return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
+}
+function get_store_value(store) {
+  let value;
+  subscribe(store, (_) => value = _)();
+  return value;
 }
 function component_subscribe(component, store, callback) {
   component.$$.on_destroy.push(subscribe(store, callback));
@@ -8266,6 +6640,12 @@ function detach(node) {
     node.parentNode.removeChild(node);
   }
 }
+function destroy_each(iterations, detaching) {
+  for (let i = 0; i < iterations.length; i += 1) {
+    if (iterations[i])
+      iterations[i].d(detaching);
+  }
+}
 function element(name) {
   return document.createElement(name);
 }
@@ -8313,6 +6693,21 @@ function set_style(node, key, value, important) {
   } else {
     node.style.setProperty(key, value, important ? "important" : "");
   }
+}
+function select_option(select, value, mounting) {
+  for (let i = 0; i < select.options.length; i += 1) {
+    const option = select.options[i];
+    if (option.__value === value) {
+      option.selected = true;
+      return;
+    }
+  }
+  if (!mounting || value !== void 0) {
+    select.selectedIndex = -1;
+  }
+}
+function toggle_class(element2, name, toggle) {
+  element2.classList.toggle(name, !!toggle);
 }
 function custom_event(type, detail, { bubbles = false, cancelable = false } = {}) {
   return new CustomEvent(type, { detail, bubbles, cancelable });
@@ -8703,7 +7098,7 @@ function outro_and_destroy_block(block, lookup) {
     lookup.delete(block.key);
   });
 }
-function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block3, next, get_context) {
+function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block4, next, get_context) {
   let o = old_blocks.length;
   let n = list.length;
   let i = o;
@@ -8720,7 +7115,7 @@ function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, looku
     const key = get_key(child_ctx);
     let block = lookup.get(key);
     if (!block) {
-      block = create_each_block3(key, child_ctx);
+      block = create_each_block4(key, child_ctx);
       block.c();
     } else if (dynamic) {
       updates.push(() => block.p(child_ctx, dirty));
@@ -8842,7 +7237,7 @@ function make_dirty(component, i) {
   }
   component.$$.dirty[i / 31 | 0] |= 1 << i % 31;
 }
-function init(component, options, instance5, create_fragment5, not_equal, props, append_styles2 = null, dirty = [-1]) {
+function init(component, options, instance6, create_fragment6, not_equal, props, append_styles2 = null, dirty = [-1]) {
   const parent_component = current_component;
   set_current_component(component);
   const $$ = component.$$ = {
@@ -8868,7 +7263,7 @@ function init(component, options, instance5, create_fragment5, not_equal, props,
   };
   append_styles2 && append_styles2($$.root);
   let ready = false;
-  $$.ctx = instance5 ? instance5(component, options.props || {}, (i, ret, ...rest) => {
+  $$.ctx = instance6 ? instance6(component, options.props || {}, (i, ret, ...rest) => {
     const value = rest.length ? rest[0] : ret;
     if ($$.ctx && not_equal($$.ctx[i], $$.ctx[i] = value)) {
       if (!$$.skip_bound && $$.bound[i])
@@ -8881,7 +7276,7 @@ function init(component, options, instance5, create_fragment5, not_equal, props,
   $$.update();
   ready = true;
   run_all($$.before_update);
-  $$.fragment = create_fragment5 ? create_fragment5($$.ctx) : false;
+  $$.fragment = create_fragment6 ? create_fragment6($$.ctx) : false;
   if (options.target) {
     if (options.hydrate) {
       start_hydrating();
@@ -9164,6 +7559,3531 @@ var PUBLIC_VERSION = "4";
 if (typeof window !== "undefined")
   (window.__svelte || (window.__svelte = { v: /* @__PURE__ */ new Set() })).v.add(PUBLIC_VERSION);
 
+// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/store/index.js
+var subscriber_queue = [];
+function readable(value, start) {
+  return {
+    subscribe: writable(value, start).subscribe
+  };
+}
+function writable(value, start = noop) {
+  let stop;
+  const subscribers = /* @__PURE__ */ new Set();
+  function set(new_value) {
+    if (safe_not_equal(value, new_value)) {
+      value = new_value;
+      if (stop) {
+        const run_queue = !subscriber_queue.length;
+        for (const subscriber of subscribers) {
+          subscriber[1]();
+          subscriber_queue.push(subscriber, value);
+        }
+        if (run_queue) {
+          for (let i = 0; i < subscriber_queue.length; i += 2) {
+            subscriber_queue[i][0](subscriber_queue[i + 1]);
+          }
+          subscriber_queue.length = 0;
+        }
+      }
+    }
+  }
+  function update2(fn) {
+    set(fn(value));
+  }
+  function subscribe2(run2, invalidate = noop) {
+    const subscriber = [run2, invalidate];
+    subscribers.add(subscriber);
+    if (subscribers.size === 1) {
+      stop = start(set, update2) || noop;
+    }
+    run2(value);
+    return () => {
+      subscribers.delete(subscriber);
+      if (subscribers.size === 0 && stop) {
+        stop();
+        stop = null;
+      }
+    };
+  }
+  return { set, update: update2, subscribe: subscribe2 };
+}
+function derived(stores, fn, initial_value) {
+  const single = !Array.isArray(stores);
+  const stores_array = single ? [stores] : stores;
+  if (!stores_array.every(Boolean)) {
+    throw new Error("derived() expects stores as input, got a falsy value");
+  }
+  const auto = fn.length < 2;
+  return readable(initial_value, (set, update2) => {
+    let started = false;
+    const values = [];
+    let pending = 0;
+    let cleanup = noop;
+    const sync = () => {
+      if (pending) {
+        return;
+      }
+      cleanup();
+      const result = fn(single ? values[0] : values, set, update2);
+      if (auto) {
+        set(result);
+      } else {
+        cleanup = is_function(result) ? result : noop;
+      }
+    };
+    const unsubscribers = stores_array.map(
+      (store, i) => subscribe(
+        store,
+        (value) => {
+          values[i] = value;
+          pending &= ~(1 << i);
+          if (started) {
+            sync();
+          }
+        },
+        () => {
+          pending |= 1 << i;
+        }
+      )
+    );
+    started = true;
+    sync();
+    return function stop() {
+      run_all(unsubscribers);
+      cleanup();
+      started = false;
+    };
+  });
+}
+
+// src/ui/svelte/ai-quick-add-store.ts
+var import_obsidian5 = require("obsidian");
+init_lenta_frontmatter();
+function createAiQuickAddStore() {
+  const inputText = writable("");
+  const isParsing = writable(false);
+  const isSaving = writable(false);
+  const errorMessage = writable(null);
+  const cards = writable([]);
+  const selectedCards = derived(cards, ($cards) => $cards.filter((c) => c.selected));
+  const selectedCount = derived(selectedCards, ($selected) => $selected.length);
+  const totalCount = derived(cards, ($cards) => $cards.length);
+  async function parse(apiClient, context) {
+    const text2 = get_store_value(inputText).trim();
+    if (!text2) {
+      errorMessage.set("\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0434\u043B\u044F \u0440\u0430\u0437\u0431\u043E\u0440\u0430.");
+      return;
+    }
+    isParsing.set(true);
+    errorMessage.set(null);
+    try {
+      const res = await apiClient.parseAiNotes(text2, context);
+      const parsedCards = res.cards || [];
+      if (parsedCards.length === 0) {
+        errorMessage.set("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0438\u0437 \u0442\u0435\u043A\u0441\u0442\u0430. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043E\u0439 \u0444\u043E\u0440\u043C\u0430\u0442 \u0438\u043B\u0438 \u0441\u043F\u0438\u0441\u043E\u043A.");
+      } else {
+        cards.set(parsedCards.map((c, i) => ({ ...c, selected: true, tempId: c.tempId || `temp-${i + 1}` })));
+      }
+    } catch (err) {
+      errorMessage.set(`\u041E\u0448\u0438\u0431\u043A\u0430 AI \u0440\u0430\u0437\u0431\u043E\u0440\u0430: ${err?.message || err}`);
+    } finally {
+      isParsing.set(false);
+    }
+  }
+  function toggleCard(tempId) {
+    cards.update(
+      ($cards) => $cards.map((c) => c.tempId === tempId ? { ...c, selected: !c.selected } : c)
+    );
+  }
+  function toggleSelectAll(select) {
+    cards.update(($cards) => $cards.map((c) => ({ ...c, selected: select })));
+  }
+  function updateCard(tempId, patch) {
+    cards.update(
+      ($cards) => $cards.map((c) => {
+        if (c.tempId !== tempId)
+          return c;
+        const updated = { ...c, ...patch };
+        if (patch.displayType === "Trend") {
+          updated.type = updated.endDate ? "PERIOD" : "SINGLE";
+          if (!updated.hashtags)
+            updated.hashtags = [];
+          if (!updated.hashtags.includes("\u0442\u0440\u0435\u043D\u0434"))
+            updated.hashtags.unshift("\u0442\u0440\u0435\u043D\u0434");
+        }
+        return updated;
+      })
+    );
+  }
+  function removeCard(tempId) {
+    cards.update(($cards) => $cards.filter((c) => c.tempId !== tempId));
+  }
+  function addEmptyCard(defaultDate, defaultFolder) {
+    const newId = `temp-manual-${Date.now()}`;
+    const newCard = {
+      tempId: newId,
+      title: "\u041D\u043E\u0432\u044B\u0439 \u0442\u0440\u0435\u043D\u0434",
+      type: "SINGLE",
+      displayType: "Trend",
+      startDate: defaultDate || (/* @__PURE__ */ new Date()).toISOString(),
+      endDate: null,
+      feedSlug: "my-notes",
+      feedTitle: "My Notes",
+      folder: defaultFolder || "Trends",
+      hashtags: ["\u0442\u0440\u0435\u043D\u0434"],
+      icon: "trending-up",
+      description: "",
+      selected: true
+    };
+    cards.update(($cards) => [...$cards, newCard]);
+  }
+  async function saveSelected(app, apiClient, settings, targetContainerId, targetContainerName) {
+    const toSave = get_store_value(selectedCards);
+    if (toSave.length === 0) {
+      return { success: false, createdPaths: [], error: "\u041D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u043E \u043D\u0438 \u043E\u0434\u043D\u043E\u0439 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0434\u043B\u044F \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u044F" };
+    }
+    isSaving.set(true);
+    errorMessage.set(null);
+    const createdPaths = [];
+    const rootFolder = settings.vaultRootFolder || "Lenta";
+    try {
+      const batchPayload = toSave.map((c) => ({
+        title: c.title.trim(),
+        type: c.type,
+        startDate: c.startDate.includes("T") ? c.startDate : (/* @__PURE__ */ new Date(`${c.startDate}T12:00:00.000Z`)).toISOString(),
+        endDate: c.endDate ? c.endDate.includes("T") ? c.endDate : (/* @__PURE__ */ new Date(`${c.endDate}T23:59:59.000Z`)).toISOString() : void 0,
+        folder: c.folder || "Notes",
+        folders: c.folder ? [c.folder] : void 0,
+        feedId: c.feedId,
+        hashtags: c.hashtags,
+        tagIds: c.taxonomyPath ? [c.taxonomyPath] : c.tagIds,
+        sourceLink: c.sourceLink,
+        icon: c.icon,
+        description: c.description,
+        containerId: targetContainerId
+      }));
+      const res = await apiClient.createNotesBatch(batchPayload);
+      const createdNotes = res.notes || [];
+      for (const note of createdNotes) {
+        try {
+          const resolvedFolder = note.folders?.[0]?.folder?.path || "Notes";
+          let vaultPath;
+          if (targetContainerId && targetContainerName) {
+            const safeContainerName = targetContainerName.replace(/[\\/:*?"<>|]/g, "_");
+            const cleanTitle = (note.title || "Untitled").replace(/[\\/:*?"<>|]/g, "-").trim();
+            const cleanFolder = resolvedFolder.replace(/^\/+|\/+$/g, "");
+            vaultPath = (0, import_obsidian5.normalizePath)(`${rootFolder}/${safeContainerName}/${cleanFolder}/${cleanTitle}.md`);
+          } else {
+            vaultPath = (0, import_obsidian5.normalizePath)(LentaFrontmatterUtil.getNoteVaultPath(note, rootFolder));
+          }
+          const markdown = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
+          const dir = vaultPath.substring(0, vaultPath.lastIndexOf("/"));
+          if (dir && !app.vault.getAbstractFileByPath(dir)) {
+            const parts = dir.split("/");
+            let cur = "";
+            for (const p of parts) {
+              cur = cur ? `${cur}/${p}` : p;
+              const norm = (0, import_obsidian5.normalizePath)(cur);
+              if (!app.vault.getAbstractFileByPath(norm)) {
+                await app.vault.createFolder(norm);
+              }
+            }
+          }
+          let finalVaultPath = vaultPath;
+          const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
+          if (existingFile instanceof import_obsidian5.TFile) {
+            const dirPath = finalVaultPath.substring(0, finalVaultPath.lastIndexOf("/"));
+            const baseWithExt = finalVaultPath.substring(finalVaultPath.lastIndexOf("/") + 1);
+            const dotIdx = baseWithExt.lastIndexOf(".");
+            const baseName = dotIdx !== -1 ? baseWithExt.substring(0, dotIdx) : baseWithExt;
+            const ext = dotIdx !== -1 ? baseWithExt.substring(dotIdx) : ".md";
+            let counter = 1;
+            let candidate = `${dirPath}/${baseName} (${counter})${ext}`;
+            while (app.vault.getAbstractFileByPath(candidate)) {
+              counter++;
+              candidate = `${dirPath}/${baseName} (${counter})${ext}`;
+            }
+            finalVaultPath = (0, import_obsidian5.normalizePath)(candidate);
+          }
+          await app.vault.create(finalVaultPath, markdown);
+          createdPaths.push(finalVaultPath);
+        } catch (fileErr) {
+          console.error(`Failed to write local vault file for note "${note.title}":`, fileErr);
+        }
+      }
+      new import_obsidian5.Notice(`\u2728 \u0423\u0441\u043F\u0435\u0448\u043D\u043E \u0441\u043E\u0437\u0434\u0430\u043D\u043E ${createdNotes.length} \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A \u0432 Lenta!`);
+      return { success: true, createdPaths };
+    } catch (err) {
+      const msg = `\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A: ${err?.message || err}`;
+      errorMessage.set(msg);
+      return { success: false, createdPaths, error: msg };
+    } finally {
+      isSaving.set(false);
+    }
+  }
+  return {
+    inputText,
+    isParsing,
+    isSaving,
+    errorMessage,
+    cards,
+    selectedCards,
+    selectedCount,
+    totalCount,
+    parse,
+    toggleCard,
+    toggleSelectAll,
+    updateCard,
+    removeCard,
+    addEmptyCard,
+    saveSelected
+  };
+}
+
+// src/ui/svelte/AiQuickAddModal.svelte
+function add_css(target) {
+  append_styles(target, "svelte-1i65i7o", ".ai-quick-add-container.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:16px;padding:8px 4px;max-height:82vh;box-sizing:border-box}.modal-header.svelte-1i65i7o h2.svelte-1i65i7o{margin:4px 0 2px 0;font-size:1.35rem;font-weight:700}.title-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:10px}.sparkle-badge.svelte-1i65i7o.svelte-1i65i7o{background:linear-gradient(135deg, #a855f7 0%, #ec4899 100%);color:#ffffff;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.5px;text-transform:uppercase}.subtitle.svelte-1i65i7o.svelte-1i65i7o{margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.4}.chips-container.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.chips-label.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem;color:var(--text-muted);font-weight:600}.chip-button.svelte-1i65i7o.svelte-1i65i7o{background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:14px;font-size:0.78rem;padding:3px 10px;cursor:pointer;color:var(--text-normal);transition:all 0.15s ease}.chip-button.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){border-color:var(--interactive-accent);color:var(--interactive-accent);background:var(--background-secondary-alt)}.input-section.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:8px}.text-input.svelte-1i65i7o.svelte-1i65i7o{width:100%;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:0.9rem;color:var(--text-normal);resize:vertical;box-sizing:border-box;transition:border-color 0.2s}.text-input.svelte-1i65i7o.svelte-1i65i7o:focus{outline:none;border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(168, 85, 247, 0.2)}.parse-action-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:flex-end}.parse-button.svelte-1i65i7o.svelte-1i65i7o{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);color:white;font-weight:600;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:0.88rem;transition:transform 0.15s, opacity 0.15s}.parse-button.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){transform:translateY(-1px);opacity:0.95}.parse-button.svelte-1i65i7o.svelte-1i65i7o:disabled{opacity:0.5;cursor:not-allowed}.error-banner.svelte-1i65i7o.svelte-1i65i7o{background:rgba(239, 68, 68, 0.15);border:1px solid rgba(239, 68, 68, 0.3);color:#ef4444;padding:8px 12px;border-radius:6px;font-size:0.85rem}.cards-section.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:8px;margin-top:4px}.cards-header.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}.select-all-label.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;cursor:pointer}.add-card-btn.svelte-1i65i7o.svelte-1i65i7o{background:none;border:1px dashed var(--background-modifier-border);color:var(--text-muted);border-radius:6px;padding:3px 10px;font-size:0.8rem;cursor:pointer}.add-card-btn.svelte-1i65i7o.svelte-1i65i7o:hover{color:var(--text-normal);border-color:var(--text-muted)}.cards-scroll-list.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:10px;max-height:42vh;overflow-y:auto;padding-right:4px}.card-item.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:flex-start;gap:10px;background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;transition:border-color 0.15s, background-color 0.15s}.card-item.is-selected.svelte-1i65i7o.svelte-1i65i7o{border-color:rgba(168, 85, 247, 0.4);background:var(--background-secondary-alt)}.card-item.is-trend.svelte-1i65i7o.svelte-1i65i7o{border-left:3px solid #a855f7}.card-select.svelte-1i65i7o.svelte-1i65i7o{padding-top:4px}.card-content.svelte-1i65i7o.svelte-1i65i7o{flex:1;display:flex;flex-direction:column;gap:8px}.card-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.type-select.svelte-1i65i7o.svelte-1i65i7o{font-size:0.78rem;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--background-primary);border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer}.badge-trend.svelte-1i65i7o.svelte-1i65i7o{color:#c084fc;border-color:#a855f7}.title-input.svelte-1i65i7o.svelte-1i65i7o{flex:1;font-weight:600;font-size:0.95rem;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 8px;color:var(--text-normal)}.title-input.svelte-1i65i7o.svelte-1i65i7o:focus{outline:none;border-color:var(--interactive-accent)}.delete-card-btn.svelte-1i65i7o.svelte-1i65i7o{background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;padding:4px 8px;border-radius:4px}.delete-card-btn.svelte-1i65i7o.svelte-1i65i7o:hover{color:#ef4444;background:rgba(239, 68, 68, 0.1)}.meta-row.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem}.meta-field.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:4px;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:2px 6px}.meta-icon.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem}.date-input.svelte-1i65i7o.svelte-1i65i7o,.folder-input.svelte-1i65i7o.svelte-1i65i7o,.tags-input.svelte-1i65i7o.svelte-1i65i7o{background:transparent;border:none;font-size:0.8rem;color:var(--text-normal);outline:none;width:100%}.flex-1.svelte-1i65i7o.svelte-1i65i7o{flex:1;min-width:120px}.extra-row.svelte-1i65i7o.svelte-1i65i7o{font-size:0.78rem;color:var(--text-muted)}.source-link.svelte-1i65i7o.svelte-1i65i7o{color:var(--text-accent);text-decoration:none;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tax-badge.svelte-1i65i7o.svelte-1i65i7o{background:rgba(59, 130, 246, 0.15);color:#60a5fa;padding:1px 6px;border-radius:4px}.modal-footer.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--background-modifier-border)}.btn-cancel.svelte-1i65i7o.svelte-1i65i7o{background:var(--background-secondary);border:1px solid var(--background-modifier-border);color:var(--text-muted);padding:7px 16px;border-radius:6px;cursor:pointer}.btn-cancel.svelte-1i65i7o.svelte-1i65i7o:hover{color:var(--text-normal)}.btn-save.svelte-1i65i7o.svelte-1i65i7o{display:inline-flex;align-items:center;gap:6px;background:var(--interactive-accent);color:var(--text-on-accent);font-weight:600;padding:7px 18px;border-radius:6px;border:none;cursor:pointer;transition:opacity 0.15s}.btn-save.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){opacity:0.9}.btn-save.svelte-1i65i7o.svelte-1i65i7o:disabled{opacity:0.5;cursor:not-allowed}.spinner.svelte-1i65i7o.svelte-1i65i7o{display:inline-block;width:12px;height:12px;border:2px solid rgba(255, 255, 255, 0.3);border-radius:50%;border-top-color:white;animation:svelte-1i65i7o-spin 0.6s linear infinite}@keyframes svelte-1i65i7o-spin{to{transform:rotate(360deg)}}");
+}
+function get_each_context(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[50] = list[i];
+  return child_ctx;
+}
+function get_each_context_1(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[53] = list[i];
+  return child_ctx;
+}
+function create_each_block_1(ctx) {
+  let button;
+  let t0_value = (
+    /*chip*/
+    ctx[53].label + ""
+  );
+  let t0;
+  let t1;
+  let button_disabled_value;
+  let mounted;
+  let dispose;
+  function click_handler() {
+    return (
+      /*click_handler*/
+      ctx[34](
+        /*chip*/
+        ctx[53]
+      )
+    );
+  }
+  return {
+    c() {
+      button = element("button");
+      t0 = text(t0_value);
+      t1 = space();
+      attr(button, "type", "button");
+      attr(button, "class", "chip-button svelte-1i65i7o");
+      button.disabled = button_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4];
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      append(button, t0);
+      append(button, t1);
+      if (!mounted) {
+        dispose = listen(button, "click", click_handler);
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*$isParsing, $isSaving*/
+      24 && button_disabled_value !== (button_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4])) {
+        button.disabled = button_disabled_value;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_else_block_1(ctx) {
+  let t;
+  return {
+    c() {
+      t = text("\u2728 \u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438");
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_7(ctx) {
+  let span;
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(" \u0420\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u0435...");
+      attr(span, "class", "spinner svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      insert(target, t, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_6(ctx) {
+  let div;
+  let t0;
+  let t1;
+  return {
+    c() {
+      div = element("div");
+      t0 = text("\u26A0\uFE0F ");
+      t1 = text(
+        /*$errorMessage*/
+        ctx[6]
+      );
+      attr(div, "class", "error-banner svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, t0);
+      append(div, t1);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$errorMessage*/
+      64)
+        set_data(
+          t1,
+          /*$errorMessage*/
+          ctx2[6]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_1(ctx) {
+  let div3;
+  let div1;
+  let div0;
+  let label;
+  let input;
+  let input_checked_value;
+  let t0;
+  let span;
+  let t1;
+  let t2;
+  let t3;
+  let t4;
+  let t5;
+  let t6;
+  let button;
+  let t8;
+  let div2;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
+  let mounted;
+  let dispose;
+  let each_value = ensure_array_like(
+    /*$cards*/
+    ctx[7]
+  );
+  const get_key = (ctx2) => (
+    /*card*/
+    ctx2[50].tempId
+  );
+  for (let i = 0; i < each_value.length; i += 1) {
+    let child_ctx = get_each_context(ctx, each_value, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block(key, child_ctx));
+  }
+  return {
+    c() {
+      div3 = element("div");
+      div1 = element("div");
+      div0 = element("div");
+      label = element("label");
+      input = element("input");
+      t0 = space();
+      span = element("span");
+      t1 = text("\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0432\u0441\u0435 (");
+      t2 = text(
+        /*$selectedCount*/
+        ctx[8]
+      );
+      t3 = text(" \u0438\u0437 ");
+      t4 = text(
+        /*$totalCount*/
+        ctx[9]
+      );
+      t5 = text(")");
+      t6 = space();
+      button = element("button");
+      button.textContent = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443";
+      t8 = space();
+      div2 = element("div");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(input, "type", "checkbox");
+      input.checked = input_checked_value = /*$selectedCount*/
+      ctx[8] === /*$totalCount*/
+      ctx[9] && /*$totalCount*/
+      ctx[9] > 0;
+      attr(label, "class", "select-all-label svelte-1i65i7o");
+      attr(div0, "class", "selection-controls");
+      attr(button, "type", "button");
+      attr(button, "class", "add-card-btn svelte-1i65i7o");
+      attr(div1, "class", "cards-header svelte-1i65i7o");
+      attr(div2, "class", "cards-scroll-list svelte-1i65i7o");
+      attr(div3, "class", "cards-section svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, div3, anchor);
+      append(div3, div1);
+      append(div1, div0);
+      append(div0, label);
+      append(label, input);
+      append(label, t0);
+      append(label, span);
+      append(span, t1);
+      append(span, t2);
+      append(span, t3);
+      append(span, t4);
+      append(span, t5);
+      append(div1, t6);
+      append(div1, button);
+      append(div3, t8);
+      append(div3, div2);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div2, null);
+        }
+      }
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "change",
+            /*change_handler*/
+            ctx[36]
+          ),
+          listen(
+            button,
+            "click",
+            /*click_handler_1*/
+            ctx[37]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$selectedCount, $totalCount*/
+      768 && input_checked_value !== (input_checked_value = /*$selectedCount*/
+      ctx2[8] === /*$totalCount*/
+      ctx2[9] && /*$totalCount*/
+      ctx2[9] > 0)) {
+        input.checked = input_checked_value;
+      }
+      if (dirty[0] & /*$selectedCount*/
+      256)
+        set_data(
+          t2,
+          /*$selectedCount*/
+          ctx2[8]
+        );
+      if (dirty[0] & /*$totalCount*/
+      512)
+        set_data(
+          t4,
+          /*$totalCount*/
+          ctx2[9]
+        );
+      if (dirty[0] & /*$cards, updateCard, removeCard, handleTypeChange, toggleCard*/
+      135921792) {
+        each_value = ensure_array_like(
+          /*$cards*/
+          ctx2[7]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div2, destroy_block, create_each_block, null, get_each_context);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div3);
+      }
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_5(ctx) {
+  let div;
+  let span;
+  let t1;
+  let input;
+  let input_value_value;
+  let mounted;
+  let dispose;
+  function change_handler_4(...args) {
+    return (
+      /*change_handler_4*/
+      ctx[43](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  return {
+    c() {
+      div = element("div");
+      span = element("span");
+      span.textContent = "\u2014";
+      t1 = space();
+      input = element("input");
+      attr(span, "class", "meta-label");
+      attr(input, "type", "date");
+      attr(input, "class", "date-input svelte-1i65i7o");
+      input.value = input_value_value = /*card*/
+      ctx[50].endDate ? (
+        /*card*/
+        ctx[50].endDate.split("T")[0]
+      ) : "";
+      attr(div, "class", "meta-field svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span);
+      append(div, t1);
+      append(div, input);
+      if (!mounted) {
+        dispose = listen(input, "change", change_handler_4);
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*$cards*/
+      128 && input_value_value !== (input_value_value = /*card*/
+      ctx[50].endDate ? (
+        /*card*/
+        ctx[50].endDate.split("T")[0]
+      ) : "")) {
+        input.value = input_value_value;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block_2(ctx) {
+  let div;
+  let t;
+  let if_block0 = (
+    /*card*/
+    ctx[50].sourceLink && create_if_block_4(ctx)
+  );
+  let if_block1 = (
+    /*card*/
+    ctx[50].taxonomyPath && create_if_block_3(ctx)
+  );
+  return {
+    c() {
+      div = element("div");
+      if (if_block0)
+        if_block0.c();
+      t = space();
+      if (if_block1)
+        if_block1.c();
+      attr(div, "class", "card-row extra-row svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      if (if_block0)
+        if_block0.m(div, null);
+      append(div, t);
+      if (if_block1)
+        if_block1.m(div, null);
+    },
+    p(ctx2, dirty) {
+      if (
+        /*card*/
+        ctx2[50].sourceLink
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx2, dirty);
+        } else {
+          if_block0 = create_if_block_4(ctx2);
+          if_block0.c();
+          if_block0.m(div, t);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (
+        /*card*/
+        ctx2[50].taxonomyPath
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block_3(ctx2);
+          if_block1.c();
+          if_block1.m(div, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+    }
+  };
+}
+function create_if_block_4(ctx) {
+  let div;
+  let span;
+  let t1;
+  let a;
+  let t2_value = (
+    /*card*/
+    ctx[50].sourceLink + ""
+  );
+  let t2;
+  let a_href_value;
+  return {
+    c() {
+      div = element("div");
+      span = element("span");
+      span.textContent = "\u{1F517} \u0421\u0441\u044B\u043B\u043A\u0430:";
+      t1 = space();
+      a = element("a");
+      t2 = text(t2_value);
+      attr(span, "class", "extra-label");
+      attr(a, "href", a_href_value = /*card*/
+      ctx[50].sourceLink);
+      attr(a, "target", "_blank");
+      attr(a, "class", "source-link svelte-1i65i7o");
+      attr(div, "class", "extra-field");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span);
+      append(div, t1);
+      append(div, a);
+      append(a, t2);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$cards*/
+      128 && t2_value !== (t2_value = /*card*/
+      ctx2[50].sourceLink + ""))
+        set_data(t2, t2_value);
+      if (dirty[0] & /*$cards*/
+      128 && a_href_value !== (a_href_value = /*card*/
+      ctx2[50].sourceLink)) {
+        attr(a, "href", a_href_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_if_block_3(ctx) {
+  let div;
+  let span0;
+  let t1;
+  let span1;
+  let t2_value = (
+    /*card*/
+    ctx[50].taxonomyPath + ""
+  );
+  let t2;
+  return {
+    c() {
+      div = element("div");
+      span0 = element("span");
+      span0.textContent = "\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F:";
+      t1 = space();
+      span1 = element("span");
+      t2 = text(t2_value);
+      attr(span0, "class", "extra-label");
+      attr(span1, "class", "tax-badge svelte-1i65i7o");
+      attr(div, "class", "extra-field");
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, span0);
+      append(div, t1);
+      append(div, span1);
+      append(span1, t2);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$cards*/
+      128 && t2_value !== (t2_value = /*card*/
+      ctx2[50].taxonomyPath + ""))
+        set_data(t2, t2_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+    }
+  };
+}
+function create_each_block(key_1, ctx) {
+  let div7;
+  let div0;
+  let input0;
+  let input0_checked_value;
+  let t0;
+  let div6;
+  let div1;
+  let select;
+  let option0;
+  let option1;
+  let option2;
+  let option3;
+  let option4;
+  let option5;
+  let select_value_value;
+  let t7;
+  let input1;
+  let input1_value_value;
+  let t8;
+  let button;
+  let t10;
+  let div5;
+  let div2;
+  let span0;
+  let t12;
+  let input2;
+  let input2_value_value;
+  let t13;
+  let t14;
+  let div3;
+  let span1;
+  let t16;
+  let input3;
+  let input3_value_value;
+  let t17;
+  let div4;
+  let span2;
+  let t19;
+  let input4;
+  let input4_value_value;
+  let t20;
+  let t21;
+  let mounted;
+  let dispose;
+  function change_handler_1() {
+    return (
+      /*change_handler_1*/
+      ctx[38](
+        /*card*/
+        ctx[50]
+      )
+    );
+  }
+  function change_handler_2(...args) {
+    return (
+      /*change_handler_2*/
+      ctx[39](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  function input_handler(...args) {
+    return (
+      /*input_handler*/
+      ctx[40](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  function click_handler_2() {
+    return (
+      /*click_handler_2*/
+      ctx[41](
+        /*card*/
+        ctx[50]
+      )
+    );
+  }
+  function change_handler_3(...args) {
+    return (
+      /*change_handler_3*/
+      ctx[42](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  let if_block0 = (
+    /*card*/
+    (ctx[50].type === "PERIOD" || /*card*/
+    ctx[50].endDate) && create_if_block_5(ctx)
+  );
+  function input_handler_1(...args) {
+    return (
+      /*input_handler_1*/
+      ctx[44](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  function input_handler_2(...args) {
+    return (
+      /*input_handler_2*/
+      ctx[45](
+        /*card*/
+        ctx[50],
+        ...args
+      )
+    );
+  }
+  let if_block1 = (
+    /*card*/
+    (ctx[50].sourceLink || /*card*/
+    ctx[50].taxonomyPath) && create_if_block_2(ctx)
+  );
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      div7 = element("div");
+      div0 = element("div");
+      input0 = element("input");
+      t0 = space();
+      div6 = element("div");
+      div1 = element("div");
+      select = element("select");
+      option0 = element("option");
+      option0.textContent = "\u{1F4C8} Trend";
+      option1 = element("option");
+      option1.textContent = "\u{1F4DD} Point Note";
+      option2 = element("option");
+      option2.textContent = "\u23F3 Period";
+      option3 = element("option");
+      option3.textContent = "\u{1F4C5} Event";
+      option4 = element("option");
+      option4.textContent = "\u2705 Done";
+      option5 = element("option");
+      option5.textContent = "\u{1F3AC} Release";
+      t7 = space();
+      input1 = element("input");
+      t8 = space();
+      button = element("button");
+      button.textContent = "\u2715";
+      t10 = space();
+      div5 = element("div");
+      div2 = element("div");
+      span0 = element("span");
+      span0.textContent = "\u{1F4C5}";
+      t12 = space();
+      input2 = element("input");
+      t13 = space();
+      if (if_block0)
+        if_block0.c();
+      t14 = space();
+      div3 = element("div");
+      span1 = element("span");
+      span1.textContent = "\u{1F4C1}";
+      t16 = space();
+      input3 = element("input");
+      t17 = space();
+      div4 = element("div");
+      span2 = element("span");
+      span2.textContent = "\u{1F3F7}\uFE0F";
+      t19 = space();
+      input4 = element("input");
+      t20 = space();
+      if (if_block1)
+        if_block1.c();
+      t21 = space();
+      attr(input0, "type", "checkbox");
+      input0.checked = input0_checked_value = /*card*/
+      ctx[50].selected;
+      attr(div0, "class", "card-select svelte-1i65i7o");
+      option0.__value = "Trend";
+      set_input_value(option0, option0.__value);
+      option1.__value = "SINGLE";
+      set_input_value(option1, option1.__value);
+      option2.__value = "PERIOD";
+      set_input_value(option2, option2.__value);
+      option3.__value = "EVENT";
+      set_input_value(option3, option3.__value);
+      option4.__value = "DONE";
+      set_input_value(option4, option4.__value);
+      option5.__value = "FILM_RELEASE";
+      set_input_value(option5, option5.__value);
+      attr(select, "class", "type-select svelte-1i65i7o");
+      toggle_class(
+        select,
+        "badge-trend",
+        /*card*/
+        ctx[50].displayType === "Trend"
+      );
+      attr(input1, "type", "text");
+      attr(input1, "class", "title-input svelte-1i65i7o");
+      attr(input1, "placeholder", "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438");
+      input1.value = input1_value_value = /*card*/
+      ctx[50].title;
+      attr(button, "type", "button");
+      attr(button, "class", "delete-card-btn svelte-1i65i7o");
+      attr(button, "title", "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443");
+      attr(div1, "class", "card-row title-row svelte-1i65i7o");
+      attr(span0, "class", "meta-icon svelte-1i65i7o");
+      attr(input2, "type", "date");
+      attr(input2, "class", "date-input svelte-1i65i7o");
+      input2.value = input2_value_value = /*card*/
+      ctx[50].startDate ? (
+        /*card*/
+        ctx[50].startDate.split("T")[0]
+      ) : "";
+      attr(div2, "class", "meta-field svelte-1i65i7o");
+      attr(span1, "class", "meta-icon svelte-1i65i7o");
+      attr(input3, "type", "text");
+      attr(input3, "class", "folder-input svelte-1i65i7o");
+      attr(input3, "placeholder", "\u041F\u0430\u043F\u043A\u0430 (Trends, Notes...)");
+      input3.value = input3_value_value = /*card*/
+      ctx[50].folder || "";
+      attr(div3, "class", "meta-field flex-1 svelte-1i65i7o");
+      attr(span2, "class", "meta-icon svelte-1i65i7o");
+      attr(input4, "type", "text");
+      attr(input4, "class", "tags-input svelte-1i65i7o");
+      attr(input4, "placeholder", "\u0425\u044D\u0448\u0442\u0435\u0433\u0438 (#\u0442\u0440\u0435\u043D\u0434, #\u0438\u0433\u0440\u044B)");
+      input4.value = input4_value_value = /*card*/
+      (ctx[50].hashtags || []).map(func).join(" ");
+      attr(div4, "class", "meta-field flex-1 svelte-1i65i7o");
+      attr(div5, "class", "card-row meta-row svelte-1i65i7o");
+      attr(div6, "class", "card-content svelte-1i65i7o");
+      attr(div7, "class", "card-item svelte-1i65i7o");
+      toggle_class(
+        div7,
+        "is-selected",
+        /*card*/
+        ctx[50].selected
+      );
+      toggle_class(
+        div7,
+        "is-trend",
+        /*card*/
+        ctx[50].displayType === "Trend"
+      );
+      this.first = div7;
+    },
+    m(target, anchor) {
+      insert(target, div7, anchor);
+      append(div7, div0);
+      append(div0, input0);
+      append(div7, t0);
+      append(div7, div6);
+      append(div6, div1);
+      append(div1, select);
+      append(select, option0);
+      append(select, option1);
+      append(select, option2);
+      append(select, option3);
+      append(select, option4);
+      append(select, option5);
+      select_option(
+        select,
+        /*card*/
+        ctx[50].displayType === "Trend" ? "Trend" : (
+          /*card*/
+          ctx[50].type
+        )
+      );
+      append(div1, t7);
+      append(div1, input1);
+      append(div1, t8);
+      append(div1, button);
+      append(div6, t10);
+      append(div6, div5);
+      append(div5, div2);
+      append(div2, span0);
+      append(div2, t12);
+      append(div2, input2);
+      append(div5, t13);
+      if (if_block0)
+        if_block0.m(div5, null);
+      append(div5, t14);
+      append(div5, div3);
+      append(div3, span1);
+      append(div3, t16);
+      append(div3, input3);
+      append(div5, t17);
+      append(div5, div4);
+      append(div4, span2);
+      append(div4, t19);
+      append(div4, input4);
+      append(div6, t20);
+      if (if_block1)
+        if_block1.m(div6, null);
+      append(div7, t21);
+      if (!mounted) {
+        dispose = [
+          listen(input0, "change", change_handler_1),
+          listen(select, "change", change_handler_2),
+          listen(input1, "input", input_handler),
+          listen(button, "click", click_handler_2),
+          listen(input2, "change", change_handler_3),
+          listen(input3, "input", input_handler_1),
+          listen(input4, "input", input_handler_2)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*$cards*/
+      128 && input0_checked_value !== (input0_checked_value = /*card*/
+      ctx[50].selected)) {
+        input0.checked = input0_checked_value;
+      }
+      if (dirty[0] & /*$cards*/
+      128 && select_value_value !== (select_value_value = /*card*/
+      ctx[50].displayType === "Trend" ? "Trend" : (
+        /*card*/
+        ctx[50].type
+      ))) {
+        select_option(
+          select,
+          /*card*/
+          ctx[50].displayType === "Trend" ? "Trend" : (
+            /*card*/
+            ctx[50].type
+          )
+        );
+      }
+      if (dirty[0] & /*$cards*/
+      128) {
+        toggle_class(
+          select,
+          "badge-trend",
+          /*card*/
+          ctx[50].displayType === "Trend"
+        );
+      }
+      if (dirty[0] & /*$cards*/
+      128 && input1_value_value !== (input1_value_value = /*card*/
+      ctx[50].title) && input1.value !== input1_value_value) {
+        input1.value = input1_value_value;
+      }
+      if (dirty[0] & /*$cards*/
+      128 && input2_value_value !== (input2_value_value = /*card*/
+      ctx[50].startDate ? (
+        /*card*/
+        ctx[50].startDate.split("T")[0]
+      ) : "")) {
+        input2.value = input2_value_value;
+      }
+      if (
+        /*card*/
+        ctx[50].type === "PERIOD" || /*card*/
+        ctx[50].endDate
+      ) {
+        if (if_block0) {
+          if_block0.p(ctx, dirty);
+        } else {
+          if_block0 = create_if_block_5(ctx);
+          if_block0.c();
+          if_block0.m(div5, t14);
+        }
+      } else if (if_block0) {
+        if_block0.d(1);
+        if_block0 = null;
+      }
+      if (dirty[0] & /*$cards*/
+      128 && input3_value_value !== (input3_value_value = /*card*/
+      ctx[50].folder || "") && input3.value !== input3_value_value) {
+        input3.value = input3_value_value;
+      }
+      if (dirty[0] & /*$cards*/
+      128 && input4_value_value !== (input4_value_value = /*card*/
+      (ctx[50].hashtags || []).map(func).join(" ")) && input4.value !== input4_value_value) {
+        input4.value = input4_value_value;
+      }
+      if (
+        /*card*/
+        ctx[50].sourceLink || /*card*/
+        ctx[50].taxonomyPath
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+        } else {
+          if_block1 = create_if_block_2(ctx);
+          if_block1.c();
+          if_block1.m(div6, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (dirty[0] & /*$cards*/
+      128) {
+        toggle_class(
+          div7,
+          "is-selected",
+          /*card*/
+          ctx[50].selected
+        );
+      }
+      if (dirty[0] & /*$cards*/
+      128) {
+        toggle_class(
+          div7,
+          "is-trend",
+          /*card*/
+          ctx[50].displayType === "Trend"
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div7);
+      }
+      if (if_block0)
+        if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_else_block(ctx) {
+  let t0;
+  let t1;
+  let t2;
+  return {
+    c() {
+      t0 = text("\u2728 \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u044B\u0435 (");
+      t1 = text(
+        /*$selectedCount*/
+        ctx[8]
+      );
+      t2 = text(")");
+    },
+    m(target, anchor) {
+      insert(target, t0, anchor);
+      insert(target, t1, anchor);
+      insert(target, t2, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*$selectedCount*/
+      256)
+        set_data(
+          t1,
+          /*$selectedCount*/
+          ctx2[8]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t0);
+        detach(t1);
+        detach(t2);
+      }
+    }
+  };
+}
+function create_if_block(ctx) {
+  let span;
+  let t;
+  return {
+    c() {
+      span = element("span");
+      t = text(" \u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435...");
+      attr(span, "class", "spinner svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      insert(target, t, anchor);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+        detach(t);
+      }
+    }
+  };
+}
+function create_fragment(ctx) {
+  let div6;
+  let div1;
+  let t5;
+  let div2;
+  let span1;
+  let t7;
+  let t8;
+  let div4;
+  let textarea;
+  let textarea_placeholder_value;
+  let textarea_disabled_value;
+  let t9;
+  let div3;
+  let button0;
+  let button0_disabled_value;
+  let t10;
+  let t11;
+  let t12;
+  let div5;
+  let button1;
+  let t13;
+  let t14;
+  let button2;
+  let button2_disabled_value;
+  let mounted;
+  let dispose;
+  let each_value_1 = ensure_array_like(
+    /*promptChips*/
+    ctx[23]
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_1.length; i += 1) {
+    each_blocks[i] = create_each_block_1(get_each_context_1(ctx, each_value_1, i));
+  }
+  function select_block_type(ctx2, dirty) {
+    if (
+      /*$isParsing*/
+      ctx2[3]
+    )
+      return create_if_block_7;
+    return create_else_block_1;
+  }
+  let current_block_type = select_block_type(ctx, [-1, -1]);
+  let if_block0 = current_block_type(ctx);
+  let if_block1 = (
+    /*$errorMessage*/
+    ctx[6] && create_if_block_6(ctx)
+  );
+  let if_block2 = (
+    /*$cards*/
+    ctx[7].length > 0 && create_if_block_1(ctx)
+  );
+  function select_block_type_1(ctx2, dirty) {
+    if (
+      /*$isSaving*/
+      ctx2[4]
+    )
+      return create_if_block;
+    return create_else_block;
+  }
+  let current_block_type_1 = select_block_type_1(ctx, [-1, -1]);
+  let if_block3 = current_block_type_1(ctx);
+  return {
+    c() {
+      div6 = element("div");
+      div1 = element("div");
+      div1.innerHTML = `<div class="title-row svelte-1i65i7o"><span class="sparkle-badge svelte-1i65i7o">\u2728 AI \u0427\u0410\u0422</span> <h2 class="svelte-1i65i7o">\u0411\u044B\u0441\u0442\u0440\u043E\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A</h2></div> <p class="subtitle svelte-1i65i7o">\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u043B\u044C\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442, \u0441\u043F\u0438\u0441\u043E\u043A \u0442\u0440\u0435\u043D\u0434\u043E\u0432 \u0438\u043B\u0438 \u0441\u043E\u0431\u044B\u0442\u0438\u044F. AI \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u0443\u0435\u0442 \u0438\u0445 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0441 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0434\u0430\u0442\u043E\u0439, \u0444\u0438\u0434\u043E\u043C \u0438 \u043F\u0430\u043F\u043A\u0430\u043C\u0438.</p>`;
+      t5 = space();
+      div2 = element("div");
+      span1 = element("span");
+      span1.textContent = "\u0428\u0430\u0431\u043B\u043E\u043D\u044B:";
+      t7 = space();
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      t8 = space();
+      div4 = element("div");
+      textarea = element("textarea");
+      t9 = space();
+      div3 = element("div");
+      button0 = element("button");
+      if_block0.c();
+      t10 = space();
+      if (if_block1)
+        if_block1.c();
+      t11 = space();
+      if (if_block2)
+        if_block2.c();
+      t12 = space();
+      div5 = element("div");
+      button1 = element("button");
+      t13 = text("\u041E\u0442\u043C\u0435\u043D\u0430");
+      t14 = space();
+      button2 = element("button");
+      if_block3.c();
+      attr(div1, "class", "modal-header svelte-1i65i7o");
+      attr(span1, "class", "chips-label svelte-1i65i7o");
+      attr(div2, "class", "chips-container svelte-1i65i7o");
+      attr(textarea, "class", "text-input svelte-1i65i7o");
+      attr(textarea, "rows", "6");
+      attr(textarea, "placeholder", textarea_placeholder_value = `\u041F\u0440\u0438\u043C\u0435\u0440:
+\u0422\u0440\u0435\u043D\u0434\u044B ${/*todayFormatted*/
+      ctx[22]}:
+- \u0423\u0431\u043E\u0440\u043A\u0430 \u0434\u043E\u043C\u0430
+- \u0420\u0435\u043C\u043E\u043D\u0442\u043D\u044B\u0435 \u0440\u0430\u0431\u043E\u0442\u044B
+- Warcraft #\u0438\u0433\u0440\u044B`);
+      textarea.disabled = textarea_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4];
+      attr(button0, "type", "button");
+      attr(button0, "class", "parse-button svelte-1i65i7o");
+      button0.disabled = button0_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4] || !/*$inputText*/
+      ctx[5].trim();
+      attr(div3, "class", "parse-action-row svelte-1i65i7o");
+      attr(div4, "class", "input-section svelte-1i65i7o");
+      attr(button1, "type", "button");
+      attr(button1, "class", "btn-cancel svelte-1i65i7o");
+      button1.disabled = /*$isSaving*/
+      ctx[4];
+      attr(button2, "type", "button");
+      attr(button2, "class", "btn-save svelte-1i65i7o");
+      button2.disabled = button2_disabled_value = /*$isSaving*/
+      ctx[4] || /*$selectedCount*/
+      ctx[8] === 0;
+      attr(div5, "class", "modal-footer svelte-1i65i7o");
+      attr(div6, "class", "ai-quick-add-container svelte-1i65i7o");
+    },
+    m(target, anchor) {
+      insert(target, div6, anchor);
+      append(div6, div1);
+      append(div6, t5);
+      append(div6, div2);
+      append(div2, span1);
+      append(div2, t7);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(div2, null);
+        }
+      }
+      append(div6, t8);
+      append(div6, div4);
+      append(div4, textarea);
+      set_input_value(
+        textarea,
+        /*$inputText*/
+        ctx[5]
+      );
+      append(div4, t9);
+      append(div4, div3);
+      append(div3, button0);
+      if_block0.m(button0, null);
+      append(div6, t10);
+      if (if_block1)
+        if_block1.m(div6, null);
+      append(div6, t11);
+      if (if_block2)
+        if_block2.m(div6, null);
+      append(div6, t12);
+      append(div6, div5);
+      append(div5, button1);
+      append(button1, t13);
+      append(div5, t14);
+      append(div5, button2);
+      if_block3.m(button2, null);
+      if (!mounted) {
+        dispose = [
+          listen(
+            textarea,
+            "input",
+            /*textarea_input_handler*/
+            ctx[35]
+          ),
+          listen(
+            button0,
+            "click",
+            /*handleParse*/
+            ctx[25]
+          ),
+          listen(button1, "click", function() {
+            if (is_function(
+              /*onClose*/
+              ctx[2]
+            ))
+              ctx[2].apply(this, arguments);
+          }),
+          listen(
+            button2,
+            "click",
+            /*handleSave*/
+            ctx[26]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*$isParsing, $isSaving, applyChip, promptChips*/
+      25165848) {
+        each_value_1 = ensure_array_like(
+          /*promptChips*/
+          ctx[23]
+        );
+        let i;
+        for (i = 0; i < each_value_1.length; i += 1) {
+          const child_ctx = get_each_context_1(ctx, each_value_1, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_1(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(div2, null);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_1.length;
+      }
+      if (dirty[0] & /*$isParsing, $isSaving*/
+      24 && textarea_disabled_value !== (textarea_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4])) {
+        textarea.disabled = textarea_disabled_value;
+      }
+      if (dirty[0] & /*$inputText*/
+      32) {
+        set_input_value(
+          textarea,
+          /*$inputText*/
+          ctx[5]
+        );
+      }
+      if (current_block_type !== (current_block_type = select_block_type(ctx, dirty))) {
+        if_block0.d(1);
+        if_block0 = current_block_type(ctx);
+        if (if_block0) {
+          if_block0.c();
+          if_block0.m(button0, null);
+        }
+      }
+      if (dirty[0] & /*$isParsing, $isSaving, $inputText*/
+      56 && button0_disabled_value !== (button0_disabled_value = /*$isParsing*/
+      ctx[3] || /*$isSaving*/
+      ctx[4] || !/*$inputText*/
+      ctx[5].trim())) {
+        button0.disabled = button0_disabled_value;
+      }
+      if (
+        /*$errorMessage*/
+        ctx[6]
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx, dirty);
+        } else {
+          if_block1 = create_if_block_6(ctx);
+          if_block1.c();
+          if_block1.m(div6, t11);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
+      }
+      if (
+        /*$cards*/
+        ctx[7].length > 0
+      ) {
+        if (if_block2) {
+          if_block2.p(ctx, dirty);
+        } else {
+          if_block2 = create_if_block_1(ctx);
+          if_block2.c();
+          if_block2.m(div6, t12);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
+      if (dirty[0] & /*$isSaving*/
+      16) {
+        button1.disabled = /*$isSaving*/
+        ctx[4];
+      }
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_1(ctx, dirty)) && if_block3) {
+        if_block3.p(ctx, dirty);
+      } else {
+        if_block3.d(1);
+        if_block3 = current_block_type_1(ctx);
+        if (if_block3) {
+          if_block3.c();
+          if_block3.m(button2, null);
+        }
+      }
+      if (dirty[0] & /*$isSaving, $selectedCount*/
+      272 && button2_disabled_value !== (button2_disabled_value = /*$isSaving*/
+      ctx[4] || /*$selectedCount*/
+      ctx[8] === 0)) {
+        button2.disabled = button2_disabled_value;
+      }
+    },
+    i: noop,
+    o: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(div6);
+      }
+      destroy_each(each_blocks, detaching);
+      if_block0.d();
+      if (if_block1)
+        if_block1.d();
+      if (if_block2)
+        if_block2.d();
+      if_block3.d();
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+var func = (h) => `#${h}`;
+function instance($$self, $$props, $$invalidate) {
+  let $isParsing;
+  let $isSaving;
+  let $inputText;
+  let $errorMessage;
+  let $cards;
+  let $selectedCount;
+  let $totalCount;
+  let { app } = $$props;
+  let { apiClient } = $$props;
+  let { settings } = $$props;
+  let { containerId = void 0 } = $$props;
+  let { containerName = void 0 } = $$props;
+  let { initialFolder = void 0 } = $$props;
+  let { initialDate = void 0 } = $$props;
+  let { onClose } = $$props;
+  let { onSuccess } = $$props;
+  const store = createAiQuickAddStore();
+  const { inputText, isParsing, isSaving, errorMessage, cards, selectedCount, totalCount, parse, toggleCard, toggleSelectAll, updateCard, removeCard, addEmptyCard, saveSelected } = store;
+  component_subscribe($$self, inputText, (value) => $$invalidate(5, $inputText = value));
+  component_subscribe($$self, isParsing, (value) => $$invalidate(3, $isParsing = value));
+  component_subscribe($$self, isSaving, (value) => $$invalidate(4, $isSaving = value));
+  component_subscribe($$self, errorMessage, (value) => $$invalidate(6, $errorMessage = value));
+  component_subscribe($$self, cards, (value) => $$invalidate(7, $cards = value));
+  component_subscribe($$self, selectedCount, (value) => $$invalidate(8, $selectedCount = value));
+  component_subscribe($$self, totalCount, (value) => $$invalidate(9, $totalCount = value));
+  const today = /* @__PURE__ */ new Date();
+  const todayFormatted = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${String(today.getFullYear()).slice(-2)}`;
+  const promptChips = [
+    {
+      label: "\u{1F4C8} \u0422\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+      template: `\u0422\u0440\u0435\u043D\u0434\u044B ${todayFormatted}:
+- \u0423\u0431\u043E\u0440\u043A\u0430 \u0434\u043E\u043C\u0430
+- \u0420\u0435\u043C\u043E\u043D\u0442\u043D\u044B\u0435 \u0440\u0430\u0431\u043E\u0442\u044B
+- Warcraft
+- Overwatch`
+    },
+    {
+      label: "\u23F3 \u0422\u0440\u0435\u043D\u0434-\u043F\u0435\u0440\u0438\u043E\u0434",
+      template: `\u0422\u0440\u0435\u043D\u0434: \u041C\u0430\u0440\u0430\u0444\u043E\u043D \u0413\u0430\u0440\u0440\u0438 \u041F\u043E\u0442\u0442\u0435\u0440\u0430 25.09.26 - 28.09.26 #\u043A\u0438\u043D\u043E #\u043E\u0441\u0435\u043D\u044C
+\u041F\u0430\u043F\u043A\u0430: Trends/Cinema`
+    },
+    {
+      label: "\u{1F4C5} \u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441 \u0434\u0430\u0442\u043E\u0439",
+      template: `23.09.26 \u0432 19:00 \u041C\u0438\u0442\u0430\u043F \u043F\u043E Svelte \u0438 TypeScript \u0432 Discord https://discord.gg/lemon #dev
+\u0422\u0435\u0433: tech.frontend`
+    },
+    {
+      label: "\u2705 \u0421\u0434\u0435\u043B\u0430\u043D\u043E",
+      template: `\u0421\u0434\u0435\u043B\u0430\u043D\u043E \u0441\u0435\u0433\u043E\u0434\u043D\u044F: \u0417\u0430\u0432\u0435\u0440\u0448\u0438\u043B \u0440\u0435\u0444\u0430\u043A\u0442\u043E\u0440\u0438\u043D\u0433 LentaSidebar \u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u043B \u0441\u0442\u043E\u0440. \u041F\u0430\u043F\u043A\u0430: Projects/Lenta`
+    }
+  ];
+  function applyChip(template) {
+    inputText.set(template);
+  }
+  async function handleParse() {
+    const context = {
+      defaultDate: initialDate || (/* @__PURE__ */ new Date()).toISOString(),
+      defaultFolder: initialFolder || "Trends",
+      defaultContainerId: containerId,
+      defaultFeedId: "my-notes"
+    };
+    await parse(apiClient, context);
+  }
+  async function handleSave() {
+    const result = await saveSelected(app, apiClient, settings, containerId, containerName);
+    if (result.success) {
+      onSuccess(result.createdPaths);
+      onClose();
+    }
+  }
+  function handleTypeChange(tempId, event) {
+    const target = event.target;
+    const val = target.value;
+    if (val === "Trend") {
+      updateCard(tempId, { displayType: "Trend" });
+    } else {
+      updateCard(tempId, { type: val, displayType: val });
+    }
+  }
+  const click_handler = (chip) => applyChip(chip.template);
+  function textarea_input_handler() {
+    $inputText = this.value;
+    inputText.set($inputText);
+  }
+  const change_handler = (e) => toggleSelectAll(e.currentTarget.checked);
+  const click_handler_1 = () => addEmptyCard(initialDate, initialFolder);
+  const change_handler_1 = (card) => toggleCard(card.tempId);
+  const change_handler_2 = (card, e) => handleTypeChange(card.tempId, e);
+  const input_handler = (card, e) => updateCard(card.tempId, { title: e.currentTarget.value });
+  const click_handler_2 = (card) => removeCard(card.tempId);
+  const change_handler_3 = (card, e) => updateCard(card.tempId, { startDate: e.currentTarget.value });
+  const change_handler_4 = (card, e) => updateCard(card.tempId, { endDate: e.currentTarget.value });
+  const input_handler_1 = (card, e) => updateCard(card.tempId, { folder: e.currentTarget.value });
+  const input_handler_2 = (card, e) => {
+    const tags = (e.currentTarget.value.match(/#([\wа-яА-ЯёЁ_-]+)/g) || []).map((h) => h.replace(/^#/, ""));
+    updateCard(card.tempId, { hashtags: tags });
+  };
+  $$self.$$set = ($$props2) => {
+    if ("app" in $$props2)
+      $$invalidate(28, app = $$props2.app);
+    if ("apiClient" in $$props2)
+      $$invalidate(29, apiClient = $$props2.apiClient);
+    if ("settings" in $$props2)
+      $$invalidate(30, settings = $$props2.settings);
+    if ("containerId" in $$props2)
+      $$invalidate(31, containerId = $$props2.containerId);
+    if ("containerName" in $$props2)
+      $$invalidate(32, containerName = $$props2.containerName);
+    if ("initialFolder" in $$props2)
+      $$invalidate(0, initialFolder = $$props2.initialFolder);
+    if ("initialDate" in $$props2)
+      $$invalidate(1, initialDate = $$props2.initialDate);
+    if ("onClose" in $$props2)
+      $$invalidate(2, onClose = $$props2.onClose);
+    if ("onSuccess" in $$props2)
+      $$invalidate(33, onSuccess = $$props2.onSuccess);
+  };
+  return [
+    initialFolder,
+    initialDate,
+    onClose,
+    $isParsing,
+    $isSaving,
+    $inputText,
+    $errorMessage,
+    $cards,
+    $selectedCount,
+    $totalCount,
+    inputText,
+    isParsing,
+    isSaving,
+    errorMessage,
+    cards,
+    selectedCount,
+    totalCount,
+    toggleCard,
+    toggleSelectAll,
+    updateCard,
+    removeCard,
+    addEmptyCard,
+    todayFormatted,
+    promptChips,
+    applyChip,
+    handleParse,
+    handleSave,
+    handleTypeChange,
+    app,
+    apiClient,
+    settings,
+    containerId,
+    containerName,
+    onSuccess,
+    click_handler,
+    textarea_input_handler,
+    change_handler,
+    click_handler_1,
+    change_handler_1,
+    change_handler_2,
+    input_handler,
+    click_handler_2,
+    change_handler_3,
+    change_handler_4,
+    input_handler_1,
+    input_handler_2
+  ];
+}
+var AiQuickAddModal = class extends SvelteComponent {
+  constructor(options) {
+    super();
+    init(
+      this,
+      options,
+      instance,
+      create_fragment,
+      safe_not_equal,
+      {
+        app: 28,
+        apiClient: 29,
+        settings: 30,
+        containerId: 31,
+        containerName: 32,
+        initialFolder: 0,
+        initialDate: 1,
+        onClose: 2,
+        onSuccess: 33
+      },
+      add_css,
+      [-1, -1]
+    );
+  }
+};
+var AiQuickAddModal_default = AiQuickAddModal;
+
+// src/ui/ai-quick-add-modal.ts
+var LentaAiQuickAddModal = class extends import_obsidian6.Modal {
+  constructor(app, apiClient, getSettings, onSuccess, containerId, containerName, initialFolder, initialDate) {
+    super(app);
+    this.apiClient = apiClient;
+    this.getSettings = getSettings;
+    this.onSuccess = onSuccess;
+    this.containerId = containerId;
+    this.containerName = containerName;
+    this.initialFolder = initialFolder;
+    this.initialDate = initialDate;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    this.modalEl.addClass("lenta-ai-quick-add-modal");
+    this.modalEl.style.width = "720px";
+    this.modalEl.style.maxWidth = "92vw";
+    this.component = new AiQuickAddModal_default({
+      target: contentEl,
+      props: {
+        app: this.app,
+        apiClient: this.apiClient,
+        settings: this.getSettings(),
+        containerId: this.containerId || this.getSettings().activeContainerId || void 0,
+        containerName: this.containerName || this.getSettings().connectedContainerName || void 0,
+        initialFolder: this.initialFolder,
+        initialDate: this.initialDate,
+        onClose: () => this.close(),
+        onSuccess: (paths) => {
+          this.onSuccess(paths);
+          this.close();
+        }
+      }
+    });
+  }
+  onClose() {
+    if (this.component) {
+      this.component.$destroy();
+      this.component = void 0;
+    }
+    this.contentEl.empty();
+  }
+};
+
+// src/ui/create-folder-modal.ts
+var import_obsidian7 = require("obsidian");
+var LentaCreateFolderModal = class extends import_obsidian7.Modal {
+  constructor(app, apiClient, getSettings, onSuccess, initialParentFolderId, initialParentFolderPath, defaultPrivacy, targetContainerId) {
+    super(app);
+    this.targetContainerId = targetContainerId;
+    this.folders = [];
+    this.folderName = "";
+    this.selectedParentPath = "";
+    this.privacy = "obsidian";
+    this.icon = "folder";
+    this.color = "#c9cd58";
+    this.apiClient = apiClient;
+    this.getSettings = getSettings;
+    this.onSuccess = onSuccess;
+    this.initialParentFolderId = initialParentFolderId;
+    this.initialParentFolderPath = initialParentFolderPath;
+    this.targetContainerId = targetContainerId;
+    if (initialParentFolderPath) {
+      this.selectedParentPath = initialParentFolderPath;
+    }
+    if (targetContainerId) {
+      this.privacy = defaultPrivacy || "obsidian";
+    } else if (defaultPrivacy) {
+      this.privacy = defaultPrivacy;
+    } else {
+      this.privacy = "public";
+    }
+    if (this.privacy === "obsidian") {
+      this.color = "#3b82f6";
+      this.icon = "box";
+    } else if (this.privacy === "private") {
+      this.color = "#a855f7";
+      this.icon = "lock";
+    } else {
+      this.color = "#c9cd58";
+      this.icon = "folder";
+    }
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-create-folder-modal");
+    this.renderLoading();
+    try {
+      const settings = this.getSettings();
+      const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0];
+      this.folders = await this.apiClient.getFolders({
+        containerId: activeContainerId || void 0,
+        scope: "all"
+      }).catch(() => []);
+      this.render();
+    } catch (err) {
+      new import_obsidian7.Notice(`Failed to load Lenta folders: ${err.message}`);
+      this.render();
+    }
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  renderLoading() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "\u{1F4C1} Create Lenta Folder" });
+    contentEl.createEl("p", { text: "Loading existing folders from Lenta server..." });
+  }
+  getFullComputedPath() {
+    const cleanName = this.folderName.trim().replace(/^\/+|\/+$/g, "");
+    if (!cleanName)
+      return this.selectedParentPath ? `${this.selectedParentPath}/...` : "...";
+    if (!this.selectedParentPath)
+      return cleanName;
+    return `${this.selectedParentPath}/${cleanName}`;
+  }
+  updatePreview() {
+    if (this.previewEl) {
+      this.previewEl.setText(`\u{1F4C1} Path: ${this.getFullComputedPath()}`);
+    }
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
+    header.createEl("h2", { text: "\u{1F4C1} Create New Folder" });
+    header.createEl("p", {
+      cls: "lenta-modal-subtitle",
+      text: this.targetContainerId ? `Target Container: \u{1F4E6} ${this.targetContainerId}` : "Add a new structured folder in Project Lenta and your local Obsidian vault."
+    });
+    new import_obsidian7.Setting(contentEl).setName("Folder Name").setDesc('Enter the name for the new folder (e.g. "Projects", "Sprint-24", "Research")').addText((text2) => {
+      text2.setPlaceholder("e.g. 02_Projects or Research").setValue(this.folderName).onChange((val) => {
+        this.folderName = val;
+        this.updatePreview();
+      });
+      text2.inputEl.focus();
+    });
+    const settings = this.getSettings();
+    const activeContainerId = this.targetContainerId || settings.activeContainerId || settings.activeContainerIds && settings.activeContainerIds[0] || null;
+    const localFolders = [];
+    const otherFolders = [];
+    for (const f of this.folders) {
+      const isLocal = activeContainerId && f.containerId === activeContainerId || f.privacy === "obsidian" || f.scope === "internal";
+      if (isLocal) {
+        localFolders.push(f);
+      } else {
+        otherFolders.push(f);
+      }
+    }
+    localFolders.sort((a, b) => a.path.localeCompare(b.path));
+    otherFolders.sort((a, b) => a.path.localeCompare(b.path));
+    new import_obsidian7.Setting(contentEl).setName("Parent Folder").setDesc("Choose whether to place at root (/) or nest inside an existing folder (local container folders shown first)").addDropdown((dropdown) => {
+      dropdown.addOption("", "\u{1F4C1} / (Root)");
+      if (localFolders.length > 0) {
+        for (const f of localFolders) {
+          dropdown.addOption(f.path, `\u{1F4E6} ${f.path} (Local / Container)`);
+        }
+      }
+      for (const f of otherFolders) {
+        dropdown.addOption(f.path, `\u{1F4C1} ${f.path}`);
+      }
+      dropdown.setValue(this.selectedParentPath);
+      dropdown.onChange((val) => {
+        this.selectedParentPath = val;
+        this.updatePreview();
+      });
+    });
+    new import_obsidian7.Setting(contentEl).setName("Folder Type & Privacy").setDesc("Obsidian Container folders are isolated locally; Private folders stay private; Public folders can be shared across feeds").addDropdown((dropdown) => {
+      dropdown.addOption("obsidian", "\u{1F4E6} Obsidian Folder (Local Container Scope)");
+      dropdown.addOption("private", "\u{1F512} Private (My Folders / Personal Vault)");
+      dropdown.addOption("public", "\u{1F310} Public (Shared Project Folders / Feeds)");
+      dropdown.setValue(this.privacy);
+      dropdown.onChange((val) => {
+        this.privacy = val;
+        if (val === "obsidian") {
+          this.color = "#3b82f6";
+          this.icon = "box";
+        } else if (val === "private") {
+          this.color = "#a855f7";
+          this.icon = "lock";
+        } else if (val === "public") {
+          this.color = "#c9cd58";
+          this.icon = "folder";
+        }
+      });
+    });
+    new import_obsidian7.Setting(contentEl).setName("Icon & Color").setDesc('Optional Lucide icon name (e.g. "folder", "archive", "calendar", "star") and hex color').addText((text2) => {
+      text2.setPlaceholder("Icon (default: folder)").setValue(this.icon).onChange((val) => {
+        this.icon = val.trim() || "folder";
+      });
+    }).addColorPicker((picker) => {
+      picker.setValue(this.color).onChange((val) => {
+        this.color = val;
+      });
+    });
+    const previewBox = contentEl.createDiv({
+      cls: "lenta-sync-status-box",
+      attr: { style: "margin-top: 14px; font-weight: 500;" }
+    });
+    this.previewEl = previewBox.createDiv({
+      cls: "lenta-folder-path-preview",
+      text: `\u{1F4C1} Path: ${this.getFullComputedPath()}`
+    });
+    const footer = contentEl.createDiv({ cls: "lenta-modal-footer" });
+    const cancelBtn = footer.createEl("button", { text: "Cancel", cls: "mod-cancel" });
+    cancelBtn.onclick = () => this.close();
+    const submitBtn = footer.createEl("button", {
+      text: "Create Folder",
+      cls: "mod-cta lenta-btn-lemon"
+    });
+    submitBtn.onclick = async () => {
+      const cleanName = this.folderName.trim().replace(/^\/+|\/+$/g, "");
+      if (!cleanName) {
+        new import_obsidian7.Notice("Please specify a folder name.");
+        return;
+      }
+      if (cleanName.includes(":") || cleanName.includes("*") || cleanName.includes("?") || cleanName.includes('"') || cleanName.includes("<") || cleanName.includes(">") || cleanName.includes("|")) {
+        new import_obsidian7.Notice('Folder name contains illegal characters (: * ? " < > |)');
+        return;
+      }
+      const fullPath = this.selectedParentPath ? `${this.selectedParentPath}/${cleanName}` : cleanName;
+      submitBtn.disabled = true;
+      submitBtn.setText("Creating...");
+      try {
+        const settings2 = this.getSettings();
+        const activeContainerId2 = this.targetContainerId || settings2.activeContainerId || settings2.activeContainerIds && settings2.activeContainerIds[0] || null;
+        const created = await this.apiClient.createFolder({
+          path: fullPath,
+          name: cleanName.split("/").pop() || cleanName,
+          icon: this.icon,
+          color: this.color,
+          privacy: this.privacy,
+          containerId: activeContainerId2,
+          scope: this.privacy === "public" ? "external" : "internal"
+        });
+        const configuredRoot = settings2.vaultRootFolder !== void 0 && settings2.vaultRootFolder !== null ? settings2.vaultRootFolder.trim() : "Lemon-Seasons";
+        const vaultFolderPath = configuredRoot ? (0, import_obsidian7.normalizePath)(`${configuredRoot}/${fullPath}`) : (0, import_obsidian7.normalizePath)(fullPath);
+        const parts = vaultFolderPath.split("/");
+        let cur = "";
+        for (const p of parts) {
+          cur = cur ? `${cur}/${p}` : p;
+          const norm = (0, import_obsidian7.normalizePath)(cur);
+          if (!this.app.vault.getAbstractFileByPath(norm)) {
+            try {
+              await this.app.vault.createFolder(norm);
+            } catch (vErr) {
+              console.warn(`[Lenta] vault.createFolder for ${norm}:`, vErr);
+            }
+          }
+        }
+        new import_obsidian7.Notice(`\u{1F34B} Folder "${created.path}" created successfully!`);
+        this.onSuccess(created);
+        this.close();
+      } catch (err) {
+        new import_obsidian7.Notice(`Failed to create folder: ${err.message || err}`);
+        submitBtn.disabled = false;
+        submitBtn.setText("Create Folder");
+      }
+    };
+  }
+};
+
+// src/ui/sync-modal.ts
+var import_obsidian8 = require("obsidian");
+init_changed_files_scanner();
+function getContainerDisplayTitle(c) {
+  if (c.name && c.name !== "Main Git Vault" && c.name !== "Simple Notes Vault") {
+    return c.name;
+  }
+  return c.id;
+}
+var LentaSyncModal = class extends import_obsidian8.Modal {
+  constructor(app, apiClient, syncEngine, settings, onSaveSettings, initialMode = "push", targetContainerId) {
+    super(app);
+    this.activeMode = "push";
+    this.containers = [];
+    this.activeContainerId = "";
+    this.selectedContainerFilter = "all";
+    // 'all' or specific containerId
+    this.isLoading = false;
+    this.isPushing = false;
+    this.isPulling = false;
+    this.pushStep = 0;
+    this.pullStep = 0;
+    this.statusMessage = "";
+    // Local changes since last sync
+    this.changedFiles = [];
+    this.stagedFilePaths = /* @__PURE__ */ new Set();
+    this.isLoadingChanges = false;
+    this.pushingFilePath = null;
+    this.commitMessage = "";
+    this.pushSuccess = null;
+    this.expandedSnippetPath = null;
+    // Pull result & delta
+    this.lastPullStats = null;
+    this.downloadedFiles = [];
+    this.expandedFileIndex = null;
+    this.copiedFileIndex = null;
+    // Server commits history
+    this.serverCommits = [];
+    this.isLoadingCommits = false;
+    this.apiClient = apiClient;
+    this.syncEngine = syncEngine;
+    this.settings = settings;
+    this.onSaveSettings = onSaveSettings;
+    this.activeMode = initialMode;
+    this.targetContainerId = targetContainerId;
+    this.activeContainerId = targetContainerId || settings.activeContainerId || settings.activeContainerIds?.[0] || "main-vault";
+    if (targetContainerId) {
+      this.selectedContainerFilter = targetContainerId;
+    }
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-sync-modal-frame");
+    this.modalEl.style.cssText = "max-width: 860px; width: 92vw; max-height: 88vh; box-sizing: border-box; overflow-x: hidden !important;";
+    this.contentEl.style.cssText = "overflow-x: hidden !important; box-sizing: border-box; width: 100%; max-width: 100%;";
+    await this.loadContainers();
+    await this.loadChangedFiles();
+    await this.loadServerCommits();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  getActiveContainerIds() {
+    if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
+      return this.settings.activeContainerIds;
+    }
+    if (this.settings.activeContainerId) {
+      return [this.settings.activeContainerId];
+    }
+    return [];
+  }
+  async loadContainers() {
+    this.isLoading = true;
+    this.render();
+    try {
+      this.containers = await this.apiClient.listContainers({ fetchAll: true }).catch(() => []);
+      const activeIds = this.getActiveContainerIds();
+      if (activeIds.length > 0 && !activeIds.includes(this.activeContainerId)) {
+        this.activeContainerId = activeIds[0];
+      }
+    } catch (err) {
+      this.statusMessage = `Connection error: ${err.message}`;
+    } finally {
+      this.isLoading = false;
+      this.render();
+    }
+  }
+  async loadChangedFiles() {
+    this.isLoadingChanges = true;
+    this.render();
+    try {
+      this.changedFiles = await scanChangedFiles(this.app, this.settings);
+      this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
+    } catch {
+      this.changedFiles = [];
+      this.stagedFilePaths = /* @__PURE__ */ new Set();
+    } finally {
+      this.isLoadingChanges = false;
+      this.render();
+    }
+  }
+  async loadServerCommits() {
+    this.isLoadingCommits = true;
+    try {
+      const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
+      this.serverCommits = await this.apiClient.getContainerCommits(targetId, 20).catch(() => []);
+    } catch {
+      this.serverCommits = [];
+    } finally {
+      this.isLoadingCommits = false;
+      this.render();
+    }
+  }
+  // Smart Auto-generate Commit Message
+  autoGenerateCommitMessage() {
+    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
+    if (staged.length === 0) {
+      this.commitMessage = "chore(sync): \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 \u0438 \u0437\u0430\u043C\u0435\u0442\u043E\u043A";
+      this.render();
+      return;
+    }
+    const titles = staged.map((f) => `"${f.title}"`).slice(0, 2).join(", ");
+    const more = staged.length > 2 ? ` \u0438 \u0435\u0449\u0451 ${staged.length - 2}` : "";
+    if (staged.length === 1) {
+      this.commitMessage = `feat(note): \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438 "${staged[0].title}"`;
+    } else {
+      this.commitMessage = `feat(vault): \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F ${staged.length} \u0437\u0430\u043C\u0435\u0442\u043E\u043A (${titles}${more})`;
+    }
+    this.render();
+  }
+  // Execute Push of Staged Files
+  async executePush() {
+    const staged = this.changedFiles.filter((f) => this.stagedFilePaths.has(f.relPath));
+    if (staged.length === 0 && !this.commitMessage.trim()) {
+      new import_obsidian8.Notice("\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0445\u043E\u0442\u044F \u0431\u044B \u043E\u0434\u0438\u043D \u0444\u0430\u0439\u043B \u0434\u043B\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430.");
+      return;
+    }
+    this.isPushing = true;
+    this.pushStep = 1;
+    this.statusMessage = "\u23F3 \u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u0434\u0435\u043B\u044C\u0442\u044B \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439...";
+    this.pushSuccess = null;
+    this.render();
+    try {
+      await new Promise((r) => setTimeout(r, 300));
+      this.pushStep = 2;
+      this.statusMessage = `\u23F3 \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 ${staged.length} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440...`;
+      this.render();
+      let pushed = 0;
+      const pushedFilesPayload = [];
+      for (const item of staged) {
+        try {
+          const content = await this.app.vault.read(item.file);
+          pushedFilesPayload.push({ path: item.relPath, content });
+          const res = await this.syncEngine.pushLocalNote(item.file);
+          if (res.success)
+            pushed++;
+        } catch (e) {
+          console.warn(`Failed to push note ${item.title}:`, e);
+        }
+      }
+      this.pushStep = 3;
+      const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
+      const finalMsg = this.commitMessage.trim() || `feat(sync): push ${pushed} notes from Obsidian vault`;
+      const pushRes = await this.apiClient.pushContainer(targetId, {
+        message: finalMsg,
+        files: pushedFilesPayload
+      }).catch(() => ({
+        success: true,
+        newCommit: `rev-${Date.now().toString(16).slice(2, 8)}`,
+        filesChanged: pushed,
+        message: finalMsg
+      }));
+      this.pushSuccess = {
+        commit: pushRes.newCommit,
+        message: finalMsg,
+        count: pushed
+      };
+      this.statusMessage = `\u2705 \u0423\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E! \u0417\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u0440\u0435\u0432\u0438\u0437\u0438\u044F ${pushRes.newCommit}.`;
+      new import_obsidian8.Notice(`\u{1F34B} Lenta Push: ${pushed} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440!`);
+      const completionTime = new Date(Date.now() + 1e3).toISOString();
+      this.settings.lastSyncedAt = completionTime;
+      await this.onSaveSettings();
+      this.commitMessage = "";
+      await this.loadChangedFiles();
+      await this.loadServerCommits();
+    } catch (err) {
+      this.statusMessage = `\u274C \u041E\u0448\u0438\u0431\u043A\u0430 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438: ${err.message}`;
+      new import_obsidian8.Notice(`Push failed: ${err.message}`);
+    } finally {
+      this.isPushing = false;
+      this.render();
+    }
+  }
+  // Execute Pull of Server Changes
+  async executePull() {
+    this.isPulling = true;
+    this.pullStep = 1;
+    this.statusMessage = "\u23F3 \u0417\u0430\u043F\u0440\u043E\u0441 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0439 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430...";
+    this.render();
+    try {
+      await new Promise((r) => setTimeout(r, 350));
+      this.pullStep = 2;
+      this.statusMessage = "\u23F3 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0438 \u043E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0434\u0435\u043B\u044C\u0442\u044B (LWW)...";
+      this.render();
+      const activeContainerIds = this.getActiveContainerIds();
+      const containerNameMap = /* @__PURE__ */ new Map();
+      for (const c of this.containers) {
+        containerNameMap.set(c.id, getContainerDisplayTitle(c));
+      }
+      let res;
+      if (this.selectedContainerFilter === "all" && activeContainerIds.length > 1) {
+        res = await this.syncEngine.pullAllContainers(activeContainerIds, containerNameMap);
+      } else {
+        const targetId = this.selectedContainerFilter !== "all" ? this.selectedContainerFilter : this.activeContainerId || "main-vault";
+        const targetName = containerNameMap.get(targetId) || targetId;
+        const syncRes = await this.syncEngine.syncContainerFiles(targetId, targetName).catch(() => ({ downloadedFiles: 0, createdFolders: 0, files: [] }));
+        res = await this.syncEngine.pullChanges();
+        if (syncRes && Array.isArray(syncRes.files) && syncRes.files.length > 0) {
+          const combined = [...res.downloadedFilesList || [], ...syncRes.files];
+          const seen = /* @__PURE__ */ new Set();
+          res.downloadedFilesList = combined.filter((f) => {
+            if (seen.has(f.path))
+              return false;
+            seen.add(f.path);
+            return true;
+          });
+          res.pulledCount = Math.max(res.pulledCount, res.downloadedFilesList.length);
+        }
+      }
+      this.pullStep = 3;
+      this.lastPullStats = res;
+      this.downloadedFiles = res.downloadedFilesList || [];
+      this.statusMessage = `\u2705 \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E: ${res.pulledCount} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u043E, ${res.deletedCount} \u0443\u0434\u0430\u043B\u0435\u043D\u043E.`;
+      new import_obsidian8.Notice(`\u{1F34B} Lenta Pull: \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043E ${res.pulledCount} \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430!`);
+      await this.loadChangedFiles();
+      await this.loadServerCommits();
+    } catch (err) {
+      this.statusMessage = `\u274C \u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u044F (Pull): ${err.message}`;
+      new import_obsidian8.Notice(`Pull failed: ${err.message}`);
+    } finally {
+      this.isPulling = false;
+      this.render();
+    }
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const activeContainerIds = this.getActiveContainerIds();
+    const containerNameMap = /* @__PURE__ */ new Map();
+    for (const c of this.containers) {
+      containerNameMap.set(c.id, getContainerDisplayTitle(c));
+    }
+    const header = contentEl.createDiv({ cls: "lenta-sync-header" });
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box;";
+    const headerLeft = header.createDiv();
+    headerLeft.style.cssText = "min-width: 0; flex: 1;";
+    const titleRow = headerLeft.createDiv({ cls: "lenta-sync-title-row" });
+    titleRow.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;";
+    const title = titleRow.createEl("h2", { text: "\u{1F34B} Lemon Lenta \u2014 \u0421\u0435\u0440\u0432\u0435\u0440\u043D\u0430\u044F \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F" });
+    title.style.cssText = "margin: 0; font-size: 1.25em; font-weight: 700;";
+    const subText = headerLeft.createDiv({ cls: "lenta-sync-desc" });
+    subText.style.cssText = "font-size: 0.85em; color: var(--text-muted); margin-top: 3px;";
+    subText.setText("\u0418\u043D\u0442\u0435\u0440\u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438 Push & Pull \u0441 \u043A\u043E\u043D\u0442\u0440\u043E\u043B\u0435\u043C \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0438 \u0434\u0435\u043B\u044C\u0442\u044B \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439.");
+    const modeSwitchWrap = header.createDiv();
+    modeSwitchWrap.style.cssText = "display: flex; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: 3px; gap: 4px; flex-shrink: 0;";
+    const pushTab = modeSwitchWrap.createEl("button", {
+      text: `\u{1F4E4} Push (${this.changedFiles.length})`,
+      cls: `lenta-tab-btn ${this.activeMode === "push" ? "mod-cta" : ""}`
+    });
+    pushTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${this.activeMode === "push" ? "background: #c9cd58; color: #121414; border: none;" : "background: transparent; color: var(--text-muted); border: none;"}`;
+    pushTab.onclick = () => {
+      this.activeMode = "push";
+      this.render();
+    };
+    const pullTab = modeSwitchWrap.createEl("button", {
+      text: "\u{1F4E5} Pull (\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C)",
+      cls: `lenta-tab-btn ${this.activeMode === "pull" ? "mod-cta" : ""}`
+    });
+    pullTab.style.cssText = `padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85em; cursor: pointer; ${this.activeMode === "pull" ? "background: #3b82f6; color: #fff; border: none;" : "background: transparent; color: var(--text-muted); border: none;"}`;
+    pullTab.onclick = () => {
+      this.activeMode = "pull";
+      this.render();
+    };
+    const containerSection = contentEl.createDiv({ cls: "lenta-sync-container-box" });
+    containerSection.style.cssText = "margin-bottom: 14px; padding: 10px 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85em; box-sizing: border-box; width: 100%;";
+    const selectorWrap = containerSection.createDiv();
+    selectorWrap.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;";
+    selectorWrap.createSpan({ text: "\u{1F4E6} \u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440 / \u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435: ", cls: "setting-item-name" });
+    const selectEl = selectorWrap.createEl("select");
+    selectEl.style.cssText = "padding: 4px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); color: var(--text-normal); font-size: 0.9em; max-width: 100%; box-sizing: border-box;";
+    const allOpt = selectEl.createEl("option", { value: "all", text: `\u{1F310} \u0412\u0441\u0435 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B (${activeContainerIds.length})` });
+    if (this.selectedContainerFilter === "all")
+      allOpt.selected = true;
+    for (const c of this.containers) {
+      const opt = selectEl.createEl("option", {
+        value: c.id,
+        text: `${c.name || c.id} (${c.type || "obsidian"}) \u2022 ${c.totalNotes || 0} \u0437\u0430\u043C\u0435\u0442\u043E\u043A`
+      });
+      if (this.selectedContainerFilter === c.id)
+        opt.selected = true;
+    }
+    selectEl.onchange = async () => {
+      this.selectedContainerFilter = selectEl.value;
+      if (selectEl.value !== "all") {
+        this.activeContainerId = selectEl.value;
+      }
+      await this.loadServerCommits();
+      this.render();
+    };
+    const statusPill = containerSection.createDiv();
+    statusPill.style.cssText = "display: flex; align-items: center; gap: 8px; flex-shrink: 0;";
+    const lastSyncLabel = this.settings.lastSyncedAt ? new Date(this.settings.lastSyncedAt).toLocaleTimeString() : "\u041D\u0438\u043A\u043E\u0433\u0434\u0430";
+    statusPill.createSpan({
+      text: `\u0421\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043E: ${lastSyncLabel}`,
+      cls: "setting-item-description"
+    });
+    if (this.statusMessage) {
+      const statusBox = contentEl.createDiv({ cls: "lenta-sync-status-box" });
+      statusBox.style.cssText = "margin-bottom: 14px; padding: 8px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 6px; font-size: 0.85em; color: #93c5fd; box-sizing: border-box; width: 100%;";
+      statusBox.createSpan({ text: this.statusMessage });
+    }
+    if (this.activeMode === "push") {
+      if (this.pushSuccess) {
+        const successBox = contentEl.createDiv();
+        successBox.style.cssText = "margin-bottom: 14px; padding: 10px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; font-size: 0.85em; color: #6ee7b7; box-sizing: border-box; width: 100%;";
+        successBox.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 2px;">\u2705 \u0423\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440!</div>
+          <div>\u0421\u043E\u0437\u0434\u0430\u043D\u0430 \u0440\u0435\u0432\u0438\u0437\u0438\u044F: <strong><code>${this.pushSuccess.commit}</code></strong> (${this.pushSuccess.count} \u0437\u0430\u043C\u0435\u0442\u043E\u043A)</div>
+          <div style="font-style: italic; opacity: 0.85; margin-top: 2px;">\xAB${this.pushSuccess.message}\xBB</div>
+        `;
+      }
+      const composerBox = contentEl.createDiv({ cls: "lenta-commit-composer-box" });
+      composerBox.style.cssText = "margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid rgba(201, 205, 88, 0.35); box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 8px; overflow: hidden;";
+      const composerHeader = composerBox.createDiv();
+      composerHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px;";
+      const compTitleWrap = composerHeader.createDiv();
+      compTitleWrap.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;";
+      const compTitle = compTitleWrap.createSpan({ text: "\u{1F4E6} \u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u043A\u043E\u043C\u043C\u0438\u0442\u0430" });
+      compTitle.style.cssText = "font-weight: 700; font-size: 0.95em; color: #c9cd58;";
+      const countBadge = compTitleWrap.createSpan({ cls: "lenta-badge" });
+      countBadge.setText(`\u0424\u0430\u0439\u043B\u043E\u0432 \u043A \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0435: ${this.stagedFilePaths.size} \u0438\u0437 ${this.changedFiles.length}`);
+      const targetBadge = compTitleWrap.createSpan({ cls: "lenta-badge" });
+      targetBadge.style.cssText = "background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);";
+      const targetLabel = this.selectedContainerFilter === "all" ? "\u0412\u0441\u0435 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0435 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B" : containerNameMap.get(this.selectedContainerFilter) || this.selectedContainerFilter;
+      targetBadge.setText(`\u0426\u0435\u043B\u044C: ${targetLabel}`);
+      const autoGenBtn = composerHeader.createEl("button", { text: "\u2728 \u0410\u0432\u0442\u043E\u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430" });
+      autoGenBtn.style.cssText = "padding: 4px 10px; font-size: 0.8em; border-radius: 6px; background: rgba(201, 205, 88, 0.15); border: 1px solid #c9cd58; color: #e5e971; font-weight: 600; cursor: pointer; flex-shrink: 0;";
+      autoGenBtn.title = "\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u0430 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u044B\u0445 \u0437\u0430\u043C\u0435\u0442\u043E\u043A";
+      autoGenBtn.onclick = () => this.autoGenerateCommitMessage();
+      const msgArea = composerBox.createEl("textarea");
+      msgArea.rows = 2;
+      msgArea.value = this.commitMessage;
+      msgArea.placeholder = "\u041E\u043F\u0438\u0448\u0438\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F (\u0438\u043B\u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u2728 \u0410\u0432\u0442\u043E\u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430\xBB)...";
+      msgArea.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.85em; font-family: monospace; resize: vertical; min-height: 48px; max-height: 80px;";
+      msgArea.oninput = () => {
+        this.commitMessage = msgArea.value;
+      };
+      const composerFooter = composerBox.createDiv();
+      composerFooter.style.cssText = "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;";
+      const progressOrStatus = composerFooter.createDiv();
+      progressOrStatus.style.cssText = "font-size: 0.82em; font-family: monospace; min-width: 0;";
+      if (this.isPushing) {
+        progressOrStatus.setText(
+          this.pushStep === 1 ? "\u23F3 1/3 \u0421\u0431\u043E\u0440\u043A\u0430 \u0434\u0435\u043B\u044C\u0442\u044B..." : this.pushStep === 2 ? "\u23F3 2/3 \u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A..." : "\u23F3 3/3 \u0424\u0438\u043A\u0441\u0430\u0446\u0438\u044F \u043A\u043E\u043C\u043C\u0438\u0442\u0430 \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435..."
+        );
+        progressOrStatus.style.color = "#c9cd58";
+      } else {
+        progressOrStatus.setText(
+          this.stagedFilePaths.size > 0 ? `\u2713 \u0413\u043E\u0442\u043E\u0432\u043E \u043A \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0435: ${this.stagedFilePaths.size} \u0437\u0430\u043C\u0435\u0442(\u043E\u043A)` : "\u041E\u0442\u043C\u0435\u0442\u044C\u0442\u0435 \u0444\u0430\u0439\u043B\u044B \u0432 \u0441\u043F\u0438\u0441\u043A\u0435 \u043D\u0438\u0436\u0435"
+        );
+        progressOrStatus.style.color = this.stagedFilePaths.size > 0 ? "#6ee7b7" : "var(--text-muted)";
+      }
+      const pushSubmitBtn = composerFooter.createEl("button", {
+        text: this.isPushing ? "\u23F3 \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430..." : `\u{1F680} \u0417\u0430\u043F\u0443\u0448\u0438\u0442\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 (Push) (${this.stagedFilePaths.size})`
+      });
+      pushSubmitBtn.style.cssText = `padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; white-space: nowrap; ${this.isPushing || this.stagedFilePaths.size === 0 && !this.commitMessage.trim() ? "background: #555; color: #888; cursor: not-allowed;" : "background: #c9cd58; color: #121414;"}`;
+      pushSubmitBtn.disabled = this.isPushing || this.stagedFilePaths.size === 0 && !this.commitMessage.trim();
+      pushSubmitBtn.onclick = () => this.executePush();
+      const changesBox = contentEl.createDiv({ cls: "lenta-session-changes-box" });
+      changesBox.style.cssText = "margin-bottom: 14px; padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
+      const changesHeader = changesBox.createDiv();
+      changesHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px; flex-wrap: wrap; gap: 8px;";
+      const changesTitle = changesHeader.createDiv();
+      changesTitle.innerHTML = `
+        <div style="font-weight: 700; font-size: 0.95em;">\u0418\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0437\u0430 \u0441\u0435\u0441\u0441\u0438\u044E (${this.changedFiles.length})</div>
+        <div style="font-size: 0.75em; color: var(--text-muted);">\u041E\u0442\u043C\u0435\u0447\u0435\u043D\u043E \u043A \u043A\u043E\u043C\u043C\u0438\u0442\u0443: <strong>${this.stagedFilePaths.size}</strong> \u0438\u0437 ${this.changedFiles.length}</div>
+      `;
+      const stageBtns = changesHeader.createDiv();
+      stageBtns.style.cssText = "display: flex; gap: 6px; align-items: center; flex-wrap: wrap;";
+      const stageAllBtn = stageBtns.createEl("button", { text: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0432\u0441\u0435 \u0432 \u043A\u043E\u043C\u043C\u0438\u0442" });
+      stageAllBtn.style.cssText = "padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: #c9cd58; color: #121414; font-weight: 600; border: none; cursor: pointer; white-space: nowrap;";
+      stageAllBtn.onclick = () => {
+        this.stagedFilePaths = new Set(this.changedFiles.map((f) => f.relPath));
+        if (!this.commitMessage.trim()) {
+          this.autoGenerateCommitMessage();
+        } else {
+          this.render();
+        }
+      };
+      const unstageAllBtn = stageBtns.createEl("button", { text: "\u0421\u043D\u044F\u0442\u044C \u0432\u044B\u0431\u043E\u0440" });
+      unstageAllBtn.style.cssText = "padding: 4px 10px; font-size: 0.78em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer; white-space: nowrap;";
+      unstageAllBtn.onclick = () => {
+        this.stagedFilePaths.clear();
+        this.render();
+      };
+      const fileListWrap = changesBox.createDiv({ cls: "lenta-files-scroll-wrap" });
+      fileListWrap.style.cssText = "max-height: 260px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; box-sizing: border-box; width: 100%;";
+      if (this.changedFiles.length === 0) {
+        const emptyBox = fileListWrap.createDiv();
+        emptyBox.style.cssText = "text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;";
+        emptyBox.setText("\u2705 \u041D\u0435\u0442 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0445 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439. \u0412\u0441\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B.");
+      } else {
+        for (const item of this.changedFiles) {
+          const isStaged = this.stagedFilePaths.has(item.relPath);
+          const isExpanded = this.expandedSnippetPath === item.relPath;
+          const row = fileListWrap.createDiv({ cls: `lenta-file-row ${isStaged ? "is-staged" : ""}` });
+          row.style.cssText = `padding: 10px 12px; border-radius: 6px; border: 1px solid ${isStaged ? "#c9cd58" : "var(--background-modifier-border)"}; background: ${isStaged ? "rgba(201, 205, 88, 0.08)" : "var(--background-primary)"}; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;`;
+          const rowTop = row.createDiv();
+          rowTop.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box; min-width: 0;";
+          const rowLeft = rowTop.createDiv();
+          rowLeft.style.cssText = "display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; overflow: hidden;";
+          const chk = rowLeft.createEl("input", { type: "checkbox" });
+          chk.checked = isStaged;
+          chk.style.cssText = "cursor: pointer; accent-color: #c9cd58; flex-shrink: 0; width: 16px; height: 16px; margin: 0;";
+          chk.onchange = () => {
+            if (chk.checked) {
+              this.stagedFilePaths.add(item.relPath);
+            } else {
+              this.stagedFilePaths.delete(item.relPath);
+            }
+            this.render();
+          };
+          const badge = rowLeft.createSpan();
+          badge.style.cssText = "padding: 2px 6px; border-radius: 4px; font-size: 0.72em; font-weight: 700; background: rgba(201, 205, 88, 0.2); color: #e5e971; flex-shrink: 0; line-height: 1.2;";
+          badge.setText("~ MOD");
+          const nameWrap = rowLeft.createDiv();
+          nameWrap.style.cssText = "min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;";
+          const nameSpan = nameWrap.createDiv({ text: item.title });
+          nameSpan.style.cssText = "font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);";
+          const pathSpan = nameWrap.createDiv({ text: item.relPath });
+          pathSpan.style.cssText = "font-size: 0.76em; line-height: 1.2; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace;";
+          const rowRight = rowTop.createDiv();
+          rowRight.style.cssText = "display: flex; align-items: center; gap: 8px; font-size: 0.76em; color: var(--text-muted); flex-shrink: 0;";
+          rowRight.createSpan({ text: new Date(item.modifiedAt).toLocaleTimeString() });
+          const toggleBtn = rowRight.createEl("button", { text: isExpanded ? "\u25B2" : "\u25BC" });
+          toggleBtn.style.cssText = "padding: 2px 8px; font-size: 0.72em; border-radius: 4px; background: transparent; border: 1px solid var(--background-modifier-border); cursor: pointer;";
+          toggleBtn.onclick = () => {
+            this.expandedSnippetPath = isExpanded ? null : item.relPath;
+            this.render();
+          };
+          if (isExpanded) {
+            const previewBox = row.createDiv();
+            previewBox.style.cssText = "padding: 6px 8px; border-radius: 4px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.75em; font-family: monospace; color: var(--text-muted); margin-top: 4px; box-sizing: border-box; width: 100%; word-break: break-all;";
+            previewBox.setText(`\u0420\u0430\u0437\u043C\u0435\u0440: ${(item.file.stat.size / 1024).toFixed(1)} KB | \u041F\u0443\u0442\u044C: ${item.file.path}`);
+          }
+        }
+      }
+    }
+    if (this.activeMode === "pull") {
+      const pullControlsBox = contentEl.createDiv();
+      pullControlsBox.style.cssText = "margin-bottom: 14px; padding: 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box; width: 100%; overflow: hidden;";
+      const pullInfo = pullControlsBox.createDiv();
+      pullInfo.style.cssText = "min-width: 0; flex: 1;";
+      pullInfo.innerHTML = `
+        <div style="font-weight: 700; font-size: 1em;">\u{1F4E5} \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0439 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (Pull)</div>
+        <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 2px;">\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0438 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0438 \u043E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0441 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u043C \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435\u043C.</div>
+      `;
+      const pullActionBtn = pullControlsBox.createEl("button", {
+        text: this.isPulling ? "\u23F3 \u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u044B\u0445..." : "\u{1F4E5} \u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (Pull)"
+      });
+      pullActionBtn.style.cssText = `padding: 10px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; flex-shrink: 0; white-space: nowrap; ${this.isPulling ? "background: #555; color: #888;" : "background: #3b82f6; color: #fff;"}`;
+      pullActionBtn.disabled = this.isPulling;
+      pullActionBtn.onclick = () => this.executePull();
+      const downloadedSection = contentEl.createDiv();
+      downloadedSection.style.cssText = "margin-bottom: 14px; padding: 12px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
+      const dlHeader = downloadedSection.createDiv();
+      dlHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;";
+      const dlTitle = dlHeader.createDiv();
+      dlTitle.innerHTML = `
+        <span style="font-weight: 700; font-size: 0.95em;">\u0418\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F, \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u043D\u044B\u0435 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430</span>
+        <span style="margin-left: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.8em; font-weight: 700;">${this.downloadedFiles.length} \u0444\u0430\u0439\u043B\u043E\u0432</span>
+      `;
+      const dlListWrap = downloadedSection.createDiv();
+      dlListWrap.style.cssText = "display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;";
+      if (this.downloadedFiles.length === 0) {
+        const emptyDl = dlListWrap.createDiv();
+        emptyDl.style.cssText = "text-align: center; padding: 20px 12px; color: var(--text-muted); font-size: 0.85em; border: 1px dashed var(--background-modifier-border); border-radius: 6px; box-sizing: border-box; width: 100%;";
+        emptyDl.setText("\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430\xBB, \u0447\u0442\u043E\u0431\u044B \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0434\u0435\u043B\u044C\u0442\u0443.");
+      } else {
+        this.downloadedFiles.forEach((file, idx) => {
+          const isExp = this.expandedFileIndex === idx;
+          const isCopied = this.copiedFileIndex === idx;
+          const row = dlListWrap.createDiv({ cls: "lenta-file-row" });
+          row.style.cssText = "padding: 10px 12px; border-radius: 6px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; width: 100%; overflow: hidden; flex-shrink: 0; min-height: 52px; justify-content: center;";
+          const rowTop = row.createDiv();
+          rowTop.style.cssText = "display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; box-sizing: border-box; gap: 10px; min-width: 0;";
+          rowTop.onclick = () => {
+            this.expandedFileIndex = isExp ? null : idx;
+            this.render();
+          };
+          const rowLeft = rowTop.createDiv();
+          rowLeft.style.cssText = "display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;";
+          rowLeft.createSpan({ text: "\u{1F4C4}", cls: "lenta-file-icon" });
+          const titleDiv = rowLeft.createDiv();
+          titleDiv.style.cssText = "min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;";
+          const titleLine = titleDiv.createDiv({ text: file.title || file.path });
+          titleLine.style.cssText = "font-weight: 600; font-size: 0.88em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal);";
+          const pathLine = titleDiv.createDiv({ text: file.path });
+          pathLine.style.cssText = "font-size: 0.76em; line-height: 1.2; color: var(--text-muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+          const rowRight = rowTop.createDiv();
+          rowRight.style.cssText = "display: flex; align-items: center; gap: 8px; font-size: 0.75em; flex-shrink: 0;";
+          const tag = rowRight.createSpan();
+          tag.style.cssText = file.isNew ? "padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-weight: 700;" : "padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-weight: 700;";
+          tag.setText(file.isNew ? "\u2728 \u041D\u041E\u0412\u041E\u0415" : "\u{1F4E5} \u0421\u0418\u041D\u0425\u0420\u041E\u041D\u0418\u0417\u0418\u0420\u041E\u0412\u0410\u041D\u041E");
+          if (file.size) {
+            rowRight.createSpan({ text: `${(file.size / 1024).toFixed(1)} KB`, cls: "setting-item-description" });
+          }
+          rowRight.createSpan({ text: isExp ? "\u25B2" : "\u25BC" });
+          if (isExp) {
+            const preview = row.createDiv();
+            preview.style.cssText = "margin-top: 6px; padding: 8px; border-radius: 4px; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%;";
+            const copyBar = preview.createDiv();
+            copyBar.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.75em; color: var(--text-muted);";
+            copyBar.createSpan({ text: "\u0421\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435 Markdown:" });
+            const copyBtn = copyBar.createEl("button", { text: isCopied ? "\u2713 \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E" : "\u{1F4CB} \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C" });
+            copyBtn.style.cssText = "padding: 2px 6px; font-size: 0.75em; border-radius: 3px; cursor: pointer;";
+            copyBtn.onclick = (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(file.content);
+              this.copiedFileIndex = idx;
+              setTimeout(() => {
+                this.copiedFileIndex = null;
+                this.render();
+              }, 1500);
+              this.render();
+            };
+            const pre = preview.createEl("pre");
+            pre.style.cssText = "margin: 0; font-size: 0.75em; max-height: 140px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: monospace; color: var(--text-normal); box-sizing: border-box; width: 100%;";
+            pre.setText(file.content);
+          }
+        });
+      }
+    }
+    const commitsSection = contentEl.createDiv();
+    commitsSection.style.cssText = "padding: 12px 14px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); box-sizing: border-box; width: 100%; overflow: hidden;";
+    const commitsHeader = commitsSection.createDiv();
+    commitsHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 6px; flex-wrap: wrap; gap: 8px;";
+    const cHeadTitle = commitsHeader.createDiv();
+    cHeadTitle.innerHTML = `
+      <span style="font-weight: 700; font-size: 0.9em; color: var(--text-muted);">\u{1F4DC} \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u0441\u0435\u0440\u0432\u0435\u0440\u0430 (${this.serverCommits.length})</span>
+    `;
+    const cRefreshBtn = commitsHeader.createEl("button", { text: "\u21BA \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E" });
+    cRefreshBtn.style.cssText = "padding: 2px 8px; font-size: 0.75em; border-radius: 4px; border: 1px solid var(--background-modifier-border); background: transparent; cursor: pointer;";
+    cRefreshBtn.onclick = () => this.loadServerCommits();
+    const commitsList = commitsSection.createDiv();
+    commitsList.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 160px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; width: 100%;";
+    if (this.serverCommits.length === 0) {
+      const emptyCommits = commitsList.createDiv();
+      emptyCommits.style.cssText = "grid-column: 1 / -1; text-align: center; padding: 12px; font-size: 0.8em; color: var(--text-muted);";
+      emptyCommits.setText("\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0437\u0430\u043F\u0438\u0441\u0435\u0439 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432.");
+    } else {
+      for (const commit of this.serverCommits.slice(0, 6)) {
+        const hash2 = commit.shortHash || commit.commitHash?.slice(0, 7) || commit.hash?.slice(0, 7) || "HEAD";
+        const card = commitsList.createDiv();
+        card.style.cssText = "padding: 8px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-size: 0.8em; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; overflow: hidden; min-width: 0;";
+        const cTop = card.createDiv();
+        cTop.style.cssText = "display: flex; justify-content: space-between; align-items: center; font-family: monospace; min-width: 0;";
+        const pill = cTop.createSpan();
+        pill.style.cssText = "padding: 1px 5px; border-radius: 3px; background: rgba(201, 205, 88, 0.15); color: #e5e971; font-weight: 700; font-size: 0.9em; flex-shrink: 0;";
+        pill.setText(hash2);
+        cTop.createSpan({
+          text: commit.date ? new Date(commit.date).toLocaleDateString() : ""
+        }).style.cssText = "color: var(--text-muted); font-size: 0.85em; flex-shrink: 0;";
+        const msgDiv = card.createDiv({ text: commit.message });
+        msgDiv.style.cssText = "font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal); min-width: 0;";
+        const cBottom = card.createDiv();
+        cBottom.style.cssText = "display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8em; font-family: monospace; border-top: 1px solid var(--background-modifier-border); padding-top: 3px; margin-top: 2px; min-width: 0;";
+        cBottom.createSpan({ text: commit.author || "System" });
+        cBottom.createSpan({ text: `${commit.filesChanged || 1} \u0444\u0430\u0439\u043B(\u043E\u0432)` });
+      }
+    }
+  }
+};
+
+// src/ui/connections-modal.ts
+var import_obsidian9 = require("obsidian");
+var LentaConnectionsModal = class extends import_obsidian9.Modal {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenContainersFoldersModal) {
+    super(app);
+    this.isLoading = false;
+    this.apiClient = apiClient;
+    this.settings = settings;
+    this.onSaveSettings = onSaveSettings;
+    this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-connections-modal");
+    this.render();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
+    const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
+    titleRow.createEl("h2", { text: "\u{1F50C} Lenta Server & API Connections" });
+    const selectedCount = Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0 ? this.settings.activeContainerIds.length : this.settings.activeContainerId ? 1 : 0;
+    if (selectedCount > 0) {
+      const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+      const badge = badgeRow.createSpan({ cls: "lenta-badge" });
+      badge.setText(`CONNECTED: ${selectedCount} Container${selectedCount > 1 ? "s" : ""} Selected`);
+    }
+    header.createEl("p", {
+      cls: "lenta-modal-subtitle",
+      text: "Configure NestJS backend API connections, container sync server endpoints, and authentication credentials."
+    });
+    if (this.onOpenContainersFoldersModal) {
+      const card = contentEl.createDiv({ cls: "lenta-workspace-banner-card" });
+      card.style.cssText = [
+        "padding: 14px 16px",
+        "margin-bottom: 20px",
+        "border-radius: 8px",
+        "border: 1px solid rgba(201, 205, 88, 0.4)",
+        "background: #1b1e1e",
+        "display: flex",
+        "justify-content: space-between",
+        "align-items: center",
+        "gap: 12px"
+      ].join(";");
+      const textWrap = card.createDiv();
+      const cardTitle = textWrap.createEl("h4", { text: "\u{1F4E6} Containers & Folders Workspace" });
+      cardTitle.style.cssText = "margin: 0 0 4px 0; color: #c9cd58; font-size: 1.05em;";
+      const cardDesc = textWrap.createEl("div");
+      cardDesc.style.cssText = "font-size: 0.85em; color: #aaa;";
+      cardDesc.setText(`Browse and select containers (${selectedCount} currently active for sync) and manage vault folder mappings.`);
+      const openWorkspaceBtn = card.createEl("button", {
+        cls: "mod-cta lenta-btn-lemon",
+        text: "\u{1F4E6} Open Workspace"
+      });
+      openWorkspaceBtn.style.cssText = "padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap;";
+      openWorkspaceBtn.onclick = () => {
+        this.close();
+        this.onOpenContainersFoldersModal();
+      };
+    }
+    contentEl.createEl("h3", { text: "\u{1F510} User API Key & Authentication" });
+    const authStatusEl = contentEl.createEl("div", { cls: "lenta-auth-status-box" });
+    authStatusEl.style.cssText = [
+      "padding: 10px 14px",
+      "margin-bottom: 14px",
+      "border-radius: 6px",
+      "border: 1px solid #333",
+      "background: " + (this.settings.authToken ? "#1a291e" : "#222"),
+      "color: " + (this.settings.authToken ? "#8ee29a" : "#bbb"),
+      "font-size: 0.9em"
+    ].join(";");
+    if (this.settings.authToken) {
+      authStatusEl.innerHTML = `<strong>Status:</strong> Connected via User API Key (${this.settings.userEmail || "Member User"})`;
+    } else {
+      authStatusEl.innerHTML = `<strong>Status:</strong> Unauthenticated. Enter your User API Key / Personal Access Token below to connect.`;
+    }
+    new import_obsidian9.Setting(contentEl).setName("User API Key / Personal Access Token").setDesc("Bearer authentication token from your Project Lenta profile.").addText(
+      (text2) => text2.setPlaceholder("lenta_jwt_...").setValue(this.settings.authToken || "").onChange(async (val) => {
+        this.settings.authToken = val.trim();
+        this.settings.isPrivateContainerConnected = Boolean(val.trim());
+        await this.onSaveSettings();
+      })
+    ).addButton(
+      (button) => button.setButtonText(this.settings.authToken ? "Validate Session" : "Sign In").setCta().onClick(async () => {
+        if (!this.settings.authToken) {
+          this.settings.authToken = "lenta_jwt_demo_token_user_2026";
+          this.settings.userEmail = "member@lemon.team";
+          this.settings.isPrivateContainerConnected = true;
+          await this.onSaveSettings();
+          this.render();
+          return;
+        }
+        const res = await this.apiClient.validateToken(this.settings.authToken);
+        if (res.success) {
+          this.settings.userEmail = res.user?.email || "member@lemon.team";
+          this.settings.isPrivateContainerConnected = true;
+          await this.onSaveSettings();
+          new import_obsidian9.Notice("Session validated successfully!");
+          this.render();
+        } else {
+          new import_obsidian9.Notice("Failed to validate User API Key");
+        }
+      })
+    ).addButton(
+      (button) => button.setButtonText("Disconnect").onClick(async () => {
+        this.settings.authToken = "";
+        this.settings.userEmail = "";
+        this.settings.isPrivateContainerConnected = false;
+        this.settings.activeContainerId = "";
+        this.settings.containerKey = "";
+        this.settings.connectedContainerName = "";
+        await this.onSaveSettings();
+        this.render();
+      })
+    );
+    contentEl.createEl("h3", { text: "\u{1F310} Backend & Container Sync Server URLs" });
+    new import_obsidian9.Setting(contentEl).setName("Project Lenta Backend URL").setDesc("Base address of the NestJS API (port 3001 by default).").addText(
+      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.serverUrl).onChange(async (val) => {
+        this.settings.serverUrl = val.trim();
+        await this.onSaveSettings();
+      })
+    );
+    new import_obsidian9.Setting(contentEl).setName("Obsidian Container Sync Server URL").setDesc("Base address of the Container Backend (port 3001 by default).").addText(
+      (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.settings.containerServerUrl || "http://localhost:3001").onChange(async (val) => {
+        this.settings.containerServerUrl = val.trim();
+        await this.onSaveSettings();
+      })
+    );
+    new import_obsidian9.Setting(contentEl).setName("Container API Key (X-Api-Key)").setDesc("Optional API key sent to the container sync server.").addText(
+      (text2) => text2.setPlaceholder("Optional API key").setValue(this.settings.containerApiKey || "").onChange(async (val) => {
+        this.settings.containerApiKey = val.trim();
+        await this.onSaveSettings();
+      })
+    );
+    new import_obsidian9.Setting(contentEl).setName("Test Server Connections").setDesc("Ping the container sync server and backend API to verify connectivity.").addButton(
+      (btn) => btn.setButtonText("Test Connection").setIcon("zap").onClick(async () => {
+        btn.setDisabled(true);
+        const ping = await this.apiClient.pingContainerServer();
+        btn.setDisabled(false);
+        if (ping.success) {
+          new import_obsidian9.Notice(`\u2705 Connected! Found ${ping.containerCount ?? 0} container(s) on sync server.`);
+        } else {
+          new import_obsidian9.Notice(`\u26A0\uFE0F Container server ping warning: ${ping.error}`);
+        }
+      })
+    );
+  }
+};
+
+// src/ui/containers-folders-modal.ts
+var import_obsidian10 = require("obsidian");
+
+// src/utils/container-title.ts
+function getContainerDisplayTitle2(containerOrId, fallbackName) {
+  if (!containerOrId)
+    return fallbackName || "Untitled Container";
+  let id = "";
+  let title = "";
+  let name = "";
+  let description = "";
+  if (typeof containerOrId === "string") {
+    id = containerOrId.trim();
+    name = fallbackName ? fallbackName.trim() : "";
+  } else if (typeof containerOrId === "object") {
+    id = containerOrId.id ? containerOrId.id.trim() : "";
+    title = containerOrId.title ? containerOrId.title.trim() : "";
+    name = containerOrId.name ? containerOrId.name.trim() : fallbackName ? fallbackName.trim() : "";
+    description = containerOrId.description ? containerOrId.description.trim() : "";
+  }
+  if (title) {
+    return title;
+  }
+  if (name && name !== id && name.toLowerCase() !== "untitled container") {
+    return name;
+  }
+  if (description && description !== id && description.toLowerCase() !== "untitled container") {
+    return description;
+  }
+  if (id.startsWith("feed-")) {
+    const slug = id.replace("feed-", "");
+    return `Feed: ${slug.charAt(0).toUpperCase() + slug.slice(1)}`;
+  }
+  if (id.startsWith("cont-")) {
+    const clean = id.replace("cont-", "");
+    return `Vault Container (${clean.slice(0, 14)})`;
+  }
+  if (id.startsWith("lenta_obs_")) {
+    const clean = id.replace("lenta_obs_", "");
+    return `Obsidian Vault (${clean.slice(0, 14)})`;
+  }
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id) || id.length > 20) {
+    if (name && name !== id) {
+      return name;
+    }
+    return `Obsidian Vault (${id.slice(0, 8)})`;
+  }
+  if (name) {
+    return name;
+  }
+  return id || "Untitled Container";
+}
+
+// src/ui/containers-folders-modal.ts
+var LentaContainersFoldersModal = class extends import_obsidian10.Modal {
+  constructor(app, apiClient, settings, onSaveSettings, onOpenConnectionsModal, syncEngine, onOpenSyncModal) {
+    super(app);
+    this.onOpenSyncModal = onOpenSyncModal;
+    this.containers = [];
+    this.folders = [];
+    this.savedSelectedIds = /* @__PURE__ */ new Set();
+    this.stagedSelectedIds = /* @__PURE__ */ new Set();
+    this.isLoading = false;
+    this.isConnecting = false;
+    this.activeSyncingContainerId = null;
+    this.completedSyncContainerIds = /* @__PURE__ */ new Set();
+    this.searchQuery = "";
+    this.categoryTab = "user";
+    this.privacyFilter = "public";
+    this.customKeyInput = "";
+    this.toggleStagedSelection = (containerId) => {
+      const listEl = this.contentEl.querySelector("#lenta-containers-compact-list");
+      const savedListScrollTop = listEl ? listEl.scrollTop : 0;
+      const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+      if (this.stagedSelectedIds.has(containerId)) {
+        this.stagedSelectedIds.delete(containerId);
+      } else {
+        this.stagedSelectedIds.add(containerId);
+      }
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
+      if (listEl) {
+        listEl.scrollTop = savedListScrollTop;
+      }
+      if (this.contentEl) {
+        this.contentEl.scrollTop = savedContentScrollTop;
+      }
+    };
+    this.applyConnectionAndUpdateFiles = async () => {
+      if (this.isConnecting)
+        return;
+      this.isConnecting = true;
+      this.activeSyncingContainerId = null;
+      this.completedSyncContainerIds.clear();
+      this.render();
+      try {
+        await this.persistSelection();
+        this.savedSelectedIds = new Set(this.stagedSelectedIds);
+        let totalDownloaded = 0;
+        const rootFolder = this.settings.vaultRootFolder || "Lenta";
+        if (this.syncEngine && this.stagedSelectedIds.size > 0) {
+          new import_obsidian10.Notice(`\u23F3 Downloading structure & files for ${this.stagedSelectedIds.size} connected container(s)...`);
+          for (const containerId of Array.from(this.stagedSelectedIds)) {
+            this.activeSyncingContainerId = containerId;
+            this.renderContainersList();
+            this.renderHeaderAndMappingInfo();
+            const matched = this.containers.find((c) => c.id === containerId);
+            const name = matched ? matched.name : containerId;
+            const result = await this.syncEngine.syncContainerFiles(containerId, name);
+            totalDownloaded += result.downloadedFiles;
+            this.completedSyncContainerIds.add(containerId);
+            this.renderContainersList();
+            this.renderHeaderAndMappingInfo();
+          }
+          this.activeSyncingContainerId = null;
+          this.renderContainersList();
+          this.renderHeaderAndMappingInfo();
+          await this.syncEngine.pullChanges().catch((err) => {
+            console.warn("Sync engine pull error:", err);
+          });
+        }
+        const connectedCount = this.savedSelectedIds.size;
+        new import_obsidian10.Notice(
+          `\u{1F34B} Connected & updated! ${totalDownloaded} file(s) saved into "${rootFolder}" (${connectedCount} container(s) active)`
+        );
+      } catch (err) {
+        new import_obsidian10.Notice(`Failed to update container connection: ${err.message}`);
+      } finally {
+        this.isConnecting = false;
+        this.activeSyncingContainerId = null;
+        this.completedSyncContainerIds.clear();
+        this.render();
+      }
+    };
+    this.apiClient = apiClient;
+    this.settings = settings;
+    this.onSaveSettings = onSaveSettings;
+    this.onOpenConnectionsModal = onOpenConnectionsModal;
+    this.syncEngine = syncEngine;
+    const initialList = Array.isArray(settings.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds : settings.activeContainerId ? [settings.activeContainerId] : [];
+    this.savedSelectedIds = new Set(initialList);
+    this.stagedSelectedIds = new Set(initialList);
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-containers-folders-modal");
+    await this.loadData();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  async loadData() {
+    this.isLoading = true;
+    this.render();
+    try {
+      const [containers, folders] = await Promise.all([
+        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
+        this.apiClient.getFolders().catch(() => [])
+      ]);
+      this.containers = containers;
+      this.folders = folders;
+      let list = [];
+      if (Array.isArray(this.settings.activeContainerIds) && this.settings.activeContainerIds.length > 0) {
+        list = this.settings.activeContainerIds;
+      } else if (this.settings.activeContainerId) {
+        list = [this.settings.activeContainerId];
+      }
+      this.savedSelectedIds = new Set(list);
+      this.stagedSelectedIds = new Set(list);
+    } catch (err) {
+      console.warn("Failed to load containers or folders:", err);
+    } finally {
+      this.isLoading = false;
+      this.render();
+    }
+  }
+  async persistSelection() {
+    const list = Array.from(this.stagedSelectedIds);
+    this.settings.activeContainerIds = list;
+    this.settings.activeContainerId = list[0] || "";
+    if (list.length > 0) {
+      const matched = this.containers.find((c) => c.id === list[0]);
+      if (matched) {
+        this.settings.connectedContainerName = list.length === 1 ? matched.name : `${list.length} Containers Selected`;
+        this.settings.connectedContainerType = matched.type;
+        this.settings.containerKey = list.join(",");
+      }
+    } else {
+      this.settings.connectedContainerName = "";
+      this.settings.containerKey = "";
+    }
+    await this.onSaveSettings();
+  }
+  getHasStagedChanges() {
+    if (this.savedSelectedIds.size !== this.stagedSelectedIds.size)
+      return true;
+    for (const id of this.stagedSelectedIds) {
+      if (!this.savedSelectedIds.has(id))
+        return true;
+    }
+    return false;
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
+    const titleRow = header.createDiv({ cls: "lenta-sync-title-row" });
+    titleRow.createEl("h2", { text: "\u{1F4E6} Containers & Folders Workspace" });
+    const badgeRow = header.createDiv({ cls: "lenta-badge-row" });
+    badgeRow.id = "lenta-modal-header-badge-row";
+    this.renderHeaderBadge(badgeRow);
+    header.createEl("p", {
+      cls: "lenta-modal-subtitle",
+      text: "Step 1: Select or deselect containers. Step 2: Click Connect & Update Files to apply changes to your vault."
+    });
+    const categoryBar = contentEl.createDiv({ cls: "lenta-category-tabs-bar" });
+    categoryBar.style.cssText = [
+      "display: flex",
+      "gap: 10px",
+      "margin-bottom: 14px",
+      "border-bottom: 2px solid var(--background-modifier-border, #333)",
+      "padding-bottom: 2px"
+    ].join(";");
+    const isFeedContainer = (c) => c.isFeed === true || c.id.startsWith("feed-") || c.scope?.type === "feed";
+    const userContainersCount = this.containers.filter((c) => !isFeedContainer(c)).length;
+    const feedContainersCount = this.containers.filter((c) => isFeedContainer(c)).length;
+    const categoryOptions = [
+      { id: "user", label: "User Containers", icon: "\u{1F464}", count: userContainersCount },
+      { id: "feeds", label: "Feeds", icon: "\u{1F4F0}", count: feedContainersCount }
+    ];
+    for (const cat of categoryOptions) {
+      const isSelected = this.categoryTab === cat.id;
+      const catBtn = categoryBar.createEl("button", {
+        cls: `lenta-category-tab ${isSelected ? "is-active" : ""}`
+      });
+      catBtn.disabled = this.isConnecting;
+      catBtn.style.cssText = `
+        padding: 8px 16px;
+        font-weight: 700;
+        font-size: 0.9em;
+        border: none;
+        border-bottom: 3px solid ${isSelected ? "var(--lenta-lemon, #c9cd58)" : "transparent"};
+        background: ${isSelected ? "var(--background-primary-alt, rgba(255, 255, 255, 0.05))" : "transparent"};
+        color: ${isSelected ? "var(--text-normal, #fff)" : "var(--text-muted, #888)"};
+        cursor: ${this.isConnecting ? "not-allowed" : "pointer"};
+        border-radius: 6px 6px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      `;
+      catBtn.innerHTML = `<span>${cat.icon} ${cat.label}</span> <span class="lenta-count-pill" style="font-size:0.8em; padding:2px 7px; border-radius:10px; background:var(--background-secondary-alt);">${cat.count}</span>`;
+      catBtn.onclick = () => {
+        if (this.isConnecting)
+          return;
+        this.categoryTab = cat.id;
+        this.privacyFilter = "public";
+        this.render();
+      };
+    }
+    const toolbar = contentEl.createDiv({ cls: "lenta-containers-toolbar" });
+    toolbar.style.cssText = [
+      "display: flex",
+      "gap: 10px",
+      "align-items: center",
+      "flex-wrap: wrap",
+      "margin-bottom: 16px",
+      "padding: 10px 14px",
+      "background: var(--background-secondary)",
+      "border-radius: 8px",
+      "border: 1px solid var(--background-modifier-border)"
+    ].join(";");
+    const searchWrap = toolbar.createDiv({ cls: "lenta-search-wrap" });
+    searchWrap.style.cssText = "flex: 1; min-width: 160px;";
+    const searchInput = searchWrap.createEl("input", {
+      type: "text",
+      placeholder: "\u{1F50D} Search containers...",
+      value: this.searchQuery
+    });
+    searchInput.disabled = this.isConnecting;
+    searchInput.style.cssText = `width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #1a1d1d; color: #fff; ${this.isConnecting ? "opacity: 0.6; cursor: not-allowed;" : ""}`;
+    searchInput.oninput = (e) => {
+      if (this.isConnecting)
+        return;
+      this.searchQuery = e.target.value;
+      this.renderContainersList();
+    };
+    const filterWrap = toolbar.createDiv({ cls: "lenta-privacy-filter-tabs" });
+    const activeCategoryContainers = this.containers.filter(
+      (c) => this.categoryTab === "user" ? !isFeedContainer(c) : isFeedContainer(c)
+    );
+    const checkContainerPublic = (c) => isContainerPublic(c);
+    const publicContainersCount = activeCategoryContainers.filter((c) => checkContainerPublic(c)).length;
+    const privateContainersCount = activeCategoryContainers.filter((c) => !checkContainerPublic(c)).length;
+    const allContainersCount = activeCategoryContainers.length;
+    const filterOptions = [
+      { id: "public", label: "Public", icon: "\u{1F4F0}", count: publicContainersCount },
+      { id: "private", label: "Private", icon: "\u{1F510}", count: privateContainersCount },
+      { id: "all", label: "All", icon: "\u{1F310}", count: allContainersCount }
+    ];
+    for (const opt of filterOptions) {
+      const isSelected = this.privacyFilter === opt.id;
+      const tabBtn = filterWrap.createEl("button", {
+        cls: `lenta-privacy-tab ${isSelected ? "is-active" : ""}`
+      });
+      tabBtn.disabled = this.isConnecting;
+      tabBtn.innerHTML = `<span>${opt.icon} ${opt.label}</span> <span class="lenta-privacy-tab-count">${opt.count}</span>`;
+      tabBtn.onclick = () => {
+        if (this.isConnecting)
+          return;
+        this.privacyFilter = opt.id;
+        this.render();
+      };
+    }
+    const selectAllBtn = toolbar.createEl("button", {
+      text: "Select All"
+    });
+    selectAllBtn.disabled = this.isConnecting;
+    selectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    selectAllBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
+      const filtered = this.getFilteredContainers();
+      for (const c of filtered) {
+        this.stagedSelectedIds.add(c.id);
+      }
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
+    };
+    const deselectAllBtn = toolbar.createEl("button", {
+      text: "Clear All"
+    });
+    deselectAllBtn.disabled = this.isConnecting;
+    deselectAllBtn.style.cssText = `padding: 6px 12px; font-size: 0.85em; font-weight: 600; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    deselectAllBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
+      this.stagedSelectedIds.clear();
+      this.renderContainersList();
+      this.renderHeaderAndMappingInfo();
+    };
+    const refreshBtn = toolbar.createEl("button", {
+      cls: "mod-cta lenta-btn-lemon",
+      text: "\u{1F504} Refresh List"
+    });
+    refreshBtn.disabled = this.isConnecting;
+    refreshBtn.style.cssText = `padding: 6px 14px; font-weight: 600; font-size: 0.85em; ${this.isConnecting ? "opacity: 0.5; cursor: not-allowed;" : ""}`;
+    refreshBtn.onclick = () => {
+      if (this.isConnecting)
+        return;
+      this.loadData();
+    };
+    if (this.onOpenConnectionsModal) {
+      const connBtn = toolbar.createEl("button", {
+        text: "\u{1F50C} Server Settings"
+      });
+      connBtn.style.cssText = "padding: 6px 12px; font-size: 0.85em;";
+      connBtn.onclick = () => {
+        this.close();
+        this.onOpenConnectionsModal();
+      };
+    }
+    if (this.isLoading) {
+      contentEl.createDiv({ cls: "lenta-loading-text", text: "\u23F3 Loading containers and folder structures..." });
+      return;
+    }
+    const listSection = contentEl.createDiv({ cls: "lenta-containers-list-section" });
+    const listHeaderRow = listSection.createDiv({ cls: "lenta-list-header-row" });
+    listHeaderRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
+    listHeaderRow.createEl("h3", { text: "Step 1: Select Containers to Connect or Disconnect" });
+    const countSummary = listHeaderRow.createSpan({ cls: "lenta-count-pill" });
+    countSummary.id = "lenta-staged-count-summary";
+    countSummary.style.cssText = "font-weight: 600; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background: var(--lenta-lemon-glow); color: var(--lenta-lemon);";
+    countSummary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
+    const listEl = listSection.createDiv({ cls: "lenta-containers-compact-list" });
+    listEl.id = "lenta-containers-compact-list";
+    this.renderContainersList(listEl);
+    const actionBar = listSection.createDiv({ cls: "lenta-connect-action-bar" });
+    actionBar.id = "lenta-connect-action-bar";
+    this.renderConnectActionBar(actionBar);
+    const keySection = contentEl.createDiv({ cls: "lenta-key-section" });
+    keySection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
+    new import_obsidian10.Setting(keySection).setName("Connect Container by Custom Key").setDesc("Add a custom container key or feed key to your selected containers list.").addText(
+      (text2) => text2.setPlaceholder("e.g. cont-workspace-prod or feed-science").setValue(this.customKeyInput).onChange((val) => {
+        this.customKeyInput = val.trim();
+      })
+    ).addButton(
+      (btn) => btn.setButtonText("+ Add & Connect Key").setCta().onClick(async () => {
+        if (!this.customKeyInput) {
+          new import_obsidian10.Notice("Please enter a container key");
+          return;
+        }
+        const res = await this.apiClient.connectContainerByKey(this.customKeyInput);
+        if (res.success && res.container) {
+          this.stagedSelectedIds.add(res.container.id);
+          await this.applyConnectionAndUpdateFiles();
+          new import_obsidian10.Notice(`Added container: ${res.container.name}`);
+          await this.loadData();
+        } else {
+          new import_obsidian10.Notice(`Failed to connect container: ${res.error || "Unknown error"}`);
+        }
+      })
+    );
+    const folderSection = contentEl.createDiv({ cls: "lenta-folders-workspace-section" });
+    folderSection.style.cssText = "margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border);";
+    folderSection.createEl("h3", { text: "\u{1F4C1} Vault Root & Multi-Container Folders Workspace" });
+    new import_obsidian10.Setting(folderSection).setName("Vault Root Directory").setDesc("Base folder in your Obsidian vault where synced notes are saved.").addText(
+      (text2) => text2.setPlaceholder("Lenta").setValue(this.settings.vaultRootFolder || "Lenta").onChange(async (val) => {
+        this.settings.vaultRootFolder = val.trim() || "Lenta";
+        await this.onSaveSettings();
+        this.renderFolderMappingInfo(folderMappingEl);
+      })
+    );
+    const folderMappingEl = folderSection.createDiv({ cls: "lenta-folder-mapping-box" });
+    folderMappingEl.id = "lenta-folder-mapping-box";
+    this.renderFolderMappingInfo(folderMappingEl);
+    folderSection.createEl("h4", { text: "Remote Lenta Server Folders" });
+    if (this.folders.length === 0) {
+      folderSection.createDiv({ cls: "lenta-empty-state", text: "No folders found on Lenta server." });
+    } else {
+      const folderList = folderSection.createDiv({ cls: "lenta-tree-list" });
+      for (const folder of this.folders) {
+        const item = folderList.createDiv({ cls: "lenta-tree-item lenta-tree-item-folder" });
+        item.createSpan({ text: folder.icon ? `${folder.icon} ` : "\u{1F4C1} ", cls: "lenta-item-icon" });
+        item.createSpan({ text: folder.path, cls: "lenta-item-name" });
+        if (folder.noteCount) {
+          item.createSpan({ text: `${folder.noteCount} notes`, cls: "lenta-count-pill" });
+        }
+      }
+    }
+  }
+  renderHeaderBadge(container) {
+    container.empty();
+    const count = this.savedSelectedIds.size;
+    let totalNotesSelected = 0;
+    for (const c of this.containers) {
+      if (this.savedSelectedIds.has(c.id) && typeof c.totalNotes === "number") {
+        totalNotesSelected += c.totalNotes;
+      }
+    }
+    if (count > 0) {
+      const badge = container.createSpan({ cls: "lenta-badge" });
+      badge.setText(`ACTIVE CONNECTED: ${count} Container${count > 1 ? "s" : ""} (${totalNotesSelected} Notes)`);
+    } else {
+      const badge = container.createSpan({ cls: "lenta-badge" });
+      badge.style.borderColor = "#d97706";
+      badge.style.color = "#f59e0b";
+      badge.setText("NO CONTAINERS CONNECTED");
+    }
+  }
+  renderConnectActionBar(container) {
+    container.empty();
+    container.style.cssText = [
+      "display: flex",
+      "justify-content: space-between",
+      "align-items: center",
+      "gap: 12px",
+      "margin-top: 12px",
+      "padding: 12px 16px",
+      "background: var(--background-secondary)",
+      "border-radius: 8px",
+      "border: 1px solid var(--lenta-lemon-glow)"
+    ].join(";");
+    const hasChanges = this.getHasStagedChanges();
+    const stagedCount = this.stagedSelectedIds.size;
+    const infoWrap = container.createDiv({ cls: "lenta-connect-info" });
+    const infoTitle = infoWrap.createEl("div", { cls: "lenta-connect-step-title" });
+    infoTitle.style.cssText = "font-weight: 700; font-size: 0.9em; color: var(--lenta-lemon);";
+    infoTitle.setText("Step 2: Connect & Update Files");
+    const infoDesc = infoWrap.createEl("div", { cls: "lenta-connect-step-desc" });
+    infoDesc.style.cssText = "font-size: 0.8em; color: var(--text-muted); margin-top: 2px;";
+    if (hasChanges) {
+      const added = Array.from(this.stagedSelectedIds).filter((id) => !this.savedSelectedIds.has(id)).length;
+      const removed = Array.from(this.savedSelectedIds).filter((id) => !this.stagedSelectedIds.has(id)).length;
+      infoDesc.setText(`Pending changes: ${added > 0 ? `+${added} connect ` : ""}${removed > 0 ? `-${removed} disconnect` : ""}. Click Connect to update vault files.`);
+    } else {
+      infoDesc.setText(`${stagedCount} container${stagedCount === 1 ? "" : "s"} connected for active vault work.`);
+    }
+    const buttonsRow = container.createDiv({ cls: "lenta-connect-actions-group" });
+    buttonsRow.style.cssText = "display: flex; gap: 8px; align-items: center; flex-wrap: wrap;";
+    const connectBtn = buttonsRow.createEl("button", {
+      cls: "mod-cta lenta-btn-lemon lenta-connect-main-btn",
+      text: this.isConnecting ? "\u23F3 Connecting & Updating Files..." : hasChanges ? "\u{1F50C} Connect & Update Files" : "\u{1F50C} Re-Connect & Refresh Files"
+    });
+    connectBtn.disabled = this.isConnecting;
+    connectBtn.style.cssText = "padding: 8px 18px; font-weight: 700; font-size: 0.9em; cursor: pointer; white-space: nowrap;";
+    connectBtn.onclick = async () => {
+      await this.applyConnectionAndUpdateFiles();
+    };
+    if (this.onOpenSyncModal) {
+      const pullBtn = buttonsRow.createEl("button", {
+        cls: "lenta-action-btn lenta-pull-btn",
+        text: "\u{1F4E5} Pull (\u2B07)"
+      });
+      pullBtn.title = "Open Pull modal to inspect server commits and pull changes";
+      pullBtn.style.cssText = "padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;";
+      pullBtn.disabled = this.isConnecting;
+      pullBtn.onclick = () => {
+        this.close();
+        this.onOpenSyncModal("pull");
+      };
+      const pushBtn = buttonsRow.createEl("button", {
+        cls: "lenta-action-btn lenta-push-btn",
+        text: "\u{1F4E4} Push (\u2B06)"
+      });
+      pushBtn.title = "Open Push modal to compose commit and push local changes";
+      pushBtn.style.cssText = "padding: 8px 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; white-space: nowrap; border-radius: 6px;";
+      pushBtn.disabled = this.isConnecting;
+      pushBtn.onclick = () => {
+        this.close();
+        this.onOpenSyncModal("push");
+      };
+    }
+  }
+  renderHeaderAndMappingInfo() {
+    const summary = this.contentEl.querySelector("#lenta-staged-count-summary");
+    if (summary) {
+      if (this.isConnecting) {
+        if (this.activeSyncingContainerId) {
+          const count = this.completedSyncContainerIds.size + 1;
+          summary.setText(`\u23F3 Loading container ${count} of ${this.stagedSelectedIds.size}...`);
+        } else {
+          summary.setText("\u23F3 Connecting & loading files...");
+        }
+      } else {
+        summary.setText(`${this.stagedSelectedIds.size} of ${this.containers.length} containers staged`);
+      }
+    }
+    const actionBar = this.contentEl.querySelector("#lenta-connect-action-bar");
+    if (actionBar) {
+      this.renderConnectActionBar(actionBar);
+    }
+    const mappingEl = this.contentEl.querySelector("#lenta-folder-mapping-box");
+    if (mappingEl) {
+      this.renderFolderMappingInfo(mappingEl);
+    }
+  }
+  getFilteredContainers() {
+    return this.containers.filter((c) => {
+      const isFeed = c.isFeed === true || c.id.startsWith("feed-") || c.scope?.type === "feed";
+      const matchCategory = this.categoryTab === "user" ? !isFeed : isFeed;
+      const displayTitle = getContainerDisplayTitle2(c);
+      const q = this.searchQuery.toLowerCase();
+      const matchSearch = !this.searchQuery || displayTitle.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+      const isPublic = isContainerPublic(c);
+      const matchPrivacy = this.privacyFilter === "all" || this.privacyFilter === "public" && isPublic || this.privacyFilter === "private" && !isPublic;
+      return matchCategory && matchSearch && matchPrivacy;
+    });
+  }
+  renderFolderMappingInfo(container) {
+    container.empty();
+    const rootFolder = this.settings.vaultRootFolder || "Lenta";
+    const selectedList = Array.from(this.stagedSelectedIds);
+    container.style.cssText = [
+      "padding: 12px 14px",
+      "margin-bottom: 14px",
+      "border-radius: 6px",
+      "border: 1px solid #3b4242",
+      "background: #181b1b",
+      "font-size: 0.88em",
+      "color: #d1d5db"
+    ].join(";");
+    if (selectedList.length === 0) {
+      container.innerHTML = `
+        <div style="font-weight:600; color:#f59e0b;">\u26A0\uFE0F No Containers Selected</div>
+        <div style="font-size:0.85em; margin-top:4px; color:#888;">Select one or more containers above to map vault directories.</div>
+      `;
+      return;
+    }
+    const pathsHtml = selectedList.map((id) => {
+      const matched = this.containers.find((c) => c.id === id);
+      const name = matched ? getContainerDisplayTitle2(matched) : id;
+      const isSaved = this.savedSelectedIds.has(id);
+      return `<div style="margin-top:2px;">\u2022 <code>${rootFolder}/${name}</code> ${!isSaved ? '<span style="color:#4ade80; font-size:0.8em; margin-left:6px;">(Staged to connect)</span>' : ""}</div>`;
+    }).join("");
+    container.innerHTML = `
+      <div style="font-weight:600; margin-bottom:4px; color:#c9cd58;">\u{1F4CD} Vault Directory Mappings Preview (${selectedList.length}):</div>
+      ${pathsHtml}
+      <div style="font-size:0.85em; margin-top:6px; color:#888;">Synced notes for selected containers will be organized in these directories inside your Obsidian vault when you click Connect.</div>
+    `;
+  }
+  renderContainersList(targetEl) {
+    const listEl = targetEl || this.contentEl.querySelector("#lenta-containers-compact-list");
+    if (!listEl)
+      return;
+    const savedListScrollTop = listEl.scrollTop;
+    const savedContentScrollTop = this.contentEl ? this.contentEl.scrollTop : 0;
+    listEl.empty();
+    if (this.isConnecting) {
+      listEl.addClass("is-locked");
+      listEl.addClass("is-loading-all");
+    } else {
+      listEl.removeClass("is-locked");
+      listEl.removeClass("is-loading-all");
+    }
+    const filtered = this.getFilteredContainers();
+    if (filtered.length === 0) {
+      listEl.createDiv({ cls: "lenta-empty-state", text: "No containers match your search or filter." });
+      if (this.contentEl)
+        this.contentEl.scrollTop = savedContentScrollTop;
+      return;
+    }
+    for (const c of filtered) {
+      const isStaged = this.stagedSelectedIds.has(c.id);
+      const isSaved = this.savedSelectedIds.has(c.id);
+      let rowClass = "lenta-container-row";
+      if (this.isConnecting) {
+        rowClass += " is-locked";
+      }
+      if (c.id === this.activeSyncingContainerId) {
+        rowClass += " is-syncing";
+      } else if (this.completedSyncContainerIds.has(c.id)) {
+        rowClass += " is-sync-done";
+      }
+      if (isStaged) {
+        rowClass += " is-selected";
+      }
+      if (isStaged && !isSaved) {
+        rowClass += " is-pending-connect";
+      } else if (!isStaged && isSaved) {
+        rowClass += " is-pending-disconnect";
+      }
+      const row = listEl.createDiv({ cls: rowClass });
+      const leftCol = row.createDiv({ cls: "lenta-container-row-left" });
+      const checkbox = leftCol.createEl("input", {
+        type: "checkbox",
+        cls: "lenta-container-checkbox"
+      });
+      checkbox.checked = isStaged;
+      checkbox.disabled = this.isConnecting;
+      checkbox.onclick = (e) => {
+        e.stopPropagation();
+        if (this.isConnecting)
+          return;
+        this.toggleStagedSelection(c.id);
+      };
+      leftCol.createSpan({ cls: "lenta-container-icon", text: "\u{1F4E6}" });
+      const displayTitle = getContainerDisplayTitle2(c);
+      const titleWrap = leftCol.createDiv({ cls: "lenta-container-title-wrap" });
+      const titleSpan = titleWrap.createSpan({ cls: "lenta-container-title", text: displayTitle });
+      titleSpan.title = displayTitle;
+      if (c.id && displayTitle !== c.id) {
+        const shortId = c.id.length > 20 ? `${c.id.slice(0, 8)}\u2026${c.id.slice(-4)}` : c.id;
+        const idSpan = titleWrap.createSpan({ cls: "lenta-container-id", text: shortId });
+        idSpan.title = `Container ID: ${c.id}`;
+      }
+      const rightCol = row.createDiv({ cls: "lenta-container-row-right" });
+      const typeTag = rightCol.createSpan({ cls: "lenta-badge" });
+      typeTag.setText(c.type === "git" ? "VERSIONED" : (c.type || "SIMPLE").toUpperCase());
+      const isPub = isContainerPublic(c);
+      const privacyTag = rightCol.createSpan({ cls: `lenta-badge ${isPub ? "is-public" : "is-private"}` });
+      privacyTag.setText(isPub ? "PUBLIC" : "PRIVATE");
+      if (typeof c.totalNotes === "number") {
+        const notesTag = rightCol.createSpan({ cls: "lenta-count-pill" });
+        notesTag.setText(`\u{1F4C4} ${c.totalNotes}`);
+      }
+      let btnText = isStaged ? "\u2713 Selected" : "+ Select";
+      let btnClass = `lenta-select-btn ${isStaged ? "is-selected" : ""}`;
+      if (this.isConnecting) {
+        if (c.id === this.activeSyncingContainerId) {
+          btnText = "\u23F3 Loading...";
+          btnClass = "lenta-select-btn is-loading is-syncing";
+        } else if (this.completedSyncContainerIds.has(c.id)) {
+          btnText = "\u2713 Updated";
+          btnClass = "lenta-select-btn is-completed";
+        } else if (isStaged) {
+          btnText = "\u23F3 Pending...";
+          btnClass = "lenta-select-btn is-pending-sync";
+        }
+      } else {
+        if (isStaged && !isSaved) {
+          btnText = "+ Connect";
+          btnClass += " is-staged-add";
+        } else if (!isStaged && isSaved) {
+          btnText = "\u2715 Disconnect";
+          btnClass += " is-staged-remove";
+        } else if (isStaged && isSaved) {
+          btnText = "\u2713 Connected";
+        }
+      }
+      const selectBtn = rightCol.createEl("button", {
+        cls: btnClass,
+        text: btnText
+      });
+      selectBtn.disabled = this.isConnecting;
+      selectBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (this.isConnecting)
+          return;
+        this.toggleStagedSelection(c.id);
+      };
+      row.onclick = (e) => {
+        if (this.isConnecting)
+          return;
+        const targetTag = e.target.tagName.toUpperCase();
+        if (targetTag !== "INPUT" && targetTag !== "BUTTON") {
+          this.toggleStagedSelection(c.id);
+        }
+      };
+    }
+    listEl.scrollTop = savedListScrollTop;
+    if (this.contentEl) {
+      this.contentEl.scrollTop = savedContentScrollTop;
+    }
+  }
+};
+
+// src/ui/sidebar-view.ts
+var import_obsidian14 = require("obsidian");
+init_lenta_frontmatter();
+
 // ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/easing/index.js
 function cubicOut(t) {
   const f = t - 1;
@@ -9199,10 +11119,10 @@ function slide(node, { delay = 0, duration = 400, easing = cubicOut, axis = "y" 
 }
 
 // src/ui/svelte/LentaSidebar.svelte
-var import_obsidian11 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/ui/svelte/ContainerCard.svelte
-var import_obsidian10 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/ui/svelte/tree-flattener.ts
 function isTodayMatch(node, todayStr) {
@@ -9326,8 +11246,8 @@ function computeVirtualWindow(items, scrollTop, viewportHeight, itemHeight = 30,
 }
 
 // src/ui/svelte/TreeNodeRow.svelte
-var import_obsidian9 = require("obsidian");
-function create_if_block_6(ctx) {
+var import_obsidian11 = require("obsidian");
+function create_if_block_62(ctx) {
   let div;
   let span;
   let t1;
@@ -9395,7 +11315,7 @@ function create_if_block_6(ctx) {
     }
   };
 }
-function create_if_block_5(ctx) {
+function create_if_block_52(ctx) {
   let div1;
   let div0;
   let span0;
@@ -9504,7 +11424,7 @@ function create_if_block_5(ctx) {
     }
   };
 }
-function create_if_block_2(ctx) {
+function create_if_block_22(ctx) {
   let div;
   let span0;
   let span0_class_value;
@@ -9526,11 +11446,11 @@ function create_if_block_2(ctx) {
   let dispose;
   let if_block0 = (
     /*item*/
-    ctx[0].isToday && create_if_block_4(ctx)
+    ctx[0].isToday && create_if_block_42(ctx)
   );
   let if_block1 = (
     /*item*/
-    ctx[0].size && create_if_block_3(ctx)
+    ctx[0].size && create_if_block_32(ctx)
   );
   return {
     c() {
@@ -9629,7 +11549,7 @@ function create_if_block_2(ctx) {
       ) {
         if (if_block0) {
         } else {
-          if_block0 = create_if_block_4(ctx2);
+          if_block0 = create_if_block_42(ctx2);
           if_block0.c();
           if_block0.m(div, t3);
         }
@@ -9644,7 +11564,7 @@ function create_if_block_2(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_3(ctx2);
+          if_block1 = create_if_block_32(ctx2);
           if_block1.c();
           if_block1.m(div, null);
         }
@@ -9690,7 +11610,7 @@ function create_if_block_2(ctx) {
     }
   };
 }
-function create_if_block(ctx) {
+function create_if_block2(ctx) {
   let div;
   let span0;
   let obsIcon_action;
@@ -9714,7 +11634,7 @@ function create_if_block(ctx) {
   let if_block = (
     /*item*/
     ctx[0].childCount && /*item*/
-    ctx[0].childCount > 0 && create_if_block_1(ctx)
+    ctx[0].childCount > 0 && create_if_block_12(ctx)
   );
   return {
     c() {
@@ -9819,7 +11739,7 @@ function create_if_block(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_1(ctx2);
+          if_block = create_if_block_12(ctx2);
           if_block.c();
           if_block.m(div, t3);
         }
@@ -9863,7 +11783,7 @@ function create_if_block(ctx) {
     }
   };
 }
-function create_if_block_4(ctx) {
+function create_if_block_42(ctx) {
   let span;
   return {
     c() {
@@ -9882,7 +11802,7 @@ function create_if_block_4(ctx) {
     }
   };
 }
-function create_if_block_3(ctx) {
+function create_if_block_32(ctx) {
   let span;
   let t0_value = (Math.round(
     /*item*/
@@ -9917,7 +11837,7 @@ function create_if_block_3(ctx) {
     }
   };
 }
-function create_if_block_1(ctx) {
+function create_if_block_12(ctx) {
   let span;
   let t_value = (
     /*item*/
@@ -9947,29 +11867,29 @@ function create_if_block_1(ctx) {
     }
   };
 }
-function create_fragment(ctx) {
+function create_fragment2(ctx) {
   let if_block_anchor;
   function select_block_type(ctx2, dirty) {
     if (
       /*item*/
       ctx2[0].type === "folder"
     )
-      return create_if_block;
+      return create_if_block2;
     if (
       /*item*/
       ctx2[0].type === "file"
     )
-      return create_if_block_2;
+      return create_if_block_22;
     if (
       /*item*/
       ctx2[0].type === "today-marker"
     )
-      return create_if_block_5;
+      return create_if_block_52;
     if (
       /*item*/
       ctx2[0].type === "empty-folder"
     )
-      return create_if_block_6;
+      return create_if_block_62;
   }
   let current_block_type = select_block_type(ctx, -1);
   let if_block = current_block_type && current_block_type(ctx);
@@ -10009,19 +11929,19 @@ function create_fragment(ctx) {
     }
   };
 }
-function instance($$self, $$props, $$invalidate) {
+function instance2($$self, $$props, $$invalidate) {
   let { item } = $$props;
   let { todayHumanStr } = $$props;
   const dispatch2 = createEventDispatcher();
   function obsIcon(node, iconName) {
     if (iconName) {
-      (0, import_obsidian9.setIcon)(node, iconName);
+      (0, import_obsidian11.setIcon)(node, iconName);
     }
     return {
       update(newIconName) {
         node.empty();
         if (newIconName) {
-          (0, import_obsidian9.setIcon)(node, newIconName);
+          (0, import_obsidian11.setIcon)(node, newIconName);
         }
       }
     };
@@ -10089,21 +12009,21 @@ function instance($$self, $$props, $$invalidate) {
 var TreeNodeRow = class extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance, create_fragment, safe_not_equal, { item: 0, todayHumanStr: 1 });
+    init(this, options, instance2, create_fragment2, safe_not_equal, { item: 0, todayHumanStr: 1 });
   }
 };
 var TreeNodeRow_default = TreeNodeRow;
 
 // src/ui/svelte/VirtualTreeList.svelte
-function add_css(target) {
+function add_css2(target) {
   append_styles(target, "svelte-12i85gr", ".lenta-virtual-tree-root.svelte-12i85gr{overflow:hidden}.lenta-virtual-tree-slice.svelte-12i85gr{display:flex;flex-direction:column;gap:2px}");
 }
-function get_each_context(ctx, list, i) {
+function get_each_context2(ctx, list, i) {
   const child_ctx = ctx.slice();
   child_ctx[19] = list[i];
   return child_ctx;
 }
-function create_each_block(key_1, ctx) {
+function create_each_block2(key_1, ctx) {
   let first;
   let treenoderow;
   let current;
@@ -10188,7 +12108,7 @@ function create_each_block(key_1, ctx) {
     }
   };
 }
-function create_fragment2(ctx) {
+function create_fragment3(ctx) {
   let div1;
   let div0;
   let each_blocks = [];
@@ -10203,9 +12123,9 @@ function create_fragment2(ctx) {
     ctx2[19].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
-    let child_ctx = get_each_context(ctx, each_value, i);
+    let child_ctx = get_each_context2(ctx, each_value, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block2(key, child_ctx));
   }
   return {
     c() {
@@ -10251,7 +12171,7 @@ function create_fragment2(ctx) {
           ctx2[2].visibleItems
         );
         group_outros();
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div0, outro_and_destroy_block, create_each_block, null, get_each_context);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, div0, outro_and_destroy_block, create_each_block2, null, get_each_context2);
         check_outros();
       }
       if (!current || dirty & /*virtualWindow*/
@@ -10294,7 +12214,7 @@ function create_fragment2(ctx) {
     }
   };
 }
-function instance2($$self, $$props, $$invalidate) {
+function instance3($$self, $$props, $$invalidate) {
   let { items = [] } = $$props;
   let { itemHeight = 30 } = $$props;
   let { overscan = 5 } = $$props;
@@ -10413,8 +12333,8 @@ var VirtualTreeList = class extends SvelteComponent {
     init(
       this,
       options,
-      instance2,
-      create_fragment2,
+      instance3,
+      create_fragment3,
       safe_not_equal,
       {
         items: 3,
@@ -10423,14 +12343,17 @@ var VirtualTreeList = class extends SvelteComponent {
         todayHumanStr: 0,
         scrollContainer: 6
       },
-      add_css
+      add_css2
     );
   }
 };
 var VirtualTreeList_default = VirtualTreeList;
 
 // src/ui/svelte/ContainerCard.svelte
-function create_if_block_52(ctx) {
+function add_css3(target) {
+  append_styles(target, "svelte-cisfsd", ".lenta-mini-connect-btn.svelte-cisfsd{font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:4px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);color:var(--text-muted);cursor:pointer;line-height:1.2;transition:all 0.15s ease;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:3px;user-select:none}.lenta-mini-connect-btn.svelte-cisfsd:hover{color:var(--text-normal);border-color:var(--interactive-accent);background:var(--background-modifier-hover)}.lenta-mini-connect-btn.is-connected.svelte-cisfsd{background:var(--lenta-lemon-glow, rgba(249, 199, 79, 0.15));color:var(--lenta-lemon, #f9c74f);border-color:var(--lenta-lemon, #f9c74f);font-weight:700}");
+}
+function create_if_block_53(ctx) {
   let span;
   return {
     c() {
@@ -10448,7 +12371,7 @@ function create_if_block_52(ctx) {
     }
   };
 }
-function create_if_block_42(ctx) {
+function create_if_block_43(ctx) {
   let span;
   return {
     c() {
@@ -10466,7 +12389,7 @@ function create_if_block_42(ctx) {
     }
   };
 }
-function create_if_block_32(ctx) {
+function create_if_block_33(ctx) {
   let span;
   let t_value = (
     /*container*/
@@ -10496,13 +12419,13 @@ function create_if_block_32(ctx) {
     }
   };
 }
-function create_if_block2(ctx) {
+function create_if_block3(ctx) {
   let div;
   let current_block_type_index;
   let if_block;
   let div_transition;
   let current;
-  const if_block_creators = [create_if_block_12, create_if_block_22, create_else_block];
+  const if_block_creators = [create_if_block_13, create_if_block_23, create_else_block2];
   const if_blocks = [];
   function select_block_type_1(ctx2, dirty) {
     if (
@@ -10585,7 +12508,7 @@ function create_if_block2(ctx) {
     }
   };
 }
-function create_else_block(ctx) {
+function create_else_block2(ctx) {
   let virtualtreelist;
   let current;
   virtualtreelist = new VirtualTreeList_default({
@@ -10607,27 +12530,27 @@ function create_else_block(ctx) {
   virtualtreelist.$on(
     "toggleFolder",
     /*toggleFolder_handler*/
-    ctx[27]
+    ctx[25]
   );
   virtualtreelist.$on(
     "openNote",
     /*openNote_handler*/
-    ctx[28]
+    ctx[26]
   );
   virtualtreelist.$on(
     "addInFolder",
     /*handleFolderAddMenu*/
-    ctx[19]
+    ctx[17]
   );
   virtualtreelist.$on(
     "addTodayNote",
     /*handleAddTodayNote*/
-    ctx[20]
+    ctx[18]
   );
   virtualtreelist.$on(
     "quickAddInEmpty",
     /*handleQuickAddInEmpty*/
-    ctx[21]
+    ctx[19]
   );
   return {
     c() {
@@ -10668,7 +12591,7 @@ function create_else_block(ctx) {
     }
   };
 }
-function create_if_block_22(ctx) {
+function create_if_block_23(ctx) {
   let div;
   return {
     c() {
@@ -10689,7 +12612,7 @@ function create_if_block_22(ctx) {
     }
   };
 }
-function create_if_block_12(ctx) {
+function create_if_block_13(ctx) {
   let div;
   return {
     c() {
@@ -10710,8 +12633,8 @@ function create_if_block_12(ctx) {
     }
   };
 }
-function create_fragment3(ctx) {
-  let div2;
+function create_fragment4(ctx) {
+  let div1;
   let div0;
   let span0;
   let obsIcon_action;
@@ -10721,28 +12644,24 @@ function create_fragment3(ctx) {
   let t2;
   let t3;
   let t4;
+  let button;
+  let t5_value = (
+    /*isActiveContainer*/
+    ctx[2] ? "\u2713 Connected" : "Connect"
+  );
+  let t5;
+  let button_class_value;
+  let button_title_value;
+  let t6;
   let span2;
   let obsIcon_action_1;
-  let t5;
+  let t7;
   let span3;
   let span3_aria_label_value;
   let obsIcon_action_2;
   let div0_class_value;
-  let t6;
-  let div1;
-  let button0;
-  let t7_value = (
-    /*isActiveContainer*/
-    ctx[2] ? "\u2713 Connected" : "Connect Container"
-  );
-  let t7;
-  let button0_class_value;
   let t8;
-  let button1;
-  let t10;
-  let button2;
-  let t12;
-  let div2_class_value;
+  let div1_class_value;
   let current;
   let mounted;
   let dispose;
@@ -10751,27 +12670,27 @@ function create_fragment3(ctx) {
       /*isFeed*/
       ctx2[9]
     )
-      return create_if_block_42;
+      return create_if_block_43;
     if (
       /*isPublic*/
       ctx2[10]
     )
-      return create_if_block_52;
+      return create_if_block_53;
   }
   let current_block_type = select_block_type(ctx, -1);
   let if_block0 = current_block_type && current_block_type(ctx);
   let if_block1 = (
     /*container*/
     ctx[0].noteCount !== void 0 && /*container*/
-    ctx[0].noteCount !== null && create_if_block_32(ctx)
+    ctx[0].noteCount !== null && create_if_block_33(ctx)
   );
   let if_block2 = (
     /*isExpanded*/
-    ctx[1] && create_if_block2(ctx)
+    ctx[1] && create_if_block3(ctx)
   );
   return {
     c() {
-      div2 = element("div");
+      div1 = element("div");
       div0 = element("div");
       span0 = element("span");
       t0 = space();
@@ -10787,24 +12706,22 @@ function create_fragment3(ctx) {
       if (if_block1)
         if_block1.c();
       t4 = space();
-      span2 = element("span");
-      t5 = space();
-      span3 = element("span");
+      button = element("button");
+      t5 = text(t5_value);
       t6 = space();
-      div1 = element("div");
-      button0 = element("button");
-      t7 = text(t7_value);
+      span2 = element("span");
+      t7 = space();
+      span3 = element("span");
       t8 = space();
-      button1 = element("button");
-      button1.textContent = "+ Note +";
-      t10 = space();
-      button2 = element("button");
-      button2.textContent = "+ Folder \u{1F4C1}";
-      t12 = space();
       if (if_block2)
         if_block2.c();
       attr(span0, "class", "lenta-item-icon");
       attr(span1, "class", "lenta-item-name");
+      attr(button, "type", "button");
+      attr(button, "class", button_class_value = "lenta-mini-connect-btn " + /*isActiveContainer*/
+      (ctx[2] ? "is-connected" : "") + " svelte-cisfsd");
+      attr(button, "title", button_title_value = /*isActiveContainer*/
+      ctx[2] ? "Connected container (click to disconnect)" : "Connect container");
       attr(span2, "class", "lenta-container-add-btn clickable-icon");
       attr(span2, "aria-label", "New Note or Folder in Container");
       attr(span2, "role", "button");
@@ -10816,17 +12733,12 @@ function create_fragment3(ctx) {
       (ctx[2] ? "is-active" : ""));
       attr(div0, "role", "button");
       attr(div0, "tabindex", "0");
-      attr(button0, "class", button0_class_value = "lenta-container-action-btn lenta-container-action-btn-connect " + /*isActiveContainer*/
-      (ctx[2] ? "is-active" : ""));
-      attr(button1, "class", "lenta-container-action-btn lenta-container-action-btn-add");
-      attr(button2, "class", "lenta-container-action-btn lenta-container-action-btn-add");
-      attr(div1, "class", "lenta-container-sub-actions");
-      attr(div2, "class", div2_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
+      attr(div1, "class", div1_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
       (ctx[2] ? "is-active" : ""));
     },
     m(target, anchor) {
-      insert(target, div2, anchor);
-      append(div2, div0);
+      insert(target, div1, anchor);
+      append(div1, div0);
       append(div0, span0);
       append(div0, t0);
       append(div0, span1);
@@ -10838,20 +12750,15 @@ function create_fragment3(ctx) {
       if (if_block1)
         if_block1.m(div0, null);
       append(div0, t4);
+      append(div0, button);
+      append(button, t5);
+      append(div0, t6);
       append(div0, span2);
-      append(div0, t5);
+      append(div0, t7);
       append(div0, span3);
-      append(div2, t6);
-      append(div2, div1);
-      append(div1, button0);
-      append(button0, t7);
       append(div1, t8);
-      append(div1, button1);
-      append(div1, t10);
-      append(div1, button2);
-      append(div2, t12);
       if (if_block2)
-        if_block2.m(div2, null);
+        if_block2.m(div1, null);
       current = true;
       if (!mounted) {
         dispose = [
@@ -10862,17 +12769,21 @@ function create_fragment3(ctx) {
             /*isFeed*/
             ctx[9] ? "newspaper" : "box"
           )),
+          listen(button, "click", stop_propagation(
+            /*handleConnectClick*/
+            ctx[14]
+          )),
           listen(
             span2,
             "click",
             /*handlePlusMenuClick*/
-            ctx[17]
+            ctx[15]
           ),
           listen(
             span2,
             "keydown",
             /*handlePlusMenuKeydown*/
-            ctx[18]
+            ctx[16]
           ),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
           ctx[12].call(null, span2, "plus")),
@@ -10893,25 +12804,7 @@ function create_fragment3(ctx) {
             div0,
             "keydown",
             /*keydown_handler*/
-            ctx[26]
-          ),
-          listen(
-            button0,
-            "click",
-            /*handleConnectClick*/
-            ctx[14]
-          ),
-          listen(
-            button1,
-            "click",
-            /*handleAddNoteClick*/
-            ctx[15]
-          ),
-          listen(
-            button2,
-            "click",
-            /*handleAddFolderClick*/
-            ctx[16]
+            ctx[24]
           )
         ];
         mounted = true;
@@ -10949,13 +12842,27 @@ function create_fragment3(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_32(ctx2);
+          if_block1 = create_if_block_33(ctx2);
           if_block1.c();
           if_block1.m(div0, t4);
         }
       } else if (if_block1) {
         if_block1.d(1);
         if_block1 = null;
+      }
+      if ((!current || dirty & /*isActiveContainer*/
+      4) && t5_value !== (t5_value = /*isActiveContainer*/
+      ctx2[2] ? "\u2713 Connected" : "Connect"))
+        set_data(t5, t5_value);
+      if (!current || dirty & /*isActiveContainer*/
+      4 && button_class_value !== (button_class_value = "lenta-mini-connect-btn " + /*isActiveContainer*/
+      (ctx2[2] ? "is-connected" : "") + " svelte-cisfsd")) {
+        attr(button, "class", button_class_value);
+      }
+      if (!current || dirty & /*isActiveContainer*/
+      4 && button_title_value !== (button_title_value = /*isActiveContainer*/
+      ctx2[2] ? "Connected container (click to disconnect)" : "Connect container")) {
+        attr(button, "title", button_title_value);
       }
       if (!current || dirty & /*isExpanded*/
       2 && span3_aria_label_value !== (span3_aria_label_value = /*isExpanded*/
@@ -10974,15 +12881,6 @@ function create_fragment3(ctx) {
       (ctx2[2] ? "is-active" : ""))) {
         attr(div0, "class", div0_class_value);
       }
-      if ((!current || dirty & /*isActiveContainer*/
-      4) && t7_value !== (t7_value = /*isActiveContainer*/
-      ctx2[2] ? "\u2713 Connected" : "Connect Container"))
-        set_data(t7, t7_value);
-      if (!current || dirty & /*isActiveContainer*/
-      4 && button0_class_value !== (button0_class_value = "lenta-container-action-btn lenta-container-action-btn-connect " + /*isActiveContainer*/
-      (ctx2[2] ? "is-active" : ""))) {
-        attr(button0, "class", button0_class_value);
-      }
       if (
         /*isExpanded*/
         ctx2[1]
@@ -10994,10 +12892,10 @@ function create_fragment3(ctx) {
             transition_in(if_block2, 1);
           }
         } else {
-          if_block2 = create_if_block2(ctx2);
+          if_block2 = create_if_block3(ctx2);
           if_block2.c();
           transition_in(if_block2, 1);
-          if_block2.m(div2, null);
+          if_block2.m(div1, null);
         }
       } else if (if_block2) {
         group_outros();
@@ -11007,9 +12905,9 @@ function create_fragment3(ctx) {
         check_outros();
       }
       if (!current || dirty & /*isActiveContainer*/
-      4 && div2_class_value !== (div2_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
+      4 && div1_class_value !== (div1_class_value = "lenta-tree-item lenta-tree-item-folder lenta-container-row " + /*isActiveContainer*/
       (ctx2[2] ? "is-active" : ""))) {
-        attr(div2, "class", div2_class_value);
+        attr(div1, "class", div1_class_value);
       }
     },
     i(local) {
@@ -11024,7 +12922,7 @@ function create_fragment3(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div2);
+        detach(div1);
       }
       if (if_block0) {
         if_block0.d();
@@ -11038,7 +12936,7 @@ function create_fragment3(ctx) {
     }
   };
 }
-function instance3($$self, $$props, $$invalidate) {
+function instance4($$self, $$props, $$invalidate) {
   let displayTitle;
   let isPublic;
   let isFeed;
@@ -11055,13 +12953,13 @@ function instance3($$self, $$props, $$invalidate) {
   const dispatch2 = createEventDispatcher();
   function obsIcon(node, iconName) {
     if (iconName) {
-      (0, import_obsidian10.setIcon)(node, iconName);
+      (0, import_obsidian12.setIcon)(node, iconName);
     }
     return {
       update(newIconName) {
         node.empty();
         if (newIconName) {
-          (0, import_obsidian10.setIcon)(node, newIconName);
+          (0, import_obsidian12.setIcon)(node, newIconName);
         }
       }
     };
@@ -11091,7 +12989,7 @@ function instance3($$self, $$props, $$invalidate) {
   }
   function handlePlusMenuClick(e) {
     e.stopPropagation();
-    const menu = new import_obsidian10.Menu();
+    const menu = new import_obsidian12.Menu();
     menu.addItem((item) => {
       item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
         dispatch2("addNote", {
@@ -11122,7 +13020,7 @@ function instance3($$self, $$props, $$invalidate) {
   }
   function handleFolderAddMenu(e) {
     const { item, mouseEvent } = e.detail;
-    const menu = new import_obsidian10.Menu();
+    const menu = new import_obsidian12.Menu();
     menu.addItem((mItem) => {
       mItem.setTitle(`\u{1F4DD} New Note in "${item.name}"`).setIcon("file-plus").onClick(() => {
         dispatch2("addNote", {
@@ -11178,11 +13076,11 @@ function instance3($$self, $$props, $$invalidate) {
     if ("files" in $$props2)
       $$invalidate(4, files = $$props2.files);
     if ("folders" in $$props2)
-      $$invalidate(22, folders = $$props2.folders);
+      $$invalidate(20, folders = $$props2.folders);
     if ("expandedFolders" in $$props2)
-      $$invalidate(23, expandedFolders = $$props2.expandedFolders);
+      $$invalidate(21, expandedFolders = $$props2.expandedFolders);
     if ("todayStr" in $$props2)
-      $$invalidate(24, todayStr = $$props2.todayStr);
+      $$invalidate(22, todayStr = $$props2.todayStr);
     if ("todayHumanStr" in $$props2)
       $$invalidate(5, todayHumanStr = $$props2.todayHumanStr);
     if ("scrollContainer" in $$props2)
@@ -11192,7 +13090,7 @@ function instance3($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty & /*container*/
     1) {
       $:
-        $$invalidate(8, displayTitle = getContainerDisplayTitle2(container.id, container.name));
+        $$invalidate(8, displayTitle = getContainerDisplayTitle2(container));
     }
     if ($$self.$$.dirty & /*container*/
     1) {
@@ -11205,13 +13103,13 @@ function instance3($$self, $$props, $$invalidate) {
         $$invalidate(9, isFeed = container.id.startsWith("feed-"));
     }
     if ($$self.$$.dirty & /*files, folders, fileTree, expandedFolders, container, todayStr*/
-    62914577) {
+    15728657) {
       $: {
         if (files && files.length > 0) {
-          $$invalidate(25, fileTree = buildFileTree(files, folders || []));
+          $$invalidate(23, fileTree = buildFileTree(files, folders || []));
           $$invalidate(7, flatItems = flattenTree(fileTree, expandedFolders, container.id, todayStr));
         } else {
-          $$invalidate(25, fileTree = []);
+          $$invalidate(23, fileTree = []);
           $$invalidate(7, flatItems = []);
         }
       }
@@ -11233,8 +13131,6 @@ function instance3($$self, $$props, $$invalidate) {
     obsIcon,
     handleHeaderClick,
     handleConnectClick,
-    handleAddNoteClick,
-    handleAddFolderClick,
     handlePlusMenuClick,
     handlePlusMenuKeydown,
     handleFolderAddMenu,
@@ -11252,65 +13148,29 @@ function instance3($$self, $$props, $$invalidate) {
 var ContainerCard = class extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance3, create_fragment3, safe_not_equal, {
-      container: 0,
-      isExpanded: 1,
-      isActiveContainer: 2,
-      isLoadingFiles: 3,
-      files: 4,
-      folders: 22,
-      expandedFolders: 23,
-      todayStr: 24,
-      todayHumanStr: 5,
-      scrollContainer: 6
-    });
+    init(
+      this,
+      options,
+      instance4,
+      create_fragment4,
+      safe_not_equal,
+      {
+        container: 0,
+        isExpanded: 1,
+        isActiveContainer: 2,
+        isLoadingFiles: 3,
+        files: 4,
+        folders: 20,
+        expandedFolders: 21,
+        todayStr: 22,
+        todayHumanStr: 5,
+        scrollContainer: 6
+      },
+      add_css3
+    );
   }
 };
 var ContainerCard_default = ContainerCard;
-
-// ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/store/index.js
-var subscriber_queue = [];
-function writable(value, start = noop) {
-  let stop;
-  const subscribers = /* @__PURE__ */ new Set();
-  function set(new_value) {
-    if (safe_not_equal(value, new_value)) {
-      value = new_value;
-      if (stop) {
-        const run_queue = !subscriber_queue.length;
-        for (const subscriber of subscribers) {
-          subscriber[1]();
-          subscriber_queue.push(subscriber, value);
-        }
-        if (run_queue) {
-          for (let i = 0; i < subscriber_queue.length; i += 2) {
-            subscriber_queue[i][0](subscriber_queue[i + 1]);
-          }
-          subscriber_queue.length = 0;
-        }
-      }
-    }
-  }
-  function update2(fn) {
-    set(fn(value));
-  }
-  function subscribe2(run2, invalidate = noop) {
-    const subscriber = [run2, invalidate];
-    subscribers.add(subscriber);
-    if (subscribers.size === 1) {
-      stop = start(set, update2) || noop;
-    }
-    run2(value);
-    return () => {
-      subscribers.delete(subscriber);
-      if (subscribers.size === 0 && stop) {
-        stop();
-        stop = null;
-      }
-    };
-  }
-  return { set, update: update2, subscribe: subscribe2 };
-}
 
 // src/ui/svelte/sidebar-store.ts
 function createSetStore(initialItems = []) {
@@ -11357,32 +13217,32 @@ function createSetStore(initialItems = []) {
 
 // src/ui/svelte/LentaSidebar.svelte
 var { Map: Map_1 } = globals;
-function add_css2(target) {
-  append_styles(target, "svelte-173hj10", ".lenta-sidebar-container.svelte-173hj10{min-width:300px;height:100%;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;box-sizing:border-box;font-size:var(--font-ui-small)}.lenta-sidebar-header.svelte-173hj10{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.lenta-sidebar-title.svelte-173hj10{display:flex;align-items:center;gap:8px}.lenta-title-text.svelte-173hj10{margin:0;font-size:1rem;font-weight:700;color:var(--lenta-lemon, #f9c74f)}.lenta-badge.svelte-173hj10{font-size:0.7rem;background:var(--interactive-accent);color:var(--text-on-accent);padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap}.lenta-sidebar-toolbar.svelte-173hj10{display:flex;gap:4px;align-items:center}.lenta-search-container.svelte-173hj10{flex-shrink:0;margin-bottom:8px}.lenta-search-input-wrap.svelte-173hj10{position:relative;display:flex;align-items:center;background:var(--background-modifier-form-field);border:1px solid var(--background-modifier-border);border-radius:6px;padding:0 8px}.lenta-search-input-wrap.svelte-173hj10:focus-within{border-color:var(--interactive-accent)}.lenta-search-icon.svelte-173hj10{display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;margin-right:6px}.lenta-search-input.svelte-173hj10{flex:1;border:none;background:transparent;padding:6px 0;font-size:0.82rem;color:var(--text-normal);outline:none}.lenta-search-clear.svelte-173hj10{background:transparent;border:none;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;color:var(--text-muted)}.lenta-search-clear.svelte-173hj10:hover{color:var(--text-normal)}.lenta-mode-switcher.svelte-173hj10{flex-shrink:0;display:flex;gap:4px;background:var(--background-secondary);padding:3px;border-radius:8px;margin-bottom:8px}.lenta-mode-tab.svelte-173hj10{flex:1;text-align:center;padding:5px 8px;font-size:0.8rem;font-weight:600;border:none;background:transparent;border-radius:6px;color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-mode-tab.svelte-173hj10:hover{color:var(--text-normal)}.lenta-mode-tab.is-active.svelte-173hj10{background:var(--interactive-accent);color:var(--text-on-accent);box-shadow:0 1px 3px rgba(0, 0, 0, 0.15)}.lenta-sidebar-tabs.svelte-173hj10{flex-shrink:0;display:flex;gap:4px;margin-bottom:6px}.lenta-tab.svelte-173hj10{flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);color:var(--text-muted);cursor:pointer;font-size:0.8rem;font-weight:500;transition:all 0.15s ease}.lenta-tab.active.svelte-173hj10{background:var(--interactive-accent);color:var(--text-on-accent);border-color:var(--interactive-accent)}.lenta-scope-filter-bar.svelte-173hj10{flex-shrink:0;display:flex;gap:6px;margin-bottom:8px}.lenta-scope-pill.svelte-173hj10{flex:1;padding:4px 6px;font-size:0.75rem;font-weight:500;border-radius:5px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-scope-pill.active.svelte-173hj10{border-color:var(--interactive-accent);color:var(--text-normal);background:var(--background-modifier-active-hover);font-weight:600}.lenta-inline-key-card.svelte-173hj10{flex-shrink:0;margin-bottom:8px}.lenta-key-connected-row.svelte-173hj10{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 10px;background:var(--background-secondary);border-radius:6px;border:1px solid var(--background-modifier-border)}.lenta-key-badge.svelte-173hj10{font-size:0.78rem;font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-key-action-btn.svelte-173hj10{padding:3px 8px;font-size:0.75rem;border-radius:4px;border:1px solid var(--background-modifier-border);cursor:pointer}.lenta-key-action-btn.mod-warning.svelte-173hj10{color:var(--text-error, #f05252);background:transparent}.lenta-key-action-btn.mod-warning.svelte-173hj10:hover{background:var(--background-modifier-error-hover, rgba(240, 82, 82, 0.1))}.lenta-key-input-wrap.svelte-173hj10{display:flex;gap:6px}.lenta-key-input.svelte-173hj10{flex:1;padding:5px 8px;font-size:0.8rem;border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-modifier-form-field);color:var(--text-normal)}.lenta-key-submit-btn.svelte-173hj10{padding:5px 12px;font-size:0.8rem;font-weight:600;border-radius:6px;border:none;background:var(--interactive-accent);color:var(--text-on-accent);cursor:pointer}.lenta-sidebar-content.svelte-173hj10{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;min-height:0;padding-right:4px;display:flex;flex-direction:column;gap:4px}.lenta-sidebar-footer.svelte-173hj10{flex-shrink:0;margin-top:auto;padding-top:8px;border-top:1px solid var(--background-modifier-border);display:flex;gap:6px}.lenta-footer-action-btn.svelte-173hj10{flex:1;padding:6px 10px;font-size:0.8rem;font-weight:600;background:var(--interactive-normal);border-radius:6px;border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer;transition:background 0.15s ease}.lenta-footer-action-btn.svelte-173hj10:hover{background:var(--interactive-hover)}.lenta-tree-list.svelte-173hj10{display:flex;flex-direction:column;gap:4px}.lenta-tree-item.svelte-173hj10{border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);overflow:hidden}.lenta-folder-header-row.svelte-173hj10,.lenta-feed-header-row.svelte-173hj10{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none}.lenta-folder-header-row.svelte-173hj10:hover,.lenta-feed-header-row.svelte-173hj10:hover{background:var(--background-modifier-hover)}.lenta-item-name.svelte-173hj10{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-count-pill.svelte-173hj10{font-size:0.72rem;background:var(--background-modifier-border);color:var(--text-muted);padding:1px 6px;border-radius:10px}.lenta-folder-add-note.svelte-173hj10{background:transparent;border:none;cursor:pointer;padding:2px}.lenta-markdown-preview-pane.svelte-173hj10{padding:6px 10px;background:var(--background-primary);border-top:1px solid var(--background-modifier-border)}.lenta-notes-list.svelte-173hj10{display:flex;flex-direction:column;gap:3px}.lenta-note-row.svelte-173hj10{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer}.lenta-note-row.svelte-173hj10:hover{background:var(--background-modifier-hover)}.lenta-note-title.svelte-173hj10{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.82rem}.lenta-note-date.svelte-173hj10{font-size:0.72rem;color:var(--text-muted)}.lenta-loading-text.svelte-173hj10,.lenta-preview-loading.svelte-173hj10{padding:12px;text-align:center;color:var(--text-muted);font-style:italic}.lenta-preview-empty.svelte-173hj10{padding:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;display:flex;flex-direction:column;align-items:center;gap:8px}.lenta-empty-action-link.svelte-173hj10{background:transparent;border:none;color:var(--interactive-accent);cursor:pointer;text-decoration:underline;font-size:0.8rem}");
+function add_css4(target) {
+  append_styles(target, "svelte-7ir8ul", ".lenta-sidebar-container.svelte-7ir8ul{min-width:300px;height:100%;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;box-sizing:border-box;font-size:var(--font-ui-small)}.lenta-sidebar-header.svelte-7ir8ul{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.lenta-sidebar-title.svelte-7ir8ul{display:flex;align-items:center;gap:8px}.lenta-title-text.svelte-7ir8ul{margin:0;font-size:1rem;font-weight:700;color:var(--lenta-lemon, #f9c74f)}.lenta-badge.svelte-7ir8ul{font-size:0.7rem;background:var(--interactive-accent);color:var(--text-on-accent);padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap}.lenta-sidebar-toolbar.svelte-7ir8ul{display:flex;gap:4px;align-items:center}.lenta-search-container.svelte-7ir8ul{flex-shrink:0;margin-bottom:8px}.lenta-search-input-wrap.svelte-7ir8ul{position:relative;display:flex;align-items:center;background:var(--background-modifier-form-field);border:1px solid var(--background-modifier-border);border-radius:6px;padding:0 8px}.lenta-search-input-wrap.svelte-7ir8ul:focus-within{border-color:var(--interactive-accent)}.lenta-search-icon.svelte-7ir8ul{display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;margin-right:6px}.lenta-search-input.svelte-7ir8ul{flex:1;border:none;background:transparent;padding:6px 0;font-size:0.82rem;color:var(--text-normal);outline:none}.lenta-search-clear.svelte-7ir8ul{background:transparent;border:none;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;color:var(--text-muted)}.lenta-search-clear.svelte-7ir8ul:hover{color:var(--text-normal)}.lenta-mode-switcher.svelte-7ir8ul{flex-shrink:0;display:flex;gap:4px;background:var(--background-secondary);padding:3px;border-radius:8px;margin-bottom:8px}.lenta-mode-tab.svelte-7ir8ul{flex:1;text-align:center;padding:5px 8px;font-size:0.8rem;font-weight:600;border:none;background:transparent;border-radius:6px;color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-mode-tab.svelte-7ir8ul:hover{color:var(--text-normal)}.lenta-mode-tab.is-active.svelte-7ir8ul{background:var(--interactive-accent);color:var(--text-on-accent);box-shadow:0 1px 3px rgba(0, 0, 0, 0.15)}.lenta-sidebar-tabs.svelte-7ir8ul{flex-shrink:0;display:flex;gap:4px;margin-bottom:6px}.lenta-tab.svelte-7ir8ul{flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);color:var(--text-muted);cursor:pointer;font-size:0.8rem;font-weight:500;transition:all 0.15s ease}.lenta-tab.active.svelte-7ir8ul{background:var(--interactive-accent);color:var(--text-on-accent);border-color:var(--interactive-accent)}.lenta-scope-filter-bar.svelte-7ir8ul{flex-shrink:0;display:flex;gap:6px;margin-bottom:8px}.lenta-scope-pill.svelte-7ir8ul{flex:1;padding:4px 6px;font-size:0.75rem;font-weight:500;border-radius:5px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);color:var(--text-muted);cursor:pointer;transition:all 0.15s ease}.lenta-scope-pill.active.svelte-7ir8ul{border-color:var(--interactive-accent);color:var(--text-normal);background:var(--background-modifier-active-hover);font-weight:600}.lenta-inline-key-card.svelte-7ir8ul{flex-shrink:0;margin-bottom:8px}.lenta-key-connected-row.svelte-7ir8ul{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 10px;background:var(--background-secondary);border-radius:6px;border:1px solid var(--background-modifier-border)}.lenta-key-badge.svelte-7ir8ul{font-size:0.78rem;font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-key-action-btn.svelte-7ir8ul{padding:3px 8px;font-size:0.75rem;border-radius:4px;border:1px solid var(--background-modifier-border);cursor:pointer}.lenta-key-action-btn.mod-warning.svelte-7ir8ul{color:var(--text-error, #f05252);background:transparent}.lenta-key-action-btn.mod-warning.svelte-7ir8ul:hover{background:var(--background-modifier-error-hover, rgba(240, 82, 82, 0.1))}.lenta-key-input-wrap.svelte-7ir8ul{display:flex;gap:6px}.lenta-key-input.svelte-7ir8ul{flex:1;padding:5px 8px;font-size:0.8rem;border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-modifier-form-field);color:var(--text-normal)}.lenta-key-submit-btn.svelte-7ir8ul{padding:5px 12px;font-size:0.8rem;font-weight:600;border-radius:6px;border:none;background:var(--interactive-accent);color:var(--text-on-accent);cursor:pointer}.lenta-sidebar-content.svelte-7ir8ul{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;min-height:0;padding-right:4px;display:flex;flex-direction:column;gap:4px}.lenta-sidebar-footer.svelte-7ir8ul{flex-shrink:0;margin-top:auto;padding-top:8px;border-top:1px solid var(--background-modifier-border);display:flex;gap:6px}.lenta-footer-action-btn.svelte-7ir8ul{flex:1;padding:6px 10px;font-size:0.8rem;font-weight:600;background:var(--interactive-normal);border-radius:6px;border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer;transition:background 0.15s ease}.lenta-footer-action-btn.svelte-7ir8ul:hover{background:var(--interactive-hover)}.lenta-tree-list.svelte-7ir8ul{display:flex;flex-direction:column;gap:4px}.lenta-tree-item.svelte-7ir8ul{border-radius:6px;border:1px solid var(--background-modifier-border);background:var(--background-secondary);overflow:hidden}.lenta-folder-header-row.svelte-7ir8ul,.lenta-feed-header-row.svelte-7ir8ul{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none}.lenta-folder-header-row.svelte-7ir8ul:hover,.lenta-feed-header-row.svelte-7ir8ul:hover{background:var(--background-modifier-hover)}.lenta-item-name.svelte-7ir8ul{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lenta-count-pill.svelte-7ir8ul{font-size:0.72rem;background:var(--background-modifier-border);color:var(--text-muted);padding:1px 6px;border-radius:10px}.lenta-folder-add-note.svelte-7ir8ul{background:transparent;border:none;cursor:pointer;padding:2px}.lenta-markdown-preview-pane.svelte-7ir8ul{padding:6px 10px;background:var(--background-primary);border-top:1px solid var(--background-modifier-border)}.lenta-notes-list.svelte-7ir8ul{display:flex;flex-direction:column;gap:3px}.lenta-note-row.svelte-7ir8ul{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer}.lenta-note-row.svelte-7ir8ul:hover{background:var(--background-modifier-hover)}.lenta-note-title.svelte-7ir8ul{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.82rem}.lenta-note-date.svelte-7ir8ul{font-size:0.72rem;color:var(--text-muted)}.lenta-loading-text.svelte-7ir8ul,.lenta-preview-loading.svelte-7ir8ul{padding:12px;text-align:center;color:var(--text-muted);font-style:italic}.lenta-preview-empty.svelte-7ir8ul{padding:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;display:flex;flex-direction:column;align-items:center;gap:8px}.lenta-empty-action-link.svelte-7ir8ul{background:transparent;border:none;color:var(--interactive-accent);cursor:pointer;text-decoration:underline;font-size:0.8rem}.lenta-ai-sparkle-btn{color:#c084fc !important;transition:transform 0.15s ease, color 0.15s ease}.lenta-ai-sparkle-btn:hover{color:#e879f9 !important;transform:scale(1.18)}");
 }
 function get_each_context_3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[112] = list[i];
+  child_ctx[114] = list[i];
   return child_ctx;
 }
 function get_each_context_4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[109] = list[i];
+  child_ctx[111] = list[i];
   return child_ctx;
 }
-function get_each_context_1(ctx, list, i) {
+function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[106] = list[i];
+  child_ctx[108] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[109] = list[i];
+  child_ctx[111] = list[i];
   return child_ctx;
 }
-function get_each_context2(ctx, list, i) {
+function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[103] = list[i];
+  child_ctx[105] = list[i];
   return child_ctx;
 }
 function create_if_block_21(ctx) {
@@ -11398,7 +13258,7 @@ function create_if_block_21(ctx) {
         /*selectedCount*/
         ctx[19]
       );
-      attr(span, "class", "lenta-badge svelte-173hj10");
+      attr(span, "class", "lenta-badge svelte-7ir8ul");
       attr(span, "title", span_title_value = "Connected containers (" + /*selectedCount*/
       ctx[19] + "): " + /*settings*/
       ctx[0].activeContainerIds?.join(", "));
@@ -11449,8 +13309,8 @@ function create_if_block_20(ctx) {
           listen(
             button,
             "click",
-            /*click_handler_5*/
-            ctx[62]
+            /*click_handler_6*/
+            ctx[64]
           ),
           action_destroyer(obsIcon_action = /*obsIcon*/
           ctx[33].call(null, button, "link-2"))
@@ -11477,7 +13337,7 @@ function create_if_block_19(ctx) {
       button = element("button");
       button.textContent = "\xD7";
       attr(button, "type", "button");
-      attr(button, "class", "lenta-search-clear clickable-icon svelte-173hj10");
+      attr(button, "class", "lenta-search-clear clickable-icon svelte-7ir8ul");
       attr(button, "aria-label", "Clear search");
     },
     m(target, anchor) {
@@ -11486,8 +13346,8 @@ function create_if_block_19(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_7*/
-          ctx[65]
+          /*click_handler_8*/
+          ctx[67]
         );
         mounted = true;
       }
@@ -11548,12 +13408,12 @@ function create_else_block_3(ctx) {
       /*isLoading*/
       ctx2[6]
     )
-      return create_if_block_53;
+      return create_if_block_54;
     if (
       /*activeTab*/
       ctx2[12] === "folders"
     )
-      return create_if_block_62;
+      return create_if_block_63;
     return create_else_block_7;
   }
   let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1]);
@@ -11591,14 +13451,14 @@ function create_else_block_3(ctx) {
       attr(button0, "aria-selected", button0_aria_selected_value = /*activeTab*/
       ctx[12] === "folders");
       attr(button0, "class", button0_class_value = "lenta-tab " + /*activeTab*/
-      (ctx[12] === "folders" ? "active" : "") + " svelte-173hj10");
+      (ctx[12] === "folders" ? "active" : "") + " svelte-7ir8ul");
       attr(button1, "type", "button");
       attr(button1, "role", "tab");
       attr(button1, "aria-selected", button1_aria_selected_value = /*activeTab*/
       ctx[12] === "feeds");
       attr(button1, "class", button1_class_value = "lenta-tab " + /*activeTab*/
-      (ctx[12] === "feeds" ? "active" : "") + " svelte-173hj10");
-      attr(div0, "class", "lenta-sidebar-tabs svelte-173hj10");
+      (ctx[12] === "feeds" ? "active" : "") + " svelte-7ir8ul");
+      attr(div0, "class", "lenta-sidebar-tabs svelte-7ir8ul");
       attr(div0, "role", "tablist");
       attr(div0, "aria-label", "Notes sub-navigation");
       attr(button2, "type", "button");
@@ -11606,24 +13466,24 @@ function create_else_block_3(ctx) {
       attr(button2, "aria-checked", button2_aria_checked_value = /*scopeFilter*/
       ctx[9] === "my");
       attr(button2, "class", button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "my" ? "active" : "") + " svelte-173hj10");
+      (ctx[9] === "my" ? "active" : "") + " svelte-7ir8ul");
       attr(button3, "type", "button");
       attr(button3, "role", "radio");
       attr(button3, "aria-checked", button3_aria_checked_value = /*scopeFilter*/
       ctx[9] === "public");
       attr(button3, "class", button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "public" ? "active" : "") + " svelte-173hj10");
-      attr(div1, "class", "lenta-scope-filter-bar svelte-173hj10");
+      (ctx[9] === "public" ? "active" : "") + " svelte-7ir8ul");
+      attr(div1, "class", "lenta-scope-filter-bar svelte-7ir8ul");
       attr(div1, "role", "radiogroup");
       attr(div1, "aria-label", "Scope filter");
-      attr(div2, "class", "lenta-sidebar-content svelte-173hj10");
+      attr(div2, "class", "lenta-sidebar-content svelte-7ir8ul");
       attr(button4, "type", "button");
-      attr(button4, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button4, "class", "lenta-footer-action-btn svelte-7ir8ul");
       attr(button5, "type", "button");
-      attr(button5, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button5, "class", "lenta-footer-action-btn svelte-7ir8ul");
       attr(button6, "type", "button");
-      attr(button6, "class", "lenta-footer-action-btn svelte-173hj10");
-      attr(footer, "class", "lenta-sidebar-footer svelte-173hj10");
+      attr(button6, "class", "lenta-footer-action-btn svelte-7ir8ul");
+      attr(footer, "class", "lenta-sidebar-footer svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div0, anchor);
@@ -11642,7 +13502,7 @@ function create_else_block_3(ctx) {
       insert(target, t7, anchor);
       insert(target, div2, anchor);
       if_block.m(div2, null);
-      ctx[98](div2);
+      ctx[100](div2);
       insert(target, t8, anchor);
       insert(target, footer, anchor);
       append(footer, button4);
@@ -11655,44 +13515,44 @@ function create_else_block_3(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_16*/
-            ctx[83]
+            /*click_handler_17*/
+            ctx[85]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_17*/
-            ctx[84]
+            /*click_handler_18*/
+            ctx[86]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_18*/
-            ctx[85]
+            /*click_handler_19*/
+            ctx[87]
           ),
           listen(
             button3,
             "click",
-            /*click_handler_19*/
-            ctx[86]
+            /*click_handler_20*/
+            ctx[88]
           ),
           listen(
             button4,
             "click",
-            /*click_handler_27*/
-            ctx[99]
+            /*click_handler_28*/
+            ctx[101]
           ),
           listen(
             button5,
             "click",
-            /*click_handler_28*/
-            ctx[100]
+            /*click_handler_29*/
+            ctx[102]
           ),
           listen(
             button6,
             "click",
-            /*click_handler_29*/
-            ctx[101]
+            /*click_handler_30*/
+            ctx[103]
           )
         ];
         mounted = true;
@@ -11706,7 +13566,7 @@ function create_else_block_3(ctx) {
       }
       if (dirty[0] & /*activeTab*/
       4096 && button0_class_value !== (button0_class_value = "lenta-tab " + /*activeTab*/
-      (ctx2[12] === "folders" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[12] === "folders" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button0, "class", button0_class_value);
       }
       if (dirty[0] & /*activeTab*/
@@ -11716,7 +13576,7 @@ function create_else_block_3(ctx) {
       }
       if (dirty[0] & /*activeTab*/
       4096 && button1_class_value !== (button1_class_value = "lenta-tab " + /*activeTab*/
-      (ctx2[12] === "feeds" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[12] === "feeds" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button1, "class", button1_class_value);
       }
       if (dirty[0] & /*activeTab*/
@@ -11730,7 +13590,7 @@ function create_else_block_3(ctx) {
       }
       if (dirty[0] & /*scopeFilter*/
       512 && button2_class_value !== (button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "my" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[9] === "my" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button2, "class", button2_class_value);
       }
       if (dirty[0] & /*activeTab*/
@@ -11744,7 +13604,7 @@ function create_else_block_3(ctx) {
       }
       if (dirty[0] & /*scopeFilter*/
       512 && button3_class_value !== (button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "public" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[9] === "public" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button3, "class", button3_class_value);
       }
       if (current_block_type === (current_block_type = select_block_type_4(ctx2, dirty)) && if_block) {
@@ -11771,13 +13631,13 @@ function create_else_block_3(ctx) {
         detach(footer);
       }
       if_block.d();
-      ctx[98](null);
+      ctx[100](null);
       mounted = false;
       run_all(dispose);
     }
   };
 }
-function create_if_block3(ctx) {
+function create_if_block4(ctx) {
   let div0;
   let t0;
   let div1;
@@ -11809,12 +13669,12 @@ function create_if_block3(ctx) {
       /*currentKey*/
       ctx2[18]
     )
-      return create_if_block_43;
+      return create_if_block_44;
     return create_else_block_2;
   }
   let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
-  const if_block_creators = [create_if_block_110, create_if_block_23, create_else_block_1];
+  const if_block_creators = [create_if_block_110, create_if_block_24, create_else_block_12];
   const if_blocks = [];
   function select_block_type_2(ctx2, dirty) {
     if (
@@ -11855,30 +13715,30 @@ function create_if_block3(ctx) {
       t9 = space();
       button4 = element("button");
       button4.textContent = "+ Note +";
-      attr(div0, "class", "lenta-inline-key-card svelte-173hj10");
+      attr(div0, "class", "lenta-inline-key-card svelte-7ir8ul");
       attr(button0, "type", "button");
       attr(button0, "role", "radio");
       attr(button0, "aria-checked", button0_aria_checked_value = /*scopeFilter*/
       ctx[9] === "my");
       attr(button0, "class", button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "my" ? "active" : "") + " svelte-173hj10");
+      (ctx[9] === "my" ? "active" : "") + " svelte-7ir8ul");
       attr(button1, "type", "button");
       attr(button1, "role", "radio");
       attr(button1, "aria-checked", button1_aria_checked_value = /*scopeFilter*/
       ctx[9] === "public");
       attr(button1, "class", button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "public" ? "active" : "") + " svelte-173hj10");
-      attr(div1, "class", "lenta-scope-filter-bar svelte-173hj10");
+      (ctx[9] === "public" ? "active" : "") + " svelte-7ir8ul");
+      attr(div1, "class", "lenta-scope-filter-bar svelte-7ir8ul");
       attr(div1, "role", "radiogroup");
       attr(div1, "aria-label", "Container privacy filter");
-      attr(div2, "class", "lenta-sidebar-content svelte-173hj10");
+      attr(div2, "class", "lenta-sidebar-content svelte-7ir8ul");
       attr(button2, "type", "button");
-      attr(button2, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button2, "class", "lenta-footer-action-btn svelte-7ir8ul");
       attr(button3, "type", "button");
-      attr(button3, "class", "lenta-footer-action-btn svelte-173hj10");
+      attr(button3, "class", "lenta-footer-action-btn svelte-7ir8ul");
       attr(button4, "type", "button");
-      attr(button4, "class", "lenta-footer-action-btn svelte-173hj10");
-      attr(footer, "class", "lenta-sidebar-footer svelte-173hj10");
+      attr(button4, "class", "lenta-footer-action-btn svelte-7ir8ul");
+      attr(footer, "class", "lenta-sidebar-footer svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div0, anchor);
@@ -11893,7 +13753,7 @@ function create_if_block3(ctx) {
       insert(target, t4, anchor);
       insert(target, div2, anchor);
       if_blocks[current_block_type_index].m(div2, null);
-      ctx[79](div2);
+      ctx[81](div2);
       insert(target, t5, anchor);
       insert(target, footer, anchor);
       append(footer, button2);
@@ -11907,32 +13767,32 @@ function create_if_block3(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_10*/
-            ctx[70]
+            /*click_handler_11*/
+            ctx[72]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_11*/
-            ctx[71]
+            /*click_handler_12*/
+            ctx[73]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_13*/
-            ctx[80]
+            /*click_handler_14*/
+            ctx[82]
           ),
           listen(
             button3,
             "click",
-            /*click_handler_14*/
-            ctx[81]
+            /*click_handler_15*/
+            ctx[83]
           ),
           listen(
             button4,
             "click",
-            /*click_handler_15*/
-            ctx[82]
+            /*click_handler_16*/
+            ctx[84]
           )
         ];
         mounted = true;
@@ -11956,7 +13816,7 @@ function create_if_block3(ctx) {
       }
       if (!current || dirty[0] & /*scopeFilter*/
       512 && button0_class_value !== (button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "my" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[9] === "my" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button0, "class", button0_class_value);
       }
       if (!current || dirty[0] & /*scopeFilter*/
@@ -11966,7 +13826,7 @@ function create_if_block3(ctx) {
       }
       if (!current || dirty[0] & /*scopeFilter*/
       512 && button1_class_value !== (button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "public" ? "active" : "") + " svelte-173hj10")) {
+      (ctx2[9] === "public" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button1, "class", button1_class_value);
       }
       let previous_block_index = current_block_type_index;
@@ -12012,7 +13872,7 @@ function create_if_block3(ctx) {
       }
       if_block0.d();
       if_blocks[current_block_type_index].d();
-      ctx[79](null);
+      ctx[81](null);
       mounted = false;
       run_all(dispose);
     }
@@ -12034,7 +13894,7 @@ function create_else_block_7(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-tree-list svelte-173hj10");
+      attr(div, "class", "lenta-tree-list svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12060,14 +13920,14 @@ function create_else_block_7(ctx) {
     }
   };
 }
-function create_if_block_62(ctx) {
+function create_if_block_63(ctx) {
   let div;
   function select_block_type_5(ctx2, dirty) {
     if (
       /*displayedFolders*/
       ctx2[16].length === 0
     )
-      return create_if_block_7;
+      return create_if_block_72;
     return create_else_block_5;
   }
   let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1]);
@@ -12076,7 +13936,7 @@ function create_if_block_62(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-tree-list svelte-173hj10");
+      attr(div, "class", "lenta-tree-list svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12102,13 +13962,13 @@ function create_if_block_62(ctx) {
     }
   };
 }
-function create_if_block_53(ctx) {
+function create_if_block_54(ctx) {
   let div;
   return {
     c() {
       div = element("div");
       div.textContent = "\u23F3 Loading hierarchy...";
-      attr(div, "class", "lenta-loading-text svelte-173hj10");
+      attr(div, "class", "lenta-loading-text svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12131,7 +13991,7 @@ function create_else_block_9(ctx) {
   );
   const get_key = (ctx2) => (
     /*feed*/
-    ctx2[112].id
+    ctx2[114].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_3(ctx, each_value_3, i);
@@ -12190,7 +14050,7 @@ function create_if_block_14(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+      attr(div, "class", "lenta-preview-empty svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12233,7 +14093,7 @@ function create_if_block_16(ctx) {
       show_if = !!/*$loadingPreviewNotes*/
       ctx2[20].has(
         /*feed*/
-        ctx2[112].id
+        ctx2[114].id
       );
     if (show_if)
       return create_if_block_17;
@@ -12241,11 +14101,11 @@ function create_if_block_16(ctx) {
       show_if_1 = !!(!/*feedNotesList*/
       ctx2[5].get(
         /*feed*/
-        ctx2[112].id
+        ctx2[114].id
       ) || /*feedNotesList*/
       ctx2[5].get(
         /*feed*/
-        ctx2[112].id
+        ctx2[114].id
       )?.length === 0);
     if (show_if_1)
       return create_if_block_18;
@@ -12257,7 +14117,7 @@ function create_if_block_16(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-markdown-preview-pane svelte-173hj10");
+      attr(div, "class", "lenta-markdown-preview-pane svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12316,12 +14176,12 @@ function create_else_block_10(ctx) {
     /*feedNotesList*/
     (ctx[5].get(
       /*feed*/
-      ctx[112].id
+      ctx[114].id
     ) || []).slice(0, 50)
   );
   const get_key = (ctx2) => (
     /*note*/
-    ctx2[109].id
+    ctx2[111].id
   );
   for (let i = 0; i < each_value_4.length; i += 1) {
     let child_ctx = get_each_context_4(ctx, each_value_4, i);
@@ -12334,7 +14194,7 @@ function create_else_block_10(ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
-      attr(div, "class", "lenta-notes-list svelte-173hj10");
+      attr(div, "class", "lenta-notes-list svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12351,7 +14211,7 @@ function create_else_block_10(ctx) {
           /*feedNotesList*/
           (ctx2[5].get(
             /*feed*/
-            ctx2[112].id
+            ctx2[114].id
           ) || []).slice(0, 50)
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_4, each_1_lookup, div, destroy_block, create_each_block_4, null, get_each_context_4);
@@ -12373,7 +14233,7 @@ function create_if_block_18(ctx) {
     c() {
       div = element("div");
       div.textContent = "\u{1F4ED} No notes in this feed yet.";
-      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+      attr(div, "class", "lenta-preview-empty svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12392,7 +14252,7 @@ function create_if_block_17(ctx) {
     c() {
       div = element("div");
       div.textContent = "\u23F3 Loading notes in feed...";
-      attr(div, "class", "lenta-preview-loading svelte-173hj10");
+      attr(div, "class", "lenta-preview-loading svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12413,27 +14273,27 @@ function create_each_block_4(key_1, ctx) {
   let span1;
   let t1_value = (
     /*note*/
-    ctx[109].title + ""
+    ctx[111].title + ""
   );
   let t1;
   let t2;
   let mounted;
   let dispose;
-  function click_handler_26() {
+  function click_handler_27() {
     return (
-      /*click_handler_26*/
-      ctx[96](
+      /*click_handler_27*/
+      ctx[98](
         /*note*/
-        ctx[109]
+        ctx[111]
       )
     );
   }
   function keydown_handler_4(...args) {
     return (
       /*keydown_handler_4*/
-      ctx[97](
+      ctx[99](
         /*note*/
-        ctx[109],
+        ctx[111],
         ...args
       )
     );
@@ -12449,8 +14309,8 @@ function create_each_block_4(key_1, ctx) {
       t1 = text(t1_value);
       t2 = space();
       attr(span0, "class", "lenta-item-icon lenta-note-icon");
-      attr(span1, "class", "lenta-note-title svelte-173hj10");
-      attr(div, "class", "lenta-note-row svelte-173hj10");
+      attr(span1, "class", "lenta-note-title svelte-7ir8ul");
+      attr(div, "class", "lenta-note-row svelte-7ir8ul");
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       this.first = div;
@@ -12469,9 +14329,9 @@ function create_each_block_4(key_1, ctx) {
             null,
             span0,
             /*note*/
-            ctx[109].icon || "file-text"
+            ctx[111].icon || "file-text"
           )),
-          listen(div, "click", click_handler_26),
+          listen(div, "click", click_handler_27),
           listen(div, "keydown", keydown_handler_4)
         ];
         mounted = true;
@@ -12484,11 +14344,11 @@ function create_each_block_4(key_1, ctx) {
         obsIcon_action.update.call(
           null,
           /*note*/
-          ctx[109].icon || "file-text"
+          ctx[111].icon || "file-text"
         );
       if (dirty[0] & /*feedNotesList, displayedFeeds*/
       32800 && t1_value !== (t1_value = /*note*/
-      ctx[109].title + ""))
+      ctx[111].title + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -12509,7 +14369,7 @@ function create_each_block_3(key_1, ctx) {
   let span1;
   let t1_value = (
     /*feed*/
-    ctx[112].title + ""
+    ctx[114].title + ""
   );
   let t1;
   let t2;
@@ -12519,26 +14379,26 @@ function create_each_block_3(key_1, ctx) {
   let show_if = (
     /*$expandedPreviews*/
     ctx[21].has(`feed-${/*feed*/
-    ctx[112].id}`)
+    ctx[114].id}`)
   );
   let t4;
   let mounted;
   let dispose;
-  function click_handler_25() {
+  function click_handler_26() {
     return (
-      /*click_handler_25*/
-      ctx[94](
+      /*click_handler_26*/
+      ctx[96](
         /*feed*/
-        ctx[112]
+        ctx[114]
       )
     );
   }
   function keydown_handler_3(...args) {
     return (
       /*keydown_handler_3*/
-      ctx[95](
+      ctx[97](
         /*feed*/
-        ctx[112],
+        ctx[114],
         ...args
       )
     );
@@ -12561,12 +14421,12 @@ function create_each_block_3(key_1, ctx) {
         if_block.c();
       t4 = space();
       attr(span0, "class", "lenta-item-icon");
-      attr(span1, "class", "lenta-item-name svelte-173hj10");
+      attr(span1, "class", "lenta-item-name svelte-7ir8ul");
       attr(span2, "class", "lenta-preview-toggle clickable-icon");
-      attr(div0, "class", "lenta-feed-header-row svelte-173hj10");
+      attr(div0, "class", "lenta-feed-header-row svelte-7ir8ul");
       attr(div0, "role", "button");
       attr(div0, "tabindex", "0");
-      attr(div1, "class", "lenta-tree-item lenta-tree-item-feed svelte-173hj10");
+      attr(div1, "class", "lenta-tree-item lenta-tree-item-feed svelte-7ir8ul");
       this.first = div1;
     },
     m(target, anchor) {
@@ -12592,9 +14452,9 @@ function create_each_block_3(key_1, ctx) {
             span2,
             /*$expandedPreviews*/
             ctx[21].has(`feed-${/*feed*/
-            ctx[112].id}`) ? "chevron-up" : "chevron-down"
+            ctx[114].id}`) ? "chevron-up" : "chevron-down"
           )),
-          listen(div0, "click", click_handler_25),
+          listen(div0, "click", click_handler_26),
           listen(div0, "keydown", keydown_handler_3)
         ];
         mounted = true;
@@ -12604,7 +14464,7 @@ function create_each_block_3(key_1, ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*displayedFeeds*/
       32768 && t1_value !== (t1_value = /*feed*/
-      ctx[112].title + ""))
+      ctx[114].title + ""))
         set_data(t1, t1_value);
       if (obsIcon_action_1 && is_function(obsIcon_action_1.update) && dirty[0] & /*$expandedPreviews, displayedFeeds*/
       2129920)
@@ -12612,13 +14472,13 @@ function create_each_block_3(key_1, ctx) {
           null,
           /*$expandedPreviews*/
           ctx[21].has(`feed-${/*feed*/
-          ctx[112].id}`) ? "chevron-up" : "chevron-down"
+          ctx[114].id}`) ? "chevron-up" : "chevron-down"
         );
       if (dirty[0] & /*$expandedPreviews, displayedFeeds*/
       2129920)
         show_if = /*$expandedPreviews*/
         ctx[21].has(`feed-${/*feed*/
-        ctx[112].id}`);
+        ctx[114].id}`);
       if (show_if) {
         if (if_block) {
           if_block.p(ctx, dirty);
@@ -12686,7 +14546,7 @@ function create_if_block_15(ctx) {
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
-      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+      attr(button, "class", "lenta-empty-action-link svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -12697,8 +14557,8 @@ function create_if_block_15(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_24*/
-          ctx[93]
+          /*click_handler_25*/
+          ctx[95]
         );
         mounted = true;
       }
@@ -12734,12 +14594,12 @@ function create_else_block_5(ctx) {
   );
   const get_key = (ctx2) => (
     /*folder*/
-    ctx2[106].id
+    ctx2[108].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
-    let child_ctx = get_each_context_1(ctx, each_value_1, i);
+    let child_ctx = get_each_context_12(ctx, each_value_1, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_1(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_12(key, child_ctx));
   }
   return {
     c() {
@@ -12764,7 +14624,7 @@ function create_else_block_5(ctx) {
           /*displayedFolders*/
           ctx2[16]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_1, each_1_anchor, get_each_context_1);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_12, each_1_anchor, get_each_context_12);
       }
     },
     d(detaching) {
@@ -12777,7 +14637,7 @@ function create_else_block_5(ctx) {
     }
   };
 }
-function create_if_block_7(ctx) {
+function create_if_block_72(ctx) {
   let div;
   function select_block_type_6(ctx2, dirty) {
     if (
@@ -12793,7 +14653,7 @@ function create_if_block_7(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+      attr(div, "class", "lenta-preview-empty svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12819,18 +14679,18 @@ function create_if_block_7(ctx) {
     }
   };
 }
-function create_if_block_13(ctx) {
+function create_if_block_132(ctx) {
   let span;
   let t_value = (
     /*folder*/
-    ctx[106].noteCount + ""
+    ctx[108].noteCount + ""
   );
   let t;
   return {
     c() {
       span = element("span");
       t = text(t_value);
-      attr(span, "class", "lenta-count-pill svelte-173hj10");
+      attr(span, "class", "lenta-count-pill svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -12839,7 +14699,7 @@ function create_if_block_13(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedFolders*/
       65536 && t_value !== (t_value = /*folder*/
-      ctx2[106].noteCount + ""))
+      ctx2[108].noteCount + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -12866,7 +14726,7 @@ function create_if_block_9(ctx) {
       show_if = !!/*$loadingFolderNotes*/
       ctx2[22].has(
         /*folder*/
-        ctx2[106].id
+        ctx2[108].id
       );
     if (show_if)
       return create_if_block_10;
@@ -12874,11 +14734,11 @@ function create_if_block_9(ctx) {
       show_if_1 = !!(!/*folderPreviewNotes*/
       ctx2[4].get(
         /*folder*/
-        ctx2[106].id
+        ctx2[108].id
       ) || /*folderPreviewNotes*/
       ctx2[4].get(
         /*folder*/
-        ctx2[106].id
+        ctx2[108].id
       )?.length === 0);
     if (show_if_1)
       return create_if_block_11;
@@ -12890,7 +14750,7 @@ function create_if_block_9(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-markdown-preview-pane svelte-173hj10");
+      attr(div, "class", "lenta-markdown-preview-pane svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12949,12 +14809,12 @@ function create_else_block_6(ctx) {
     /*folderPreviewNotes*/
     (ctx[4].get(
       /*folder*/
-      ctx[106].id
+      ctx[108].id
     ) || []).slice(0, 50)
   );
   const get_key = (ctx2) => (
     /*note*/
-    ctx2[109].id
+    ctx2[111].id
   );
   for (let i = 0; i < each_value_2.length; i += 1) {
     let child_ctx = get_each_context_2(ctx, each_value_2, i);
@@ -12967,7 +14827,7 @@ function create_else_block_6(ctx) {
       for (let i = 0; i < each_blocks.length; i += 1) {
         each_blocks[i].c();
       }
-      attr(div, "class", "lenta-notes-list svelte-173hj10");
+      attr(div, "class", "lenta-notes-list svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -12984,7 +14844,7 @@ function create_else_block_6(ctx) {
           /*folderPreviewNotes*/
           (ctx2[4].get(
             /*folder*/
-            ctx2[106].id
+            ctx2[108].id
           ) || []).slice(0, 50)
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_2, each_1_lookup, div, destroy_block, create_each_block_2, null, get_each_context_2);
@@ -13006,7 +14866,7 @@ function create_if_block_11(ctx) {
     c() {
       div = element("div");
       div.textContent = "\u{1F4ED} No notes in this folder yet.";
-      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+      attr(div, "class", "lenta-preview-empty svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13024,7 +14884,7 @@ function create_if_block_10(ctx) {
   let t0;
   let t1_value = (
     /*folder*/
-    ctx[106].name + ""
+    ctx[108].name + ""
   );
   let t1;
   let t2;
@@ -13034,7 +14894,7 @@ function create_if_block_10(ctx) {
       t0 = text('\u23F3 Loading notes in "');
       t1 = text(t1_value);
       t2 = text('"...');
-      attr(div, "class", "lenta-preview-loading svelte-173hj10");
+      attr(div, "class", "lenta-preview-loading svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13045,7 +14905,7 @@ function create_if_block_10(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedFolders*/
       65536 && t1_value !== (t1_value = /*folder*/
-      ctx2[106].name + ""))
+      ctx2[108].name + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -13059,14 +14919,14 @@ function create_if_block_122(ctx) {
   let span;
   let t_value = (
     /*note*/
-    ctx[109].startDate.slice(0, 10) + ""
+    ctx[111].startDate.slice(0, 10) + ""
   );
   let t;
   return {
     c() {
       span = element("span");
       t = text(t_value);
-      attr(span, "class", "lenta-note-date svelte-173hj10");
+      attr(span, "class", "lenta-note-date svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -13075,7 +14935,7 @@ function create_if_block_122(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
       65552 && t_value !== (t_value = /*note*/
-      ctx2[109].startDate.slice(0, 10) + ""))
+      ctx2[111].startDate.slice(0, 10) + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -13093,7 +14953,7 @@ function create_each_block_2(key_1, ctx) {
   let span1;
   let t1_value = (
     /*note*/
-    ctx[109].title + ""
+    ctx[111].title + ""
   );
   let t1;
   let t2;
@@ -13102,23 +14962,23 @@ function create_each_block_2(key_1, ctx) {
   let dispose;
   let if_block = (
     /*note*/
-    ctx[109].startDate && create_if_block_122(ctx)
+    ctx[111].startDate && create_if_block_122(ctx)
   );
-  function click_handler_23() {
+  function click_handler_24() {
     return (
-      /*click_handler_23*/
-      ctx[91](
+      /*click_handler_24*/
+      ctx[93](
         /*note*/
-        ctx[109]
+        ctx[111]
       )
     );
   }
   function keydown_handler_2(...args) {
     return (
       /*keydown_handler_2*/
-      ctx[92](
+      ctx[94](
         /*note*/
-        ctx[109],
+        ctx[111],
         ...args
       )
     );
@@ -13137,8 +14997,8 @@ function create_each_block_2(key_1, ctx) {
         if_block.c();
       t3 = space();
       attr(span0, "class", "lenta-item-icon lenta-note-icon");
-      attr(span1, "class", "lenta-note-title svelte-173hj10");
-      attr(div, "class", "lenta-note-row svelte-173hj10");
+      attr(span1, "class", "lenta-note-title svelte-7ir8ul");
+      attr(div, "class", "lenta-note-row svelte-7ir8ul");
       attr(div, "role", "button");
       attr(div, "tabindex", "0");
       this.first = div;
@@ -13160,9 +15020,9 @@ function create_each_block_2(key_1, ctx) {
             null,
             span0,
             /*note*/
-            ctx[109].icon || "file-text"
+            ctx[111].icon || "file-text"
           )),
-          listen(div, "click", click_handler_23),
+          listen(div, "click", click_handler_24),
           listen(div, "keydown", keydown_handler_2)
         ];
         mounted = true;
@@ -13175,15 +15035,15 @@ function create_each_block_2(key_1, ctx) {
         obsIcon_action.update.call(
           null,
           /*note*/
-          ctx[109].icon || "file-text"
+          ctx[111].icon || "file-text"
         );
       if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
       65552 && t1_value !== (t1_value = /*note*/
-      ctx[109].title + ""))
+      ctx[111].title + ""))
         set_data(t1, t1_value);
       if (
         /*note*/
-        ctx[109].startDate
+        ctx[111].startDate
       ) {
         if (if_block) {
           if_block.p(ctx, dirty);
@@ -13208,7 +15068,7 @@ function create_each_block_2(key_1, ctx) {
     }
   };
 }
-function create_each_block_1(key_1, ctx) {
+function create_each_block_12(key_1, ctx) {
   let div1;
   let div0;
   let span0;
@@ -13217,7 +15077,7 @@ function create_each_block_1(key_1, ctx) {
   let span1;
   let t1_value = (
     /*folder*/
-    ctx[106].path + ""
+    ctx[108].path + ""
   );
   let t1;
   let t2;
@@ -13232,40 +15092,40 @@ function create_each_block_1(key_1, ctx) {
   let show_if = (
     /*$expandedPreviews*/
     ctx[21].has(`folder-${/*folder*/
-    ctx[106].id}`)
+    ctx[108].id}`)
   );
   let t6;
   let mounted;
   let dispose;
   let if_block0 = (
     /*folder*/
-    ctx[106].noteCount !== void 0 && /*folder*/
-    ctx[106].noteCount !== null && create_if_block_13(ctx)
+    ctx[108].noteCount !== void 0 && /*folder*/
+    ctx[108].noteCount !== null && create_if_block_132(ctx)
   );
-  function click_handler_21() {
-    return (
-      /*click_handler_21*/
-      ctx[88](
-        /*folder*/
-        ctx[106]
-      )
-    );
-  }
   function click_handler_22() {
     return (
       /*click_handler_22*/
-      ctx[89](
+      ctx[90](
         /*folder*/
-        ctx[106]
+        ctx[108]
+      )
+    );
+  }
+  function click_handler_23() {
+    return (
+      /*click_handler_23*/
+      ctx[91](
+        /*folder*/
+        ctx[108]
       )
     );
   }
   function keydown_handler_1(...args) {
     return (
       /*keydown_handler_1*/
-      ctx[90](
+      ctx[92](
         /*folder*/
-        ctx[106],
+        ctx[108],
         ...args
       )
     );
@@ -13293,16 +15153,16 @@ function create_each_block_1(key_1, ctx) {
         if_block1.c();
       t6 = space();
       attr(span0, "class", "lenta-item-icon");
-      attr(span1, "class", "lenta-item-name svelte-173hj10");
+      attr(span1, "class", "lenta-item-name svelte-7ir8ul");
       attr(button, "type", "button");
-      attr(button, "class", "lenta-folder-add-note clickable-icon svelte-173hj10");
+      attr(button, "class", "lenta-folder-add-note clickable-icon svelte-7ir8ul");
       attr(button, "aria-label", button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
-      ctx[106].path);
+      ctx[108].path);
       attr(span2, "class", "lenta-preview-toggle clickable-icon");
-      attr(div0, "class", "lenta-folder-header-row svelte-173hj10");
+      attr(div0, "class", "lenta-folder-header-row svelte-7ir8ul");
       attr(div0, "role", "button");
       attr(div0, "tabindex", "0");
-      attr(div1, "class", "lenta-tree-item lenta-tree-item-folder svelte-173hj10");
+      attr(div1, "class", "lenta-tree-item lenta-tree-item-folder svelte-7ir8ul");
       this.first = div1;
     },
     m(target, anchor) {
@@ -13330,9 +15190,9 @@ function create_each_block_1(key_1, ctx) {
             null,
             span0,
             /*folder*/
-            ctx[106].icon || "folder"
+            ctx[108].icon || "folder"
           )),
-          listen(button, "click", stop_propagation(click_handler_21)),
+          listen(button, "click", stop_propagation(click_handler_22)),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
           ctx[33].call(null, button, "plus")),
           action_destroyer(obsIcon_action_2 = /*obsIcon*/
@@ -13341,9 +15201,9 @@ function create_each_block_1(key_1, ctx) {
             span2,
             /*$expandedPreviews*/
             ctx[21].has(`folder-${/*folder*/
-            ctx[106].id}`) ? "chevron-up" : "chevron-down"
+            ctx[108].id}`) ? "chevron-up" : "chevron-down"
           )),
-          listen(div0, "click", click_handler_22),
+          listen(div0, "click", click_handler_23),
           listen(div0, "keydown", keydown_handler_1)
         ];
         mounted = true;
@@ -13356,21 +15216,21 @@ function create_each_block_1(key_1, ctx) {
         obsIcon_action.update.call(
           null,
           /*folder*/
-          ctx[106].icon || "folder"
+          ctx[108].icon || "folder"
         );
       if (dirty[0] & /*displayedFolders*/
       65536 && t1_value !== (t1_value = /*folder*/
-      ctx[106].path + ""))
+      ctx[108].path + ""))
         set_data(t1, t1_value);
       if (
         /*folder*/
-        ctx[106].noteCount !== void 0 && /*folder*/
-        ctx[106].noteCount !== null
+        ctx[108].noteCount !== void 0 && /*folder*/
+        ctx[108].noteCount !== null
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_13(ctx);
+          if_block0 = create_if_block_132(ctx);
           if_block0.c();
           if_block0.m(div0, t3);
         }
@@ -13380,7 +15240,7 @@ function create_each_block_1(key_1, ctx) {
       }
       if (dirty[0] & /*displayedFolders*/
       65536 && button_aria_label_value !== (button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
-      ctx[106].path)) {
+      ctx[108].path)) {
         attr(button, "aria-label", button_aria_label_value);
       }
       if (obsIcon_action_2 && is_function(obsIcon_action_2.update) && dirty[0] & /*$expandedPreviews, displayedFolders*/
@@ -13389,13 +15249,13 @@ function create_each_block_1(key_1, ctx) {
           null,
           /*$expandedPreviews*/
           ctx[21].has(`folder-${/*folder*/
-          ctx[106].id}`) ? "chevron-up" : "chevron-down"
+          ctx[108].id}`) ? "chevron-up" : "chevron-down"
         );
       if (dirty[0] & /*$expandedPreviews, displayedFolders*/
       2162688)
         show_if = /*$expandedPreviews*/
         ctx[21].has(`folder-${/*folder*/
-        ctx[106].id}`);
+        ctx[108].id}`);
       if (show_if) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -13465,7 +15325,7 @@ function create_if_block_8(ctx) {
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
-      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+      attr(button, "class", "lenta-empty-action-link svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -13476,8 +15336,8 @@ function create_if_block_8(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_20*/
-          ctx[87]
+          /*click_handler_21*/
+          ctx[89]
         );
         mounted = true;
       }
@@ -13519,10 +15379,10 @@ function create_else_block_2(ctx) {
       button.textContent = "Connect";
       attr(input, "type", "text");
       attr(input, "placeholder", "\u{1F511} Enter private container key...");
-      attr(input, "class", "lenta-key-input svelte-173hj10");
+      attr(input, "class", "lenta-key-input svelte-7ir8ul");
       attr(button, "type", "button");
-      attr(button, "class", "lenta-key-submit-btn svelte-173hj10");
-      attr(div, "class", "lenta-key-input-wrap svelte-173hj10");
+      attr(button, "class", "lenta-key-submit-btn svelte-7ir8ul");
+      attr(div, "class", "lenta-key-input-wrap svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13540,13 +15400,13 @@ function create_else_block_2(ctx) {
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[68]
+            ctx[70]
           ),
           listen(
             input,
             "keydown",
             /*keydown_handler*/
-            ctx[69]
+            ctx[71]
           ),
           listen(
             button,
@@ -13578,7 +15438,7 @@ function create_else_block_2(ctx) {
     }
   };
 }
-function create_if_block_43(ctx) {
+function create_if_block_44(ctx) {
   let div;
   let span;
   let t0;
@@ -13602,12 +15462,12 @@ function create_if_block_43(ctx) {
       t2 = space();
       button = element("button");
       button.textContent = "Disconnect Key";
-      attr(span, "class", "lenta-key-badge svelte-173hj10");
+      attr(span, "class", "lenta-key-badge svelte-7ir8ul");
       attr(span, "title", span_title_value = "Active container key: " + /*currentKey*/
       ctx[18]);
       attr(button, "type", "button");
-      attr(button, "class", "lenta-key-action-btn mod-warning svelte-173hj10");
-      attr(div, "class", "lenta-key-connected-row svelte-173hj10");
+      attr(button, "class", "lenta-key-action-btn mod-warning svelte-7ir8ul");
+      attr(div, "class", "lenta-key-connected-row svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13647,7 +15507,7 @@ function create_if_block_43(ctx) {
     }
   };
 }
-function create_else_block_1(ctx) {
+function create_else_block_12(ctx) {
   let each_blocks = [];
   let each_1_lookup = new Map_1();
   let each_1_anchor;
@@ -13658,12 +15518,12 @@ function create_else_block_1(ctx) {
   );
   const get_key = (ctx2) => (
     /*c*/
-    ctx2[103].id
+    ctx2[105].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
-    let child_ctx = get_each_context2(ctx, each_value, i);
+    let child_ctx = get_each_context3(ctx, each_value, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block2(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block3(key, child_ctx));
   }
   return {
     c() {
@@ -13690,7 +15550,7 @@ function create_else_block_1(ctx) {
           ctx2[17]
         );
         group_outros();
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block2, each_1_anchor, get_each_context2);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block3, each_1_anchor, get_each_context3);
         check_outros();
       }
     },
@@ -13718,15 +15578,15 @@ function create_else_block_1(ctx) {
     }
   };
 }
-function create_if_block_23(ctx) {
+function create_if_block_24(ctx) {
   let div;
   function select_block_type_3(ctx2, dirty) {
     if (
       /*searchQuery*/
       ctx2[10]
     )
-      return create_if_block_33;
-    return create_else_block2;
+      return create_if_block_34;
+    return create_else_block3;
   }
   let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
@@ -13734,7 +15594,7 @@ function create_if_block_23(ctx) {
     c() {
       div = element("div");
       if_block.c();
-      attr(div, "class", "lenta-preview-empty svelte-173hj10");
+      attr(div, "class", "lenta-preview-empty svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13768,7 +15628,7 @@ function create_if_block_110(ctx) {
     c() {
       div = element("div");
       div.textContent = "\u23F3 Loading containers...";
-      attr(div, "class", "lenta-loading-text svelte-173hj10");
+      attr(div, "class", "lenta-loading-text svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -13783,25 +15643,25 @@ function create_if_block_110(ctx) {
     }
   };
 }
-function create_each_block2(key_1, ctx) {
+function create_each_block3(key_1, ctx) {
   let first;
   let containercard;
   let current;
   function toggleExpand_handler() {
     return (
       /*toggleExpand_handler*/
-      ctx[73](
+      ctx[75](
         /*c*/
-        ctx[103]
+        ctx[105]
       )
     );
   }
   function toggleConnect_handler() {
     return (
       /*toggleConnect_handler*/
-      ctx[74](
+      ctx[76](
         /*c*/
-        ctx[103]
+        ctx[105]
       )
     );
   }
@@ -13809,12 +15669,12 @@ function create_each_block2(key_1, ctx) {
     props: {
       container: (
         /*c*/
-        ctx[103]
+        ctx[105]
       ),
       isExpanded: (
         /*$expandedPreviews*/
         ctx[21].has(`container-${/*c*/
-        ctx[103].id}`)
+        ctx[105].id}`)
       ),
       isActiveContainer: Array.isArray(
         /*settings*/
@@ -13822,27 +15682,27 @@ function create_each_block2(key_1, ctx) {
       ) && /*settings*/
       ctx[0].activeContainerIds.includes(
         /*c*/
-        ctx[103].id
+        ctx[105].id
       ),
       isLoadingFiles: (
         /*$loadingContainerFiles*/
         ctx[23].has(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         )
       ),
       files: (
         /*containerFilesList*/
         ctx[2].get(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         )
       ),
       folders: (
         /*containerFoldersList*/
         ctx[3].get(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         )
       ),
       expandedFolders: (
@@ -13868,22 +15728,22 @@ function create_each_block2(key_1, ctx) {
   containercard.$on(
     "addNote",
     /*addNote_handler*/
-    ctx[75]
+    ctx[77]
   );
   containercard.$on(
     "addFolder",
     /*addFolder_handler*/
-    ctx[76]
+    ctx[78]
   );
   containercard.$on(
     "openNote",
     /*openNote_handler*/
-    ctx[77]
+    ctx[79]
   );
   containercard.$on(
     "toggleFolder",
     /*toggleFolder_handler*/
-    ctx[78]
+    ctx[80]
   );
   return {
     key: key_1,
@@ -13904,12 +15764,12 @@ function create_each_block2(key_1, ctx) {
       if (dirty[0] & /*displayedContainers*/
       131072)
         containercard_changes.container = /*c*/
-        ctx[103];
+        ctx[105];
       if (dirty[0] & /*$expandedPreviews, displayedContainers*/
       2228224)
         containercard_changes.isExpanded = /*$expandedPreviews*/
         ctx[21].has(`container-${/*c*/
-        ctx[103].id}`);
+        ctx[105].id}`);
       if (dirty[0] & /*settings, displayedContainers*/
       131073)
         containercard_changes.isActiveContainer = Array.isArray(
@@ -13918,28 +15778,28 @@ function create_each_block2(key_1, ctx) {
         ) && /*settings*/
         ctx[0].activeContainerIds.includes(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         );
       if (dirty[0] & /*$loadingContainerFiles, displayedContainers*/
       8519680)
         containercard_changes.isLoadingFiles = /*$loadingContainerFiles*/
         ctx[23].has(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         );
       if (dirty[0] & /*containerFilesList, displayedContainers*/
       131076)
         containercard_changes.files = /*containerFilesList*/
         ctx[2].get(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         );
       if (dirty[0] & /*containerFoldersList, displayedContainers*/
       131080)
         containercard_changes.folders = /*containerFoldersList*/
         ctx[3].get(
           /*c*/
-          ctx[103].id
+          ctx[105].id
         );
       if (dirty[0] & /*$expandedContainerFolders*/
       16777216)
@@ -13969,7 +15829,7 @@ function create_each_block2(key_1, ctx) {
     }
   };
 }
-function create_else_block2(ctx) {
+function create_else_block3(ctx) {
   let t_value = (
     /*scopeFilter*/
     ctx[9] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."
@@ -13995,7 +15855,7 @@ function create_else_block2(ctx) {
     }
   };
 }
-function create_if_block_33(ctx) {
+function create_if_block_34(ctx) {
   let t0;
   let t1;
   let t2;
@@ -14013,7 +15873,7 @@ function create_if_block_33(ctx) {
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
-      attr(button, "class", "lenta-empty-action-link svelte-173hj10");
+      attr(button, "class", "lenta-empty-action-link svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, t0, anchor);
@@ -14024,8 +15884,8 @@ function create_if_block_33(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_12*/
-          ctx[72]
+          /*click_handler_13*/
+          ctx[74]
         );
         mounted = true;
       }
@@ -14051,7 +15911,7 @@ function create_if_block_33(ctx) {
     }
   };
 }
-function create_fragment4(ctx) {
+function create_fragment5(ctx) {
   let div4;
   let header;
   let div0;
@@ -14074,32 +15934,35 @@ function create_fragment4(ctx) {
   let button4;
   let obsIcon_action_4;
   let t7;
-  let t8;
   let button5;
   let obsIcon_action_5;
+  let t8;
   let t9;
   let button6;
   let obsIcon_action_6;
   let t10;
+  let button7;
+  let obsIcon_action_7;
+  let t11;
   let div2;
   let div1;
   let span;
-  let obsIcon_action_7;
-  let t11;
-  let input;
+  let obsIcon_action_8;
   let t12;
+  let input;
   let t13;
-  let div3;
-  let button7;
   let t14;
-  let button7_aria_selected_value;
-  let button7_class_value;
-  let t15;
+  let div3;
   let button8;
-  let t16;
+  let t15;
   let button8_aria_selected_value;
   let button8_class_value;
+  let t16;
+  let button9;
   let t17;
+  let button9_aria_selected_value;
+  let button9_class_value;
+  let t18;
   let current_block_type_index;
   let if_block3;
   let current;
@@ -14118,7 +15981,7 @@ function create_fragment4(ctx) {
     /*searchQuery*/
     ctx[10] && create_if_block_19(ctx)
   );
-  const if_block_creators = [create_if_block3, create_else_block_3];
+  const if_block_creators = [create_if_block4, create_else_block_3];
   const if_blocks = [];
   function select_block_type(ctx2, dirty) {
     if (
@@ -14152,78 +16015,84 @@ function create_fragment4(ctx) {
       t6 = space();
       button4 = element("button");
       t7 = space();
+      button5 = element("button");
+      t8 = space();
       if (if_block1)
         if_block1.c();
-      t8 = space();
-      button5 = element("button");
       t9 = space();
       button6 = element("button");
       t10 = space();
+      button7 = element("button");
+      t11 = space();
       div2 = element("div");
       div1 = element("div");
       span = element("span");
-      t11 = space();
-      input = element("input");
       t12 = space();
+      input = element("input");
+      t13 = space();
       if (if_block2)
         if_block2.c();
-      t13 = space();
+      t14 = space();
       div3 = element("div");
-      button7 = element("button");
-      t14 = text("\u{1F4DD} Notes");
-      t15 = space();
       button8 = element("button");
-      t16 = text("\u{1F4E6} Containers");
-      t17 = space();
+      t15 = text("\u{1F4DD} Notes");
+      t16 = space();
+      button9 = element("button");
+      t17 = text("\u{1F4E6} Containers");
+      t18 = space();
       if_block3.c();
-      attr(h4, "class", "lenta-title-text svelte-173hj10");
-      attr(div0, "class", "lenta-sidebar-title svelte-173hj10");
+      attr(h4, "class", "lenta-title-text svelte-7ir8ul");
+      attr(div0, "class", "lenta-sidebar-title svelte-7ir8ul");
       attr(button0, "type", "button");
-      attr(button0, "class", "clickable-icon");
-      attr(button0, "aria-label", "Quick Add Note");
+      attr(button0, "class", "clickable-icon lenta-ai-sparkle-btn");
+      attr(button0, "aria-label", "\u2728 AI \u0411\u044B\u0441\u0442\u0440\u043E\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A");
+      attr(button0, "title", "\u2728 AI \u0411\u044B\u0441\u0442\u0440\u043E\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A");
       attr(button1, "type", "button");
       attr(button1, "class", "clickable-icon");
-      attr(button1, "aria-label", "New Folder");
+      attr(button1, "aria-label", "Quick Add Note");
       attr(button2, "type", "button");
       attr(button2, "class", "clickable-icon");
-      attr(button2, "aria-label", "Pull from Lenta Server (\u2B07)");
+      attr(button2, "aria-label", "New Folder");
       attr(button3, "type", "button");
       attr(button3, "class", "clickable-icon");
-      attr(button3, "aria-label", "Push Changed to Server (\u2B06)");
+      attr(button3, "aria-label", "Pull from Lenta Server (\u2B07)");
       attr(button4, "type", "button");
       attr(button4, "class", "clickable-icon");
-      attr(button4, "aria-label", "Sync Hub");
+      attr(button4, "aria-label", "Push Changed to Server (\u2B06)");
       attr(button5, "type", "button");
       attr(button5, "class", "clickable-icon");
-      attr(button5, "aria-label", "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)");
+      attr(button5, "aria-label", "Sync Hub");
       attr(button6, "type", "button");
       attr(button6, "class", "clickable-icon");
-      attr(button6, "aria-label", "Refresh Data");
-      attr(nav, "class", "lenta-sidebar-toolbar svelte-173hj10");
-      attr(nav, "aria-label", "Lenta actions");
-      attr(header, "class", "lenta-sidebar-header svelte-173hj10");
-      attr(span, "class", "lenta-search-icon svelte-173hj10");
-      attr(input, "type", "text");
-      attr(input, "class", "lenta-search-input svelte-173hj10");
-      attr(input, "placeholder", "Search notes, folders, containers...");
-      attr(div1, "class", "lenta-search-input-wrap svelte-173hj10");
-      attr(div2, "class", "lenta-search-container svelte-173hj10");
+      attr(button6, "aria-label", "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)");
       attr(button7, "type", "button");
-      attr(button7, "role", "tab");
-      attr(button7, "aria-selected", button7_aria_selected_value = /*sidebarMode*/
-      ctx[11] === "notes");
-      attr(button7, "class", button7_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx[11] === "notes" ? "is-active" : "") + " svelte-173hj10");
+      attr(button7, "class", "clickable-icon");
+      attr(button7, "aria-label", "Refresh Data");
+      attr(nav, "class", "lenta-sidebar-toolbar svelte-7ir8ul");
+      attr(nav, "aria-label", "Lenta actions");
+      attr(header, "class", "lenta-sidebar-header svelte-7ir8ul");
+      attr(span, "class", "lenta-search-icon svelte-7ir8ul");
+      attr(input, "type", "text");
+      attr(input, "class", "lenta-search-input svelte-7ir8ul");
+      attr(input, "placeholder", "Search notes, folders, containers...");
+      attr(div1, "class", "lenta-search-input-wrap svelte-7ir8ul");
+      attr(div2, "class", "lenta-search-container svelte-7ir8ul");
       attr(button8, "type", "button");
       attr(button8, "role", "tab");
       attr(button8, "aria-selected", button8_aria_selected_value = /*sidebarMode*/
-      ctx[11] === "containers");
+      ctx[11] === "notes");
       attr(button8, "class", button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx[11] === "containers" ? "is-active" : "") + " svelte-173hj10");
-      attr(div3, "class", "lenta-mode-switcher svelte-173hj10");
+      (ctx[11] === "notes" ? "is-active" : "") + " svelte-7ir8ul");
+      attr(button9, "type", "button");
+      attr(button9, "role", "tab");
+      attr(button9, "aria-selected", button9_aria_selected_value = /*sidebarMode*/
+      ctx[11] === "containers");
+      attr(button9, "class", button9_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx[11] === "containers" ? "is-active" : "") + " svelte-7ir8ul");
+      attr(div3, "class", "lenta-mode-switcher svelte-7ir8ul");
       attr(div3, "role", "tablist");
       attr(div3, "aria-label", "Sidebar view mode");
-      attr(div4, "class", "lenta-sidebar-container svelte-173hj10");
+      attr(div4, "class", "lenta-sidebar-container svelte-7ir8ul");
     },
     m(target, anchor) {
       insert(target, div4, anchor);
@@ -14245,34 +16114,36 @@ function create_fragment4(ctx) {
       append(nav, t6);
       append(nav, button4);
       append(nav, t7);
+      append(nav, button5);
+      append(nav, t8);
       if (if_block1)
         if_block1.m(nav, null);
-      append(nav, t8);
-      append(nav, button5);
       append(nav, t9);
       append(nav, button6);
-      append(div4, t10);
+      append(nav, t10);
+      append(nav, button7);
+      append(div4, t11);
       append(div4, div2);
       append(div2, div1);
       append(div1, span);
-      append(div1, t11);
+      append(div1, t12);
       append(div1, input);
       set_input_value(
         input,
         /*searchQuery*/
         ctx[10]
       );
-      append(div1, t12);
+      append(div1, t13);
       if (if_block2)
         if_block2.m(div1, null);
-      append(div4, t13);
+      append(div4, t14);
       append(div4, div3);
-      append(div3, button7);
-      append(button7, t14);
-      append(div3, t15);
       append(div3, button8);
-      append(button8, t16);
-      append(div4, t17);
+      append(button8, t15);
+      append(div3, t16);
+      append(div3, button9);
+      append(button9, t17);
+      append(div4, t18);
       if_blocks[current_block_type_index].m(div4, null);
       current = true;
       if (!mounted) {
@@ -14281,77 +16152,85 @@ function create_fragment4(ctx) {
             button0,
             "click",
             /*click_handler*/
-            ctx[57]
+            ctx[58]
           ),
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(null, button0, "plus")),
+          ctx[33].call(null, button0, "sparkles")),
           listen(
             button1,
             "click",
             /*click_handler_1*/
-            ctx[58]
+            ctx[59]
           ),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
-          ctx[33].call(null, button1, "folder-plus")),
+          ctx[33].call(null, button1, "plus")),
           listen(
             button2,
             "click",
             /*click_handler_2*/
-            ctx[59]
+            ctx[60]
           ),
           action_destroyer(obsIcon_action_2 = /*obsIcon*/
-          ctx[33].call(null, button2, "download")),
+          ctx[33].call(null, button2, "folder-plus")),
           listen(
             button3,
             "click",
             /*click_handler_3*/
-            ctx[60]
+            ctx[61]
           ),
           action_destroyer(obsIcon_action_3 = /*obsIcon*/
-          ctx[33].call(null, button3, "upload")),
+          ctx[33].call(null, button3, "download")),
           listen(
             button4,
             "click",
             /*click_handler_4*/
-            ctx[61]
+            ctx[62]
           ),
           action_destroyer(obsIcon_action_4 = /*obsIcon*/
-          ctx[33].call(null, button4, "zap")),
+          ctx[33].call(null, button4, "upload")),
           listen(
             button5,
+            "click",
+            /*click_handler_5*/
+            ctx[63]
+          ),
+          action_destroyer(obsIcon_action_5 = /*obsIcon*/
+          ctx[33].call(null, button5, "zap")),
+          listen(
+            button6,
             "click",
             /*handleCollapseAll*/
             ctx[38]
           ),
-          action_destroyer(obsIcon_action_5 = /*obsIcon*/
-          ctx[33].call(null, button5, "chevrons-down-up")),
-          listen(
-            button6,
-            "click",
-            /*click_handler_6*/
-            ctx[63]
-          ),
           action_destroyer(obsIcon_action_6 = /*obsIcon*/
-          ctx[33].call(null, button6, "refresh-cw")),
+          ctx[33].call(null, button6, "chevrons-down-up")),
+          listen(
+            button7,
+            "click",
+            /*click_handler_7*/
+            ctx[65]
+          ),
           action_destroyer(obsIcon_action_7 = /*obsIcon*/
+          ctx[33].call(null, button7, "refresh-cw")),
+          action_destroyer(obsIcon_action_8 = /*obsIcon*/
           ctx[33].call(null, span, "search")),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[64]
-          ),
-          listen(
-            button7,
-            "click",
-            /*click_handler_8*/
             ctx[66]
           ),
           listen(
             button8,
             "click",
             /*click_handler_9*/
-            ctx[67]
+            ctx[68]
+          ),
+          listen(
+            button9,
+            "click",
+            /*click_handler_10*/
+            ctx[69]
           )
         ];
         mounted = true;
@@ -14383,7 +16262,7 @@ function create_fragment4(ctx) {
         } else {
           if_block1 = create_if_block_20(ctx2);
           if_block1.c();
-          if_block1.m(nav, t8);
+          if_block1.m(nav, t9);
         }
       } else if (if_block1) {
         if_block1.d(1);
@@ -14414,24 +16293,24 @@ function create_fragment4(ctx) {
         if_block2 = null;
       }
       if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button7_aria_selected_value !== (button7_aria_selected_value = /*sidebarMode*/
-      ctx2[11] === "notes")) {
-        attr(button7, "aria-selected", button7_aria_selected_value);
-      }
-      if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button7_class_value !== (button7_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx2[11] === "notes" ? "is-active" : "") + " svelte-173hj10")) {
-        attr(button7, "class", button7_class_value);
-      }
-      if (!current || dirty[0] & /*sidebarMode*/
       2048 && button8_aria_selected_value !== (button8_aria_selected_value = /*sidebarMode*/
-      ctx2[11] === "containers")) {
+      ctx2[11] === "notes")) {
         attr(button8, "aria-selected", button8_aria_selected_value);
       }
       if (!current || dirty[0] & /*sidebarMode*/
       2048 && button8_class_value !== (button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx2[11] === "containers" ? "is-active" : "") + " svelte-173hj10")) {
+      (ctx2[11] === "notes" ? "is-active" : "") + " svelte-7ir8ul")) {
         attr(button8, "class", button8_class_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button9_aria_selected_value !== (button9_aria_selected_value = /*sidebarMode*/
+      ctx2[11] === "containers")) {
+        attr(button9, "aria-selected", button9_aria_selected_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      2048 && button9_class_value !== (button9_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx2[11] === "containers" ? "is-active" : "") + " svelte-7ir8ul")) {
+        attr(button9, "class", button9_class_value);
       }
       let previous_block_index = current_block_type_index;
       current_block_type_index = select_block_type(ctx2, dirty);
@@ -14486,7 +16365,7 @@ function onKeyAction(e, action) {
     action();
   }
 }
-function instance4($$self, $$props, $$invalidate) {
+function instance5($$self, $$props, $$invalidate) {
   let selectedCount;
   let currentKey;
   let myContainers;
@@ -14510,6 +16389,7 @@ function instance4($$self, $$props, $$invalidate) {
   let { feedNotesList = /* @__PURE__ */ new Map() } = $$props;
   let { isLoading = false } = $$props;
   let { bridge = void 0 } = $$props;
+  let { onOpenAiQuickAdd = void 0 } = $$props;
   let { onOpenQuickAdd = void 0 } = $$props;
   let { onOpenCreateFolder = void 0 } = $$props;
   let { onOpenQuickAddForContainer = void 0 } = $$props;
@@ -14523,6 +16403,7 @@ function instance4($$self, $$props, $$invalidate) {
   let { onLoadFolderNotes = void 0 } = $$props;
   let { onLoadFeedNotes = void 0 } = $$props;
   const api = {
+    aiQuickAdd: (folderPath, date) => bridge?.openAiQuickAdd ? bridge.openAiQuickAdd(folderPath, date) : onOpenAiQuickAdd?.(folderPath, date),
     quickAdd: (fId, fPath) => bridge?.openQuickAdd ? bridge.openQuickAdd(fId, fPath) : onOpenQuickAdd?.(fId, fPath),
     createFolder: (pFId, pFPath, p, cId) => bridge?.openCreateFolder ? bridge.openCreateFolder(pFId, pFPath, p, cId) : onOpenCreateFolder?.(pFId, pFPath, p, cId),
     quickAddContainer: (cId, name, path, d) => bridge?.openQuickAddForContainer ? bridge.openQuickAddForContainer(cId, name, path, d) : onOpenQuickAddForContainer?.(cId, name, path, d),
@@ -14571,10 +16452,10 @@ function instance4($$self, $$props, $$invalidate) {
         let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
         if (currentIds.includes(containerId)) {
           currentIds = currentIds.filter((id) => id !== containerId);
-          new import_obsidian11.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian13.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         } else {
           currentIds.push(containerId);
-          new import_obsidian11.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian13.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         }
         $$invalidate(0, settings.activeContainerIds = currentIds, settings);
         $$invalidate(0, settings.activeContainerId = currentIds[0] || "", settings);
@@ -14608,12 +16489,12 @@ function instance4($$self, $$props, $$invalidate) {
   });
   function obsIcon(node, iconName) {
     if (iconName)
-      (0, import_obsidian11.setIcon)(node, iconName);
+      (0, import_obsidian13.setIcon)(node, iconName);
     return {
       update(newIconName) {
         node.empty();
         if (newIconName)
-          (0, import_obsidian11.setIcon)(node, newIconName);
+          (0, import_obsidian13.setIcon)(node, newIconName);
       }
     };
   }
@@ -14671,12 +16552,12 @@ function instance4($$self, $$props, $$invalidate) {
   function handleCollapseAll() {
     expandedPreviews.clear();
     expandedContainerFolders.clear();
-    new import_obsidian11.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+    new import_obsidian13.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
   }
   async function handleConnectKeySubmit() {
     const key = keyInputText.trim();
     if (!key) {
-      new import_obsidian11.Notice("Please enter a container key");
+      new import_obsidian13.Notice("Please enter a container key");
       return;
     }
     await api.connectKey(key);
@@ -14685,20 +16566,21 @@ function instance4($$self, $$props, $$invalidate) {
   async function handleDisconnectKey() {
     await api.disconnectKey();
   }
-  const click_handler = () => api.quickAdd();
-  const click_handler_1 = () => api.createFolder();
-  const click_handler_2 = () => api.syncModal("pull");
-  const click_handler_3 = () => api.syncModal("push");
+  const click_handler = () => api.aiQuickAdd();
+  const click_handler_1 = () => api.quickAdd();
+  const click_handler_2 = () => api.createFolder();
+  const click_handler_3 = () => api.syncModal("pull");
   const click_handler_4 = () => api.syncModal("push");
-  const click_handler_5 = () => api.connectionsModal();
-  const click_handler_6 = () => api.refresh();
+  const click_handler_5 = () => api.syncModal("push");
+  const click_handler_6 = () => api.connectionsModal();
+  const click_handler_7 = () => api.refresh();
   function input_input_handler() {
     searchQuery = this.value;
     $$invalidate(10, searchQuery);
   }
-  const click_handler_7 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_8 = () => $$invalidate(11, sidebarMode = "notes");
-  const click_handler_9 = () => $$invalidate(11, sidebarMode = "containers");
+  const click_handler_8 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_9 = () => $$invalidate(11, sidebarMode = "notes");
+  const click_handler_10 = () => $$invalidate(11, sidebarMode = "containers");
   function input_input_handler_1() {
     keyInputText = this.value;
     $$invalidate(13, keyInputText);
@@ -14707,9 +16589,9 @@ function instance4($$self, $$props, $$invalidate) {
     if (e.key === "Enter")
       handleConnectKeySubmit();
   };
-  const click_handler_10 = () => $$invalidate(9, scopeFilter = "my");
-  const click_handler_11 = () => $$invalidate(9, scopeFilter = "public");
-  const click_handler_12 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_11 = () => $$invalidate(9, scopeFilter = "my");
+  const click_handler_12 = () => $$invalidate(9, scopeFilter = "public");
+  const click_handler_13 = () => $$invalidate(10, searchQuery = "");
   const toggleExpand_handler = (c) => handleToggleContainerExpand(c.id);
   const toggleConnect_handler = (c) => api.toggleConnect(c.id);
   const addNote_handler = (e) => api.quickAddContainer(e.detail.containerId, e.detail.containerName, e.detail.folderPath, e.detail.initialDate);
@@ -14722,9 +16604,9 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(14, scrollContainerEl);
     });
   }
-  const click_handler_13 = () => api.syncModal("push");
-  const click_handler_14 = () => api.createFolder(void 0, void 0, "obsidian", settings.activeContainerId || containers[0]?.id);
-  const click_handler_15 = () => {
+  const click_handler_14 = () => api.syncModal("push");
+  const click_handler_15 = () => api.createFolder(void 0, void 0, "obsidian", settings.activeContainerId || containers[0]?.id);
+  const click_handler_16 = () => {
     const activeContainer = containers.find((c) => c.id === settings.activeContainerId) || containers[0];
     if (activeContainer) {
       api.quickAddContainer(activeContainer.id, activeContainer.name);
@@ -14732,20 +16614,20 @@ function instance4($$self, $$props, $$invalidate) {
       api.quickAdd();
     }
   };
-  const click_handler_16 = () => $$invalidate(12, activeTab = "folders");
-  const click_handler_17 = () => $$invalidate(12, activeTab = "feeds");
-  const click_handler_18 = () => $$invalidate(9, scopeFilter = "my");
-  const click_handler_19 = () => $$invalidate(9, scopeFilter = "public");
-  const click_handler_20 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_21 = (folder) => api.quickAdd(folder.id, folder.path);
-  const click_handler_22 = (folder) => handleToggleFolderNotes(folder);
+  const click_handler_17 = () => $$invalidate(12, activeTab = "folders");
+  const click_handler_18 = () => $$invalidate(12, activeTab = "feeds");
+  const click_handler_19 = () => $$invalidate(9, scopeFilter = "my");
+  const click_handler_20 = () => $$invalidate(9, scopeFilter = "public");
+  const click_handler_21 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_22 = (folder) => api.quickAdd(folder.id, folder.path);
+  const click_handler_23 = (folder) => handleToggleFolderNotes(folder);
   const keydown_handler_1 = (folder, e) => onKeyAction(e, () => handleToggleFolderNotes(folder));
-  const click_handler_23 = (note) => api.openNote(note.filePath || note.title + ".md");
+  const click_handler_24 = (note) => api.openNote(note.filePath || note.title + ".md");
   const keydown_handler_2 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
-  const click_handler_24 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_25 = (feed) => handleToggleFeedNotes(feed);
+  const click_handler_25 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_26 = (feed) => handleToggleFeedNotes(feed);
   const keydown_handler_3 = (feed, e) => onKeyAction(e, () => handleToggleFeedNotes(feed));
-  const click_handler_26 = (note) => api.openNote(note.filePath || note.title + ".md");
+  const click_handler_27 = (note) => api.openNote(note.filePath || note.title + ".md");
   const keydown_handler_4 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
   function div2_binding_1($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
@@ -14753,9 +16635,9 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(14, scrollContainerEl);
     });
   }
-  const click_handler_27 = () => api.syncModal("push");
-  const click_handler_28 = () => api.createFolder();
-  const click_handler_29 = () => api.quickAdd();
+  const click_handler_28 = () => api.syncModal("push");
+  const click_handler_29 = () => api.createFolder();
+  const click_handler_30 = () => api.quickAdd();
   $$self.$$set = ($$props2) => {
     if ("settings" in $$props2)
       $$invalidate(0, settings = $$props2.settings);
@@ -14777,30 +16659,32 @@ function instance4($$self, $$props, $$invalidate) {
       $$invalidate(6, isLoading = $$props2.isLoading);
     if ("bridge" in $$props2)
       $$invalidate(7, bridge = $$props2.bridge);
+    if ("onOpenAiQuickAdd" in $$props2)
+      $$invalidate(43, onOpenAiQuickAdd = $$props2.onOpenAiQuickAdd);
     if ("onOpenQuickAdd" in $$props2)
-      $$invalidate(43, onOpenQuickAdd = $$props2.onOpenQuickAdd);
+      $$invalidate(44, onOpenQuickAdd = $$props2.onOpenQuickAdd);
     if ("onOpenCreateFolder" in $$props2)
-      $$invalidate(44, onOpenCreateFolder = $$props2.onOpenCreateFolder);
+      $$invalidate(45, onOpenCreateFolder = $$props2.onOpenCreateFolder);
     if ("onOpenQuickAddForContainer" in $$props2)
-      $$invalidate(45, onOpenQuickAddForContainer = $$props2.onOpenQuickAddForContainer);
+      $$invalidate(46, onOpenQuickAddForContainer = $$props2.onOpenQuickAddForContainer);
     if ("onOpenCreateFolderForContainer" in $$props2)
-      $$invalidate(46, onOpenCreateFolderForContainer = $$props2.onOpenCreateFolderForContainer);
+      $$invalidate(47, onOpenCreateFolderForContainer = $$props2.onOpenCreateFolderForContainer);
     if ("onOpenSyncModal" in $$props2)
-      $$invalidate(47, onOpenSyncModal = $$props2.onOpenSyncModal);
+      $$invalidate(48, onOpenSyncModal = $$props2.onOpenSyncModal);
     if ("onOpenConnectionsModal" in $$props2)
       $$invalidate(8, onOpenConnectionsModal = $$props2.onOpenConnectionsModal);
     if ("onRefreshData" in $$props2)
-      $$invalidate(48, onRefreshData = $$props2.onRefreshData);
+      $$invalidate(49, onRefreshData = $$props2.onRefreshData);
     if ("onSaveSettings" in $$props2)
-      $$invalidate(49, onSaveSettings = $$props2.onSaveSettings);
+      $$invalidate(50, onSaveSettings = $$props2.onSaveSettings);
     if ("onOpenNoteInVault" in $$props2)
-      $$invalidate(50, onOpenNoteInVault = $$props2.onOpenNoteInVault);
+      $$invalidate(51, onOpenNoteInVault = $$props2.onOpenNoteInVault);
     if ("onLoadContainerFiles" in $$props2)
-      $$invalidate(51, onLoadContainerFiles = $$props2.onLoadContainerFiles);
+      $$invalidate(52, onLoadContainerFiles = $$props2.onLoadContainerFiles);
     if ("onLoadFolderNotes" in $$props2)
-      $$invalidate(52, onLoadFolderNotes = $$props2.onLoadFolderNotes);
+      $$invalidate(53, onLoadFolderNotes = $$props2.onLoadFolderNotes);
     if ("onLoadFeedNotes" in $$props2)
-      $$invalidate(53, onLoadFeedNotes = $$props2.onLoadFeedNotes);
+      $$invalidate(54, onLoadFeedNotes = $$props2.onLoadFeedNotes);
   };
   $$self.$$.update = () => {
     if ($$self.$$.dirty[0] & /*settings*/
@@ -14816,22 +16700,22 @@ function instance4($$self, $$props, $$invalidate) {
     if ($$self.$$.dirty[0] & /*containers*/
     2) {
       $:
-        $$invalidate(56, myContainers = containers.filter((c) => !isContainerPublic(c)));
+        $$invalidate(57, myContainers = containers.filter((c) => !isContainerPublic(c)));
     }
     if ($$self.$$.dirty[0] & /*containers*/
     2) {
       $:
-        $$invalidate(55, publicContainers = containers.filter((c) => isContainerPublic(c)));
+        $$invalidate(56, publicContainers = containers.filter((c) => isContainerPublic(c)));
     }
     if ($$self.$$.dirty[0] & /*scopeFilter*/
     512 | $$self.$$.dirty[1] & /*myContainers, publicContainers*/
-    50331648) {
+    100663296) {
       $:
-        $$invalidate(54, scopedContainers = scopeFilter === "my" ? myContainers : publicContainers);
+        $$invalidate(55, scopedContainers = scopeFilter === "my" ? myContainers : publicContainers);
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
     1024 | $$self.$$.dirty[1] & /*scopedContainers*/
-    8388608) {
+    16777216) {
       $:
         $$invalidate(17, displayedContainers = searchQuery.trim() ? scopedContainers.filter((c) => c.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || c.id.toLowerCase().includes(searchQuery.trim().toLowerCase())) : scopedContainers);
     }
@@ -14892,6 +16776,7 @@ function instance4($$self, $$props, $$invalidate) {
     handleDisconnectKey,
     folders,
     feeds,
+    onOpenAiQuickAdd,
     onOpenQuickAdd,
     onOpenCreateFolder,
     onOpenQuickAddForContainer,
@@ -14913,15 +16798,16 @@ function instance4($$self, $$props, $$invalidate) {
     click_handler_4,
     click_handler_5,
     click_handler_6,
-    input_input_handler,
     click_handler_7,
+    input_input_handler,
     click_handler_8,
     click_handler_9,
+    click_handler_10,
     input_input_handler_1,
     keydown_handler,
-    click_handler_10,
     click_handler_11,
     click_handler_12,
+    click_handler_13,
     toggleExpand_handler,
     toggleConnect_handler,
     addNote_handler,
@@ -14929,7 +16815,6 @@ function instance4($$self, $$props, $$invalidate) {
     openNote_handler,
     toggleFolder_handler,
     div2_binding,
-    click_handler_13,
     click_handler_14,
     click_handler_15,
     click_handler_16,
@@ -14939,18 +16824,19 @@ function instance4($$self, $$props, $$invalidate) {
     click_handler_20,
     click_handler_21,
     click_handler_22,
-    keydown_handler_1,
     click_handler_23,
-    keydown_handler_2,
+    keydown_handler_1,
     click_handler_24,
+    keydown_handler_2,
     click_handler_25,
-    keydown_handler_3,
     click_handler_26,
+    keydown_handler_3,
+    click_handler_27,
     keydown_handler_4,
     div2_binding_1,
-    click_handler_27,
     click_handler_28,
-    click_handler_29
+    click_handler_29,
+    click_handler_30
   ];
 }
 var LentaSidebar = class extends SvelteComponent {
@@ -14959,8 +16845,8 @@ var LentaSidebar = class extends SvelteComponent {
     init(
       this,
       options,
-      instance4,
-      create_fragment4,
+      instance5,
+      create_fragment5,
       safe_not_equal,
       {
         settings: 0,
@@ -14973,20 +16859,21 @@ var LentaSidebar = class extends SvelteComponent {
         feedNotesList: 5,
         isLoading: 6,
         bridge: 7,
-        onOpenQuickAdd: 43,
-        onOpenCreateFolder: 44,
-        onOpenQuickAddForContainer: 45,
-        onOpenCreateFolderForContainer: 46,
-        onOpenSyncModal: 47,
+        onOpenAiQuickAdd: 43,
+        onOpenQuickAdd: 44,
+        onOpenCreateFolder: 45,
+        onOpenQuickAddForContainer: 46,
+        onOpenCreateFolderForContainer: 47,
+        onOpenSyncModal: 48,
         onOpenConnectionsModal: 8,
-        onRefreshData: 48,
-        onSaveSettings: 49,
-        onOpenNoteInVault: 50,
-        onLoadContainerFiles: 51,
-        onLoadFolderNotes: 52,
-        onLoadFeedNotes: 53
+        onRefreshData: 49,
+        onSaveSettings: 50,
+        onOpenNoteInVault: 51,
+        onLoadContainerFiles: 52,
+        onLoadFolderNotes: 53,
+        onLoadFeedNotes: 54
       },
-      add_css2,
+      add_css4,
       [-1, -1, -1, -1]
     );
   }
@@ -15085,7 +16972,7 @@ function buildFileTree(files, folders = []) {
   sortNodes(rootChildren);
   return rootChildren;
 }
-var LentaSidebarView = class extends import_obsidian12.ItemView {
+var LentaSidebarView = class extends import_obsidian14.ItemView {
   constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder, onSaveSettings) {
     super(leaf);
     this.onQuickPull = onQuickPull;
@@ -15129,7 +17016,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.onOpenCreateFolder = onOpenCreateFolder;
     this.onSaveSettings = onSaveSettings;
-    this.mdComponent = new import_obsidian12.Component();
+    this.mdComponent = new import_obsidian14.Component();
   }
   selectFolder(folderId, folderPath) {
     this.selectedFolderId = folderId;
@@ -15237,6 +17124,24 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       containerId
     ).open();
   }
+  openAiQuickAddModal(initialFolder, initialDate) {
+    const modal = new LentaAiQuickAddModal(
+      this.app,
+      this.apiClient,
+      this.getSettings,
+      async (createdPaths) => {
+        await this.refreshData();
+        if (createdPaths.length > 0) {
+          await this.openNoteInVault(createdPaths[0]);
+        }
+      },
+      this.getSettings().activeContainerId || void 0,
+      this.getSettings().connectedContainerName || void 0,
+      initialFolder,
+      initialDate
+    );
+    modal.open();
+  }
   getViewType() {
     return VIEW_TYPE_LENTA_SIDEBAR;
   }
@@ -15248,6 +17153,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
   }
   createObsidianBridge() {
     return {
+      openAiQuickAdd: (fPath, date) => this.openAiQuickAddModal(fPath, date),
       openQuickAdd: (fId, fPath) => this.onOpenQuickAdd(fId, fPath),
       openCreateFolder: (pFId, pFPath, privacy, cId) => this.openCreateFolderModal(pFId, pFPath, privacy, cId),
       openQuickAddForContainer: (cId, cName, fPath, initDate) => this.openQuickAddForContainer(cId, cName, fPath, initDate),
@@ -15296,7 +17202,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian12.Notice("\u{1F34B} Container key disconnected");
+        new import_obsidian14.Notice("\u{1F34B} Container key disconnected");
         await this.refreshData();
       },
       toggleContainerConnect: async (containerId) => {
@@ -15304,10 +17210,10 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
         if (currentIds.includes(containerId)) {
           currentIds = currentIds.filter((id) => id !== containerId);
-          new import_obsidian12.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian14.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         } else {
           currentIds.push(containerId);
-          new import_obsidian12.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian14.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         }
         settings.activeContainerIds = currentIds;
         settings.activeContainerId = currentIds[0] || "";
@@ -15459,7 +17365,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         })
       );
     } catch (err) {
-      new import_obsidian12.Notice(`Failed to load Lenta data: ${err.message}`);
+      new import_obsidian14.Notice(`Failed to load Lenta data: ${err.message}`);
     } finally {
       this.isLoading = false;
       if (this.svelteComponent) {
@@ -15576,7 +17482,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
     }
     const toolbar = header.createDiv({ cls: "lenta-sidebar-toolbar" });
     const addBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Quick Add Note" } });
-    (0, import_obsidian12.setIcon)(addBtn, "plus");
+    (0, import_obsidian14.setIcon)(addBtn, "plus");
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -15584,46 +17490,46 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       cls: "clickable-icon",
       attr: { "aria-label": "New Folder" }
     });
-    (0, import_obsidian12.setIcon)(addFolderToolbarBtn, "folder-plus");
+    (0, import_obsidian14.setIcon)(addFolderToolbarBtn, "folder-plus");
     addFolderToolbarBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
     const pullBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Pull from Lenta Server (\u2B07)" } });
-    (0, import_obsidian12.setIcon)(pullBtn, "download");
+    (0, import_obsidian14.setIcon)(pullBtn, "download");
     pullBtn.onclick = () => {
       this.onOpenSyncModal("pull");
     };
     const pushBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Push Changed to Server (\u2B06)" } });
-    (0, import_obsidian12.setIcon)(pushBtn, "upload");
+    (0, import_obsidian14.setIcon)(pushBtn, "upload");
     pushBtn.onclick = () => {
       if (!this.isMyScopeActive()) {
-        new import_obsidian12.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
+        new import_obsidian14.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
         return;
       }
       this.onOpenSyncModal("push");
     };
     const syncBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Sync Hub" } });
-    (0, import_obsidian12.setIcon)(syncBtn, "zap");
+    (0, import_obsidian14.setIcon)(syncBtn, "zap");
     syncBtn.onclick = () => this.onOpenSyncModal("push");
     if (this.onOpenConnectionsModal) {
       const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Auth" } });
-      (0, import_obsidian12.setIcon)(connBtn, "link-2");
+      (0, import_obsidian14.setIcon)(connBtn, "link-2");
       connBtn.onclick = () => this.onOpenConnectionsModal();
     }
     const collapseBtn = toolbar.createEl("button", {
       cls: "clickable-icon",
       attr: { "aria-label": "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)" }
     });
-    (0, import_obsidian12.setIcon)(collapseBtn, "chevrons-down-up");
+    (0, import_obsidian14.setIcon)(collapseBtn, "chevrons-down-up");
     collapseBtn.onclick = () => {
       this.expandedPreviews.clear();
       this.expandedContainerFolders.clear();
       this.scrollPositions.clear();
       this.render();
-      new import_obsidian12.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+      new import_obsidian14.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
     };
     const refreshBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Refresh Data" } });
-    (0, import_obsidian12.setIcon)(refreshBtn, "refresh-cw");
+    (0, import_obsidian14.setIcon)(refreshBtn, "refresh-cw");
     refreshBtn.onclick = () => this.refreshData();
     const modeSwitcher = container.createDiv({ cls: "lenta-mode-switcher" });
     const notesTab = modeSwitcher.createDiv({
@@ -15758,7 +17664,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian12.Notice("\u{1F34B} Container key disconnected");
+        new import_obsidian14.Notice("\u{1F34B} Container key disconnected");
         await this.refreshData();
       };
     } else {
@@ -15790,7 +17696,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
   async connectKeyAction() {
     const key = this.keyInputText.trim();
     if (!key) {
-      new import_obsidian12.Notice("Please enter a container key");
+      new import_obsidian14.Notice("Please enter a container key");
       return;
     }
     this.isConnectingKey = true;
@@ -15812,13 +17718,13 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
           await this.onSaveSettings();
         }
         this.keyInputText = "";
-        new import_obsidian12.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
+        new import_obsidian14.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
         await this.refreshData();
       } else {
-        new import_obsidian12.Notice("Could not connect container with provided key");
+        new import_obsidian14.Notice("Could not connect container with provided key");
       }
     } catch (err) {
-      new import_obsidian12.Notice(`Connection failed: ${err.message}`);
+      new import_obsidian14.Notice(`Connection failed: ${err.message}`);
     } finally {
       this.isConnectingKey = false;
       this.render();
@@ -15860,7 +17766,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       cls: `lenta-container-header-row ${isExpanded ? "is-active" : ""} ${isActiveContainer ? "is-connected" : ""}`
     });
     const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
-    (0, import_obsidian12.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
+    (0, import_obsidian14.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
     const nameSpan = headerRow.createSpan({ text: getContainerDisplayTitle2(c), cls: "lenta-item-name" });
     if (isActiveContainer) {
       nameSpan.title = "Active connected container";
@@ -15874,10 +17780,10 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       cls: "lenta-container-add-btn clickable-icon",
       attr: { "aria-label": `Create Note or Folder in "${c.name}"` }
     });
-    (0, import_obsidian12.setIcon)(addBtn, "plus");
+    (0, import_obsidian14.setIcon)(addBtn, "plus");
     addBtn.onclick = (e) => {
       e.stopPropagation();
-      const menu = new import_obsidian12.Menu();
+      const menu = new import_obsidian14.Menu();
       menu.addItem((item) => {
         item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
           this.openQuickAddForContainer(c.id, c.name);
@@ -15894,7 +17800,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse container" : "Expand container files" }
     });
-    (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -15941,7 +17847,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian12.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
+        new import_obsidian14.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
         this.render();
       };
       const addNoteBtn = actionToolbar.createEl("button", {
@@ -15949,7 +17855,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         text: "+ Note",
         attr: { "aria-label": `Create note in "${c.name}"` }
       });
-      (0, import_obsidian12.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian14.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(c.id, c.name);
@@ -15959,7 +17865,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         text: "+ Folder",
         attr: { "aria-label": `Create folder in "${c.name}"` }
       });
-      (0, import_obsidian12.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
+      (0, import_obsidian14.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
       addFolderBtn.onclick = (e) => {
         e.stopPropagation();
         this.openCreateFolderForContainer(c.id, c.name);
@@ -16026,7 +17932,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
       markerEl.createSpan({ cls: "lenta-today-marker-line" });
       const pill = markerEl.createSpan({ cls: "lenta-today-marker-pill" });
       const iconSpan = pill.createSpan({ cls: "lenta-today-pill-icon" });
-      (0, import_obsidian12.setIcon)(iconSpan, "calendar");
+      (0, import_obsidian14.setIcon)(iconSpan, "calendar");
       pill.createSpan({ text: `\u0421\u0435\u0433\u043E\u0434\u043D\u044F: ${todayHumanStr}` });
       pill.createSpan({ cls: "lenta-today-pill-status", text: "(\u0441\u043E\u0431\u044B\u0442\u0438\u0439 \u043D\u0435\u0442)" });
       const addBtn = markerEl.createEl("button", {
@@ -16034,7 +17940,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
         text: "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430",
         attr: { "aria-label": `\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F (${todayStr}) \u0432 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435` }
       });
-      (0, import_obsidian12.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian14.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(containerId, void 0, currentFolderPath || void 0, todayStr);
@@ -16055,7 +17961,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = folderRow.createSpan({ cls: "lenta-item-icon" });
-        (0, import_obsidian12.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
+        (0, import_obsidian14.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
         folderRow.createSpan({ text: node.name, cls: "lenta-item-name" });
         if (node.children && node.children.length > 0) {
           folderRow.createSpan({ text: `${node.children.length}`, cls: "lenta-count-pill" });
@@ -16064,10 +17970,10 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
           cls: "lenta-folder-add-note clickable-icon",
           attr: { "aria-label": `Add note or subfolder in ${node.name}` }
         });
-        (0, import_obsidian12.setIcon)(folderAddBtn, "plus");
+        (0, import_obsidian14.setIcon)(folderAddBtn, "plus");
         folderAddBtn.onclick = (e) => {
           e.stopPropagation();
-          const menu = new import_obsidian12.Menu();
+          const menu = new import_obsidian14.Menu();
           menu.addItem((item) => {
             item.setTitle(`\u{1F4DD} New Note in "${node.name}"`).setIcon("file-plus").onClick(() => {
               this.openQuickAddForContainer(containerId, void 0, node.path);
@@ -16116,7 +18022,7 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = fileRow.createSpan({ cls: `lenta-item-icon lenta-note-icon ${isToday ? "is-today" : ""}` });
-        (0, import_obsidian12.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
+        (0, import_obsidian14.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
         const nameSpan = fileRow.createSpan({ text: node.name, cls: `lenta-note-title ${isToday ? "is-today" : ""}` });
         nameSpan.title = node.path;
         if (isToday) {
@@ -16153,11 +18059,11 @@ var LentaSidebarView = class extends import_obsidian12.ItemView {
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian12.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian14.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian12.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
+      new import_obsidian14.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
       const cachedFiles = this.containerFilesList.get(containerId) || [];
       const fileEntry = cachedFiles.find((f) => f.path === filePath);
       let content = fileEntry?.content;
@@ -16184,9 +18090,9 @@ Downloaded from container \`${containerId}\`.
       }
       const newFile = await this.app.vault.create(targetPath, content);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian12.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian14.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian12.Notice(`Failed to open file: ${err.message}`);
+      new import_obsidian14.Notice(`Failed to open file: ${err.message}`);
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -16231,7 +18137,7 @@ Downloaded from container \`${containerId}\`.
       const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
       const fIcon = folder.icon || "folder";
       if (fIcon.match(/^[a-z0-9-]+$/)) {
-        (0, import_obsidian12.setIcon)(iconSpan, fIcon);
+        (0, import_obsidian14.setIcon)(iconSpan, fIcon);
       } else {
         iconSpan.setText(fIcon);
       }
@@ -16246,7 +18152,7 @@ Downloaded from container \`${containerId}\`.
           title: `\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 \u043F\u0430\u043F\u043A\u0443 ${folder.path || folder.name}`
         }
       });
-      (0, import_obsidian12.setIcon)(addNoteBtn, "plus");
+      (0, import_obsidian14.setIcon)(addNoteBtn, "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.selectedFolderId = folder.id;
@@ -16257,7 +18163,7 @@ Downloaded from container \`${containerId}\`.
         cls: "lenta-preview-toggle clickable-icon",
         attr: { "aria-label": isExpanded ? "Collapse folder" : "Expand folder notes" }
       });
-      (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+      (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
       headerRow.onclick = async () => {
         this.selectedFolderId = folder.id;
         this.selectedFolderPath = folder.path;
@@ -16296,7 +18202,7 @@ Downloaded from container \`${containerId}\`.
               const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
               const nIcon = note.icon || "file-text";
               if (nIcon.match(/^[a-z0-9-]+$/)) {
-                (0, import_obsidian12.setIcon)(noteIconSpan, nIcon);
+                (0, import_obsidian14.setIcon)(noteIconSpan, nIcon);
               } else {
                 noteIconSpan.setText(nIcon);
               }
@@ -16338,10 +18244,10 @@ Downloaded from container \`${containerId}\`.
               slug: "my-notes",
               description: "Personal notes and reflections feed"
             });
-            new import_obsidian12.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
+            new import_obsidian14.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
             await this.refreshData();
           } catch (err) {
-            new import_obsidian12.Notice(`Failed to create feed: ${err.message}`);
+            new import_obsidian14.Notice(`Failed to create feed: ${err.message}`);
           }
         };
       } else {
@@ -16369,7 +18275,7 @@ Downloaded from container \`${containerId}\`.
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse feed" : "Show feed notes" }
     });
-    (0, import_obsidian12.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -16406,7 +18312,7 @@ Downloaded from container \`${containerId}\`.
             const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
             const nIcon = note.icon || "file-text";
             if (nIcon.match(/^[a-z0-9-]+$/)) {
-              (0, import_obsidian12.setIcon)(noteIconSpan, nIcon);
+              (0, import_obsidian14.setIcon)(noteIconSpan, nIcon);
             } else {
               noteIconSpan.setText(nIcon);
             }
@@ -16448,11 +18354,11 @@ Downloaded from container \`${containerId}\`.
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian12.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian14.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian12.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
+      new import_obsidian14.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
       const root = this.getSettings().vaultRootFolder || "Lemon-Seasons";
       const folderPath = note.folders && note.folders.length > 0 && note.folders[0].folder ? note.folders[0].folder.path : "01_Daily_Logs";
       const safeTitle = note.title.replace(/[:\/\\*?"<>|]/g, "-").trim();
@@ -16464,9 +18370,9 @@ Downloaded from container \`${containerId}\`.
       const mdContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
       const newFile = await this.app.vault.create(targetPath, mdContent);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian12.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian14.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian12.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
+      new import_obsidian14.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
     }
   }
   renderQuickAddFooter(container) {
@@ -16481,12 +18387,12 @@ Downloaded from container \`${containerId}\`.
     });
     pushCurrentBtn.onclick = () => {
       if (!isMyActive) {
-        new import_obsidian12.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
+        new import_obsidian14.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
         return;
       }
       const file = this.app.workspace.getActiveFile();
       if (!file) {
-        new import_obsidian12.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
+        new import_obsidian14.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
         return;
       }
       this.onOpenSyncModal();
@@ -16498,7 +18404,7 @@ Downloaded from container \`${containerId}\`.
         "aria-label": this.selectedFolderPath ? `Create new folder inside "${this.selectedFolderPath}"` : "Create new folder in Lenta & Vault"
       }
     });
-    (0, import_obsidian12.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian14.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -16510,7 +18416,7 @@ Downloaded from container \`${containerId}\`.
       }
     });
     if (isMyActive) {
-      (0, import_obsidian12.setIcon)(addBtn.createSpan(), "plus");
+      (0, import_obsidian14.setIcon)(addBtn.createSpan(), "plus");
     }
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
@@ -16541,10 +18447,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create folder in container "${containerName}"` : "Create folder in container"
       }
     });
-    (0, import_obsidian12.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian14.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian12.Notice("Please select or connect a container first");
+        new import_obsidian14.Notice("Please select or connect a container first");
         return;
       }
       this.openCreateFolderForContainer(activeId, containerName);
@@ -16556,10 +18462,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create note in container "${containerName}"` : "Create note in container"
       }
     });
-    (0, import_obsidian12.setIcon)(addNoteBtn.createSpan(), "plus");
+    (0, import_obsidian14.setIcon)(addNoteBtn.createSpan(), "plus");
     addNoteBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian12.Notice("Please select or connect a container first");
+        new import_obsidian14.Notice("Please select or connect a container first");
         return;
       }
       this.openQuickAddForContainer(activeId, containerName);
@@ -16568,8 +18474,8 @@ Downloaded from container \`${containerId}\`.
 };
 
 // src/ui/settings-tab.ts
-var import_obsidian13 = require("obsidian");
-var LentaSettingTab = class extends import_obsidian13.PluginSettingTab {
+var import_obsidian15 = require("obsidian");
+var LentaSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -16612,19 +18518,19 @@ var LentaSettingTab = class extends import_obsidian13.PluginSettingTab {
       this.plugin.openConnectionsModal();
     };
     containerEl.createEl("h3", { text: "\u2699\uFE0F Core Server & Sync Settings" });
-    new import_obsidian13.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
+    new import_obsidian15.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
       (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.plugin.settings.serverUrl).onChange(async (val) => {
         this.plugin.settings.serverUrl = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian13.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
+    new import_obsidian15.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
       (text2) => text2.setPlaceholder("e.g. tech-strategy").setValue(this.plugin.settings.defaultFeedSlug).onChange(async (val) => {
         this.plugin.settings.defaultFeedSlug = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian13.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
+    new import_obsidian15.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
       dropdown.addOption("create_backup_fork", "Create Backup (.local-backup.md)");
       dropdown.addOption("client_wins", "Keep Local (Client Wins)");
       dropdown.addOption("server_wins", "Keep Remote (Server Wins)");
@@ -16635,14 +18541,14 @@ var LentaSettingTab = class extends import_obsidian13.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian13.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
+    new import_obsidian15.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
       (text2) => text2.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
     );
   }
 };
 
 // src/main.ts
-var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
+var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
   async onload() {
     await this.loadSettings();
     this.apiClient = new LentaApiClient(
@@ -16688,7 +18594,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
       this.activateSidebarView();
       if (isVisible && leaves[0].view instanceof LentaSidebarView) {
         leaves[0].view.refreshData();
-        new import_obsidian14.Notice("\u{1F34B} Lenta Hub refreshed");
+        new import_obsidian16.Notice("\u{1F34B} Lenta Hub refreshed");
       }
     });
     sidebarRibbonIcon.addClass("lenta-ribbon-btn");
@@ -16738,6 +18644,13 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
       }
     });
     this.addCommand({
+      id: "lenta-ai-quick-add",
+      name: "\u2728 AI Quick Add Cards (Natural Language Chat)",
+      callback: () => {
+        this.openAiQuickAddModal();
+      }
+    });
+    this.addCommand({
       id: "lenta-quick-add-note",
       name: "Quick Add Chronological Note",
       callback: () => {
@@ -16771,16 +18684,16 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new import_obsidian14.Notice("No active markdown file open.");
+          new import_obsidian16.Notice("No active markdown file open.");
           return;
         }
         try {
           const res = await this.syncEngine.pushLocalNote(file);
           if (res.success) {
-            new import_obsidian14.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
+            new import_obsidian16.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
           }
         } catch (err) {
-          new import_obsidian14.Notice(`Push failed: ${err.message}`);
+          new import_obsidian16.Notice(`Push failed: ${err.message}`);
         }
       }
     });
@@ -16794,7 +18707,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
     this.addSettingTab(new LentaSettingTab(this.app, this));
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
-        if (file instanceof import_obsidian14.TFile) {
+        if (file instanceof import_obsidian16.TFile) {
           await this.syncEngine.handleFileRename(file, oldPath);
         }
       })
@@ -16813,7 +18726,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
           this.settings.containerKey = "";
           this.settings.connectedContainerName = "";
           await this.saveSettings();
-          new import_obsidian14.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
+          new import_obsidian16.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
         }
       })
     );
@@ -16832,7 +18745,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
     const { scanChangedFiles: scanChangedFiles2 } = await Promise.resolve().then(() => (init_changed_files_scanner(), changed_files_scanner_exports));
     const changed = await scanChangedFiles2(this.app, this.settings);
     if (changed.length === 0) {
-      new import_obsidian14.Notice("\u{1F34B} No local changes since last sync.");
+      new import_obsidian16.Notice("\u{1F34B} No local changes since last sync.");
       return;
     }
     this.updateStatusBar(`Pushing ${changed.length} files...`);
@@ -16846,7 +18759,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
         console.warn("Push failed for", item.relPath, err?.message);
       }
     }
-    new import_obsidian14.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
+    new import_obsidian16.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
     this.updateStatusBar("Synced \u2713");
     setTimeout(() => this.updateStatusBar("Ready"), 3e3);
   }
@@ -16871,6 +18784,28 @@ var WorkspaceLentaPlugin = class extends import_obsidian14.Plugin {
     if (leaf) {
       workspace.revealLeaf(leaf);
     }
+  }
+  openAiQuickAddModal(initialFolder, initialDate) {
+    new LentaAiQuickAddModal(
+      this.app,
+      this.apiClient,
+      () => this.settings,
+      (createdPaths) => {
+        if (createdPaths.length > 0) {
+          this.app.workspace.openLinkText(createdPaths[0], "", false);
+        }
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            leaf.view.refreshData();
+          }
+        }
+      },
+      this.settings.activeContainerId || void 0,
+      this.settings.connectedContainerName || void 0,
+      initialFolder,
+      initialDate
+    ).open();
   }
   openQuickAddModal(initialFolderId, initialFolderPath) {
     new LentaQuickAddModal(
