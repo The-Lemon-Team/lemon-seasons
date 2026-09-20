@@ -13,6 +13,9 @@ import {
   UpdateFolderInput,
   CreateNoteInput,
   UpdateNoteInput,
+  ParsedNoteCard,
+  ParseNotesContext,
+  BatchCreateNotesResponse,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -25,11 +28,24 @@ export const apiClient = axios.create({
 });
 
 export const calendarApi = {
+  // AI Quick Add & Parse
+  parseAiNotes: async (text: string, context?: ParseNotesContext): Promise<{ cards: ParsedNoteCard[] }> => {
+    const res = await apiClient.post<{ cards: ParsedNoteCard[] }>('/notes/ai/parse', { text, context });
+    return res.data;
+  },
+
+  // Batch Create Notes
+  createNotesBatch: async (notes: CreateNoteInput[]): Promise<BatchCreateNotesResponse> => {
+    const res = await apiClient.post<BatchCreateNotesResponse>('/notes/batch', { notes });
+    return res.data;
+  },
+
   // Create Note
   createNote: async (input: CreateNoteInput): Promise<Note> => {
     const res = await apiClient.post<Note>('/notes', input);
     return res.data;
   },
+
 
   // Update Note
   updateNote: async (id: string, input: UpdateNoteInput): Promise<Note> => {

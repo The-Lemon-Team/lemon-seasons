@@ -15,7 +15,9 @@ import { NoteDetailModal } from './components/NoteDetailModal';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { CreateNoteModal } from './components/CreateNoteModal';
+import { AiQuickAddModal } from './components/AiQuickAddModal';
 import { PrivateContainersModal } from './components/PrivateContainersModal';
+
 import { KeyManagementModal } from './components/KeyManagementModal';
 import { ObsidianContainersView } from './components/ObsidianContainersView';
 import { FolderManagerView } from './components/FolderManagerView';
@@ -74,8 +76,10 @@ const CalendarAppInner: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
+  const [isAiQuickAddOpen, setIsAiQuickAddOpen] = useState(false);
   const [isPrivateContainersOpen, setIsPrivateContainersOpen] = useState(false);
   const [isKeysModalOpen, setIsKeysModalOpen] = useState(false);
+
 
   const [selectedSingleContainerId, setSelectedSingleContainerId] = useState<string | null>(() => {
     return parseObsidianRoute().containerId;
@@ -180,12 +184,14 @@ const CalendarAppInner: React.FC = () => {
         currentView={filters.view}
         onSetView={handleSetView}
         onOpenQuickAdd={() => setIsCreateNoteOpen(true)}
+        onOpenAiQuickAdd={() => setIsAiQuickAddOpen(true)}
         onOpenPrivateContainers={() => setIsPrivateContainersOpen(true)}
         onOpenKeysModal={() => setIsKeysModalOpen(true)}
         onToggleFilters={() => setIsFilterOpen((prev) => !prev)}
         isFilterOpen={isFilterOpen}
         activeFilterCount={activeFilterCount}
       />
+
 
       {/* 2. Main Content Canvas */}
       <div className="flex-1 flex flex-col md:ml-64 h-full relative overflow-hidden min-h-0">
@@ -357,7 +363,15 @@ const CalendarAppInner: React.FC = () => {
         onClose={() => setIsCreateNoteOpen(false)}
       />
 
+      {/* 5.1 AI Quick Add Modal */}
+      <AiQuickAddModal
+        isOpen={isAiQuickAddOpen}
+        onClose={() => setIsAiQuickAddOpen(false)}
+        defaultDate={filters.start}
+      />
+
       {/* 6. Private Obsidian Containers Modal for Logged in Users */}
+
       <PrivateContainersModal
         isOpen={isPrivateContainersOpen}
         onClose={() => setIsPrivateContainersOpen(false)}

@@ -26,6 +26,7 @@ interface SideNavBarProps {
   currentView: CalendarViewMode;
   onSetView: (view: CalendarViewMode) => void;
   onOpenQuickAdd?: () => void;
+  onOpenAiQuickAdd?: () => void;
   onOpenPrivateContainers?: () => void;
   onOpenKeysModal?: () => void;
   onToggleFilters: () => void;
@@ -37,12 +38,14 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   currentView,
   onSetView,
   onOpenQuickAdd,
+  onOpenAiQuickAdd,
   onOpenPrivateContainers,
   onOpenKeysModal,
   onToggleFilters,
   isFilterOpen,
   activeFilterCount,
 }) => {
+
   const { t } = useI18n();
   const { user, role, isAdmin, isAuthenticated, logout, switchDemoRole } = useAuth();
   const { containers } = useObsidianContainers();
@@ -81,11 +84,24 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         type="button"
         data-testid="quick-add-btn"
         onClick={onOpenQuickAdd}
-        className="bg-[#121414] border border-[#484837] hover:border-[#e5e971] hover:text-[#e5e971] text-[#e2e2e2] font-mono text-xs py-2.5 px-4 rounded transition-colors flex justify-center items-center gap-2 w-full mb-3 shadow-sm"
+        className="bg-[#121414] border border-[#484837] hover:border-[#e5e971] hover:text-[#e5e971] text-[#e2e2e2] font-mono text-xs py-2 px-3 rounded transition-colors flex justify-center items-center gap-2 w-full mb-1.5 shadow-sm"
       >
         <Plus className="w-3.5 h-3.5 text-[#c9cd58]" />
         <span>{t.newEntry}</span>
       </button>
+
+      {/* AI Quick Add CTA */}
+      <button
+        type="button"
+        data-testid="ai-quick-add-btn"
+        onClick={onOpenAiQuickAdd}
+        className="bg-gradient-to-r from-purple-950/40 to-pink-950/40 border border-purple-800/50 hover:border-purple-400 text-purple-200 hover:text-purple-100 font-mono text-xs py-2 px-3 rounded transition-all flex justify-center items-center gap-2 w-full mb-3 shadow-sm group cursor-pointer"
+        title="Быстрое добавление через AI-чат"
+      >
+        <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:rotate-12 transition-transform" />
+        <span>✨ AI Добавление</span>
+      </button>
+
 
       {/* Navigation Links */}
       <nav className="flex flex-col gap-1 flex-1">
