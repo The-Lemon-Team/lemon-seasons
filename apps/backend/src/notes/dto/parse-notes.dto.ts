@@ -23,6 +23,15 @@ export class ParseNotesContextDto {
   @IsString()
   @IsOptional()
   defaultFolder?: string;
+
+  @ApiPropertyOptional({ description: 'Optional flag to request external AI fallback', example: false })
+  @IsOptional()
+  useExternalAi?: boolean;
+
+  @ApiPropertyOptional({ description: 'Specific template identifier (e.g. trends_today, trend_period)', example: 'trends_today' })
+  @IsString()
+  @IsOptional()
+  templateId?: string;
 }
 
 export class ParseNotesDto {

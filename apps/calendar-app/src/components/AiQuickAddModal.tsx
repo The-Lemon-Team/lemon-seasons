@@ -189,10 +189,10 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              AI ЧАТ
+              ШАБЛОНЫ & АЛИАСЫ
             </span>
             <h2 className="text-base font-semibold text-[#f1f1f1] font-sans">
-              Быстрое добавление карточек
+              Быстрое добавление заметок
             </h2>
           </div>
 
@@ -206,9 +206,11 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <p className="text-xs text-[#a0a090] font-sans">
-            Введите текст на естественном языке (тренды, события, задачи, периоды). AI автоматически преобразует текст в структурированные карточки.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#a0a090] font-sans">
+              Используйте быстрые шаблоны и алиасы (<span className="text-purple-300 font-mono">п:</span> Папка, <span className="text-purple-300 font-mono">т:</span> Тег, <span className="text-purple-300 font-mono">@19:00</span> Время, <span className="text-purple-300 font-mono">/today</span>). Обработка мгновенна и изолирована.
+            </p>
+          </div>
 
           {/* Prompt Chips */}
           <div className="flex items-center flex-wrap gap-2 pt-1">

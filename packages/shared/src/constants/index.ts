@@ -92,3 +92,143 @@ export const ConflictStrategyLabelsRu: Record<ConflictStrategy, string> = {
   create_backup_fork: 'Создать резервную копию (Форк)',
   manual_merge: 'Требуется ручное слияние',
 };
+
+// ---------------------------------------------------------------------------
+// Note Templates & Aliases Constants (Private Deterministic Engine)
+// ---------------------------------------------------------------------------
+
+export const NOTE_TEMPLATE_TRENDS_TODAY = 'trends_today';
+export const NOTE_TEMPLATE_TREND_PERIOD = 'trend_period';
+export const NOTE_TEMPLATE_EVENT = 'event';
+export const NOTE_TEMPLATE_DONE = 'done';
+export const NOTE_TEMPLATE_POINT_NOTE = 'point_note';
+
+export interface NoteTemplateDefinition {
+  id: string;
+  name: string;
+  aliases: string[];
+  defaultType: NoteType;
+  defaultDisplayType: string;
+  defaultFolder: string;
+  defaultHashtags: string[];
+  icon: string;
+}
+
+export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
+  [NOTE_TEMPLATE_TRENDS_TODAY]: {
+    id: NOTE_TEMPLATE_TRENDS_TODAY,
+    name: 'Тренды на сегодня',
+    aliases: [
+      'тренды на сегодня',
+      'тренды',
+      'тренд сегодня',
+      'тренд',
+      'trends today',
+      'trends',
+      'trend',
+      '/today',
+      '/trend',
+      '/tr',
+      '!тренды',
+      '!тренд',
+      '!today',
+    ],
+    defaultType: NoteType.SINGLE,
+    defaultDisplayType: 'Trend',
+    defaultFolder: 'Trends',
+    defaultHashtags: ['тренд'],
+    icon: 'trending-up',
+  },
+  [NOTE_TEMPLATE_TREND_PERIOD]: {
+    id: NOTE_TEMPLATE_TREND_PERIOD,
+    name: 'Тренд Период',
+    aliases: [
+      'тренд период',
+      'тренд-период',
+      'период тренда',
+      'период',
+      'марафон',
+      'сезон',
+      'trend period',
+      'trend-period',
+      'period',
+      '/period',
+      '/trp',
+      '!период',
+      '!trend-period',
+    ],
+    defaultType: NoteType.PERIOD,
+    defaultDisplayType: 'Trend',
+    defaultFolder: 'Trends',
+    defaultHashtags: ['тренд'],
+    icon: 'trending-up',
+  },
+  [NOTE_TEMPLATE_EVENT]: {
+    id: NOTE_TEMPLATE_EVENT,
+    name: 'Событие с датой',
+    aliases: [
+      'событие',
+      'ивент',
+      'митап',
+      'встреча',
+      'созвон',
+      'вебинар',
+      'event',
+      '/event',
+      '!event',
+    ],
+    defaultType: NoteType.EVENT,
+    defaultDisplayType: 'Scheduled Event',
+    defaultFolder: 'Notes',
+    defaultHashtags: ['событие'],
+    icon: 'calendar',
+  },
+  [NOTE_TEMPLATE_DONE]: {
+    id: NOTE_TEMPLATE_DONE,
+    name: 'Сделано',
+    aliases: [
+      'сделано',
+      'готово',
+      'done',
+      'выполнено',
+      'чек',
+      'v',
+      '+',
+      '/done',
+      '!done',
+    ],
+    defaultType: NoteType.DONE,
+    defaultDisplayType: 'Done',
+    defaultFolder: 'Notes',
+    defaultHashtags: ['done'],
+    icon: 'check-circle',
+  },
+  [NOTE_TEMPLATE_POINT_NOTE]: {
+    id: NOTE_TEMPLATE_POINT_NOTE,
+    name: 'Заметка',
+    aliases: ['заметка', 'мысль', 'note', 'point', 'факт', '/note', '!note'],
+    defaultType: NoteType.SINGLE,
+    defaultDisplayType: 'Point Note',
+    defaultFolder: 'Notes',
+    defaultHashtags: [],
+    icon: 'file-text',
+  },
+};
+
+export const METADATA_FIELD_ALIASES = {
+  FOLDER: ['папка', 'folder', 'dir', 'п', 'ф'],
+  TAXONOMY: ['тег', 'tag', 'таксономия', 'tax', 'т'],
+  FEED: ['лента', 'feed', 'календарь', 'л'],
+  TIME: ['в', 'at', '@', 'время', 'time'],
+  LINK: ['ссылка', 'link', 'url'],
+  ICON: ['иконка', 'icon', 'и'],
+} as const;
+
+export const DATE_MACRO_ALIASES = {
+  TODAY: ['сегодня', 'today', 'тд', 'td'],
+  YESTERDAY: ['вчера', 'yesterday', 'вч'],
+  TOMORROW: ['завтра', 'tomorrow', 'зм', 'tm'],
+  DAY_BEFORE_YESTERDAY: ['позавчера'],
+  DAY_AFTER_TOMORROW: ['послезавтра'],
+} as const;
+

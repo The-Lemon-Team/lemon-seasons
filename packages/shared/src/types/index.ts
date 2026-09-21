@@ -511,6 +511,8 @@ export interface ParseNotesContext {
   defaultFolder?: string;
   availableTaxonomy?: string[];
   availableFeeds?: Array<{ id: string; title: string; slug: string }>;
+  useExternalAi?: boolean;
+  templateId?: string;
 }
 
 export interface ParseNotesInput {
