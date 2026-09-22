@@ -4136,11 +4136,124 @@ var init_zod = __esm({
 });
 
 // ../shared/dist/index.mjs
-var noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
     init_zod();
+    NoteType = {
+      SINGLE: "SINGLE",
+      PERIOD: "PERIOD",
+      EVENT: "EVENT",
+      FILM_RELEASE: "FILM_RELEASE",
+      MENTION: "MENTION",
+      DONE: "DONE"
+    };
+    NOTE_TEMPLATE_TRENDS_TODAY = "trends_today";
+    NOTE_TEMPLATE_TREND_PERIOD = "trend_period";
+    NOTE_TEMPLATE_EVENT = "event";
+    NOTE_TEMPLATE_DONE = "done";
+    NOTE_TEMPLATE_POINT_NOTE = "point_note";
+    DEFAULT_NOTE_TEMPLATES = {
+      [NOTE_TEMPLATE_TRENDS_TODAY]: {
+        id: NOTE_TEMPLATE_TRENDS_TODAY,
+        name: "\u0422\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+        aliases: [
+          "\u0442\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+          "\u0442\u0440\u0435\u043D\u0434\u044B",
+          "\u0442\u0440\u0435\u043D\u0434 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+          "\u0442\u0440\u0435\u043D\u0434",
+          "trends today",
+          "trends",
+          "trend",
+          "/today",
+          "/trend",
+          "/tr",
+          "!\u0442\u0440\u0435\u043D\u0434\u044B",
+          "!\u0442\u0440\u0435\u043D\u0434",
+          "!today"
+        ],
+        defaultType: NoteType.SINGLE,
+        defaultDisplayType: "Trend",
+        defaultFolder: "Trends",
+        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
+        icon: "trending-up"
+      },
+      [NOTE_TEMPLATE_TREND_PERIOD]: {
+        id: NOTE_TEMPLATE_TREND_PERIOD,
+        name: "\u0422\u0440\u0435\u043D\u0434 \u041F\u0435\u0440\u0438\u043E\u0434",
+        aliases: [
+          "\u0442\u0440\u0435\u043D\u0434 \u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u0442\u0440\u0435\u043D\u0434-\u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u043F\u0435\u0440\u0438\u043E\u0434 \u0442\u0440\u0435\u043D\u0434\u0430",
+          "\u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u043C\u0430\u0440\u0430\u0444\u043E\u043D",
+          "\u0441\u0435\u0437\u043E\u043D",
+          "trend period",
+          "trend-period",
+          "period",
+          "/period",
+          "/trp",
+          "!\u043F\u0435\u0440\u0438\u043E\u0434",
+          "!trend-period"
+        ],
+        defaultType: NoteType.PERIOD,
+        defaultDisplayType: "Trend",
+        defaultFolder: "Trends",
+        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
+        icon: "trending-up"
+      },
+      [NOTE_TEMPLATE_EVENT]: {
+        id: NOTE_TEMPLATE_EVENT,
+        name: "\u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441 \u0434\u0430\u0442\u043E\u0439",
+        aliases: [
+          "\u0441\u043E\u0431\u044B\u0442\u0438\u0435",
+          "\u0438\u0432\u0435\u043D\u0442",
+          "\u043C\u0438\u0442\u0430\u043F",
+          "\u0432\u0441\u0442\u0440\u0435\u0447\u0430",
+          "\u0441\u043E\u0437\u0432\u043E\u043D",
+          "\u0432\u0435\u0431\u0438\u043D\u0430\u0440",
+          "event",
+          "/event",
+          "!event"
+        ],
+        defaultType: NoteType.EVENT,
+        defaultDisplayType: "Scheduled Event",
+        defaultFolder: "Notes",
+        defaultHashtags: ["\u0441\u043E\u0431\u044B\u0442\u0438\u0435"],
+        icon: "calendar"
+      },
+      [NOTE_TEMPLATE_DONE]: {
+        id: NOTE_TEMPLATE_DONE,
+        name: "\u0421\u0434\u0435\u043B\u0430\u043D\u043E",
+        aliases: [
+          "\u0441\u0434\u0435\u043B\u0430\u043D\u043E",
+          "\u0433\u043E\u0442\u043E\u0432\u043E",
+          "done",
+          "\u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E",
+          "\u0447\u0435\u043A",
+          "v",
+          "+",
+          "/done",
+          "!done"
+        ],
+        defaultType: NoteType.DONE,
+        defaultDisplayType: "Done",
+        defaultFolder: "Notes",
+        defaultHashtags: ["done"],
+        icon: "check-circle"
+      },
+      [NOTE_TEMPLATE_POINT_NOTE]: {
+        id: NOTE_TEMPLATE_POINT_NOTE,
+        name: "\u0417\u0430\u043C\u0435\u0442\u043A\u0430",
+        aliases: ["\u0437\u0430\u043C\u0435\u0442\u043A\u0430", "\u043C\u044B\u0441\u043B\u044C", "note", "point", "\u0444\u0430\u043A\u0442", "/note", "!note"],
+        defaultType: NoteType.SINGLE,
+        defaultDisplayType: "Point Note",
+        defaultFolder: "Notes",
+        defaultHashtags: [],
+        icon: "file-text"
+      }
+    };
     noteTypeSchema = external_exports.enum([
       "SINGLE",
       "PERIOD",
