@@ -12,6 +12,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
 import { KeysModule } from './keys/keys.module';
 import { HealthModule } from './health/health.module';
 import { ContainersModule } from './containers/containers.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ContainersModule } from './containers/containers.module';
     KeysModule,
     HealthModule,
     ContainersModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

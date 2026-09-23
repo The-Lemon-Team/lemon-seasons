@@ -534,5 +534,31 @@ export interface BatchCreateNotesResponse {
   notes: Note[];
 }
 
+export interface SystemStats {
+  notesTotal: number;
+  notesByType: Record<string, number>;
+  feedsCount: number;
+  containersCount: {
+    total: number;
+    public: number;
+    private: number;
+  };
+  foldersCount: number;
+  taxonomyCount: number;
+  hashtagsCount: number;
+  activeKeysCount: number;
+  usersCount: number;
+  storage: {
+    imagesCount: number;
+    totalBytes: number;
+  };
+  system: {
+    status: 'healthy' | 'degraded';
+    uptime: number;
+    lastActivityAt?: string;
+    database: string;
+  };
+}
+
 
 

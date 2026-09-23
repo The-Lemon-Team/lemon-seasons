@@ -117,13 +117,23 @@ export const LandingPage: React.FC = () => {
           </button>
 
           {/* Quick Demo Switcher (Instant Member Login) */}
+          {/* Quick Admin Access */}
+          <button
+            onClick={() => switchDemoRole('admin')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#ef4444]/15 border border-[#ef4444]/40 hover:bg-[#ef4444]/25 text-[#fca5a5] text-xs font-mono font-bold transition-all cursor-pointer"
+            title="Быстрый вход с правами администратора"
+          >
+            <Shield className="w-3.5 h-3.5 text-[#ef4444]" />
+            <span>Админ</span>
+          </button>
+
           <button
             onClick={() => switchDemoRole('user')}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1e2020] border border-[#383a3a] hover:border-[#c9cd58] text-[#c9cd58] text-xs font-mono font-medium transition-all"
             title="Быстрый вход в рабочую зону участника"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Демо-вход</span>
+            <span>Участник</span>
           </button>
 
           {/* Obsidian Connection Quick Link */}
@@ -133,7 +143,7 @@ export const LandingPage: React.FC = () => {
             title="Перейти к Obsidian контейнерам"
           >
             <ObsidianLogo size={14} glow />
-            <span>Obsidian Connection</span>
+            <span>Obsidian Hub</span>
           </button>
 
 
@@ -178,18 +188,26 @@ export const LandingPage: React.FC = () => {
         {/* Hero Quick Auth CTA */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
           <button
-            onClick={() => openAuthModal('register')}
-            className="px-6 py-2.5 rounded-lg bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs sm:text-sm shadow-glow-lemon transition-all flex items-center gap-2"
+            onClick={() => switchDemoRole('admin')}
+            className="px-6 py-2.5 rounded-lg bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs sm:text-sm shadow-glow-lemon transition-all flex items-center gap-2 cursor-pointer"
+            title="Войти с полными правами администратора"
           >
-            <span>Начать бесплатно</span>
-            <ArrowRight className="w-4 h-4" />
+            <Shield className="w-4 h-4" />
+            <span>Войти как Администратор</span>
           </button>
           <button
             onClick={() => switchDemoRole('user')}
-            className="px-5 py-2.5 rounded-lg bg-[#1e2020] border border-[#2d3030] hover:border-[#c9cd58] text-[#c9cd58] font-mono font-medium text-xs sm:text-sm transition-all flex items-center gap-2"
+            className="px-5 py-2.5 rounded-lg bg-[#1e2020] border border-[#2d3030] hover:border-[#c9cd58] text-[#c9cd58] font-mono font-medium text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
             <span>Войти как Участник</span>
+          </button>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="px-4 py-2.5 rounded-lg bg-[#141616] border border-[#242828] hover:border-[#93927e] text-[#93927e] hover:text-[#e2e2e2] font-mono text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>{t.login}</span>
           </button>
         </div>
       </section>

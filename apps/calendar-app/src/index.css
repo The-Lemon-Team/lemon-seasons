@@ -42,14 +42,6 @@
   border-left: 3px solid #c9cd58;
 }
 
-.border-technical {
-  border-color: #242828;
-}
-
-.border-hover:hover {
-  border-color: #323636;
-}
-
 /* Glassmorphism & Glows */
 .glass-nav {
   background: rgba(18, 20, 20, 0.85);

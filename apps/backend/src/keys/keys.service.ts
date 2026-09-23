@@ -49,14 +49,15 @@ export class KeysService {
     const secretKey = this.generateSecretKey(provider);
 
     // Ensure parent User record exists in database
+    const isAdmin = targetUserId === 'usr-admin-999';
     await this.prisma.user.upsert({
       where: { id: targetUserId },
       update: {},
       create: {
         id: targetUserId,
-        email: `${targetUserId}@lemon.team`,
-        name: 'Member User',
-        role: 'user',
+        email: isAdmin ? 'admin@lemon.team' : `${targetUserId}@lemon.team`,
+        name: isAdmin ? 'Администратор (Admin)' : 'Пользователь (User)',
+        role: isAdmin ? 'admin' : 'user',
       },
     });
 

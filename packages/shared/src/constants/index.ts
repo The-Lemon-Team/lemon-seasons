@@ -232,3 +232,28 @@ export const DATE_MACRO_ALIASES = {
   DAY_AFTER_TOMORROW: ['послезавтра'],
 } as const;
 
+export const SYSTEM_USERS = {
+  admin: {
+    id: 'usr-admin-999',
+    name: 'Администратор (Admin)',
+    email: 'admin@lemon.team',
+    role: 'admin' as const,
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2025-11-01T08:00:00.000Z',
+  },
+  user: {
+    id: 'usr-member-001',
+    name: 'Пользователь (User)',
+    email: 'user@lemon.team',
+    role: 'user' as const,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-10T10:00:00.000Z',
+  },
+  guest: {
+    id: 'usr-guest-000',
+    name: 'Гость (Guest)',
+    email: 'guest@lemon.team',
+    role: 'guest' as const,
+  },
+} as const;
+

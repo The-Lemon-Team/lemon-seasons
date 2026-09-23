@@ -43,6 +43,7 @@ backend/uploads/
 
 # Scratch & Temporary
 scratch/
+prototypes/
 
 packages/obsidian-containers/
 .turbo/

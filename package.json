@@ -7,10 +7,13 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:local": "turbo run dev --filter=lemon-lenta-backend --filter=@lenta/calendar-app --filter=lemon-seasons-admin",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "stats": "curl.exe -s http://localhost:3001/stats",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:reset": "pnpm run backend:prisma:migrate && pnpm run backend:prisma:seed",
     "backend:dev": "pnpm --filter lemon-lenta-backend run start:dev",
     "backend:build": "pnpm --filter lemon-lenta-backend run build",
     "backend:prisma:generate": "pnpm --filter lemon-lenta-backend run prisma:generate",

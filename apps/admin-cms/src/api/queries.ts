@@ -6,6 +6,7 @@ import {
   hashtagsApi,
   foldersApi,
   syncApi,
+  statsApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -485,5 +486,14 @@ export function useSyncChanges(since?: string) {
     queryKey: ['sync', since],
     queryFn: () => syncApi.getChanges(since),
     refetchInterval: 30000, // Background sync poll every 30s
+  });
+}
+
+// System Stats Query
+export function useSystemStats() {
+  return useQuery({
+    queryKey: ['system-stats'],
+    queryFn: () => statsApi.getStats(),
+    refetchInterval: 15000, // Refresh metrics every 15s
   });
 }

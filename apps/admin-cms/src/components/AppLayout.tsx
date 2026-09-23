@@ -205,6 +205,18 @@ export const AppLayout: React.FC = () => {
               <span>RU</span>
             </button>
 
+            {/* Open Calendar App Link */}
+            <a
+              href="http://localhost:5174"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-semibold bg-[#e5e971]/10 border border-[#e5e971]/40 text-[#e5e971] hover:bg-[#e5e971]/20 transition-all cursor-pointer shadow-sm"
+              title="Открыть клиентское приложение Календаря (порт 5174)"
+            >
+              <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+              <span className="hidden sm:inline">В Календарь</span>
+            </a>
+
             <button
               onClick={() => navigate('/sync')}
               className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-white/5 relative cursor-pointer"

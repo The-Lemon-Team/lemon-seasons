@@ -25,6 +25,7 @@ async function main() {
   // 0. Seed Accounts (Guest, User, Admin)
   const guestUser = await prisma.user.create({
     data: {
+      id: 'usr-guest-000',
       email: 'guest@lemon.team',
       name: 'Гость (Guest)',
       password: 'guest',
@@ -34,6 +35,7 @@ async function main() {
 
   const memberUser = await prisma.user.create({
     data: {
+      id: 'usr-member-001',
       email: 'user@lemon.team',
       name: 'Пользователь (User)',
       password: 'user',
@@ -43,6 +45,7 @@ async function main() {
 
   const adminUser = await prisma.user.create({
     data: {
+      id: 'usr-admin-999',
       email: 'admin@lemon.team',
       name: 'Администратор (Admin)',
       password: 'admin',
@@ -50,7 +53,34 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 3 System Users (Guest, User, Admin)');
+  // Seed default active UserKeys
+  await prisma.userKey.createMany({
+    data: [
+      {
+        id: 'key-admin-obs-master',
+        userId: 'usr-admin-999',
+        name: 'Admin Primary Vault Key',
+        provider: 'obsidian',
+        key: 'lenta_obs_admin_primary_vault',
+      },
+      {
+        id: 'key-admin-api-secret',
+        userId: 'usr-admin-999',
+        name: 'Admin Master REST API Key',
+        provider: 'api',
+        key: 'lenta_api_admin_master_secret',
+      },
+      {
+        id: 'key-obsidian-demo-001',
+        userId: 'usr-member-001',
+        name: 'Obsidian Main Vault Laptop',
+        provider: 'obsidian',
+        key: 'lenta_obs_8f7b2c9a1d4e6f30a91b2c4d5e6f7a8b',
+      },
+    ],
+  });
+
+  console.log('✅ Created 3 System Users with Active Keys (Admin: usr-admin-999, Member: usr-member-001, Guest: usr-guest-000)');
 
   // 1. Create Feeds
   const feedMcu = await prisma.feed.create({
@@ -122,29 +152,50 @@ async function main() {
   // 1.5 Seed Initial Vault Containers (Public & Private)
   await prisma.container.upsert({
     where: { id: 'main-vault' },
-    update: {},
+    update: {
+      ownerUserId: 'usr-admin-999',
+    },
     create: {
       id: 'main-vault',
       name: '🍋 Primary Vault Container',
       type: 'obsidian',
       description: 'Primary shared Obsidian vault container for team notes and documentation.',
       visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-admin-personal' },
+    update: {
+      ownerUserId: 'usr-admin-999',
+    },
+    create: {
+      id: 'cont-admin-personal',
+      name: '🔒 Admin Personal Vault',
+      type: 'obsidian',
+      description: 'Private encrypted personal vault container for Administrator.',
+      visibility: 'private',
+      ownerUserId: 'usr-admin-999',
     },
   });
 
   await prisma.container.upsert({
     where: { id: 'cont-private-user-vault' },
-    update: {},
+    update: {
+      ownerUserId: 'usr-member-001',
+    },
     create: {
       id: 'cont-private-user-vault',
       name: '🔒 User Private Key Vault',
       type: 'obsidian',
       description: 'Encrypted private user vault container for personal notes.',
       visibility: 'private',
+      ownerUserId: 'usr-member-001',
     },
   });
 
-  console.log('✅ Created Initial Vault Containers');
+  console.log('✅ Created Initial Vault Containers with Owners (Admin & Member)');
 
   // 2. Helper functions for upserting Folder, Taxonomy, Hashtag, Image, Links
   const folderMap = new Map<string, string>();

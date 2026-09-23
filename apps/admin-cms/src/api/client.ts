@@ -19,6 +19,7 @@ import {
   CreateFeedInput,
   CreateTaxonomyInput,
   SyncChangesResponse,
+  SystemStats,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -394,6 +395,13 @@ export const ingestionApi = {
   },
   importNote: async (dto: ImportNoteDto): Promise<{ success: boolean; isNew: boolean; title: string }> => {
     const res = await apiClient.post<{ success: boolean; isNew: boolean; title: string }>('/ingestion/import-note', dto);
+    return res.data;
+  },
+};
+
+export const statsApi = {
+  getStats: async (): Promise<SystemStats> => {
+    const res = await apiClient.get<SystemStats>('/stats');
     return res.data;
   },
 };

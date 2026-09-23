@@ -6,6 +6,7 @@ import {
   useHashtags,
   useFolders,
   useSyncChanges,
+  useSystemStats,
 } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../components/HashtagBadge';
@@ -28,6 +29,7 @@ export const DashboardPage: React.FC = () => {
 
   const notes = notesData?.items || [];
   const totalNotes = notesData?.total || 0;
+  const { data: stats } = useSystemStats();
 
   return (
     <div className="space-y-6">
@@ -77,7 +79,7 @@ export const DashboardPage: React.FC = () => {
               description
             </span>
           </div>
-          <div className="font-sans font-bold text-3xl text-on-surface">{totalNotes}</div>
+          <div className="font-sans font-bold text-3xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
           <p className="text-xs text-outline mt-1 font-mono">{t.singleTruthSub}</p>
         </div>
 
@@ -127,6 +129,45 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* System Health & Note Types Breakdown */}
+      {stats && (
+        <div className="bg-surface-container rounded-lg border border-white/5 p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-[22px]">health_and_safety</span>
+              <div>
+                <h3 className="font-sans font-bold text-sm text-on-surface">Состояние системы и хранилища</h3>
+                <p className="text-xs text-on-surface-variant font-mono">
+                  БД: <span className="text-primary font-bold">{stats.system.database}</span> • Аптайм: {Math.floor(stats.system.uptime / 60)} мин • Пользователей: {stats.usersCount} • Активных ключей: {stats.activeKeysCount}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs font-mono text-on-surface-variant">
+              <span>Хранилища: <strong className="text-on-surface">{stats.containersCount.total}</strong> ({stats.containersCount.public} публ. / {stats.containersCount.private} прив.)</span>
+              <span>Медиа: <strong className="text-on-surface">{stats.storage.imagesCount}</strong> ({(stats.storage.totalBytes / (1024 * 1024)).toFixed(1)} МБ)</span>
+              {stats.system.lastActivityAt && (
+                <span>Посл. активность: <strong className="text-secondary">{new Date(stats.system.lastActivityAt).toLocaleTimeString()}</strong></span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-mono text-on-surface-variant uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Распределение заметок по типам</span>
+              <span className="text-[11px] text-primary">Всего: {stats.notesTotal} заметок</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {Object.entries(stats.notesByType).map(([type, count]) => (
+                <div key={type} className="bg-surface-container-high border border-white/5 rounded px-3 py-2 flex items-center justify-between">
+                  <NoteTypeBadge type={type} />
+                  <span className="font-mono font-bold text-sm text-on-surface">{Number(count)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Two Columns: Recent Notes & Obsidian Sync Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
