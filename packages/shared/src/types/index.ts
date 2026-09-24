@@ -187,6 +187,9 @@ export interface QueryNotesParams {
   unfiled?: boolean;
   search?: string;
   includeDeleted?: boolean;
+  containerId?: string;
+  containers?: string[] | string;
+  userId?: string;
   limit?: number;
   offset?: number;
 }
@@ -200,6 +203,7 @@ export interface NotesResponse {
 
 export interface CreateNoteInput {
   feedId?: string;
+  containerId?: string | null;
   title: string;
   description?: string;
   type: NoteType;
@@ -211,6 +215,7 @@ export interface CreateNoteInput {
   hashtags?: string[];
   folders?: (string | FolderInputItem)[];
   folder?: string;
+  folderIds?: string[];
   links?: CreateNoteLinkInput[];
   suggestFolder?: boolean;
 }
@@ -224,9 +229,12 @@ export interface UpdateNoteInput {
   sourceLink?: string;
   icon?: string;
   feedId?: string;
+  containerId?: string | null;
   tagIds?: string[];
   hashtags?: string[];
   folders?: (string | FolderInputItem)[];
+  folder?: string;
+  folderIds?: string[];
   links?: CreateNoteLinkInput[];
 }
 

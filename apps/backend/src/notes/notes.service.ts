@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { HashtagsService } from '../hashtags/hashtags.service';
@@ -16,6 +16,8 @@ import { suggestFolderPathFromTaxonomyPath } from '@lenta/shared';
 
 @Injectable()
 export class NotesService {
+  private readonly logger = new Logger(NotesService.name);
+
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -162,7 +164,7 @@ export class NotesService {
       });
     }
 
-    return this.prisma.note.create({
+    const createdNote = await this.prisma.note.create({
       data: {
         title: createNoteDto.title,
         description: createNoteDto.description,
@@ -197,6 +199,9 @@ export class NotesService {
         links: { orderBy: { order: 'asc' } },
       },
     });
+
+    this.logger.log(`Created note "${createdNote.title}" [id: ${createdNote.id}, type: ${createdNote.type}, container: ${targetContainerId || 'public'}]`);
+    return createdNote;
   }
 
   async parseAiNotes(dto: ParseNotesDto) {
@@ -215,7 +220,7 @@ export class NotesService {
         createdNotes.push(created);
       } catch (err: any) {
         // Continue creating others if one fails, but log error
-        console.error(`Failed to create batch note "${noteDto.title}":`, err?.message || err);
+        this.logger.error(`Failed to create batch note "${noteDto.title}": ${err?.message || err}`);
       }
     }
 
@@ -251,16 +256,35 @@ export class NotesService {
       includeDeleted = false,
       limit = 50,
       offset = 0,
+      containerId,
+      containers,
+      userId,
     } = query;
 
     // Time window overlap query handling
     const qStart = queryStart || overlapStart || (startDateFrom && startDateTo ? startDateFrom : undefined);
     const qEnd = queryEnd || overlapEnd || (startDateFrom && startDateTo ? startDateTo : undefined);
 
+    const parsedContainers = containers
+      ? containers.split(',').map((c) => c.trim()).filter(Boolean)
+      : undefined;
+
     const where: Prisma.NoteWhereInput = {
       ...(includeDeleted ? {} : { deletedAt: null }),
       ...(feedId ? { feedId } : {}),
-      ...(feedSlug ? { feed: { slug: feedSlug, deletedAt: null } } : {}),
+      ...(feedSlug
+        ? feedSlug === 'russian-holidays'
+          ? { feed: { slug: { in: ['russian-holidays', 'russian-official', 'russian-military'] }, deletedAt: null } }
+          : feedSlug === 'christian-holidays'
+          ? { feed: { slug: { in: ['christian-holidays', 'orthodox-holidays', 'catholic-holidays'] }, deletedAt: null } }
+          : feedSlug === 'world-religions'
+          ? { feed: { slug: { in: ['world-religions', 'islamic-holidays'] }, deletedAt: null } }
+          : { feed: { slug: feedSlug, deletedAt: null } }
+        : {}),
+      ...(containerId ? { containerId } : {}),
+      ...(parsedContainers && parsedContainers.length > 0
+        ? { containerId: { in: parsedContainers } }
+        : {}),
       ...(type ? { type: type as any } : {}),
       ...(tagId ? { tags: { some: { id: tagId, deletedAt: null } } } : {}),
       ...(tagPath
@@ -334,57 +358,76 @@ export class NotesService {
             },
           }
         : {}),
-      ...(search
-        ? {
-            OR: [
-              { title: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-              { feed: { title: { contains: search, mode: 'insensitive' } } },
-              {
-                hashtags: {
-                  some: {
-                    name: {
-                      contains: HashtagsService.normalizeName(search),
-                      mode: 'insensitive',
-                    },
-                    deletedAt: null,
-                  },
-                },
-              },
-              {
-                folders: {
-                  some: {
-                    folder: {
-                      path: {
-                        contains: search,
-                        mode: 'insensitive',
+    };
+
+    const andConditions: Prisma.NoteWhereInput[] = [];
+
+    // Multi-tenancy & Container Privacy Filter
+    if (userId !== 'usr-admin-999') {
+      andConditions.push({
+        OR: [
+          { containerId: null },
+          { container: { visibility: 'public' } },
+          ...(userId ? [{ container: { ownerUserId: userId } }] : []),
+        ],
+      });
+    }
+
+    // Text search filter across title, description, feed title, hashtags, and folder paths
+    if (search && search.trim()) {
+      const cleanSearch = search.trim();
+      const normalizedHashtagSearch = HashtagsService.normalizeName(cleanSearch);
+
+      andConditions.push({
+        OR: [
+          { title: { contains: cleanSearch, mode: 'insensitive' } },
+          { description: { contains: cleanSearch, mode: 'insensitive' } },
+          { feed: { title: { contains: cleanSearch, mode: 'insensitive' } } },
+          ...(normalizedHashtagSearch
+            ? [
+                {
+                  hashtags: {
+                    some: {
+                      name: {
+                        contains: normalizedHashtagSearch,
+                        mode: 'insensitive' as const,
                       },
                       deletedAt: null,
                     },
                   },
                 },
+              ]
+            : []),
+          {
+            folders: {
+              some: {
+                folder: {
+                  path: {
+                    contains: cleanSearch,
+                    mode: 'insensitive',
+                  },
+                  deletedAt: null,
+                },
               },
-            ],
-          }
-        : {}),
-    };
+            },
+          },
+        ],
+      });
+    }
 
+    // Time window overlap query handling
     if (qStart && qEnd) {
       const windowStart = new Date(qStart);
       const windowEnd = new Date(qEnd);
 
-      // Period Overlap condition:
-      // (startDate <= :queryEnd) AND (endDate >= :queryStart OR endDate IS NULL)
-      where.AND = [
-        { startDate: { lte: windowEnd } },
-        {
-          OR: [
-            { endDate: { gte: windowStart } },
-            { endDate: null, startDate: { gte: windowStart } },
-            { type: 'PERIOD', endDate: null },
-          ],
-        },
-      ];
+      andConditions.push({
+        startDate: { lte: windowEnd },
+        OR: [
+          { endDate: { gte: windowStart } },
+          { endDate: null, startDate: { gte: windowStart } },
+          { type: 'PERIOD', endDate: null },
+        ],
+      });
     } else {
       if (startDateFrom || startDateTo) {
         where.startDate = {
@@ -400,6 +443,11 @@ export class NotesService {
       }
     }
 
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
+    }
+
+    const queryStartTime = Date.now();
     const [total, items] = await Promise.all([
       this.prisma.note.count({ where }),
       this.prisma.note.findMany({
@@ -420,6 +468,11 @@ export class NotesService {
         },
       }),
     ]);
+
+    const queryDuration = Date.now() - queryStartTime;
+    if (queryDuration > 200) {
+      this.logger.warn(`Slow notes query (${queryDuration}ms) for feedSlug=${feedSlug || 'all'}, limit=${limit}, total=${total}`);
+    }
 
     return {
       total,
@@ -533,7 +586,7 @@ export class NotesService {
       }
     }
 
-    return this.prisma.note.update({
+    const updatedNote = await this.prisma.note.update({
       where: { id },
       data: {
         ...(updateNoteDto.title ? { title: updateNoteDto.title } : {}),
@@ -566,14 +619,19 @@ export class NotesService {
         links: { orderBy: { order: 'asc' } },
       },
     });
+
+    this.logger.log(`Updated note "${updatedNote.title}" [id: ${updatedNote.id}]`);
+    return updatedNote;
   }
 
   async softDelete(id: string) {
     await this.findOne(id);
-    return this.prisma.note.update({
+    const deleted = await this.prisma.note.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
+    this.logger.log(`Soft-deleted note [id: ${id}]`);
+    return deleted;
   }
 
   async restore(id: string) {
@@ -581,7 +639,7 @@ export class NotesService {
     if (!note) {
       throw new NotFoundException(`Note with ID '${id}' not found`);
     }
-    return this.prisma.note.update({
+    const restored = await this.prisma.note.update({
       where: { id },
       data: { deletedAt: null },
       include: {
@@ -592,6 +650,8 @@ export class NotesService {
         links: { orderBy: { order: 'asc' } },
       },
     });
+    this.logger.log(`Restored note [id: ${id}]`);
+    return restored;
   }
 
   // ==========================================

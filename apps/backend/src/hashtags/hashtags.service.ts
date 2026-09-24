@@ -7,7 +7,7 @@ export class HashtagsService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Normalize hashtag string: strip leading '#', lowercase, trim, remove illegal chars
+   * Normalize hashtag string: strip leading '#', lowercase, trim, remove illegal chars (Unicode safe)
    */
   static normalizeName(raw: string): string {
     if (!raw) return '';
@@ -15,18 +15,17 @@ export class HashtagsService {
       .trim()
       .replace(/^#+/, '')
       .toLowerCase()
-      .replace(/[^a-z0-9_\-]/g, '');
+      .replace(/[^\p{L}\p{N}_\-]/gu, '');
   }
 
   /**
-   * Extract hashtags from markdown / text content
+   * Extract hashtags from markdown / text content (Unicode safe)
    */
   static extractFromText(text?: string): string[] {
     if (!text) return [];
     // Match #tag while ignoring markdown headers like # Header or ## Header (must be preceded by start of line or whitespace)
-    // and followed by word characters/digits/hyphens/underscores.
-    // Ensure it's not a header by checking that character following # is alphanumeric or underscore/hyphen, not a space.
-    const regex = /(?:^|\s)#([a-zA-Z0-9_\-]+)/g;
+    // and followed by unicode letters/digits/hyphens/underscores.
+    const regex = /(?:^|\s)#([\p{L}\p{N}_\-]+)/gu;
     const matches: string[] = [];
     let match: RegExpExecArray | null;
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { message } from 'antd';
 import {
   Feed,
   Note,
@@ -29,7 +30,37 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
+
+// Response interceptor for resilient global error notifications
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+      const rawMessage = data?.message;
+      const errorText = Array.isArray(rawMessage)
+        ? rawMessage.join(', ')
+        : rawMessage || error.message || 'Ошибка выполнения запроса';
+
+      if (status === 401) {
+        message.warning('Сессия пользователя завершена или отсутствует доступ');
+      } else if (status >= 400 && status < 500) {
+        message.error(`Ошибка запроса (${status}): ${errorText}`);
+      } else if (status >= 500) {
+        message.error(`Ошибка сервера (${status}): ${errorText}`);
+      }
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      message.error('Таймаут соединения с сервером бэкенда (15 сек)');
+    } else if (error.request) {
+      message.error('Нет связи с сервером бэкенда (http://localhost:3001)');
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // Feeds API
 export const feedsApi = {

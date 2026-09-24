@@ -11,6 +11,7 @@ import { NoteEditorPage } from './pages/NoteEditor/NoteEditorPage';
 import { TaxonomyPage } from './pages/Taxonomy/TaxonomyPage';
 import { GeneratorLabPage } from './pages/GeneratorLab/GeneratorLabPage';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,9 +28,10 @@ const AppContent: React.FC = () => {
 
   return (
     <ConfigProvider theme={lentaThemeConfig} locale={antdLocale}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
+      <ErrorBoundary fallbackTitle="Критическая ошибка Project Lenta Admin">
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/feeds" element={<FeedsPage />} />
             <Route path="/notes" element={<NotesListPage />} />
@@ -42,6 +44,7 @@ const AppContent: React.FC = () => {
           </Route>
         </Routes>
       </BrowserRouter>
+      </ErrorBoundary>
     </ConfigProvider>
   );
 };

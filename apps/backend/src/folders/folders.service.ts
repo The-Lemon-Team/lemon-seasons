@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
@@ -27,6 +27,8 @@ export interface FolderInputItem {
 
 @Injectable()
 export class FoldersService {
+  private readonly logger = new Logger(FoldersService.name);
+
   constructor(private prisma: PrismaService) {}
 
   public static normalizePath(rawPath: string): string {
@@ -131,7 +133,7 @@ export class FoldersService {
         },
       })
       .catch((err) => {
-        console.warn(`[FoldersService] auto-provision container ${containerId}:`, err?.message || err);
+        this.logger.warn(`Auto-provision container ${containerId}: ${err?.message || err}`);
       });
   }
 

@@ -14,6 +14,21 @@ export class QueryNotesDto {
   @IsOptional()
   feedSlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by Container ID' })
+  @IsString()
+  @IsOptional()
+  containerId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by multiple Container IDs (comma-separated)' })
+  @IsString()
+  @IsOptional()
+  containers?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by user ID for privacy isolation & access control' })
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
   @ApiPropertyOptional({ enum: NoteType, description: 'Filter by NoteType' })
   @IsEnum(NoteType)
   @IsOptional()

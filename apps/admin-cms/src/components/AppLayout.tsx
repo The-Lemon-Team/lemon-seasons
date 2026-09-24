@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { QuickAddModal } from './QuickAddModal';
 import { LemonLogo } from './LemonLogo';
+import { ErrorBoundary } from './common/ErrorBoundary';
 import { useSyncChanges } from '../api/queries';
 import { useAdminI18n } from '../i18n';
 
@@ -239,7 +240,9 @@ export const AppLayout: React.FC = () => {
         {/* Page Content Canvas (Scrollable) */}
         <main className="flex-1 w-full overflow-y-auto p-6 md:p-8">
           <div className="max-w-[1440px] mx-auto pb-16">
-            <Outlet />
+            <ErrorBoundary fallbackTitle="Ошибка отображения страницы">
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
       </div>

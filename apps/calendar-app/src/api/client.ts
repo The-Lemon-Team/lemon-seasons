@@ -25,7 +25,16 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.warn('[CalendarApp API Error]', error.response?.status, error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
 
 export const calendarApi = {
   // AI Quick Add & Parse

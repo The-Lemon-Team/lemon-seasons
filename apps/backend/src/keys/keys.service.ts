@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { KeyProvider, UserKey } from '@lenta/shared';
 import { randomBytes } from 'crypto';
@@ -12,6 +12,8 @@ const PROVIDER_PREFIXES: Record<string, string> = {
 
 @Injectable()
 export class KeysService {
+  private readonly logger = new Logger(KeysService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   private generateSecretKey(provider: string): string {
@@ -39,7 +41,7 @@ export class KeysService {
         isRevoked: k.isRevoked,
       }));
     } catch (err) {
-      console.warn(`[KeysService] Could not retrieve keys for user '${userId}':`, err instanceof Error ? err.message : err);
+      this.logger.warn(`Could not retrieve keys for user '${userId}': ${err instanceof Error ? err.message : err}`);
       return [];
     }
   }
