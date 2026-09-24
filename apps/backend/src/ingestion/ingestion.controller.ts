@@ -90,18 +90,35 @@ export class IngestionController {
   }
 
   @Get('holidays/preview')
-  @ApiOperation({ summary: 'Предпросмотр рассчитанных праздников (Русские праздники / Христианские праздники)' })
+  @ApiOperation({ summary: 'Предпросмотр рассчитанных праздников (Православные, Католические, Исламские, Мировые религии, Русские военные и официальные)' })
   @ApiQuery({ name: 'year', required: false, type: Number })
-  @ApiQuery({ name: 'category', required: false, enum: ['russian', 'christian'] })
+  @ApiQuery({ name: 'category', required: false, enum: ['russian', 'russian-official', 'russian-military', 'christian', 'orthodox', 'catholic', 'islamic', 'world-religions', 'world'] })
   getHolidaysPreview(
     @Query('year') year = 2026,
-    @Query('category') category: 'russian' | 'christian' = 'russian',
+    @Query('category') category: 'russian' | 'russian-official' | 'russian-military' | 'christian' | 'orthodox' | 'catholic' | 'islamic' | 'world-religions' | 'world' = 'russian',
   ): HolidayItem[] {
     const y = Number(year) || 2026;
-    if (category === 'christian') {
-      return this.holidaysEngine.getChristianHolidays(y);
+    switch (category) {
+      case 'orthodox':
+        return this.holidaysEngine.getOrthodoxHolidays(y);
+      case 'catholic':
+        return this.holidaysEngine.getCatholicHolidays(y);
+      case 'islamic':
+        return this.holidaysEngine.getIslamicHolidays(y);
+      case 'world-religions':
+        return this.holidaysEngine.getWorldReligionsHolidays(y);
+      case 'russian-official':
+        return this.holidaysEngine.getRussianOfficialHolidays(y);
+      case 'russian-military':
+        return this.holidaysEngine.getRussianMilitaryHolidays(y);
+      case 'world':
+        return this.holidaysEngine.getWorldHolidays(y);
+      case 'christian':
+        return this.holidaysEngine.getChristianHolidays(y);
+      case 'russian':
+      default:
+        return this.holidaysEngine.getRussianHolidays(y);
     }
-    return this.holidaysEngine.getRussianHolidays(y);
   }
 
   @Get('politics/preview')
@@ -118,6 +135,20 @@ export class IngestionController {
       dto.feedSlug,
       dto.feedSlug === 'mcu-radar'
         ? 'Marvel Cinematic Universe'
+        : dto.feedSlug === 'orthodox-holidays'
+        ? 'Православные праздники'
+        : dto.feedSlug === 'catholic-holidays'
+        ? 'Католические праздники'
+        : dto.feedSlug === 'islamic-holidays'
+        ? 'Исламский религиозный календарь'
+        : dto.feedSlug === 'world-religions'
+        ? 'Мировые религии'
+        : dto.feedSlug === 'russian-official'
+        ? 'Русские праздники (Официальные)'
+        : dto.feedSlug === 'russian-military'
+        ? 'Дни воинской славы и военные праздники'
+        : dto.feedSlug === 'world-holidays'
+        ? 'Праздники стран мира'
         : dto.feedSlug === 'russian-holidays'
         ? 'Русские праздники'
         : dto.feedSlug === 'christian-holidays'
@@ -161,9 +192,14 @@ export class IngestionController {
       geminiActive: Boolean(process.env.GEMINI_API_KEY),
       tmdbActive: Boolean(process.env.TMDB_API_KEY),
       availableFeeds: [
+        { slug: 'orthodox-holidays', name: 'Православные праздники', provider: 'Meeus/Computus Пасхалия 2026' },
+        { slug: 'catholic-holidays', name: 'Католические праздники', provider: 'Meeus/Jones/Butcher Computus' },
+        { slug: 'islamic-holidays', name: 'Исламский календарь & Рамадан', provider: 'Umm al-Qura Hijri Calendar 1447–1448' },
+        { slug: 'world-religions', name: 'Мировые религии (Ислам, Иудаизм, Буддизм)', provider: 'Interfaith Liturgical Calendars' },
+        { slug: 'russian-official', name: 'Русские праздники (Официальные)', provider: 'Трудовой кодекс РФ ст. 112' },
+        { slug: 'russian-military', name: 'Дни воинской славы и военные праздники', provider: '32-ФЗ РФ и Указы Президента' },
+        { slug: 'world-holidays', name: 'Праздники стран мира', provider: 'International & National observances' },
         { slug: 'mcu-radar', name: 'Marvel Cinematic Universe', provider: 'TMDB API & Phase 5/6 Dataset' },
-        { slug: 'russian-holidays', name: 'Русские праздники', provider: '32-ФЗ & Производственный календарь РФ' },
-        { slug: 'christian-holidays', name: 'Христианские праздники', provider: 'Meeus/Computus Пасхалия 2026' },
         { slug: 'politics-2026', name: 'Политика 2026', provider: '2026 Global & Russian Agenda & Gemini' },
       ],
     };

@@ -91,19 +91,75 @@ async function main() {
     },
   });
 
+  const feedRussianOfficial = await prisma.feed.create({
+    data: {
+      title: 'Русские праздники (Официальные)',
+      description: 'Официальные государственные нерабочие праздничные дни по ст. 112 ТК РФ, памятные даты и торжества России.',
+      slug: 'russian-official',
+    },
+  });
+
+  const feedRussianMilitary = await prisma.feed.create({
+    data: {
+      title: 'Дни воинской славы и военные праздники России',
+      description: 'Дни воинской славы и памятные даты России по 32-ФЗ, профессиональные праздники видов и родов войск ВС РФ.',
+      slug: 'russian-military',
+    },
+  });
+
   const feedRussianHolidays = await prisma.feed.create({
     data: {
-      title: 'Русские праздники',
-      description: 'Официальные нерабочие праздничные дни, памятные даты и Дни воинской славы России по 32-ФЗ.',
+      title: 'Русские праздники (Сводный)',
+      description: 'Сводный календарь праздников России: официальные даты и Дни воинской славы.',
       slug: 'russian-holidays',
+    },
+  });
+
+  const feedOrthodox = await prisma.feed.create({
+    data: {
+      title: 'Православный календарь',
+      description: 'Двунадесятые праздники, Пасха Христова, многодневные посты и дни памяти святых Русской Православной Церкви 2026.',
+      slug: 'orthodox-holidays',
+    },
+  });
+
+  const feedCatholic = await prisma.feed.create({
+    data: {
+      title: 'Католический календарь',
+      description: 'Литургический год Римско-католической церкви: григорианская Пасха, Рождество, Адвент, Великий пост 2026.',
+      slug: 'catholic-holidays',
     },
   });
 
   const feedChristianHolidays = await prisma.feed.create({
     data: {
-      title: 'Христианские праздники',
-      description: 'Двунадесятые праздники, Пасха Христова и ключевые дни православного церковного года 2026.',
+      title: 'Христианские праздники (Сводный)',
+      description: 'Сводный христианский календарь: православные и католические торжества 2026.',
       slug: 'christian-holidays',
+    },
+  });
+
+  const feedIslamic = await prisma.feed.create({
+    data: {
+      title: 'Исламский религиозный календарь & Рамадан',
+      description: 'Календарь Хиджры 1447–1448: Священный месяц Рамадан, Ураза-байрам, Курбан-байрам и памятные даты Ислама.',
+      slug: 'islamic-holidays',
+    },
+  });
+
+  const feedWorldReligions = await prisma.feed.create({
+    data: {
+      title: 'Мировые религии: Ислам, Иудаизм, Буддизм',
+      description: 'Священные даты и праздники мировых духовных традиций: Ислам, Иудаизм (Песах, Ханука), Буддизм (Весак, Сагаалган).',
+      slug: 'world-religions',
+    },
+  });
+
+  const feedWorldHolidays = await prisma.feed.create({
+    data: {
+      title: 'Праздники стран мира',
+      description: 'Знаменитые национальные и культурные праздники стран мира: Китайский Новый год, День независимости США, День взятия Бастилии, День благодарения.',
+      slug: 'world-holidays',
     },
   });
 
@@ -147,9 +203,100 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 8 Feeds');
+  console.log('✅ Created 15 Feeds (including Orthodox, Catholic, Islamic, World Religions, Russian Official & Military, World Holidays)');
 
   // 1.5 Seed Initial Vault Containers (Public & Private)
+  await prisma.container.upsert({
+    where: { id: 'cont-orthodox-calendar' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-orthodox-calendar',
+      name: '☦️ Православный календарь',
+      type: 'obsidian',
+      description: 'Двунадесятые праздники, Пасхальный цикл, многодневные посты и памятные дни святых Православной Церкви.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-catholic-calendar' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-catholic-calendar',
+      name: '✝️ Католический календарь',
+      type: 'obsidian',
+      description: 'Литургический год Католической церкви: григорианская Пасха, Рождество, Адвент, Великий пост и дни святых.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-islamic-calendar' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-islamic-calendar',
+      name: '☪️ Исламский религиозный календарь',
+      type: 'obsidian',
+      description: 'Календарь Хиджры 1447–1448: Священный месяц Рамадан, Ураза-байрам, Курбан-байрам и памятные даты Ислама.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-world-religions' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-world-religions',
+      name: '🕊️ Мировые религии и духовные традиции',
+      type: 'obsidian',
+      description: 'Сводный календарь священных дат, праздников и постов мировых религий: Ислам, Иудаизм, Буддизм.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-russian-official' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-russian-official',
+      name: '🇷🇺 Праздники России (Официальные)',
+      type: 'obsidian',
+      description: 'Государственные праздники РФ по ТК РФ, общенародные и культурные даты.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-russian-military' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-russian-military',
+      name: '🎖️ Дни воинской славы и военные праздники России',
+      type: 'obsidian',
+      description: 'Дни воинской славы и памятные даты России по 32-ФЗ, профессиональные праздники видов и родов войск ВС РФ.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
+  await prisma.container.upsert({
+    where: { id: 'cont-world-holidays' },
+    update: { ownerUserId: 'usr-admin-999' },
+    create: {
+      id: 'cont-world-holidays',
+      name: '🌍 Праздники стран мира',
+      type: 'obsidian',
+      description: 'Национальные и культурные праздники стран мира: Китайский Новый год, День благодарения, 4th of July, День взятия Бастилии и другие.',
+      visibility: 'public',
+      ownerUserId: 'usr-admin-999',
+    },
+  });
+
   await prisma.container.upsert({
     where: { id: 'main-vault' },
     update: {
@@ -195,7 +342,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Created Initial Vault Containers with Owners (Admin & Member)');
+  console.log('✅ Created 10 Vault Containers with Owners (7 Public Themed Containers + 3 Workspace Containers)');
 
   // 2. Helper functions for upserting Folder, Taxonomy, Hashtag, Image, Links
   const folderMap = new Map<string, string>();
@@ -301,9 +448,9 @@ async function main() {
           folderPath.startsWith('Bookmarks') ||
           folderPath.startsWith('Core_Strategy') ||
           folderPath.startsWith('Financials');
-        const cId = isInternal ? (item.containerId || 'cont-private-user-vault') : null;
-        const privacy = isInternal ? 'private' : 'public';
-        const folderId = await getOrCreateFolder(folderPath, 'folder', cId, privacy);
+        const cId = isInternal ? (item.containerId || 'cont-private-user-vault') : item.containerId || null;
+        const privacy = isInternal ? 'private' : item.containerId ? 'obsidian' : 'public';
+        const folderId = await getOrCreateFolder(folderPath, 'folder', cId, privacy as any);
         await prisma.noteFolder.create({
           data: {
             noteId: note.id,
@@ -402,13 +549,15 @@ async function main() {
   }
   console.log(`✅ Seeded ${mcuReleases.length} MCU releases with TMDB posters and trailers`);
 
-  // 4. Seed Russian Holidays & Military Glory Days
-  console.log('🇷🇺 Seeding Russian Holidays & Military Glory Days...');
   const holidaysEngine = new HolidaysEngineService();
-  const russianHolidays = holidaysEngine.getRussianHolidays(2026);
-  for (const h of russianHolidays) {
+
+  // 4. Seed Russian Official & State Holidays
+  console.log('🇷🇺 Seeding Russian Official & State Holidays...');
+  const russianOfficialHolidays = holidaysEngine.getRussianOfficialHolidays(2026);
+  for (const h of russianOfficialHolidays) {
     await seedNoteItem({
-      feedId: feedRussianHolidays.id,
+      feedId: feedRussianOfficial.id,
+      containerId: 'cont-russian-official',
       title: h.title,
       description: h.description,
       type: h.type,
@@ -423,14 +572,38 @@ async function main() {
       imageCaption: h.imageCaption,
     });
   }
-  console.log(`✅ Seeded ${russianHolidays.length} Russian & Military Holidays`);
+  console.log(`✅ Seeded ${russianOfficialHolidays.length} Russian Official Holidays (cont-russian-official)`);
 
-  // 5. Seed Christian Holidays & Easter Cycle
-  console.log('☦️ Seeding Christian Holidays & Easter Cycle 2026...');
-  const christianHolidays = holidaysEngine.getChristianHolidays(2026);
-  for (const c of christianHolidays) {
+  // 5. Seed Russian Military Holidays & Days of Military Glory
+  console.log('🎖️ Seeding Russian Military Holidays & Days of Military Glory (32-FZ)...');
+  const russianMilitaryHolidays = holidaysEngine.getRussianMilitaryHolidays(2026);
+  for (const h of russianMilitaryHolidays) {
     await seedNoteItem({
-      feedId: feedChristianHolidays.id,
+      feedId: feedRussianMilitary.id,
+      containerId: 'cont-russian-military',
+      title: h.title,
+      description: h.description,
+      type: h.type,
+      startDate: h.startDate,
+      endDate: h.endDate,
+      icon: h.icon,
+      sourceLink: h.sourceLink,
+      taxonomyPath: h.taxonomyPath,
+      folders: h.folders,
+      hashtags: h.hashtags,
+      imageUrl: h.imageUrl,
+      imageCaption: h.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${russianMilitaryHolidays.length} Russian Military Glory & Army Days (cont-russian-military)`);
+
+  // 6. Seed Orthodox Christian Holidays & Easter Cycle
+  console.log('☦️ Seeding Orthodox Christian Holidays & Easter Cycle 2026...');
+  const orthodoxHolidays = holidaysEngine.getOrthodoxHolidays(2026);
+  for (const c of orthodoxHolidays) {
+    await seedNoteItem({
+      feedId: feedOrthodox.id,
+      containerId: 'cont-orthodox-calendar',
       title: c.title,
       description: c.description,
       type: c.type,
@@ -445,7 +618,101 @@ async function main() {
       imageCaption: c.imageCaption,
     });
   }
-  console.log(`✅ Seeded ${christianHolidays.length} Christian Feasts & Fasts`);
+  console.log(`✅ Seeded ${orthodoxHolidays.length} Orthodox Feasts & Fasts (cont-orthodox-calendar)`);
+
+  // 7. Seed Catholic Christian Holidays & Gregorian Liturgical Year
+  console.log('✝️ Seeding Catholic Christian Holidays & Gregorian Liturgical Year 2026...');
+  const catholicHolidays = holidaysEngine.getCatholicHolidays(2026);
+  for (const c of catholicHolidays) {
+    await seedNoteItem({
+      feedId: feedCatholic.id,
+      containerId: 'cont-catholic-calendar',
+      title: c.title,
+      description: c.description,
+      type: c.type,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      icon: c.icon,
+      sourceLink: c.sourceLink,
+      taxonomyPath: c.taxonomyPath,
+      folders: c.folders,
+      hashtags: c.hashtags,
+      imageUrl: c.imageUrl,
+      imageCaption: c.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${catholicHolidays.length} Catholic Solemnities & Feasts (cont-catholic-calendar)`);
+
+  // 8. Seed Islamic Religious Calendar & Holy Month Ramadan
+  console.log('☪️ Seeding Islamic Religious Calendar & Ramadan 2026...');
+  const islamicHolidays = holidaysEngine.getIslamicHolidays(2026);
+  for (const i of islamicHolidays) {
+    await seedNoteItem({
+      feedId: feedIslamic.id,
+      containerId: 'cont-islamic-calendar',
+      title: i.title,
+      description: i.description,
+      type: i.type,
+      startDate: i.startDate,
+      endDate: i.endDate,
+      icon: i.icon,
+      sourceLink: i.sourceLink,
+      taxonomyPath: i.taxonomyPath,
+      folders: i.folders,
+      hashtags: i.hashtags,
+      imageUrl: i.imageUrl,
+      imageCaption: i.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${islamicHolidays.length} Islamic Religious Events & Ramadan (cont-islamic-calendar)`);
+
+  // 9. Seed World Religions Calendar (Judaism & Buddhism)
+  console.log('🕊️ Seeding World Religions Calendar: Judaism & Buddhism...');
+  const worldReligionsHolidays = holidaysEngine.getWorldReligionsHolidays(2026);
+  // Filter out islamic items already seeded above to prevent duplicates
+  const nonIslamicWorld = worldReligionsHolidays.filter((w) => !w.taxonomyPath.startsWith('holidays.islam'));
+  for (const w of nonIslamicWorld) {
+    await seedNoteItem({
+      feedId: feedWorldReligions.id,
+      containerId: 'cont-world-religions',
+      title: w.title,
+      description: w.description,
+      type: w.type,
+      startDate: w.startDate,
+      endDate: w.endDate,
+      icon: w.icon,
+      sourceLink: w.sourceLink,
+      taxonomyPath: w.taxonomyPath,
+      folders: w.folders,
+      hashtags: w.hashtags,
+      imageUrl: w.imageUrl,
+      imageCaption: w.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${nonIslamicWorld.length} Judaism & Buddhism Holidays (cont-world-religions)`);
+
+  // 10. Seed World Countries Holidays
+  console.log('🌍 Seeding World Countries Holidays 2026...');
+  const worldHolidays = holidaysEngine.getWorldHolidays(2026);
+  for (const w of worldHolidays) {
+    await seedNoteItem({
+      feedId: feedWorldHolidays.id,
+      containerId: 'cont-world-holidays',
+      title: w.title,
+      description: w.description,
+      type: w.type,
+      startDate: w.startDate,
+      endDate: w.endDate,
+      icon: w.icon,
+      sourceLink: w.sourceLink,
+      taxonomyPath: w.taxonomyPath,
+      folders: w.folders,
+      hashtags: w.hashtags,
+      imageUrl: w.imageUrl,
+      imageCaption: w.imageCaption,
+    });
+  }
+  console.log(`✅ Seeded ${worldHolidays.length} World Countries Holidays (cont-world-holidays)`);
 
   // 6. Seed Political Events 2026
   console.log('🌐 Seeding Political Events 2026...');

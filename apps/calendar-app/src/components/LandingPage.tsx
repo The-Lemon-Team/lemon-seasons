@@ -229,8 +229,8 @@ export const LandingPage: React.FC = () => {
           </p>
         </div>
 
-        {/* 4 Single-Select Presets Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Curated Public Presets Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {PUBLIC_FEED_PRESETS.map((preset) => {
             const isSelected = selectedPresetSlug === preset.slug;
             return (

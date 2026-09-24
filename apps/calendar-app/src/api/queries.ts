@@ -63,6 +63,11 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         params.hashtag = filter.hashtags[0];
       }
 
+      // If container filter active
+      if (filter.containers && filter.containers.length > 0) {
+        params.containers = filter.containers;
+      }
+
       const response = await calendarApi.getNotes(params);
       let items = response.items;
 
@@ -147,8 +152,8 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
       }
 
       // Container & Bound Folder filter refinement
-      if (filter.containers && filter.containers.length > 0 && filter.containersList && filter.containersList.length > 0) {
-        const selectedContainerObjects = filter.containersList.filter((c) => filter.containers!.includes(c.id));
+      if (filter.containers && filter.containers.length > 0) {
+        const selectedContainerObjects = (filter.containersList || []).filter((c) => filter.containers!.includes(c.id));
         const obsFolderSet = new Set(filter.obsidianFolders || []);
 
         const boundPaths = selectedContainerObjects
@@ -169,8 +174,11 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
           .filter(Boolean)
           .map((p) => p.toLowerCase());
 
-        if (boundPaths.length > 0) {
-          items = items.filter((n) => {
+        items = items.filter((n) => {
+          if (n.containerId && filter.containers!.includes(n.containerId)) {
+            return true;
+          }
+          if (boundPaths.length > 0) {
             if (n.folders && n.folders.length > 0) {
               return n.folders.some((f) => {
                 const fp = (f.folder?.path || f.folder?.name || '').toLowerCase();
@@ -183,9 +191,9 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
                 return boundPaths.some((bp) => tp === bp || tp.includes(bp) || bp.includes(tp));
               });
             }
-            return false;
-          });
-        }
+          }
+          return false;
+        });
       }
 
       if (filter.tags && filter.tags.length > 0) {
