@@ -287,6 +287,13 @@ export class LentaSyncEngine {
       new Date().toISOString();
 
     const noteId = parsed.lentaId || parsed.frontmatter.id;
+    const curatorVal = parsed.frontmatter.curator || undefined;
+    const resonanceVal =
+      typeof parsed.frontmatter.resonance_score === 'number'
+        ? parsed.frontmatter.resonance_score
+        : typeof parsed.frontmatter.resonanceScore === 'number'
+        ? parsed.frontmatter.resonanceScore
+        : undefined;
 
     if (noteId) {
       // Update existing note
@@ -298,6 +305,8 @@ export class LentaSyncEngine {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || null,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || null,
         icon: parsed.frontmatter.icon || null,
+        curator: curatorVal || null,
+        resonanceScore: resonanceVal ?? null,
       });
 
       // Update local file if attachments were converted
@@ -336,6 +345,8 @@ export class LentaSyncEngine {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || undefined,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || undefined,
         icon: parsed.frontmatter.icon || undefined,
+        curator: curatorVal,
+        resonanceScore: resonanceVal,
       });
 
       // Update local file with generated lenta_id
@@ -415,6 +426,8 @@ export class LentaSyncEngine {
         folders: relativeFolder
           ? [{ id: '', noteId: lentaId, folderId: '', isPrimary: true, order: 0, folder: { id: '', name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: '', updatedAt: '', deletedAt: null } }]
           : [],
+        curator: parsed.frontmatter.curator || null,
+        resonanceScore: typeof parsed.frontmatter.resonance_score === 'number' ? parsed.frontmatter.resonance_score : null,
         createdAt: '',
         updatedAt: new Date().toISOString(),
         deletedAt: null,
