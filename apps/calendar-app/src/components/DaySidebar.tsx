@@ -23,6 +23,7 @@ import {
   ChevronRight as ChevronRightIcon,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { CuratorBadge } from './common/CuratorBadge';
 
 interface DaySidebarProps {
   isOpen: boolean;
@@ -388,9 +389,15 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                 <div
                   key={note.id}
                   onClick={() => onSelectNote(note)}
-                  className="group p-3.5 rounded-xl bg-[#181a1a] border border-[#242828] hover:border-[#c9cd58]/60 hover:bg-[#1e2121] transition-all cursor-pointer flex flex-col gap-2.5 shadow-sm relative overflow-hidden"
+                  className={`group p-3.5 rounded-xl bg-[#181a1a] border transition-all cursor-pointer flex flex-col gap-2.5 shadow-sm relative overflow-hidden ${
+                    note.type === NoteType.DONE
+                      ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/20 to-[#181a1a] hover:border-emerald-400'
+                      : typeof note.resonanceScore === 'number' && note.resonanceScore >= 70
+                      ? 'border-amber-500/35 bg-gradient-to-r from-amber-950/15 to-[#181a1a] hover:border-amber-400'
+                      : 'border-[#242828] hover:border-[#c9cd58]/60 hover:bg-[#1e2121]'
+                  }`}
                 >
-                  {/* Top Metadata Row: Type, Feed, Time */}
+                  {/* Top Metadata Row: Type, Feed, Curator, Time */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span
@@ -409,6 +416,14 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                           <Rss className="w-2.5 h-2.5 text-[#c9cd58]" />
                           <span>{note.feed.title}</span>
                         </span>
+                      )}
+
+                      {note.curator && (
+                        <CuratorBadge
+                          curator={note.curator}
+                          resonanceScore={note.resonanceScore}
+                          size="xs"
+                        />
                       )}
                     </div>
 

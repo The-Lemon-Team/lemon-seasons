@@ -56,6 +56,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [folderPath, setFolderPath] = useState(initialFolderPath || '');
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
+  const [curator, setCurator] = useState('');
+  const [resonanceScore, setResonanceScore] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,6 +99,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         feedId: feedId || undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
+        curator: curator.trim() || undefined,
+        resonanceScore: resonanceScore.trim() ? Number(resonanceScore) : undefined,
       });
 
       // Invalidate queries so that the newly created note is immediately displayed on the calendar
@@ -109,6 +113,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         setDescription('');
         setHashtagsInput('');
         setFolderPath('');
+        setCurator('');
+        setResonanceScore('');
         setIsCustomFolder(false);
         onSuccess?.();
         onClose();
@@ -337,6 +343,39 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                     value={hashtagsInput}
                     onChange={(e) => setHashtagsInput(e.target.value)}
                     placeholder="#стратегия, #релиз2026, #важное"
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Curator & Resonance Score */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-xl bg-[#141717] border border-[#242828]">
+                <div>
+                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                    Куратор / Аналитический актор
+                  </label>
+                  <select
+                    value={curator}
+                    onChange={(e) => setCurator(e.target.value)}
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                  >
+                    <option value="">Без куратора</option>
+                    <option value="Иван Белый">🇷🇺 Иван Белый (Внутренний контур РФ)</option>
+                    <option value="Kirk Kitten">🌐 Kirk Kitten (Международные рынки, OFAC)</option>
+                    <option value="Пользователь">👤 Пользователь (Суверенный синтез)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                    Резонанс пересечения (0 - 100%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="Например: 85"
+                    value={resonanceScore}
+                    onChange={(e) => setResonanceScore(e.target.value)}
                     className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
                   />
                 </div>

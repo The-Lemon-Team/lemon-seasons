@@ -60,7 +60,21 @@ export default {
         "inverse-on-surface": "#303031",
 
         "outline": "#93927e",
-        "outline-variant": "#484837",
+        "outline-variant": "#242828",
+        "outline-stroke": "#484837",
+        "border": "#242828",
+        "lemon": {
+          50: '#fcfdeb',
+          100: '#f7fbc8',
+          200: '#f0f797',
+          300: '#e5f05b',
+          400: '#d4e157',
+          500: '#c9cd58',
+          600: '#9ea32f',
+          700: '#777a27',
+          800: '#535620',
+          900: '#343617',
+        },
       },
       borderRadius: {
         "DEFAULT": "0.25rem",

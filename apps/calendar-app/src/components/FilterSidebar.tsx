@@ -15,6 +15,8 @@ import {
   Lock,
   Globe,
   Folder,
+  Bot,
+  Zap,
 } from 'lucide-react';
 import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
@@ -35,6 +37,8 @@ interface FilterSidebarProps {
   onToggleHashtag: (hashtag: string) => void;
   onToggleType: (type: NoteType) => void;
   onResetFilters: () => void;
+  onSelectCurator?: (curator?: string) => void;
+  onSetMinResonance?: (min?: number) => void;
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -53,6 +57,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onToggleHashtag,
   onToggleType,
   onResetFilters,
+  onSelectCurator,
+  onSetMinResonance,
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
   const { data: feeds = [] } = useFeeds();
@@ -314,6 +320,95 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* 3. Curators & Cross-Analysis (Помощники и Резонанс) */}
+        <div>
+          <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3">
+            <div className="flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5 text-sky-400" />
+              <span>{lang === 'ru' ? 'Кураторы и Анализ' : 'Curators & Analysis'}</span>
+            </div>
+            {(filterState.curator || typeof filterState.minResonance === 'number') && (
+              <span className="text-[10px] font-mono text-sky-400 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                active
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            {/* All Curators */}
+            <button
+              onClick={() => onSelectCurator?.(undefined)}
+              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                !filterState.curator
+                  ? 'bg-neutral-800/80 border-neutral-600 text-white font-medium'
+                  : 'bg-[#121414]/90 border-[#242828] text-neutral-400 hover:text-white hover:bg-[#1a1c1c]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span>👥</span>
+                <span>{lang === 'ru' ? 'Все кураторы' : 'All Curators'}</span>
+              </div>
+              {!filterState.curator && <Check className="w-3.5 h-3.5 text-[#c9cd58]" />}
+            </button>
+
+            {/* Ivan Bely */}
+            <button
+              onClick={() => onSelectCurator?.(filterState.curator === 'Иван Белый' ? undefined : 'Иван Белый')}
+              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                filterState.curator === 'Иван Белый'
+                  ? 'bg-sky-950/50 border-sky-500/70 text-sky-200 font-medium shadow-sm'
+                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
+              }`}
+            >
+              <div className="flex items-center gap-2 text-left">
+                <span className="text-base">🇷🇺</span>
+                <div>
+                  <div className="font-semibold leading-tight">Иван Белый</div>
+                  <div className="text-[10px] text-neutral-400">Внутренний контур РФ, регуляторика</div>
+                </div>
+              </div>
+              {filterState.curator === 'Иван Белый' && <Check className="w-3.5 h-3.5 text-sky-400" />}
+            </button>
+
+            {/* Kirk Kitten */}
+            <button
+              onClick={() => onSelectCurator?.(filterState.curator === 'Kirk Kitten' ? undefined : 'Kirk Kitten')}
+              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                filterState.curator === 'Kirk Kitten'
+                  ? 'bg-amber-950/50 border-amber-500/70 text-amber-200 font-medium shadow-sm'
+                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
+              }`}
+            >
+              <div className="flex items-center gap-2 text-left">
+                <span className="text-base">🌐</span>
+                <div>
+                  <div className="font-semibold leading-tight">Kirk Kitten</div>
+                  <div className="text-[10px] text-neutral-400">Международные рынки, OFAC, санкции</div>
+                </div>
+              </div>
+              {filterState.curator === 'Kirk Kitten' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+            </button>
+          </div>
+
+          {/* High Resonance quick-toggle */}
+          <div className="mt-2.5 pt-2 border-t border-[#242828]">
+            <button
+              onClick={() => onSetMinResonance?.(typeof filterState.minResonance === 'number' ? undefined : 70)}
+              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                typeof filterState.minResonance === 'number'
+                  ? 'bg-amber-950/60 border-amber-500/80 text-amber-300 font-semibold shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                  : 'bg-[#121414]/90 border-[#242828] text-neutral-400 hover:text-amber-300 hover:bg-[#1a1c1c]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>{lang === 'ru' ? 'Резонанс ≥70% (Пересечение)' : 'Resonance ≥70% (Cross-boundary)'}</span>
+              </div>
+              {typeof filterState.minResonance === 'number' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+            </button>
           </div>
         </div>
 

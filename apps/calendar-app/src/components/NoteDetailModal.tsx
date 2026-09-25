@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Note, NoteTypeColors } from '@lenta/shared';
+import {
+  Note,
+  NoteTypeColors,
+  NoteType,
+  CURATOR_PERSONAS_LIST,
+  getCuratorPersona,
+} from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
@@ -16,9 +22,13 @@ import {
   Check,
   Image as ImageIcon,
   AlertCircle,
+  Bot,
+  Zap,
+  Award,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { Modal } from './Modal';
+import { CuratorBadge } from './common/CuratorBadge';
 import { calendarApi } from '../api/client';
 import { queryKeys } from '../api/queries';
 
@@ -34,6 +44,8 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editCurator, setEditCurator] = useState<string | undefined>(undefined);
+  const [editResonanceScore, setEditResonanceScore] = useState<string>('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -41,6 +53,10 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     if (note) {
       setEditTitle(note.title);
       setEditDescription(note.description || '');
+      setEditCurator(note.curator || undefined);
+      setEditResonanceScore(
+        typeof note.resonanceScore === 'number' ? String(note.resonanceScore) : ''
+      );
       setIsEditing(false);
       setEditError(null);
     }
@@ -54,12 +70,17 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     setEditError(null);
 
     try {
+      const resonanceVal = editResonanceScore.trim() ? Number(editResonanceScore) : undefined;
       const updated = await calendarApi.updateNote(note.id, {
         title: editTitle.trim(),
         description: editDescription.trim(),
+        curator: editCurator || undefined,
+        resonanceScore: resonanceVal,
       });
       note.title = updated.title;
       note.description = updated.description;
+      note.curator = updated.curator;
+      note.resonanceScore = updated.resonanceScore;
       await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
       setIsEditing(false);
     } catch (err: any) {
@@ -108,6 +129,14 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                 <Rss className="w-3 h-3 text-[#c9cd58]" />
                 <span>{note.feed.title}</span>
               </span>
+            )}
+
+            {note.curator && (
+              <CuratorBadge
+                curator={note.curator}
+                resonanceScore={note.resonanceScore}
+                size="sm"
+              />
             )}
           </div>
 
@@ -193,17 +222,55 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           {/* Title & Timing */}
           <div>
             {isEditing ? (
-              <div className="mb-3">
-                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                  Заголовок заметки
-                </label>
-                <input
-                  type="text"
-                  data-testid="edit-note-title-input"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-base font-bold font-sans px-3 py-2 text-white outline-none"
-                />
+              <div className="space-y-3 mb-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                    Заголовок заметки
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="edit-note-title-input"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-base font-bold font-sans px-3 py-2 text-white outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                      Куратор / Аналитический актор
+                    </label>
+                    <select
+                      value={editCurator || ''}
+                      onChange={(e) => setEditCurator(e.target.value || undefined)}
+                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-white outline-none"
+                    >
+                      <option value="">Без куратора</option>
+                      {CURATOR_PERSONAS_LIST.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.emoji} {p.name} ({p.role})
+                        </option>
+                      ))}
+                      <option value="Пользователь">👤 Пользователь (Синтез)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                      Резонанс пересечения (0 - 100%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      placeholder="Например: 86"
+                      value={editResonanceScore}
+                      onChange={(e) => setEditResonanceScore(e.target.value)}
+                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-white outline-none"
+                    />
+                  </div>
+                </div>
               </div>
             ) : (
               <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
@@ -231,6 +298,91 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               )}
             </div>
           </div>
+
+          {/* Curator Dossier & Resonance Card */}
+          {(note.curator || typeof note.resonanceScore === 'number' || note.type === NoteType.DONE) && (() => {
+            const persona = note.curator ? getCuratorPersona(note.curator) : null;
+            const isHighResonance = typeof note.resonanceScore === 'number' && note.resonanceScore >= 70;
+            const isSynthesis = note.type === NoteType.DONE;
+
+            return (
+              <div className={`p-4 rounded-xl border text-xs font-mono transition-all ${
+                isSynthesis
+                  ? 'bg-gradient-to-r from-emerald-950/40 via-[#181d1c] to-[#121414] border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                  : isHighResonance
+                  ? 'bg-gradient-to-r from-amber-950/30 via-[#1b1c19] to-[#121414] border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.08)]'
+                  : 'bg-[#121414] border-[#242828]'
+              }`}>
+                {/* Header of Dossier */}
+                <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    {isSynthesis ? (
+                      <Award className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <Bot className="w-4 h-4 text-sky-400" />
+                    )}
+                    <span className="font-bold uppercase tracking-wider text-neutral-200">
+                      {isSynthesis
+                        ? 'Суверенный Синтез Пользователя (Case Milestone)'
+                        : 'Аналитический Контур Куратора'}
+                    </span>
+                  </div>
+
+                  {typeof note.resonanceScore === 'number' && (
+                    <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${
+                      isHighResonance
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-glow-lemon/20'
+                        : 'bg-neutral-800 text-neutral-300 border-neutral-700'
+                    }`}>
+                      <Zap className={`w-3.5 h-3.5 ${isHighResonance ? 'text-amber-400 fill-amber-400' : 'text-neutral-400'}`} />
+                      <span>Резонанс: {note.resonanceScore}%</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Curator Persona Details */}
+                {persona ? (
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl select-none">{persona.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-white">{persona.name}</span>
+                        <span className="text-[11px] text-neutral-400">• {persona.role}</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
+                        {persona.scope}
+                      </p>
+                    </div>
+                  </div>
+                ) : note.curator ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👤</span>
+                    <span className="font-bold text-white">{note.curator}</span>
+                  </div>
+                ) : null}
+
+                {/* High Resonance Alert banner */}
+                {isHighResonance && (
+                  <div className="mt-3 p-2.5 rounded-lg bg-amber-950/30 border border-amber-500/30 text-[11px] text-amber-200/90 leading-relaxed flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>
+                      <strong>Высокая зона пересечения (≥70%):</strong> событие напрямую связывает внутренние реалии и глобальный контекст. Требуется перекрёстный анализ мнений Ивана Белого и Kirk Kitten.
+                    </span>
+                  </div>
+                )}
+
+                {/* Synthesis description */}
+                {isSynthesis && (
+                  <div className="mt-3 p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-[11px] text-emerald-200/90 leading-relaxed flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      <strong>Итоговое решение зафиксировано:</strong> данный синтез аккумулирует практический опыт (Case-Based Reasoning) и сохраняет контроль над картиной мира в руках пользователя.
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Detailed Hierarchy & Taxonomy Inspector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
