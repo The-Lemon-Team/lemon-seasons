@@ -257,3 +257,69 @@ export const SYSTEM_USERS = {
   },
 } as const;
 
+// ---------------------------------------------------------------------------
+// Curator & Assistant Personas Registry (Lenta Lens System)
+// ---------------------------------------------------------------------------
+
+export interface CuratorPersona {
+  id: string;
+  name: string;
+  shortName: string;
+  role: string;
+  scope: string;
+  accentColor: string;
+  borderAccent: string;
+  bgLight: string;
+  badgeBg: string;
+  emoji: string;
+  iconName: string;
+  description: string;
+}
+
+export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
+  'ivan-bely': {
+    id: 'ivan-bely',
+    name: 'Иван Белый',
+    shortName: 'Иван',
+    role: 'Обозреватель обстановки и внутреннего контура РФ',
+    scope: 'Политика, экономика, регуляторика ФАС/ЦБ, выборы (ЕДГ-2026), внутренний рынок РФ',
+    accentColor: '#38bdf8', // Sky/Cyan
+    borderAccent: '#0284c7',
+    bgLight: 'rgba(56, 189, 248, 0.12)',
+    badgeBg: 'rgba(56, 189, 248, 0.22)',
+    emoji: '🇷🇺',
+    iconName: 'ShieldCheck',
+    description: 'Аналитическая оптика внутреннего контура России. Фокусируется на законах, постановлениях правительства, ценовом балансе и влиянии на граждан и бизнес.',
+  },
+  'kirk-kitten': {
+    id: 'kirk-kitten',
+    name: 'Kirk Kitten',
+    shortName: 'Kirk',
+    role: 'Специальный международный корреспондент и обозреватель рынков',
+    scope: 'США, ЕС, санкции OFAC, глобальная логистика, решения ФРС, саммиты Davos/G20, выборы в Конгресс',
+    accentColor: '#fbbf24', // Amber/Gold
+    borderAccent: '#d97706',
+    bgLight: 'rgba(251, 191, 36, 0.12)',
+    badgeBg: 'rgba(251, 191, 36, 0.22)',
+    emoji: '🌐',
+    iconName: 'Radar',
+    description: 'Аналитическая оптика внешнего международного контура. Проверяет первичные факты по англоязычным реестрам, биржевым данным и решениям зарубежных регуляторов.',
+  },
+};
+
+export const CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
+
+export function getCuratorPersona(idOrName?: string | null): CuratorPersona | null {
+  if (!idOrName) return null;
+  const clean = idOrName.trim().toLowerCase();
+  if (CURATOR_PERSONAS[clean]) return CURATOR_PERSONAS[clean];
+  const found = CURATOR_PERSONAS_LIST.find(
+    (p) =>
+      p.id.toLowerCase() === clean ||
+      p.name.toLowerCase() === clean ||
+      p.shortName.toLowerCase() === clean
+  );
+  return found || null;
+}
+
+

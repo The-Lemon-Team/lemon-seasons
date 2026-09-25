@@ -7,6 +7,9 @@ import {
   IsArray,
   IsDateString,
   IsBoolean,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 
 export enum NoteType {
@@ -68,6 +71,23 @@ export class CreateNoteDto {
   @IsString()
   @IsOptional()
   icon?: string;
+
+  @ApiPropertyOptional({ description: 'Curator or persona assigned to this note', example: 'Иван Белый' })
+  @IsString()
+  @IsOptional()
+  curator?: string;
+
+  @ApiPropertyOptional({ description: 'Resonance or cross-context overlap score (0-100)', example: 86 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  resonanceScore?: number;
+
+  @ApiPropertyOptional({ description: 'Parent note ID if this note is a synthesis or child', example: 'uuid-parent' })
+  @IsString()
+  @IsOptional()
+  parentNoteId?: string;
 
   @ApiPropertyOptional({
     description: 'Array of TaxonomyNode IDs or Ltree paths to associate with this note',

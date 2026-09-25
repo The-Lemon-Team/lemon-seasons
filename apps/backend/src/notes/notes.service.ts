@@ -172,6 +172,10 @@ export class NotesService {
         startDate: new Date(createNoteDto.startDate),
         endDate: createNoteDto.endDate ? new Date(createNoteDto.endDate) : null,
         sourceLink: initialSourceLink,
+        icon: createNoteDto.icon,
+        curator: createNoteDto.curator,
+        resonanceScore: createNoteDto.resonanceScore,
+        parentNote: createNoteDto.parentNoteId ? { connect: { id: createNoteDto.parentNoteId } } : undefined,
         feed: createNoteDto.feedId ? { connect: { id: createNoteDto.feedId } } : undefined,
         container: targetContainerId ? { connect: { id: targetContainerId } } : undefined,
         tags: tagIds.length > 0 ? { connect: tagIds.map((id) => ({ id })) } : undefined,
@@ -286,6 +290,17 @@ export class NotesService {
         ? { containerId: { in: parsedContainers } }
         : {}),
       ...(type ? { type: type as any } : {}),
+      ...(query.curator
+        ? {
+            OR: [
+              { curator: { equals: query.curator, mode: 'insensitive' } },
+              { curator: { contains: query.curator, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(query.minResonance !== undefined && query.minResonance !== null
+        ? { resonanceScore: { gte: Number(query.minResonance) } }
+        : {}),
       ...(tagId ? { tags: { some: { id: tagId, deletedAt: null } } } : {}),
       ...(tagPath
         ? {
@@ -383,6 +398,7 @@ export class NotesService {
           { title: { contains: cleanSearch, mode: 'insensitive' } },
           { description: { contains: cleanSearch, mode: 'insensitive' } },
           { feed: { title: { contains: cleanSearch, mode: 'insensitive' } } },
+          { curator: { contains: cleanSearch, mode: 'insensitive' } },
           ...(normalizedHashtagSearch
             ? [
                 {
@@ -598,6 +614,13 @@ export class NotesService {
           : {}),
         ...(updateNoteDto.sourceLink !== undefined ? { sourceLink: updateNoteDto.sourceLink } : {}),
         ...(updateNoteDto.icon !== undefined ? { icon: updateNoteDto.icon } : {}),
+        ...(updateNoteDto.curator !== undefined ? { curator: updateNoteDto.curator } : {}),
+        ...(updateNoteDto.resonanceScore !== undefined ? { resonanceScore: updateNoteDto.resonanceScore } : {}),
+        ...(updateNoteDto.parentNoteId !== undefined
+          ? updateNoteDto.parentNoteId
+            ? { parentNote: { connect: { id: updateNoteDto.parentNoteId } } }
+            : { parentNote: { disconnect: true } }
+          : {}),
         ...(updateNoteDto.feedId ? { feed: { connect: { id: updateNoteDto.feedId } } } : {}),
         ...((updateNoteDto as any).containerId !== undefined
           ? (updateNoteDto as any).containerId
