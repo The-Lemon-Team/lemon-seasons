@@ -14655,7 +14655,7 @@ function create_if_block_15(ctx) {
         /*searchQuery*/
         ctx[10]
       );
-      t2 = text('"\n                ');
+      t2 = text('"\r\n                ');
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
@@ -15434,7 +15434,7 @@ function create_if_block_8(ctx) {
         /*searchQuery*/
         ctx[10]
       );
-      t2 = text('"\n                ');
+      t2 = text('"\r\n                ');
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
@@ -15982,7 +15982,7 @@ function create_if_block_34(ctx) {
         /*searchQuery*/
         ctx[10]
       );
-      t2 = text('"\n            ');
+      t2 = text('"\r\n            ');
       button = element("button");
       button.textContent = "Clear search";
       attr(button, "type", "button");
