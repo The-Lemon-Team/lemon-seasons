@@ -16,8 +16,6 @@ function getDefaultFilterState(): CalendarFilterState {
     hashtags: [],
     types: [],
     search: '',
-    curator: undefined,
-    minResonance: undefined,
   };
 }
 
@@ -99,8 +97,6 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     : [];
 
   const search = params.get('search') || '';
-  const curator = params.get('curator') || undefined;
-  const minResonance = params.get('minResonance') ? Number(params.get('minResonance')) : undefined;
 
   return {
     start,
@@ -113,8 +109,6 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     hashtags,
     types,
     search,
-    curator,
-    minResonance,
   };
 }
 
@@ -130,8 +124,6 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
   if (state.search && state.search.trim()) params.set('search', state.search.trim());
-  if (state.curator) params.set('curator', state.curator);
-  if (typeof state.minResonance === 'number' && !isNaN(state.minResonance)) params.set('minResonance', String(state.minResonance));
 
   const str = params.toString();
   return str ? `?${str}` : '';
@@ -357,14 +349,6 @@ export function useCalendarState() {
     updateFilter({ start: bounds.start, end: bounds.end });
   }, [updateFilter]);
 
-  const setCurator = useCallback((curator?: string) => {
-    updateFilter({ curator: curator || undefined });
-  }, [updateFilter]);
-
-  const setMinResonance = useCallback((minResonance?: number) => {
-    updateFilter({ minResonance: typeof minResonance === 'number' ? minResonance : undefined });
-  }, [updateFilter]);
-
   const resetFilters = useCallback(() => {
     updateFilter({
       feed: undefined,
@@ -374,8 +358,6 @@ export function useCalendarState() {
       hashtags: [],
       types: [],
       search: '',
-      curator: undefined,
-      minResonance: undefined,
     });
   }, [updateFilter]);
 
@@ -413,8 +395,6 @@ export function useCalendarState() {
     setAllTypes,
     clearTypes,
     setSearch,
-    setCurator,
-    setMinResonance,
     prevMonth,
     nextMonth,
     setToday,

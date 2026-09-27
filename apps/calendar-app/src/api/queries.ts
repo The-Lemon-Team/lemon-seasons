@@ -15,8 +15,6 @@ export interface TimeSliceFilter {
   types?: NoteType[];
   search?: string;
   folder?: string;
-  curator?: string;
-  minResonance?: number;
 }
 
 export const queryKeys = {
@@ -68,14 +66,6 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
       // If container filter active
       if (filter.containers && filter.containers.length > 0) {
         params.containers = filter.containers;
-      }
-
-      if (filter.curator) {
-        params.curator = filter.curator;
-      }
-
-      if (typeof filter.minResonance === 'number') {
-        params.minResonance = filter.minResonance;
       }
 
       const response = await calendarApi.getNotes(params);
