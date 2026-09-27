@@ -32,11 +32,6 @@ model Note {
   endDate     DateTime?
   sourceLink  String?
   icon        String?
-  curator     String?
-  resonanceScore Int?
-  parentNoteId String?
-  parentNote  Note?     @relation("NoteSynthesis", fields: [parentNoteId], references: [id], onDelete: SetNull)
-  childNotes  Note[]    @relation("NoteSynthesis")
   version     Int       @default(1)
   tags        TaxonomyNode[]
   hashtags    Hashtag[]
@@ -55,9 +50,6 @@ model Note {
   @@index([feedId, deletedAt])
   @@index([deletedAt])
   @@index([type])
-  @@index([curator])
-  @@index([resonanceScore])
-  @@index([parentNoteId])
 }
 
 model Folder {

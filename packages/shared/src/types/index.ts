@@ -160,11 +160,6 @@ export interface Note {
   folders?: NoteFolder[];
   images?: NoteImage[];
   links?: NoteLink[];
-  curator?: string | null;
-  resonanceScore?: number | null;
-  parentNoteId?: string | null;
-  parentNote?: Note | null;
-  childNotes?: Note[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -195,8 +190,6 @@ export interface QueryNotesParams {
   containerId?: string;
   containers?: string[] | string;
   userId?: string;
-  curator?: string;
-  minResonance?: number;
   limit?: number;
   offset?: number;
 }
@@ -218,9 +211,6 @@ export interface CreateNoteInput {
   endDate?: string | null;
   sourceLink?: string;
   icon?: string;
-  curator?: string;
-  resonanceScore?: number;
-  parentNoteId?: string;
   tagIds?: string[];
   hashtags?: string[];
   folders?: (string | FolderInputItem)[];
@@ -240,9 +230,6 @@ export interface UpdateNoteInput {
   icon?: string;
   feedId?: string;
   containerId?: string | null;
-  curator?: string | null;
-  resonanceScore?: number | null;
-  parentNoteId?: string | null;
   tagIds?: string[];
   hashtags?: string[];
   folders?: (string | FolderInputItem)[];
@@ -331,11 +318,6 @@ export interface LentaFrontmatter {
   icon?: string;
   sourceLink?: string;
   source_link?: string;
-  curator?: string;
-  persona?: string;
-  assistants?: string[];
-  resonance_score?: number | null;
-  parent_note_id?: string | null;
   updated_at?: string;
   updatedAt?: string;
   deleted?: boolean;
@@ -398,8 +380,6 @@ export interface CalendarFilterState {
   hashtags: string[];
   types: NoteType[];
   search: string;
-  curator?: string;
-  minResonance?: number;
 }
 
 // User & Privacy Access Types
@@ -528,8 +508,6 @@ export interface ParsedNoteCard {
   icon?: string;
   sourceLink?: string;
   description?: string;
-  curator?: string;
-  resonanceScore?: number;
   selected?: boolean;
 }
 

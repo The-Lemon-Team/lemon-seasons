@@ -415,9 +415,6 @@ async function main() {
     imageUrl?: string;
     imageCaption?: string;
     trailerUrl?: string;
-    curator?: string;
-    resonanceScore?: number;
-    parentNoteId?: string;
   }) {
     const tagId = await getOrCreateTaxonomy(item.taxonomyPath);
     const sDate = new Date(item.startDate);
@@ -433,9 +430,6 @@ async function main() {
         startDate: sDate,
         endDate: eDate,
         icon: item.icon,
-        curator: item.curator,
-        resonanceScore: item.resonanceScore,
-        parentNoteId: item.parentNoteId,
         sourceLink: item.sourceLink,
         tags: {
           connect: [{ id: tagId }],
@@ -576,7 +570,6 @@ async function main() {
       hashtags: h.hashtags,
       imageUrl: h.imageUrl,
       imageCaption: h.imageCaption,
-      curator: 'Иван Белый',
     });
   }
   console.log(`✅ Seeded ${russianOfficialHolidays.length} Russian Official Holidays (cont-russian-official)`);
@@ -600,7 +593,6 @@ async function main() {
       hashtags: h.hashtags,
       imageUrl: h.imageUrl,
       imageCaption: h.imageCaption,
-      curator: 'Иван Белый',
     });
   }
   console.log(`✅ Seeded ${russianMilitaryHolidays.length} Russian Military Glory & Army Days (cont-russian-military)`);
@@ -718,7 +710,6 @@ async function main() {
       hashtags: w.hashtags,
       imageUrl: w.imageUrl,
       imageCaption: w.imageCaption,
-      curator: 'Kirk Kitten',
     });
   }
   console.log(`✅ Seeded ${worldHolidays.length} World Countries Holidays (cont-world-holidays)`);
@@ -742,8 +733,6 @@ async function main() {
       hashtags: p.hashtags,
       imageUrl: p.imageUrl,
       imageCaption: p.imageCaption,
-      curator: p.curator,
-      resonanceScore: p.resonanceScore,
     });
   }
   console.log(`✅ Seeded ${politicalEvents.length} Political Events 2026`);
