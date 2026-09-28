@@ -15,7 +15,9 @@ export interface AdminTranslations {
   taxonomy: string;
   syncHub: string;
   generatorLab: string;
+  agentChat: string;
   quickAdd: string;
+
   apiDocs: string;
   searchPlaceholder: string;
   adminTitle: string;
@@ -178,7 +180,9 @@ export const ruAdminTranslations: AdminTranslations = {
   taxonomy: 'Таксономия',
   syncHub: 'Центр синхронизации',
   generatorLab: 'Генератор & AI Лаборатория',
+  agentChat: 'Чат с агентами',
   quickAdd: 'Быстрое добавление',
+
   apiDocs: 'Документация API',
   searchPlaceholder: 'Поиск заметок, лент...',
   adminTitle: 'Lemon Seasons',
@@ -341,7 +345,9 @@ export const enAdminTranslations: AdminTranslations = {
   taxonomy: 'Taxonomy',
   syncHub: 'Sync Hub',
   generatorLab: 'AI & Generation Lab',
+  agentChat: 'Agent Chat Desk',
   quickAdd: 'Quick Add',
+
   apiDocs: 'API Docs',
   searchPlaceholder: 'Search notes, feeds...',
   adminTitle: 'Lemon Seasons',

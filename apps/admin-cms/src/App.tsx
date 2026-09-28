@@ -11,6 +11,7 @@ import { NoteEditorPage } from './pages/NoteEditor/NoteEditorPage';
 import { TaxonomyPage } from './pages/Taxonomy/TaxonomyPage';
 import { GeneratorLabPage } from './pages/GeneratorLab/GeneratorLabPage';
 import { NewsCurationPage } from './pages/NewsCuration/NewsCurationPage';
+import { AgentChatPage } from './pages/AgentChat/AgentChatPage';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
@@ -34,6 +35,7 @@ const AppContent: React.FC = () => {
           <Routes>
             <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/chat" element={<AgentChatPage />} />
             <Route path="/news" element={<NewsCurationPage />} />
             <Route path="/feeds" element={<FeedsPage />} />
             <Route path="/notes" element={<NotesListPage />} />
@@ -43,6 +45,7 @@ const AppContent: React.FC = () => {
             <Route path="/generators" element={<GeneratorLabPage />} />
             <Route path="/sync" element={<DashboardPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
+
           </Route>
         </Routes>
       </BrowserRouter>

@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotesService } from '../notes/notes.service';
+import { PoliticalEngineService } from '../ingestion/services/political-engine.service';
 import { NoteType } from '@lenta/shared';
 import {
   DailyNewsCard,
@@ -9,8 +10,9 @@ import {
   DailySummaryData,
   NewsTriageAgent,
   PodcastAgent,
+  AgentChatEngine,
 } from '@lemon/agents';
-import { TransformNewsDto, GeneratePodcastDto, PublishPodcastDto } from './dto/curation.dto';
+import { TransformNewsDto, GeneratePodcastDto, PublishPodcastDto, AgentChatDto } from './dto/curation.dto';
 
 @Injectable()
 export class CurationService {
@@ -26,12 +28,14 @@ export class CurationService {
     private readonly prisma: PrismaService,
     private readonly notesService: NotesService,
     private readonly configService: ConfigService,
+    private readonly politicalEngineService: PoliticalEngineService,
   ) {
     this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (this.geminiApiKey) {
       this.logger.log('🎙️ Gemini AI Key detected for NotebookLM-style Podcast Studio.');
     }
   }
+
 
   /**
    * Retrieves candidate daily news cards for a date. Seeds default rich stories if none exist.
@@ -233,8 +237,33 @@ ${dialogueMarkdown}
   }
 
   /**
+   * Processes a message directed to agents, handling snippets, contour questions, and independent analysis.
+   */
+  async processAgentChat(dto: AgentChatDto) {
+    const targetDate = dto.date || new Date().toISOString().split('T')[0];
+    const candidateCards = await this.getDailyNews(targetDate);
+    const politicalEvents = this.politicalEngineService.getPoliticalEvents2026();
+
+    const replies = await AgentChatEngine.process({
+      message: dto.message,
+      targetAgent: dto.targetAgent,
+      date: targetDate,
+      contextCards: candidateCards,
+      politicalEvents,
+      history: dto.history,
+      geminiApiKey: this.geminiApiKey,
+    });
+
+    return {
+      date: targetDate,
+      replies,
+    };
+  }
+
+  /**
    * Retrieves clean summary data for the calendar consumer view
    */
+
   async getDailySummary(date: string): Promise<DailySummaryData> {
     const targetDate = date || new Date().toISOString().split('T')[0];
 

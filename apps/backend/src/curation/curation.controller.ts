@@ -6,12 +6,20 @@ import {
   TransformNewsDto,
   GeneratePodcastDto,
   PublishPodcastDto,
+  AgentChatDto,
 } from './dto/curation.dto';
 
 @ApiTags('Curation & AI Studio')
 @Controller('curation')
 export class CurationController {
   constructor(private readonly curationService: CurationService) {}
+
+  @Post('agent-chat')
+  @ApiOperation({ summary: 'Send query or snippet to agent desk (Ivan Bely, Kirk Kitten, or Independent Analyst)' })
+  async agentChat(@Body() dto: AgentChatDto) {
+    return this.curationService.processAgentChat(dto);
+  }
+
 
   @Get('daily-news')
   @ApiOperation({ summary: 'Get candidate daily news cards for a date' })

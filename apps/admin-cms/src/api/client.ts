@@ -466,6 +466,11 @@ export const curationApi = {
     });
     return res.data;
   },
+  agentChat: async (payload: { message: string; date?: string; targetAgent?: string; history?: any[] }) => {
+    const res = await apiClient.post<{ date: string; replies: any[] }>('/curation/agent-chat', payload);
+    return res.data;
+  },
 };
+
 
 

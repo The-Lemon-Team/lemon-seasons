@@ -95,3 +95,25 @@ export class PublishPodcastDto {
   @IsString()
   containerId?: string;
 }
+
+export class AgentChatDto {
+  @ApiProperty({ description: 'User message or slash command prompt', example: '/ivan какие новости на сегодня?' })
+  @IsString()
+  message!: string;
+
+  @ApiPropertyOptional({ description: 'Target date in YYYY-MM-DD format (defaults to current date)', example: '2026-09-28' })
+  @IsOptional()
+  @IsString()
+  date?: string;
+
+  @ApiPropertyOptional({ description: 'Target agent id or all', example: 'all' })
+  @IsOptional()
+  @IsString()
+  targetAgent?: 'all' | 'ivan-bely' | 'kirk-kitten' | 'independent-analyst' | 'dispatcher';
+
+  @ApiPropertyOptional({ description: 'Previous conversation history for context' })
+  @IsOptional()
+  @IsArray()
+  history?: any[];
+}
+

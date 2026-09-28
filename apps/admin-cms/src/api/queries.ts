@@ -558,3 +558,11 @@ export function useDailySummary(date?: string) {
   });
 }
 
+export function useAgentChat() {
+  return useMutation({
+    mutationFn: (payload: { message: string; date?: string; targetAgent?: string; history?: any[] }) =>
+      curationApi.agentChat(payload),
+  });
+}
+
+

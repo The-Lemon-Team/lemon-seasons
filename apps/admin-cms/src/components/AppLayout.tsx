@@ -16,6 +16,7 @@ export const AppLayout: React.FC = () => {
   const { data: syncData, isFetching: isSyncing } = useSyncChanges();
 
   const getPageTitle = () => {
+    if (location.pathname.startsWith('/chat')) return 'Аналитический Чат-Деск (AI Curation)';
     if (location.pathname.startsWith('/news')) return 'Ежедневные новости & AI-Куратор';
     if (location.pathname.startsWith('/feeds')) return t.feeds;
     if (location.pathname.startsWith('/notes')) return t.allNotes;
@@ -67,6 +68,21 @@ export const AppLayout: React.FC = () => {
         {/* Primary Navigation Links */}
         <nav className="flex-1 px-3 space-y-1">
           <NavLink
+            to="/chat"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
+                isActive
+                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
+                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined text-[20px] text-primary">forum</span>
+            <span className="flex-1 truncate">{t.agentChat}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
+          </NavLink>
+
+          <NavLink
             to="/news"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
@@ -80,6 +96,7 @@ export const AppLayout: React.FC = () => {
             <span className="flex-1 truncate">Новости & AI</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
           </NavLink>
+
 
           <NavLink
             to="/feeds"
@@ -253,14 +270,27 @@ export const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Page Content Canvas (Scrollable) */}
-        <main className="flex-1 w-full overflow-y-auto p-6 md:p-8">
-          <div className="max-w-[1440px] mx-auto pb-16">
+        {/* Page Content Canvas (Scrollable for normal pages, fixed & non-expanding for chat) */}
+        <main
+          className={`flex-1 w-full ${
+            location.pathname.startsWith('/chat')
+              ? 'h-[calc(100vh-4rem)] overflow-hidden p-3 md:p-4 flex flex-col min-h-0'
+              : 'overflow-y-auto p-6 md:p-8'
+          }`}
+        >
+          <div
+            className={`mx-auto w-full ${
+              location.pathname.startsWith('/chat')
+                ? 'h-full flex-1 flex flex-col min-h-0 max-w-[1680px]'
+                : 'max-w-[1440px] pb-16'
+            }`}
+          >
             <ErrorBoundary fallbackTitle="Ошибка отображения страницы">
               <Outlet />
             </ErrorBoundary>
           </div>
         </main>
+
       </div>
 
       {/* Global Quick Add Modal */}
