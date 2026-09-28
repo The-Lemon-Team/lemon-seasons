@@ -4136,7 +4136,7 @@ var init_zod = __esm({
 });
 
 // ../shared/dist/index.mjs
-var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -4254,6 +4254,39 @@ var init_dist = __esm({
         icon: "file-text"
       }
     };
+    CURATOR_PERSONAS = {
+      "ivan-bely": {
+        id: "ivan-bely",
+        name: "\u0418\u0432\u0430\u043D \u0411\u0435\u043B\u044B\u0439",
+        shortName: "\u0418\u0432\u0430\u043D",
+        role: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u043E\u0431\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0438 \u0438 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0420\u0424",
+        scope: "\u041F\u043E\u043B\u0438\u0442\u0438\u043A\u0430, \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u043A\u0430, \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u0438\u043A\u0430 \u0424\u0410\u0421/\u0426\u0411, \u0432\u044B\u0431\u043E\u0440\u044B (\u0415\u0414\u0413-2026), \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u0440\u044B\u043D\u043E\u043A \u0420\u0424",
+        accentColor: "#38bdf8",
+        // Sky/Cyan
+        borderAccent: "#0284c7",
+        bgLight: "rgba(56, 189, 248, 0.12)",
+        badgeBg: "rgba(56, 189, 248, 0.22)",
+        emoji: "\u{1F1F7}\u{1F1FA}",
+        iconName: "ShieldCheck",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0420\u043E\u0441\u0441\u0438\u0438. \u0424\u043E\u043A\u0443\u0441\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0437\u0430\u043A\u043E\u043D\u0430\u0445, \u043F\u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F\u0445 \u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430, \u0446\u0435\u043D\u043E\u0432\u043E\u043C \u0431\u0430\u043B\u0430\u043D\u0441\u0435 \u0438 \u0432\u043B\u0438\u044F\u043D\u0438\u0438 \u043D\u0430 \u0433\u0440\u0430\u0436\u0434\u0430\u043D \u0438 \u0431\u0438\u0437\u043D\u0435\u0441."
+      },
+      "kirk-kitten": {
+        id: "kirk-kitten",
+        name: "Kirk Kitten",
+        shortName: "Kirk",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u044C\u043D\u044B\u0439 \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u044B\u0439 \u043A\u043E\u0440\u0440\u0435\u0441\u043F\u043E\u043D\u0434\u0435\u043D\u0442 \u0438 \u043E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0440\u044B\u043D\u043A\u043E\u0432",
+        scope: "\u0421\u0428\u0410, \u0415\u0421, \u0441\u0430\u043D\u043A\u0446\u0438\u0438 OFAC, \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u0430\u044F \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u043A\u0430, \u0440\u0435\u0448\u0435\u043D\u0438\u044F \u0424\u0420\u0421, \u0441\u0430\u043C\u043C\u0438\u0442\u044B Davos/G20, \u0432\u044B\u0431\u043E\u0440\u044B \u0432 \u041A\u043E\u043D\u0433\u0440\u0435\u0441\u0441",
+        accentColor: "#fbbf24",
+        // Amber/Gold
+        borderAccent: "#d97706",
+        bgLight: "rgba(251, 191, 36, 0.12)",
+        badgeBg: "rgba(251, 191, 36, 0.22)",
+        emoji: "\u{1F310}",
+        iconName: "Radar",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u043E\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430. \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0435 \u0444\u0430\u043A\u0442\u044B \u043F\u043E \u0430\u043D\u0433\u043B\u043E\u044F\u0437\u044B\u0447\u043D\u044B\u043C \u0440\u0435\u0435\u0441\u0442\u0440\u0430\u043C, \u0431\u0438\u0440\u0436\u0435\u0432\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C \u0438 \u0440\u0435\u0448\u0435\u043D\u0438\u044F\u043C \u0437\u0430\u0440\u0443\u0431\u0435\u0436\u043D\u044B\u0445 \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u043E\u0432."
+      }
+    };
+    CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
     noteTypeSchema = external_exports.enum([
       "SINGLE",
       "PERIOD",
@@ -4277,6 +4310,9 @@ var init_dist = __esm({
       endDate: external_exports.string().datetime().or(external_exports.string().min(1)).optional().nullable(),
       sourceLink: external_exports.string().url().optional().nullable(),
       icon: external_exports.string().optional().nullable(),
+      curator: external_exports.string().optional().nullable(),
+      resonanceScore: external_exports.number().int().min(0).max(100).optional().nullable(),
+      parentNoteId: external_exports.string().optional().nullable(),
       tagIds: external_exports.array(external_exports.string()).optional(),
       hashtags: external_exports.array(external_exports.string()).optional(),
       folders: external_exports.array(external_exports.union([external_exports.string(), external_exports.object({ path: external_exports.string(), isPrimary: external_exports.boolean().optional(), order: external_exports.number().optional() })])).optional(),
@@ -4292,6 +4328,8 @@ var init_dist = __esm({
       feedId: external_exports.string().optional(),
       feedSlug: external_exports.string().optional(),
       type: noteTypeSchema.optional(),
+      curator: external_exports.string().optional(),
+      minResonance: external_exports.number().int().min(0).max(100).optional(),
       startDateFrom: external_exports.string().optional(),
       startDateTo: external_exports.string().optional(),
       endDateFrom: external_exports.string().optional(),
@@ -4343,6 +4381,11 @@ var init_dist = __esm({
       folders: external_exports.array(external_exports.string()).optional(),
       taxonomy: external_exports.array(external_exports.string()).optional(),
       tags: external_exports.array(external_exports.string()).optional(),
+      curator: external_exports.string().optional().nullable(),
+      persona: external_exports.string().optional().nullable(),
+      assistants: external_exports.array(external_exports.string()).optional(),
+      resonance_score: external_exports.number().optional().nullable(),
+      parent_note_id: external_exports.string().optional().nullable(),
       updated_at: external_exports.string().optional(),
       updatedAt: external_exports.string().optional(),
       deleted: external_exports.boolean().optional()
@@ -4403,6 +4446,15 @@ var init_dist = __esm({
         }
         if (note.icon) {
           lines.push(`icon: "${note.icon}"`);
+        }
+        if (note.curator) {
+          lines.push(`curator: "${note.curator}"`);
+        }
+        if (typeof note.resonanceScore === "number" && !isNaN(note.resonanceScore)) {
+          lines.push(`resonance_score: ${note.resonanceScore}`);
+        }
+        if (note.parentNoteId) {
+          lines.push(`parent_note_id: "${note.parentNoteId}"`);
         }
         lines.push(`updated_at: "${note.updatedAt}"`);
         lines.push(`deleted: ${Boolean(note.deletedAt)}`);
@@ -5673,6 +5725,8 @@ var LentaSyncEngine = class {
     const noteType = parsed.frontmatter.type || "EVENT";
     const startDate = parsed.frontmatter.start_date || parsed.frontmatter.startDate || (/* @__PURE__ */ new Date()).toISOString();
     const noteId = parsed.lentaId || parsed.frontmatter.id;
+    const curatorVal = parsed.frontmatter.curator || void 0;
+    const resonanceVal = typeof parsed.frontmatter.resonance_score === "number" ? parsed.frontmatter.resonance_score : typeof parsed.frontmatter.resonanceScore === "number" ? parsed.frontmatter.resonanceScore : void 0;
     if (noteId) {
       const updated = await this.apiClient.updateNote(noteId, {
         title: parsed.title,
@@ -5681,7 +5735,9 @@ var LentaSyncEngine = class {
         startDate,
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || null,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || null,
-        icon: parsed.frontmatter.icon || null
+        icon: parsed.frontmatter.icon || null,
+        curator: curatorVal || null,
+        resonanceScore: resonanceVal ?? null
       });
       if (processedBody !== parsed.body) {
         const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(updated);
@@ -5714,7 +5770,9 @@ var LentaSyncEngine = class {
         startDate,
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || void 0,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || void 0,
-        icon: parsed.frontmatter.icon || void 0
+        icon: parsed.frontmatter.icon || void 0,
+        curator: curatorVal,
+        resonanceScore: resonanceVal
       });
       const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(created);
       await vault.modify(file, newMarkdown);
@@ -5774,6 +5832,8 @@ var LentaSyncEngine = class {
         tags: (parsed.frontmatter.taxonomy || []).map((p) => ({ id: p, name: p, path: p, icon: null, updatedAt: "", deletedAt: null })),
         hashtags: (parsed.hashtags || []).map((h) => ({ id: h, name: h, createdAt: "", updatedAt: "", deletedAt: null })),
         folders: relativeFolder ? [{ id: "", noteId: lentaId, folderId: "", isPrimary: true, order: 0, folder: { id: "", name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: "", updatedAt: "", deletedAt: null } }] : [],
+        curator: parsed.frontmatter.curator || null,
+        resonanceScore: typeof parsed.frontmatter.resonance_score === "number" ? parsed.frontmatter.resonance_score : null,
         createdAt: "",
         updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
         deletedAt: null
