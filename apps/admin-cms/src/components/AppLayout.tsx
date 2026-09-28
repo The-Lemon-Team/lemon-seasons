@@ -16,6 +16,7 @@ export const AppLayout: React.FC = () => {
   const { data: syncData, isFetching: isSyncing } = useSyncChanges();
 
   const getPageTitle = () => {
+    if (location.pathname.startsWith('/news')) return 'Ежедневные новости & AI-Куратор';
     if (location.pathname.startsWith('/feeds')) return t.feeds;
     if (location.pathname.startsWith('/notes')) return t.allNotes;
     if (location.pathname.startsWith('/taxonomy')) return t.taxonomy;
@@ -65,6 +66,21 @@ export const AppLayout: React.FC = () => {
 
         {/* Primary Navigation Links */}
         <nav className="flex-1 px-3 space-y-1">
+          <NavLink
+            to="/news"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
+                isActive
+                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
+                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined text-[20px] text-primary">newspaper</span>
+            <span className="flex-1 truncate">Новости & AI</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
+          </NavLink>
+
           <NavLink
             to="/feeds"
             className={({ isActive }) =>

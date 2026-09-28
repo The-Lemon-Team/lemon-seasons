@@ -18,6 +18,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@lemon/agents": "workspace:*",
     "@lenta/shared": "workspace:*",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",

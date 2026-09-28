@@ -437,3 +437,35 @@ export const statsApi = {
   },
 };
 
+export const curationApi = {
+  getDailyNews: async (date?: string) => {
+    const res = await apiClient.get<{ date: string; count: number; news: any[] }>('/curation/daily-news', {
+      params: { date },
+    });
+    return res.data;
+  },
+  transformNews: async (id: string, payload: any) => {
+    const res = await apiClient.post<{ success: boolean; card: any; note: any }>(`/curation/daily-news/${id}/transform`, payload);
+    return res.data;
+  },
+  dismissNews: async (id: string) => {
+    const res = await apiClient.post<{ success: boolean; card: any }>(`/curation/daily-news/${id}/dismiss`);
+    return res.data;
+  },
+  generatePodcast: async (payload: { date: string; newsIds?: string[]; host1Name?: string; host2Name?: string; tone?: string }) => {
+    const res = await apiClient.post<any>('/curation/podcast/generate', payload);
+    return res.data;
+  },
+  publishPodcast: async (payload: { date: string; podcast: any; feedId?: string; containerId?: string }) => {
+    const res = await apiClient.post<{ success: boolean; podcastId: string; noteId: string; note: any }>('/curation/podcast/publish', payload);
+    return res.data;
+  },
+  getDailySummary: async (date?: string) => {
+    const res = await apiClient.get<any>('/curation/daily-summary', {
+      params: { date },
+    });
+    return res.data;
+  },
+};
+
+

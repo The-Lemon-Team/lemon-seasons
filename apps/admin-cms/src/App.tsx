@@ -10,6 +10,7 @@ import { NotesListPage } from './pages/Notes/NotesListPage';
 import { NoteEditorPage } from './pages/NoteEditor/NoteEditorPage';
 import { TaxonomyPage } from './pages/Taxonomy/TaxonomyPage';
 import { GeneratorLabPage } from './pages/GeneratorLab/GeneratorLabPage';
+import { NewsCurationPage } from './pages/NewsCuration/NewsCurationPage';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
@@ -33,6 +34,7 @@ const AppContent: React.FC = () => {
           <Routes>
             <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/news" element={<NewsCurationPage />} />
             <Route path="/feeds" element={<FeedsPage />} />
             <Route path="/notes" element={<NotesListPage />} />
             <Route path="/notes/new" element={<NoteEditorPage />} />

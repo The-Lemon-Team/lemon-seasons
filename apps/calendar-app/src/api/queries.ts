@@ -318,4 +318,14 @@ export function useObsidianContainerCommitsQuery(containerId: string | null) {
   });
 }
 
+export function useDailySummaryQuery(date?: string | null) {
+  return useQuery({
+    queryKey: ['daily-summary', date],
+    queryFn: () => (date ? calendarApi.getDailySummary(date) : null),
+    enabled: Boolean(date),
+    staleTime: 30_000,
+  });
+}
+
+
 

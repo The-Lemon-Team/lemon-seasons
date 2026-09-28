@@ -146,5 +146,13 @@ export const calendarApi = {
     const res = await apiClient.delete<{ success: boolean; message: string }>(`/folders/${id}`);
     return res.data;
   },
+
+  getDailySummary: async (date?: string): Promise<any> => {
+    const res = await apiClient.get<any>('/curation/daily-summary', {
+      params: { date },
+    });
+    return res.data;
+  },
 };
+
 

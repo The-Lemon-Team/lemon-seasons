@@ -7,6 +7,7 @@ import {
   foldersApi,
   syncApi,
   statsApi,
+  curationApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -497,3 +498,63 @@ export function useSystemStats() {
     refetchInterval: 15000, // Refresh metrics every 15s
   });
 }
+
+// Curation & AI News Hooks
+export function useDailyNews(date?: string) {
+  return useQuery({
+    queryKey: ['daily-news', date],
+    queryFn: () => curationApi.getDailyNews(date),
+  });
+}
+
+export function useTransformNews() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+      curationApi.transformNews(id, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['daily-news'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-summary'] });
+    },
+  });
+}
+
+export function useDismissNews() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => curationApi.dismissNews(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-news'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-summary'] });
+    },
+  });
+}
+
+export function useGeneratePodcast() {
+  return useMutation({
+    mutationFn: (payload: { date: string; newsIds?: string[]; host1Name?: string; host2Name?: string; tone?: string }) =>
+      curationApi.generatePodcast(payload),
+  });
+}
+
+export function usePublishPodcast() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { date: string; podcast: any; feedId?: string; containerId?: string }) =>
+      curationApi.publishPodcast(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-news'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-summary'] });
+    },
+  });
+}
+
+export function useDailySummary(date?: string) {
+  return useQuery({
+    queryKey: ['daily-summary', date],
+    queryFn: () => curationApi.getDailySummary(date),
+  });
+}
+

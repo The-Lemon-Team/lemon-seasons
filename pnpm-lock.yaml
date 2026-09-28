@@ -17,6 +17,9 @@ importers:
       '@ant-design/icons':
         specifier: ^5.6.1
         version: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@lemon/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@lenta/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -62,7 +65,7 @@ importers:
         version: 18.3.7(@types/react@18.3.31)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))
+        version: 4.7.0(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.5.4(postcss@8.5.26)
@@ -77,10 +80,13 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.1.0
-        version: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0)
+        version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0)
 
   apps/backend:
     dependencies:
+      '@lemon/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@lenta/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -166,6 +172,9 @@ importers:
 
   apps/calendar-app:
     dependencies:
+      '@lemon/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@lenta/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -214,7 +223,7 @@ importers:
         version: 18.3.7(@types/react@18.3.31)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))
+        version: 4.7.0(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.5.4(postcss@8.5.26)
@@ -229,7 +238,23 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.1.0
-        version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0)
+        version: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0)
+
+  packages/agents:
+    dependencies:
+      '@lenta/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.1
+      tsup:
+        specifier: ^8.3.6
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
   packages/obsidian-plugin:
     dependencies:
