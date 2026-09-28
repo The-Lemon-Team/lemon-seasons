@@ -43,16 +43,20 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       template: `Тренды ${todayFormatted}:\n- Уборка дома\n- Ремонтные работы\n- Warcraft\n- Overwatch`,
     },
     {
+      label: '🇷🇺 Иван Белый (РФ)',
+      template: `Иван Белый: Решение ФАС по контролю оптовых цен и субсидированию биржевых торгов нефтепродуктами в РФ. Резонанс: 80% #экономика #регуляторика #топливо`,
+    },
+    {
+      label: '🌐 Kirk Kitten (Global)',
+      template: `Kirk Kitten: Новый санкционный пакет OFAC против танкерного флота и ограничение предельных цен. Резонанс: 80% #санкции #ofac #нефть`,
+    },
+    {
+      label: '✅ Синтез (DONE)',
+      template: `[Синтез] Влияние санкций OFAC на внутренний рынок РФ: оценка рисков и компенсаторных мер ФАС. Резонанс: 86% #синтез #кейс`,
+    },
+    {
       label: '⏳ Тренд-период',
       template: `Тренд: Марафон Гарри Поттера 25.09.26 - 28.09.26 #кино #осень\nПапка: Trends/Cinema`,
-    },
-    {
-      label: '📅 Событие с датой',
-      template: `23.09.26 в 19:00 Митап по Svelte и TypeScript в Discord https://discord.gg/lemon #dev\nТег: tech.frontend`,
-    },
-    {
-      label: '✅ Сделано',
-      template: `Сделано сегодня: Завершил рефакторинг LentaSidebar и подключил стор. Папка: Projects/Lenta`,
     },
   ];
 
@@ -164,6 +168,8 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         sourceLink: c.sourceLink,
         icon: c.icon,
         description: c.description,
+        curator: c.curator,
+        resonanceScore: c.resonanceScore,
       }));
 
       await calendarApi.createNotesBatch(payload);

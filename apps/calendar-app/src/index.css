@@ -42,29 +42,6 @@
   border-left: 3px solid #c9cd58;
 }
 
-/* Glassmorphism & Glows */
-.glass-nav {
-  background: rgba(18, 20, 20, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(201, 205, 88, 0.2);
-}
-
-.glass-panel {
-  background: rgba(27, 30, 30, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #242828;
-}
-
-.glow-hover {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.glow-hover:hover {
-  border-color: rgba(201, 205, 88, 0.4);
-  box-shadow: 0 4px 20px -4px rgba(201, 205, 88, 0.15);
-}
-
 /* Markdown preview styles in timeline & reader */
 .prose-dark {
   color: #c9c7b2;

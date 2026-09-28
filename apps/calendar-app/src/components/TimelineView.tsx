@@ -18,12 +18,15 @@ import {
   Tag,
   ArrowUpRight,
   RotateCcw,
+  X,
+  Zap,
 } from 'lucide-react';
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
 import { ObsidianSelector } from './ObsidianSelector';
 import { LemonLogo } from './LemonLogo';
+import { CuratorBadge } from './common/CuratorBadge';
 import { getFeedTheme } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
 
@@ -32,6 +35,8 @@ interface TimelineViewProps {
   isLoading: boolean;
   onSelectNote: (note: Note) => void;
   filterState?: CalendarFilterState;
+  onSelectCurator?: (curator?: string) => void;
+  onSetMinResonance?: (min?: number) => void;
   onToggleFeed?: (feedSlug: string) => void;
   onSelectOnlyFeed?: (feedSlug: string) => void;
   onSetAllFeeds?: (feeds: string[]) => void;
@@ -67,6 +72,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   isLoading,
   onSelectNote,
   filterState,
+  onSelectCurator,
+  onSetMinResonance,
   onToggleFeed,
   onSelectOnlyFeed,
   onSetAllFeeds,
@@ -201,13 +208,46 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               onSetObsidianFolders={onSetObsidianFolders}
               onClearObsidianFolders={onClearObsidianFolders}
             />
+
+            {/* Active Curator Filter Pill */}
+            {filterState.curator && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-950/60 border border-sky-500/40 text-[11px] font-mono text-sky-300">
+                <span>Куратор: {filterState.curator}</span>
+                {onSelectCurator && (
+                  <button
+                    onClick={() => onSelectCurator(undefined)}
+                    className="hover:text-white transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Active Min Resonance Filter Pill */}
+            {typeof filterState.minResonance === 'number' && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-[11px] font-mono text-amber-300">
+                <Zap className="w-3 h-3 text-amber-400" />
+                <span>Резонанс ≥{filterState.minResonance}%</span>
+                {onSetMinResonance && (
+                  <button
+                    onClick={() => onSetMinResonance(undefined)}
+                    className="hover:text-white transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {onResetFilters &&
             (filterState.feed ||
               (filterState.containers && filterState.containers.length > 0) ||
               filterState.tags.length > 0 ||
-              filterState.types.length > 0) && (
+              filterState.types.length > 0 ||
+              filterState.curator ||
+              typeof filterState.minResonance === 'number') && (
               <button
                 onClick={onResetFilters}
                 className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 transition-colors"
@@ -297,11 +337,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   {/* Card Panel */}
                   <div
                     onClick={() => onSelectNote(note)}
-                    className="group relative card-panel hover:border-[#484837] active-item rounded p-4 transition-all duration-150 cursor-pointer shadow-sm hover:shadow-glow-lemon/10"
+                    className={`group relative card-panel hover:border-[#484837] active-item rounded p-4 transition-all duration-150 cursor-pointer shadow-sm ${
+                      note.type === NoteType.DONE
+                        ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/20 to-[#181a1a] shadow-[0_0_15px_rgba(16,185,129,0.08)]'
+                        : typeof note.resonanceScore === 'number' && note.resonanceScore >= 70
+                        ? 'border-amber-500/35 bg-gradient-to-r from-amber-950/15 to-[#181a1a] shadow-[0_0_15px_rgba(245,158,11,0.08)]'
+                        : 'hover:shadow-glow-lemon/10'
+                    }`}
                   >
                     {/* Meta Top Header */}
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {/* Note Type Badge */}
                         <span
                           className="px-2 py-0.5 rounded text-[11px] font-mono font-medium border"
@@ -331,6 +377,23 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                             </span>
                           );
                         })()}
+
+                        {/* Curator / Persona Badge */}
+                        {note.curator && (
+                          <CuratorBadge
+                            curator={note.curator}
+                            resonanceScore={note.resonanceScore}
+                            size="sm"
+                            onClick={
+                              onSelectCurator
+                                ? (e) => {
+                                    e.stopPropagation();
+                                    onSelectCurator(note.curator || undefined);
+                                  }
+                                : undefined
+                            }
+                          />
+                        )}
                       </div>
 
                       {/* Timestamp */}

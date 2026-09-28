@@ -30,6 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Zap,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 
@@ -38,6 +39,8 @@ interface MonthGridViewProps {
   startDate: string; // ISO
   filterState: CalendarFilterState;
   onSelectNote: (note: Note) => void;
+  onSelectCurator?: (curator?: string) => void;
+  onSetMinResonance?: (min?: number) => void;
   onSelectDay?: (dateKey: string) => void;
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
@@ -72,6 +75,8 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   startDate,
   filterState,
   onSelectNote,
+  onSelectCurator,
+  onSetMinResonance,
   onSelectDay,
   onPrevMonth,
   onNextMonth,
@@ -131,6 +136,8 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
     filterState.tags.length +
     filterState.hashtags.length +
     filterState.types.length +
+    (filterState.curator ? 1 : 0) +
+    (typeof filterState.minResonance === 'number' ? 1 : 0) +
     (filterState.search ? 1 : 0);
 
   // Per-feed counts in current month notes
@@ -512,6 +519,39 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                     </span>
                   ))}
 
+                  {/* Curator Filter */}
+                  {filterState.curator && (
+                    <span className="shrink-0 inline-flex items-center gap-1.5 px-2 h-6 rounded bg-sky-950/60 border border-sky-500/40 text-sky-300 text-[11px] font-mono leading-none">
+                      <span>Куратор: {filterState.curator}</span>
+                      {onSelectCurator && (
+                        <button
+                          onClick={() => onSelectCurator(undefined)}
+                          className="hover:text-white p-0.5 transition-colors ml-0.5 shrink-0"
+                          title="Remove curator filter"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </span>
+                  )}
+
+                  {/* Min Resonance Filter */}
+                  {typeof filterState.minResonance === 'number' && (
+                    <span className="shrink-0 inline-flex items-center gap-1.5 px-2 h-6 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 text-[11px] font-mono leading-none">
+                      <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                      <span>Резонанс ≥{filterState.minResonance}%</span>
+                      {onSetMinResonance && (
+                        <button
+                          onClick={() => onSetMinResonance(undefined)}
+                          className="hover:text-white p-0.5 transition-colors ml-0.5 shrink-0"
+                          title="Remove resonance filter"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </span>
+                  )}
+
                   {/* Search filter indicator */}
                   {filterState.search && (
                     <span className="shrink-0 inline-flex items-center gap-1 px-2 h-6 rounded bg-[#1e2020] border border-[#333535] text-neutral-300 text-[11px] font-mono leading-none">
@@ -595,6 +635,15 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 {visibleNotes.map((note) => {
                   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
                   const startHour = dayjs(note.startDate).format('HH:mm');
+                  const isHighResonance = typeof note.resonanceScore === 'number' && note.resonanceScore >= 70;
+                  const curatorIcon =
+                    note.curator === 'Иван Белый'
+                      ? '🇷🇺'
+                      : note.curator === 'Kirk Kitten'
+                      ? '🌐'
+                      : note.curator
+                      ? '👤'
+                      : null;
 
                   return (
                     <button
@@ -603,17 +652,31 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                         e.stopPropagation();
                         onSelectNote(note);
                       }}
-                      className="text-left w-full px-1.5 py-0.5 rounded text-[11px] font-mono truncate transition-all duration-150 flex items-center gap-1.5 hover:brightness-125 hover:scale-[1.01] border shadow-xs flex-shrink-0"
+                      className={`text-left w-full px-1.5 py-0.5 rounded text-[11px] font-mono truncate transition-all duration-150 flex items-center gap-1 hover:brightness-125 hover:scale-[1.01] border shadow-xs flex-shrink-0 ${
+                        isHighResonance ? 'ring-1 ring-amber-400/60 font-semibold' : ''
+                      }`}
                       style={{
                         backgroundColor: typeColor.bg,
                         color: typeColor.text,
-                        borderColor: typeColor.border,
+                        borderColor: isHighResonance ? '#f59e0b' : typeColor.border,
                       }}
-                      title={`${startHour} • ${note.title} (${note.feed?.title || 'Feed'})`}
+                      title={`${startHour} • ${note.title} ${note.curator ? `[${note.curator}]` : ''} ${
+                        typeof note.resonanceScore === 'number' ? `(Resonance: ${note.resonanceScore}%)` : ''
+                      }`}
                     >
                       <span className="opacity-75 text-[9px] font-mono flex-shrink-0">
                         {startHour}
                       </span>
+                      {curatorIcon && (
+                        <span className="text-[10px] shrink-0 leading-none">
+                          {curatorIcon}
+                        </span>
+                      )}
+                      {isHighResonance && (
+                        <span className="text-[9px] text-amber-300 font-bold shrink-0 leading-none" title={`Резонанс: ${note.resonanceScore}%`}>
+                          ⚡
+                        </span>
+                      )}
                       <span className="truncate flex-1">{note.title}</span>
                     </button>
                   );

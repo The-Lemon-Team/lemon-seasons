@@ -11,6 +11,7 @@ import {
 } from '../../api/queries';
 import { notesApi } from '../../api/client';
 import { NoteType, CreateNoteLinkInput, FolderInputItem } from '../../types';
+import { CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
@@ -43,6 +44,8 @@ export const NoteEditorPage: React.FC = () => {
   );
   const [endDate, setEndDate] = useState('');
   const [icon, setIcon] = useState('');
+  const [curator, setCurator] = useState('');
+  const [resonanceScore, setResonanceScore] = useState('');
   const [assignedFolders, setAssignedFolders] = useState<FolderInputItem[]>([]);
   const [selectedTagPaths, setSelectedTagPaths] = useState<string[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -64,6 +67,8 @@ export const NoteEditorPage: React.FC = () => {
       setStartDate(new Date(note.startDate).toISOString().slice(0, 16));
       setEndDate(note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '');
       setIcon(note.icon || '');
+      setCurator(note.curator || '');
+      setResonanceScore(typeof note.resonanceScore === 'number' ? String(note.resonanceScore) : '');
       setDescription(note.description || '');
       setSelectedTagPaths(note.tags?.map((t) => t.path) || []);
       setHashtags(note.hashtags?.map((h) => h.name) || []);
@@ -113,6 +118,8 @@ export const NoteEditorPage: React.FC = () => {
           startDate: new Date(startDate).toISOString(),
           endDate: endDate ? new Date(endDate).toISOString() : undefined,
           icon: icon.trim() || undefined,
+          curator: curator.trim() || undefined,
+          resonanceScore: resonanceScore.trim() ? Number(resonanceScore) : undefined,
           description: description.trim() || undefined,
           tagIds: selectedTagPaths,
           hashtags,
@@ -153,6 +160,8 @@ export const NoteEditorPage: React.FC = () => {
             startDate: new Date(startDate).toISOString(),
             endDate: endDate ? new Date(endDate).toISOString() : undefined,
             icon: icon.trim() || undefined,
+            curator: curator.trim() || undefined,
+            resonanceScore: resonanceScore.trim() ? Number(resonanceScore) : undefined,
             description: description.trim() || undefined,
             tagIds: selectedTagPaths,
             hashtags,
@@ -315,6 +324,52 @@ export const NoteEditorPage: React.FC = () => {
               {t.typeInputLabel}
             </label>
             <NoteTypeSelect value={type} onChange={setType} />
+          </div>
+
+          {/* Curator / Persona */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+                Куратор / Персона
+              </label>
+              {curator && <span className="text-[10px] font-mono text-primary">Активен</span>}
+            </div>
+            <select
+              value={curator}
+              onChange={(e) => setCurator(e.target.value)}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-xs focus:border-primary outline-none"
+            >
+              <option value="">Без куратора</option>
+              {CURATOR_PERSONAS_LIST.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.emoji} {p.name} ({p.role})
+                </option>
+              ))}
+              <option value="Пользователь">👤 Пользователь (Синтез / Done)</option>
+            </select>
+          </div>
+
+          {/* Analytical Resonance Score */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+                Резонанс (0-100%)
+              </label>
+              {resonanceScore && Number(resonanceScore) >= 70 && (
+                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-500/40">
+                  ⚡ Высокий
+                </span>
+              )}
+            </div>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="Например: 85"
+              value={resonanceScore}
+              onChange={(e) => setResonanceScore(e.target.value)}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none"
+            />
           </div>
 
           {/* Start Date */}

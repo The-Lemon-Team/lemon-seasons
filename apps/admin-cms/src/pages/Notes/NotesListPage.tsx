@@ -29,6 +29,7 @@ export const NotesListPage: React.FC = () => {
   const hashtagParam = searchParams.get('hashtag') || undefined;
   const folderParam = searchParams.get('folder') || undefined;
   const unfiledParam = searchParams.get('unfiled') === 'true';
+  const curatorParam = searchParams.get('curator') || undefined;
   const search = searchParams.get('search') || '';
   const includeDeleted = searchParams.get('includeDeleted') === 'true';
 
@@ -49,6 +50,7 @@ export const NotesListPage: React.FC = () => {
     hashtag: hashtagParam,
     folder: folderParam,
     unfiled: unfiledParam || undefined,
+    curator: curatorParam,
     search: search || undefined,
     includeDeleted,
     limit,
@@ -303,6 +305,18 @@ export const NotesListPage: React.FC = () => {
                 ))}
               </select>
 
+              {/* Curator Filter Dropdown */}
+              <select
+                value={curatorParam || ''}
+                onChange={(e) => handleFilterChange('curator', e.target.value || undefined)}
+                className="bg-surface-container border border-sky-500/30 text-sky-300 font-mono rounded px-2.5 py-1 text-xs focus:border-primary outline-none"
+              >
+                <option value="" className="text-on-surface">Все кураторы</option>
+                <option value="Иван Белый" className="text-on-surface">🇷🇺 Иван Белый</option>
+                <option value="Kirk Kitten" className="text-on-surface">🌐 Kirk Kitten</option>
+                <option value="Пользователь" className="text-on-surface">👤 Пользователь (Синтез)</option>
+              </select>
+
               {/* Taxonomy Filter */}
               <select
                 value={tagPath || ''}
@@ -422,6 +436,17 @@ export const NotesListPage: React.FC = () => {
                           {note.feed && (
                             <span className="text-[11px] font-mono text-outline hover:text-on-surface-variant">
                               {note.feed.title}
+                            </span>
+                          )}
+                          {note.curator && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
+                              <span>{note.curator === 'Иван Белый' ? '🇷🇺' : note.curator === 'Kirk Kitten' ? '🌐' : '👤'}</span>
+                              <span>{note.curator}</span>
+                              {typeof note.resonanceScore === 'number' && (
+                                <span className={`font-bold ${note.resonanceScore >= 70 ? 'text-amber-400' : 'text-neutral-400'}`}>
+                                  ⚡ {note.resonanceScore}%
+                                </span>
+                              )}
                             </span>
                           )}
                           {note.sourceLink && (
