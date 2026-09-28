@@ -74,6 +74,18 @@ export class LentaFrontmatterUtil {
       lines.push(`icon: "${note.icon}"`);
     }
 
+    if (note.curator) {
+      lines.push(`curator: "${note.curator}"`);
+    }
+
+    if (typeof note.resonanceScore === 'number' && !isNaN(note.resonanceScore)) {
+      lines.push(`resonance_score: ${note.resonanceScore}`);
+    }
+
+    if (note.parentNoteId) {
+      lines.push(`parent_note_id: "${note.parentNoteId}"`);
+    }
+
     lines.push(`updated_at: "${note.updatedAt}"`);
     lines.push(`deleted: ${Boolean(note.deletedAt)}`);
     lines.push('---');

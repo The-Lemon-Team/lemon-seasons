@@ -8,6 +8,9 @@ export interface PoliticalEventItem {
   type: NoteType;
   description: string;
   icon?: string;
+  curator?: string;
+  resonanceScore?: number;
+  parentNoteId?: string;
   sourceLink?: string;
   imageUrl?: string;
   imageCaption?: string;
@@ -29,6 +32,7 @@ export class PoliticalEngineService {
         endDate: '2026-01-23T23:59:59.000Z',
         type: NoteType.PERIOD,
         icon: 'globe',
+        curator: 'Kirk Kitten',
         imageUrl: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800',
         imageCaption: 'Ежегодный саммит лидеров мировой экономики в Давосе',
         description: `### Всемирный экономический форум (Давос, Швейцария)
@@ -49,6 +53,8 @@ export class PoliticalEngineService {
         startDate: '2026-02-05T00:00:00.000Z',
         type: NoteType.EVENT,
         icon: 'shield-alert',
+        curator: 'Kirk Kitten',
+        resonanceScore: 82,
         description: `### Истечение срока Договора между РФ и США о сокращении стратегических наступательных вооружений
 
 Критическая дата в архитектуре глобальной ядерной безопасности и контроля над вооружениями. Договор СНВ-III, продленный в 2021 году на пятилетний срок, завершает свое действие 5 февраля 2026 года.
@@ -103,6 +109,8 @@ export class PoliticalEngineService {
         startDate: '2026-09-20T00:00:00.000Z',
         type: NoteType.EVENT,
         icon: 'vote',
+        curator: 'Иван Белый',
+        resonanceScore: 65,
         imageUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800',
         imageCaption: 'Государственная Дума Федерального Собрания Российской Федерации',
         description: `### Выборы депутатов Государственной Думы Федерального Собрания Российской Федерации IX созыва
@@ -118,10 +126,78 @@ export class PoliticalEngineService {
         sourceLink: 'http://duma.gov.ru',
       },
       {
+        title: 'Мониторинг ФАС: динамика оптовых цен на бензин и биржевой демпфер',
+        startDate: '2026-09-18T10:00:00.000Z',
+        type: NoteType.EVENT,
+        icon: 'trending-up',
+        curator: 'Иван Белый',
+        resonanceScore: 86,
+        description: `### Мониторинг оптовых цен на топливо (СПбМТСБ)
+
+ФАС и Минэнерго зафиксировали рост оптовых биржевых цен на бензин АИ-95 на СПбМТСБ (+4.2% за неделю).
+
+#### Внутренние факторы:
+- Перегрузка резервуарных мощностей на заводах центральной России из-за смещения морских экспортных отгрузок.
+- Задействование механизма демпфера для демпфирования оптовых колебаний.
+- Запрос данных в нефтяные компании о структуре затрат и маржинальности независимых АЗС.`,
+        taxonomyPath: 'politics.economy',
+        folders: ['Politics/Economy', 'Politics/Russia'],
+        hashtags: ['Бензин', 'ФАС', 'Цены', 'ЭкономикаРФ', 'СПбМТСБ'],
+      },
+      {
+        title: 'OFAC: Введение ограничений против танкерного флота и морских фрахтовых операторов',
+        startDate: '2026-09-19T14:30:00.000Z',
+        type: NoteType.EVENT,
+        icon: 'anchor',
+        curator: 'Kirk Kitten',
+        resonanceScore: 86,
+        description: `### Пакет санкций OFAC (Минфин США) против морских перевозчиков
+
+Управление по контролю за иностранными активами Минфина США (OFAC) объявило о включении в блокирующий список SDN четырех логистических операторов и восьми танкеров.
+
+#### Зарубежные маркеры:
+- Скачок ставок фрахта на Балтике и в Черном море на 18% в течение 48 часов.
+- Задержка танкеров в портах погрузки для проверки страховых сертификатов P&I клубов.
+- Влияние на экспортную логистику сырья и перенаправление потоков на азиатский контур.`,
+        taxonomyPath: 'politics.international',
+        folders: ['Politics/International', 'Politics/Sanctions'],
+        hashtags: ['OFAC', 'Санкции', 'Логистика', 'Танкеры', 'МорскойФрахт'],
+        sourceLink: 'https://home.treasury.gov/policy-issues/financial-sanctions/recent-actions',
+      },
+      {
+        title: '[Синтез] Влияние санкций OFAC на внутренний топливный рынок РФ',
+        startDate: '2026-09-24T18:00:00.000Z',
+        type: NoteType.DONE,
+        icon: 'check-circle',
+        curator: 'Пользователь',
+        resonanceScore: 86,
+        description: `### Аналитический синтез сессии: Топливный баланс и внешние шоки
+
+**Кураторы:** 🇷🇺 Иван Белый (Внутренний контур) × 🌐 Kirk Kitten (Международный контур)  
+**Резонанс контекста:** 86%  
+**Статус:** Анализ верифицирован, прецедент сохранен в базу практики.
+
+---
+
+#### 1. Позиция внутреннего контура (Иван Белый):
+Рост биржевых цен на СПбМТСБ (+4.2%) обусловлен задержкой экспортных отгрузок и временным дисбалансом подвижного железнодорожного состава.
+
+#### 2. Верификация внешнего контура (Kirk Kitten):
+OFAC действительно ввел пакет санкций от 19 сентября, что привело к скачку фрахтовых премий на 18% и временному логистическому затору в терминалах.
+
+#### 3. Итоговое резюме Пользователя (Мастер-Призма):
+Шок носит временный логистический характер. Реального дефицита светлых нефтепродуктов на внутреннем рынке нет. Рынок адаптируется в течение 2–3 недель по мере смены операторов судов под нейтральные флаги.`,
+        taxonomyPath: 'politics.cross_analysis',
+        folders: ['Synthesis/2026', 'Politics/CrossAnalysis'],
+        hashtags: ['Синтез', 'Done', 'Резонанс86', 'Бензин', 'OFAC', 'Практика'],
+      },
+      {
         title: 'Промежуточные выборы в Конгресс США (US Midterm Elections 2026)',
         startDate: '2026-11-03T00:00:00.000Z',
         type: NoteType.EVENT,
         icon: 'flag',
+        curator: 'Kirk Kitten',
+        resonanceScore: 78,
         imageUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800',
         imageCaption: 'Капитолий США в Вашингтоне',
         description: `### Промежуточные выборы в США (US Midterm Elections)
@@ -143,6 +219,7 @@ export class PoliticalEngineService {
         endDate: '2026-11-15T23:59:59.000Z',
         type: NoteType.PERIOD,
         icon: 'globe-2',
+        curator: 'Kirk Kitten',
         description: `### Саммит лидеров «Группы двадцати» (G20 Summit 2026)
 
 Саммит руководителей 19 ведущих экономик мира, Европейского союза и Африканского союза. Обсуждение глобальной финансовой архитектуры, инвестиций в инфраструктуру, энергетической безопасности и международной торговли.`,
@@ -156,6 +233,7 @@ export class PoliticalEngineService {
         endDate: '2026-11-20T23:59:59.000Z',
         type: NoteType.PERIOD,
         icon: 'leaf',
+        curator: 'Kirk Kitten',
         description: `### 31-я Конференция сторон Рамочной конвенции ООН об изменении климата (COP31)
 
 Крупнейший экологический и геополитический форум мира по выполнению Парижского соглашения, сокращению углеродного следа и финансированию зеленых технологий.`,
