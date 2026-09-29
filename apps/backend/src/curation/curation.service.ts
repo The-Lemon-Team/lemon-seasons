@@ -88,7 +88,19 @@ export class CurationService {
     const markdownBody = dto.description?.trim() || `## ${targetCard.title}
 
 > **Источник:** [${targetCard.source}](${targetCard.url || '#'})  
-> **Оценка контура:** ${curator === 'ivan-bely' ? '🇷🇺 Внутренний контур (Иван Белый)' : curator === 'kirk-kitten' ? '🌐 Международный контур (Kirk Kitten)' : 'Общий мониторинг'}  
+> **Оценка контура:** ${
+  curator === 'political-group' || curator === 'Политическая коллегия'
+    ? '🏛️ Политическая коллегия (Сводное резюме контуров)'
+    : curator === 'ivan-bely' || curator === 'Иван Белый'
+    ? '🇷🇺 Внутренний контур (Иван Белый)'
+    : curator === 'kirk-kitten' || curator === 'Kirk Kitten'
+    ? '🌐 Международный контур (Kirk Kitten)'
+    : curator === 'chen-wei' || curator === 'Чэнь Вэй'
+    ? '🇨🇳 Восточный контур: АТР & БРИКС (Чэнь Вэй)'
+    : curator === 'okatsiya' || curator === 'Окация'
+    ? '⚡ Контур IT & AI (Окация)'
+    : 'Общий мониторинг'
+}  
 > **Индекс резонанса:** \`${targetCard.resonanceScore}%\`
 
 ### Ключевые тезисы:
@@ -353,6 +365,24 @@ ${dialogueMarkdown}
         source: 'Интерфакс / Технологии',
         url: 'https://interfax.ru/digital/ai-registry-expand',
         rawText: 'Экспертный совет при Министерстве цифрового развития одобрил включение более 40 решений в сфере машинного обучения, графовых баз данных и систем хронологического анализа в единый реестр ПО.',
+      },
+      {
+        title: 'Anthropic и OpenAI представили обновленные бенчмарки автономных reasoning-агентов для сложного программирования',
+        source: 'TechCrunch / Artificial Intelligence',
+        url: 'https://techcrunch.com/ai/reasoning-agents-coding-benchmark',
+        rawText: 'Новые агентные архитектуры продемонстрировали устойчивое решение 82% задач SWE-bench Verified без вмешательства человека, снизив время отладки распределенных бэкендов вдвое.',
+      },
+      {
+        title: 'CNCF и Kubernetes Community выпустили LTS-релиз с нативной поддержкой динамического планирования GPU для AI-кластеров',
+        source: 'The Register / DevOps & Cloud',
+        url: 'https://theregister.com/devops/kubernetes-lts-dynamic-gpu-scheduling',
+        rawText: 'Очередной релиз Kubernetes вводит стандарт Dynamic Resource Allocation (DRA) для гетерогенных ускорителей вычислений, оптимизируя загрузку нод в распределенных средах инференса.',
+      },
+      {
+        title: 'Опубликован критический эксплойт нулевого дня в стеке сетевых драйверов: выпущен экстренный патч ядра',
+        source: 'BleepingComputer / InfoSec',
+        url: 'https://bleepingcomputer.com/security/kernel-zeroday-patch',
+        rawText: 'Специалисты по кибербезопасности зафиксировали уязвимость переполнения буфера в подсистеме обработки пакетов. Команда мейнтейнеров выпустила срочные обновления безопасности для всех LTS-веток.',
       },
     ];
 
