@@ -305,6 +305,34 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     iconName: 'Radar',
     description: 'Аналитическая оптика внешнего международного контура. Проверяет первичные факты по англоязычным реестрам, биржевым данным и решениям зарубежных регуляторов.',
   },
+  'okatsiya': {
+    id: 'okatsiya',
+    name: 'Окация',
+    shortName: 'Окация',
+    role: 'Архитектор и куратор контура IT & AI',
+    scope: 'AI/LLM, BigTech, DevOps, Backend, Frontend, Cloud, InfoSec, Data & Chips',
+    accentColor: '#a855f7', // Neon Violet/Purple
+    borderAccent: '#9333ea',
+    bgLight: 'rgba(168, 85, 247, 0.12)',
+    badgeBg: 'rgba(168, 85, 247, 0.22)',
+    emoji: '⚡',
+    iconName: 'Cpu',
+    description: 'Технологическая и архитектурная оптика. Мониторит релизы ИИ-моделей, BigTech, инфраструктурные платформы, уязвимости и ключевые инженерные отрасли IT.',
+  },
+  'chen-wei': {
+    id: 'chen-wei',
+    name: 'Чэнь Вэй',
+    shortName: 'Чэнь',
+    role: 'Обозреватель АТР, Китая и глобальных цепочек поставок',
+    scope: 'Китай, Юго-Восточная Азия, БРИКС, расчеты в нацвалютах, торговые коридоры, электроника и сырье',
+    accentColor: '#ef4444', // Red
+    borderAccent: '#dc2626',
+    bgLight: 'rgba(239, 68, 68, 0.12)',
+    badgeBg: 'rgba(239, 68, 68, 0.22)',
+    emoji: '🇨🇳',
+    iconName: 'Globe2',
+    description: 'Аналитическая оптика Азиатско-Тихоокеанского региона и стран БРИКС. Мониторит товарооборот, логистические коридоры (МТК Север-Юг, Севморпуть) и финансовый клиринг.',
+  },
 };
 
 export const CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
@@ -313,6 +341,21 @@ export function getCuratorPersona(idOrName?: string | null): CuratorPersona | nu
   if (!idOrName) return null;
   const clean = idOrName.trim().toLowerCase();
   if (CURATOR_PERSONAS[clean]) return CURATOR_PERSONAS[clean];
+
+  // Specific alias mappings
+  if (clean === 'окация' || clean === 'акация' || clean === 'okatsiya' || clean === 'it' || clean === 'ai') {
+    return CURATOR_PERSONAS['okatsiya'];
+  }
+  if (clean === 'иван' || clean === 'иван белый' || clean === 'ivan') {
+    return CURATOR_PERSONAS['ivan-bely'];
+  }
+  if (clean === 'kirk' || clean === 'kirk kitten' || clean === 'кирк') {
+    return CURATOR_PERSONAS['kirk-kitten'];
+  }
+  if (clean === 'чэнь' || clean === 'чэнь вэй' || clean === 'chen' || clean === 'chen-wei') {
+    return CURATOR_PERSONAS['chen-wei'];
+  }
+
   const found = CURATOR_PERSONAS_LIST.find(
     (p) =>
       p.id.toLowerCase() === clean ||
@@ -321,5 +364,290 @@ export function getCuratorPersona(idOrName?: string | null): CuratorPersona | nu
   );
   return found || null;
 }
+
+// ---------------------------------------------------------------------------
+// Curator Groups Registry (Группы и Коллегии Кураторов)
+// ---------------------------------------------------------------------------
+
+export interface CuratorGroup {
+  id: string;
+  name: string;
+  shortName: string;
+  emoji: string;
+  description: string;
+  curatorIds: string[];
+  coordinatorId?: string;
+  accentColor: string;
+  badgeBg: string;
+  defaultScope: string;
+}
+
+export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
+  'political-group': {
+    id: 'political-group',
+    name: 'Политическая коллегия',
+    shortName: 'Политика',
+    emoji: '🏛️',
+    description: 'Объединенная группа кураторов внутренней политики РФ, международных рынков и восточного контура',
+    curatorIds: ['ivan-bely', 'kirk-kitten', 'chen-wei'],
+    coordinatorId: 'independent-analyst',
+    accentColor: '#38bdf8',
+    badgeBg: 'rgba(56, 189, 248, 0.16)',
+    defaultScope: 'Внутренний контур РФ, международная дипломатия, санкции, рынки АТР и сырьевой баланс',
+  },
+};
+
+export const CURATOR_GROUPS_LIST = Object.values(CURATOR_GROUPS);
+
+export function getCuratorGroup(idOrName?: string | null): CuratorGroup | null {
+  if (!idOrName) return null;
+  const clean = idOrName.trim().toLowerCase();
+  if (CURATOR_GROUPS[clean]) return CURATOR_GROUPS[clean];
+  if (
+    clean === 'политика' ||
+    clean === 'политическая группа' ||
+    clean === 'коллегия' ||
+    clean === 'politics' ||
+    clean === 'political-group'
+  ) {
+    return CURATOR_GROUPS['political-group'];
+  }
+  return CURATOR_GROUPS_LIST.find((g) => g.id.toLowerCase() === clean || g.name.toLowerCase() === clean) || null;
+}
+
+// ---------------------------------------------------------------------------
+// Compact IT & AI Sectors Registry (Архитектура отраслей IT)
+// ---------------------------------------------------------------------------
+
+export type ItSectorId =
+  | 'ai'
+  | 'devops'
+  | 'bigtech'
+  | 'backend'
+  | 'frontend'
+  | 'mobile'
+  | 'infosec'
+  | 'cloud'
+  | 'data'
+  | 'hardware'
+  | 'gamedev'
+  | 'qa';
+
+export interface ItSectorDefinition {
+  id: ItSectorId;
+  name: string;
+  shortName: string;
+  emoji: string;
+  category: 'ai' | 'engineering' | 'business';
+  folder: string;
+  taxonomyPath: string;
+  hashtags: string[];
+  keywords: string[];
+  description: string;
+}
+
+export const IT_SECTOR_REGISTRY: Record<ItSectorId, ItSectorDefinition> = {
+  ai: {
+    id: 'ai',
+    name: 'Искусственный Интеллект & LLM',
+    shortName: 'AI & ML',
+    emoji: '🧠',
+    category: 'ai',
+    folder: 'Tech/AI',
+    taxonomyPath: 'tech.ai.llm',
+    hashtags: ['AI', 'LLM', 'Нейросети', 'MachineLearning', 'GenAI'],
+    keywords: ['ai', 'ии', 'llm', 'нейросеть', 'нейросети', 'deepseek', 'openai', 'anthropic', 'gemini', 'gpt', 'transformers', 'diffusion', 'rag', 'агент', 'prompt', 'rag'],
+    description: 'Большие языковые модели, мультимодальные сети, локальные веса, архитектуры трансформеров и агентные фреймворки.',
+  },
+  devops: {
+    id: 'devops',
+    name: 'DevOps, SRE & Инфраструктура',
+    shortName: 'DevOps',
+    emoji: '🚢',
+    category: 'engineering',
+    folder: 'Tech/DevOps',
+    taxonomyPath: 'tech.devops.infra',
+    hashtags: ['DevOps', 'SRE', 'Kubernetes', 'CICD', 'Infrastructure'],
+    keywords: ['devops', 'девопс', 'sre', 'kubernetes', 'k8s', 'docker', 'ci/cd', 'helm', 'terraform', 'ansible', 'container', 'контейнер', 'кластер', 'observability'],
+    description: 'Контейнеризация, оркестрация Kubernetes, автоматизация CI/CD пайплайнов, мониторинг и надежность сервисов.',
+  },
+  bigtech: {
+    id: 'bigtech',
+    name: 'Бигтех & Рынок Технологий',
+    shortName: 'BigTech',
+    emoji: '🏢',
+    category: 'business',
+    folder: 'Tech/BigTech',
+    taxonomyPath: 'tech.bigtech.market',
+    hashtags: ['BigTech', 'Бигтех', 'ITBusiness', 'Рынок', 'TechКорпорации'],
+    keywords: ['bigtech', 'бигтех', 'google', 'apple', 'microsoft', 'meta', 'nvidia', 'amazon', 'яндекс', 'yandex', 'антимонопол', 'm&a', 'капитализаци', 'квартальный отчет', 'акции'],
+    description: 'Корпоративные гиганты индустрии, инвестиции, антимонопольные расследования, поглощения (M&A) и финансовые результаты.',
+  },
+  backend: {
+    id: 'backend',
+    name: 'Backend & Распределенные Системы',
+    shortName: 'Backend',
+    emoji: '⚙️',
+    category: 'engineering',
+    folder: 'Tech/Backend',
+    taxonomyPath: 'tech.backend.systems',
+    hashtags: ['Backend', 'Бэкенд', 'Architecture', 'Databases', 'HighLoad'],
+    keywords: ['backend', 'бэкенд', 'микросервис', 'сервер', 'база данных', 'бд', 'postgres', 'postgresql', 'redis', 'kafka', 'grpc', 'rest', 'golang', 'rust', 'java', 'node.js', 'highload', 'распределенн'],
+    description: 'Серверная архитектура, базы данных, брокеры сообщений, масштабируемость HighLoad и системные языки программирования.',
+  },
+  frontend: {
+    id: 'frontend',
+    name: 'Frontend & Web-Платформа',
+    shortName: 'Frontend',
+    emoji: '🌐',
+    category: 'engineering',
+    folder: 'Tech/Frontend',
+    taxonomyPath: 'tech.frontend.web',
+    hashtags: ['Frontend', 'Фронтенд', 'WebDev', 'React', 'UIUX'],
+    keywords: ['frontend', 'фронтенд', 'react', 'vue', 'svelte', 'angular', 'nextjs', 'vite', 'javascript', 'typescript', 'css', 'браузер', 'webassembly', 'wasm', 'ui'],
+    description: 'Веб-стандарты, клиентские интерфейсы, производительность рендеринга, фреймворки и браузерные движки.',
+  },
+  mobile: {
+    id: 'mobile',
+    name: 'Mobile Разработка (iOS & Android)',
+    shortName: 'Mobile',
+    emoji: '📱',
+    category: 'engineering',
+    folder: 'Tech/Mobile',
+    taxonomyPath: 'tech.mobile.apps',
+    hashtags: ['Mobile', 'iOS', 'Android', 'Flutter', 'ReactNative'],
+    keywords: ['mobile', 'мобильн', 'ios', 'android', 'swift', 'kotlin', 'flutter', 'react native', 'app store', 'google play', 'apk'],
+    description: 'Нативная и кроссплатформенная мобильная разработка, мобильные ОС, магазины приложений и экосистемы устройств.',
+  },
+  infosec: {
+    id: 'infosec',
+    name: 'Информационная Безопасность & SecOps',
+    shortName: 'InfoSec',
+    emoji: '🛡️',
+    category: 'engineering',
+    folder: 'Tech/Security',
+    taxonomyPath: 'tech.infosec.security',
+    hashtags: ['InfoSec', 'CyberSecurity', 'CVE', 'Безопасность', 'SecOps'],
+    keywords: ['infosec', 'security', 'безопасност', 'уязвимост', 'cve', 'zero-day', 'взлом', 'хакер', 'malware', 'криптографи', 'ddos', 'фишинг', 'аудит безопасности'],
+    description: 'Кибербезопасность, уязвимости CVE, защита периметра, аудит кода, криптография и реагирование на инциденты.',
+  },
+  cloud: {
+    id: 'cloud',
+    name: 'Cloud-Платформы & Serverless',
+    shortName: 'Cloud',
+    emoji: '☁️',
+    category: 'engineering',
+    folder: 'Tech/Cloud',
+    taxonomyPath: 'tech.cloud.platforms',
+    hashtags: ['Cloud', 'AWS', 'GCP', 'Azure', 'Serverless'],
+    keywords: ['cloud', 'облак', 'aws', 'gcp', 'azure', 'yandex cloud', 'serverless', 'lambda', 's3', 'iaas', 'paas', 'edge'],
+    description: 'Облачные провайдеры, бессерверные вычисления, гибридные облака, хранилища и глобальная связность.',
+  },
+  data: {
+    id: 'data',
+    name: 'Data Engineering & Big Data',
+    shortName: 'Data',
+    emoji: '📊',
+    category: 'engineering',
+    folder: 'Tech/Data',
+    taxonomyPath: 'tech.data.engineering',
+    hashtags: ['DataEngineering', 'BigData', 'Analytics', 'ClickHouse', 'ETL'],
+    keywords: ['data', 'данные', 'big data', 'etl', 'elt', 'clickhouse', 'spark', 'hadoop', 'snowflake', 'dbt', 'lakehouse', 'аналитик данных', 'пайплайн данных'],
+    description: 'Пайплайны обработки данных, хранилища DWH/Lakehouse, аналитические СУБД и потоковая обработка.',
+  },
+  hardware: {
+    id: 'hardware',
+    name: 'Hardware, Чипы & Полупроводники',
+    shortName: 'Hardware',
+    emoji: '🔬',
+    category: 'engineering',
+    folder: 'Tech/Hardware',
+    taxonomyPath: 'tech.hardware.semiconductors',
+    hashtags: ['Hardware', 'Chips', 'Semiconductors', 'Nvidia', 'TSMC'],
+    keywords: ['hardware', 'железо', 'чип', 'чипы', 'полупроводник', 'процессор', 'gpu', 'cpu', 'nvidia', 'tsmc', 'asml', 'intel', 'amd', 'arm', 'risc-v', 'квантов'],
+    description: 'Кремниевая литография, ускорители вычислений (GPU/TPU/NPU), RISC-V, серверные архитектуры и дата-центры.',
+  },
+  gamedev: {
+    id: 'gamedev',
+    name: 'GameDev & Компьютерная Графика',
+    shortName: 'GameDev',
+    emoji: '🎮',
+    category: 'engineering',
+    folder: 'Tech/GameDev',
+    taxonomyPath: 'tech.gamedev.graphics',
+    hashtags: ['GameDev', 'UnrealEngine', 'Unity', 'Graphics', 'RayTracing'],
+    keywords: ['gamedev', 'геймдев', 'игры', 'unreal engine', 'unity', 'godot', 'шейдер', 'ray tracing', '3d', 'графика', 'directx', 'vulkan'],
+    description: 'Игровые движки, рендеринг реального времени, физические симуляции и технологии видеоигр.',
+  },
+  qa: {
+    id: 'qa',
+    name: 'QA & Инженерия Качества',
+    shortName: 'QA',
+    emoji: '🧪',
+    category: 'engineering',
+    folder: 'Tech/QA',
+    taxonomyPath: 'tech.qa.testing',
+    hashtags: ['QA', 'Testing', 'Automation', 'QualityEngineering'],
+    keywords: ['qa', 'тестирован', 'e2e', 'cypress', 'playwright', 'unit test', 'автотест', 'нагрузочное тестирование', 'qa engineering'],
+    description: 'Автоматизация тестирования, E2E проверки, нагрузочные испытания, обеспечение надежности и качество ПО.',
+  },
+};
+
+export const IT_SECTOR_LIST = Object.values(IT_SECTOR_REGISTRY);
+
+/**
+ * Fast compact resolver to find IT Sector by ID, short name or alias keyword.
+ */
+export function getItSector(idOrKeyword?: string | null): ItSectorDefinition | null {
+  if (!idOrKeyword) return null;
+  const clean = idOrKeyword.trim().toLowerCase();
+  if (IT_SECTOR_REGISTRY[clean as ItSectorId]) {
+    return IT_SECTOR_REGISTRY[clean as ItSectorId];
+  }
+  return (
+    IT_SECTOR_LIST.find(
+      (s) =>
+        s.id === clean ||
+        s.shortName.toLowerCase() === clean ||
+        s.keywords.includes(clean)
+    ) || null
+  );
+}
+
+/**
+ * Detects the most relevant IT sector from a piece of text (headline, question or article body).
+ */
+export function resolveItSectorFromText(text: string): ItSectorDefinition | null {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+
+  let bestSector: ItSectorDefinition | null = null;
+  let maxMatches = 0;
+
+  for (const sector of IT_SECTOR_LIST) {
+    let matches = 0;
+    for (const kw of sector.keywords) {
+      if (lower.includes(kw)) {
+        matches += kw.length > 3 ? 2 : 1;
+      }
+    }
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      bestSector = sector;
+    }
+  }
+
+  return bestSector;
+}
+
+/**
+ * Returns all detected IT sectors from a piece of text.
+ */
+export function detectAllItSectors(text: string): ItSectorDefinition[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  return IT_SECTOR_LIST.filter((s) => s.keywords.some((kw) => lower.includes(kw)));
+}
+
 
 
