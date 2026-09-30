@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { NoteType } from '@lenta/shared';
+import { NoteType, CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -360,8 +360,11 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                     className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
                   >
                     <option value="">Без куратора</option>
-                    <option value="Иван Белый">🇷🇺 Иван Белый (Внутренний контур РФ)</option>
-                    <option value="Kirk Kitten">🌐 Kirk Kitten (Международные рынки, OFAC)</option>
+                    {CURATOR_PERSONAS_LIST.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.emoji} {p.name} ({p.shortName})
+                      </option>
+                    ))}
                     <option value="Пользователь">👤 Пользователь (Суверенный синтез)</option>
                   </select>
                 </div>

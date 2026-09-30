@@ -1,6 +1,6 @@
 import React from 'react';
 import { getCuratorPersona } from '@lenta/shared';
-import { ShieldCheck, Radar, Crown, User, Zap } from 'lucide-react';
+import { ShieldCheck, Radar, Crown, User, Zap, Cpu } from 'lucide-react';
 
 interface CuratorBadgeProps {
   curator?: string | null;
@@ -73,6 +73,8 @@ export const CuratorBadge: React.FC<CuratorBadgeProps> = ({
               <span>{persona.emoji}</span>
               {persona.iconName === 'ShieldCheck' ? (
                 <ShieldCheck className={iconSizes} />
+              ) : persona.iconName === 'Cpu' ? (
+                <Cpu className={iconSizes} />
               ) : (
                 <Radar className={iconSizes} />
               )}

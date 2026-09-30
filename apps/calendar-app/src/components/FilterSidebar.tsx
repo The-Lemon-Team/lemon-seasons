@@ -391,6 +391,25 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               </div>
               {filterState.curator === 'Kirk Kitten' && <Check className="w-3.5 h-3.5 text-amber-400" />}
             </button>
+
+            {/* Okatsiya */}
+            <button
+              onClick={() => onSelectCurator?.(filterState.curator === 'Окация' ? undefined : 'Окация')}
+              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                filterState.curator === 'Окация'
+                  ? 'bg-purple-950/50 border-purple-500/70 text-purple-200 font-medium shadow-sm'
+                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
+              }`}
+            >
+              <div className="flex items-center gap-2 text-left">
+                <span className="text-base">⚡</span>
+                <div>
+                  <div className="font-semibold leading-tight">Окация</div>
+                  <div className="text-[10px] text-neutral-400">IT & AI, DevOps, BigTech, Backend</div>
+                </div>
+              </div>
+              {filterState.curator === 'Окация' && <Check className="w-3.5 h-3.5 text-purple-400" />}
+            </button>
           </div>
 
           {/* High Resonance quick-toggle */}
