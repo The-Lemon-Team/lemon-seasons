@@ -1,0 +1,34 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, IsInt } from 'class-validator';
+
+export class CreateChatFolderDto {
+  @ApiProperty({ description: 'Display name of the chat folder' })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiPropertyOptional({ description: 'Unique path/slug for hierarchy' })
+  @IsString()
+  @IsOptional()
+  path?: string;
+
+  @ApiPropertyOptional({ description: 'Lucide icon name' })
+  @IsString()
+  @IsOptional()
+  icon?: string;
+
+  @ApiPropertyOptional({ description: 'Accent color hex' })
+  @IsString()
+  @IsOptional()
+  color?: string;
+
+  @ApiPropertyOptional({ description: 'Display sort order' })
+  @IsInt()
+  @IsOptional()
+  order?: number;
+
+  @ApiPropertyOptional({ description: 'Parent folder ID for nesting' })
+  @IsString()
+  @IsOptional()
+  parentId?: string;
+}

@@ -233,3 +233,71 @@ model UserKey {
   @@index([provider])
 }
 
+enum ChatType {
+  DIRECT
+  GROUP
+}
+
+model ChatFolder {
+  id        String       @id @default(uuid())
+  name      String
+  path      String       @unique
+  icon      String?
+  color     String?
+  order     Int          @default(0)
+  parentId  String?
+  parent    ChatFolder?  @relation("ChatFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  ChatFolder[] @relation("ChatFolderHierarchy")
+  threads   ChatThread[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  @@index([path])
+  @@index([parentId])
+  @@index([deletedAt])
+}
+
+model ChatThread {
+  id                String              @id @default(uuid())
+  title             String
+  type              ChatType            @default(DIRECT)
+  folderId          String?
+  folder            ChatFolder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  targetAgent       String?
+  participantAgents String[]            @default([])
+  dateScope         String?
+  isPinned          Boolean             @default(false)
+  isArchived        Boolean             @default(false)
+  lastMessageAt     DateTime?           @default(now())
+  messages          ChatMessageRecord[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+
+  @@index([folderId])
+  @@index([type])
+  @@index([targetAgent])
+  @@index([isPinned, lastMessageAt])
+  @@index([deletedAt])
+}
+
+model ChatMessageRecord {
+  id             String     @id @default(uuid())
+  threadId       String
+  thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender         String
+  senderName     String
+  senderRole     String
+  avatar         String?
+  text           String     @db.Text
+  resonanceScore Int?
+  sources        String[]   @default([])
+  resonanceNodes Json?
+  groupSummary   Json?
+  suggestedCard  Json?
+  createdAt      DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+}
+

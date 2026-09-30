@@ -8,6 +8,7 @@ import {
   syncApi,
   statsApi,
   curationApi,
+  chatsApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -562,6 +563,128 @@ export function useAgentChat() {
   return useMutation({
     mutationFn: (payload: { message: string; date?: string; targetAgent?: string; history?: any[] }) =>
       curationApi.agentChat(payload),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Chat Folders, Threads & History Hooks
+// ---------------------------------------------------------------------------
+
+export function useChatFolders() {
+  return useQuery({
+    queryKey: ['chat-folders'],
+    queryFn: () => chatsApi.getFolders(),
+  });
+}
+
+export function useCreateChatFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => chatsApi.createFolder(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useUpdateChatFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => chatsApi.updateFolder(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+    },
+  });
+}
+
+export function useDeleteChatFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => chatsApi.deleteFolder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+    },
+  });
+}
+
+export function useChatThreads(params?: { folderId?: string; type?: string; search?: string; includeArchived?: boolean }) {
+  return useQuery({
+    queryKey: ['chat-threads', params],
+    queryFn: () => chatsApi.getThreads(params),
+  });
+}
+
+export function useChatThread(id?: string) {
+  return useQuery({
+    queryKey: ['chat-thread', id],
+    queryFn: () => chatsApi.getThread(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateChatThread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => chatsApi.createThread(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useUpdateChatThread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => chatsApi.updateThread(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-thread', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useDeleteChatThread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => chatsApi.deleteThread(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useThreadMessages(threadId?: string) {
+  return useQuery({
+    queryKey: ['thread-messages', threadId],
+    queryFn: () => chatsApi.getMessages(threadId!),
+    enabled: Boolean(threadId),
+  });
+}
+
+export function useSendThreadMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ threadId, data }: { threadId: string; data: any }) => chatsApi.sendMessage(threadId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['thread-messages', variables.threadId] });
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+    },
+  });
+}
+
+export function useSeedChatDefaults() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => chatsApi.seedDefaults(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+    },
   });
 }
 

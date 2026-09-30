@@ -590,5 +590,111 @@ export interface SystemStats {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Chat Architecture Types (Folders, Threads & Persisted Messages)
+// ---------------------------------------------------------------------------
+
+export type ChatType = 'DIRECT' | 'GROUP';
+
+export interface ChatFolder {
+  id: string;
+  name: string;
+  path: string;
+  icon?: string | null;
+  color?: string | null;
+  order: number;
+  parentId?: string | null;
+  parent?: ChatFolder | null;
+  children?: ChatFolder[];
+  threads?: ChatThread[];
+  _count?: {
+    threads: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface ChatThread {
+  id: string;
+  title: string;
+  type: ChatType;
+  folderId?: string | null;
+  folder?: ChatFolder | null;
+  targetAgent?: string | null;
+  participantAgents: string[];
+  dateScope?: string | null;
+  isPinned: boolean;
+  isArchived: boolean;
+  lastMessageAt?: string | null;
+  messages?: ChatMessageRecord[];
+  _count?: {
+    messages: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface ChatMessageRecord {
+  id: string;
+  threadId: string;
+  sender: string;
+  senderName: string;
+  senderRole: string;
+  avatar?: string | null;
+  text: string;
+  resonanceScore?: number | null;
+  sources?: string[];
+  resonanceNodes?: any;
+  groupSummary?: any;
+  suggestedCard?: any;
+  createdAt: string;
+}
+
+export interface CreateChatFolderInput {
+  name: string;
+  path?: string;
+  icon?: string;
+  color?: string;
+  order?: number;
+  parentId?: string;
+}
+
+export interface UpdateChatFolderInput {
+  name?: string;
+  path?: string;
+  icon?: string;
+  color?: string;
+  order?: number;
+  parentId?: string | null;
+}
+
+export interface CreateChatThreadInput {
+  title: string;
+  type?: ChatType;
+  folderId?: string;
+  targetAgent?: string;
+  participantAgents?: string[];
+  dateScope?: string;
+  isPinned?: boolean;
+}
+
+export interface UpdateChatThreadInput {
+  title?: string;
+  folderId?: string | null;
+  targetAgent?: string;
+  participantAgents?: string[];
+  dateScope?: string | null;
+  isPinned?: boolean;
+  isArchived?: boolean;
+}
+
+export interface SendThreadMessageInput {
+  message: string;
+  forcedTarget?: string;
+  date?: string;
+}
+
 
 

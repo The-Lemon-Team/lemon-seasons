@@ -472,5 +472,55 @@ export const curationApi = {
   },
 };
 
+export const chatsApi = {
+  getFolders: async (): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/chats/folders');
+    return res.data;
+  },
+  createFolder: async (data: any): Promise<any> => {
+    const res = await apiClient.post<any>('/chats/folders', data);
+    return res.data;
+  },
+  updateFolder: async (id: string, data: any): Promise<any> => {
+    const res = await apiClient.patch<any>(`/chats/folders/${id}`, data);
+    return res.data;
+  },
+  deleteFolder: async (id: string): Promise<any> => {
+    const res = await apiClient.delete<any>(`/chats/folders/${id}`);
+    return res.data;
+  },
+  getThreads: async (params?: any): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/chats/threads', { params });
+    return res.data;
+  },
+  getThread: async (id: string): Promise<any> => {
+    const res = await apiClient.get<any>(`/chats/threads/${id}`);
+    return res.data;
+  },
+  createThread: async (data: any): Promise<any> => {
+    const res = await apiClient.post<any>('/chats/threads', data);
+    return res.data;
+  },
+  updateThread: async (id: string, data: any): Promise<any> => {
+    const res = await apiClient.patch<any>(`/chats/threads/${id}`, data);
+    return res.data;
+  },
+  deleteThread: async (id: string): Promise<any> => {
+    const res = await apiClient.delete<any>(`/chats/threads/${id}`);
+    return res.data;
+  },
+  getMessages: async (threadId: string): Promise<any[]> => {
+    const res = await apiClient.get<any[]>(`/chats/threads/${threadId}/messages`);
+    return res.data;
+  },
+  sendMessage: async (threadId: string, data: any): Promise<any> => {
+    const res = await apiClient.post<any>(`/chats/threads/${threadId}/messages`, data);
+    return res.data;
+  },
+  seedDefaults: async (): Promise<void> => {
+    await apiClient.post('/chats/seed-defaults');
+  },
+};
+
 
 
