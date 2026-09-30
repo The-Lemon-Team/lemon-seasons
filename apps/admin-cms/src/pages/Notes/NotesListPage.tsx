@@ -15,6 +15,7 @@ import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { HashtagBadge } from '../../components/HashtagBadge';
 import { FolderExplorer } from '../../components/FolderExplorer';
 import { NoteType } from '../../types';
+import { CURATOR_PERSONAS_LIST, getCuratorPersona } from '@lenta/shared';
 import { useAdminI18n } from '../../i18n';
 
 export const NotesListPage: React.FC = () => {
@@ -312,8 +313,11 @@ export const NotesListPage: React.FC = () => {
                 className="bg-surface-container border border-sky-500/30 text-sky-300 font-mono rounded px-2.5 py-1 text-xs focus:border-primary outline-none"
               >
                 <option value="" className="text-on-surface">Все кураторы</option>
-                <option value="Иван Белый" className="text-on-surface">🇷🇺 Иван Белый</option>
-                <option value="Kirk Kitten" className="text-on-surface">🌐 Kirk Kitten</option>
+                {CURATOR_PERSONAS_LIST.map((p) => (
+                  <option key={p.id} value={p.name} className="text-on-surface">
+                    {p.emoji} {p.name}
+                  </option>
+                ))}
                 <option value="Пользователь" className="text-on-surface">👤 Пользователь (Синтез)</option>
               </select>
 
@@ -440,7 +444,7 @@ export const NotesListPage: React.FC = () => {
                           )}
                           {note.curator && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
-                              <span>{note.curator === 'Иван Белый' ? '🇷🇺' : note.curator === 'Kirk Kitten' ? '🌐' : '👤'}</span>
+                              <span>{getCuratorPersona(note.curator)?.emoji || '👤'}</span>
                               <span>{note.curator}</span>
                               {typeof note.resonanceScore === 'number' && (
                                 <span className={`font-bold ${note.resonanceScore >= 70 ? 'text-amber-400' : 'text-neutral-400'}`}>

@@ -24,7 +24,7 @@ import {
   usePublishPodcast,
   useFeeds,
 } from '../../api/queries';
-import { NoteType, CURATOR_PERSONAS, getCuratorPersona } from '@lenta/shared';
+import { NoteType, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, getCuratorPersona } from '@lenta/shared';
 import { DailyNewsCard, PodcastScript, PodcastDialogueTurn } from '@lemon/agents';
 
 export const NewsCurationPage: React.FC = () => {
@@ -87,10 +87,11 @@ export const NewsCurationPage: React.FC = () => {
     setEditFolder('News/Daily');
     setEditFeedId(feedsData?.[0]?.id || '');
     setEditHashtags(card.suggestedTags || []);
+    const persona = getCuratorPersona(card.suggestedCurator);
     setEditDescription(`## ${card.title}
 
 > **Источник:** [${card.source}](${card.url || '#'})  
-> **Оценка контура:** ${card.suggestedCurator === 'ivan-bely' ? '🇷🇺 Внутренний контур (Иван Белый)' : '🌐 Международный контур (Kirk Kitten)'}  
+> **Оценка контура:** ${persona ? `${persona.emoji} ${persona.name} (${persona.role})` : 'Общий мониторинг'}  
 > **Индекс резонанса:** \`${card.resonanceScore}%\`
 
 ### Ключевые тезисы:
@@ -589,10 +590,10 @@ ${card.keyPoints.map((p) => `- ${p}`).join('\n')}
                 value={editCurator}
                 onChange={(val) => setEditCurator(val)}
                 className="w-full"
-                options={[
-                  { value: 'ivan-bely', label: '🇷🇺 Иван Белый (Внутренний контур РФ)' },
-                  { value: 'kirk-kitten', label: '🌐 Kirk Kitten (Мировой контур / Рынки)' },
-                ]}
+                options={CURATOR_PERSONAS_LIST.map((p) => ({
+                  value: p.id,
+                  label: `${p.emoji} ${p.name} (${p.shortName})`,
+                }))}
               />
             </div>
           </div>

@@ -19,8 +19,9 @@ import {
   ChatSnippet,
   DEFAULT_CHAT_SNIPPETS,
   AgentId,
+  ResonanceNodeCandidate,
 } from '@lemon/agents';
-import { NoteType, CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { NoteType, CURATOR_PERSONAS_LIST, CURATOR_GROUPS_LIST } from '@lenta/shared';
 import { useAgentChat, useFeeds, useCreateNote } from '../../api/queries';
 import { FolderSelect } from '../../components/FolderSelect';
 import { HashtagInput } from '../../components/HashtagInput';
@@ -82,13 +83,16 @@ export const AgentChatPage: React.FC = () => {
         avatar: '🤖',
         text: `Добро пожаловать в **Аналитический Чат-Деск** Project Lenta!
 
-Здесь вы можете опрашивать профильных агентов в реальном времени, сопоставлять повестку дня и проводить **независимый кросс-контурный анализ**:
+Здесь вы можете опрашивать профильных агентов и группы кураторов в реальном времени:
 
-- **🇷🇺 Иван Белый** (\`/ivan\`) — внутренний контур: законы, Правительство РФ, Госдума IX созыва, проект бюджета 2027–2029, ФАС, ЦБ РФ, топливный демпфер.
-- **🌐 Kirk Kitten** (\`/kirk\`) — международный контур: санкции OFAC, директивы ЕС, морская логистика, танкерный фрахт, сырьевые рынки, ГА ООН.
-- **⚖️ Независимый аналитик** (\`/synthesis\`) — беспристрастный арбитраж фактов, выявление скрытых причинно-следственных связей без риторического шума.
+- **🏛️ Политическая коллегия** (\`/politics\`) — объединенное модульное резюме по всем контурам с алгоритмическим выявлением узлов пересечения.
+- **🇷🇺 Иван Белый** (\`/ivan\`) — внутренний контур: законы, Госдума, бюджет 2027–2029, ФАС, ЦБ РФ, топливный демпфер.
+- **🌐 Kirk Kitten** (\`/kirk\`) — международный контур: санкции OFAC, директивы ЕС, морская логистика, фрахт, сырьевые рынки.
+- **🇨🇳 Чэнь Вэй** (\`/chen\`) — восточный контур: Китай, АТР, БРИКС, валютный клиринг, логистические коридоры.
+- **⚡ Окация** (\`/it\`, \`/ai\`, \`/devops\`) — архитектура IT и искусственный интеллект.
+- **⚖️ Независимый аналитик** (\`/synthesis\`) — точечный кросс-контурный синтез по выявленным узлам.
 
-Используйте быстрые сниппеты слева или команды \`/ivan\`, \`/kirk\`, \`/synthesis\`, \`/today\`. Любой результат можно в один клик превратить в верифицированную карточку календаря!`,
+Любую сводку или точечный синтез можно в один клик зафиксировать в календаре хроники!`,
         timestamp: new Date().toISOString(),
       },
     ];
@@ -198,15 +202,45 @@ export const AgentChatPage: React.FC = () => {
     }
   };
 
+  const handleTriggerTargetedSynthesis = async (node: ResonanceNodeCandidate) => {
+    const prompt = node.suggestedPrompt || `/synthesis ${node.title}`;
+    setTargetAgent('independent-analyst');
+    await executeSendMessage(prompt, 'independent-analyst');
+  };
+
   // Convert Message or Suggested Card to Note
   const handleOpenCardDrawer = (msg: ChatMessage) => {
     const card = msg.suggestedCard;
     const title = card?.title || msg.senderRole + ': ' + msg.text.substring(0, 60).replace(/[#*`]/g, '') + '...';
     const type = card?.type || NoteType.SINGLE;
-    const curator = card?.curator || msg.sender;
-    const folderPath = card?.folder || (msg.sender === 'kirk-kitten' ? 'Politics/International' : msg.sender === 'independent-analyst' ? 'Synthesis/2026' : 'Politics/Russia');
-    const taxonomy = card?.taxonomyPath || (msg.sender === 'kirk-kitten' ? 'politics.international' : msg.sender === 'independent-analyst' ? 'politics.cross_analysis' : 'politics.russia');
-    const hashtags = card?.hashtags || ['новости', 'повестка'];
+    const curator = card?.curator || (msg.sender === 'political-group' ? 'Политическая коллегия' : msg.sender === 'okatsiya' ? 'Окация' : msg.sender);
+    const folderPath =
+      card?.folder ||
+      (msg.sender === 'political-group'
+        ? 'Politics/Daily'
+        : msg.sender === 'okatsiya'
+        ? 'Tech/Daily'
+        : msg.sender === 'kirk-kitten'
+        ? 'Politics/International'
+        : msg.sender === 'chen-wei'
+        ? 'Politics/Asia'
+        : msg.sender === 'independent-analyst'
+        ? 'Synthesis/2026'
+        : 'Politics/Russia');
+    const taxonomy =
+      card?.taxonomyPath ||
+      (msg.sender === 'political-group'
+        ? 'politics.daily_summary'
+        : msg.sender === 'okatsiya'
+        ? 'tech.overview'
+        : msg.sender === 'kirk-kitten'
+        ? 'politics.international'
+        : msg.sender === 'chen-wei'
+        ? 'politics.international.asia'
+        : msg.sender === 'independent-analyst'
+        ? 'politics.cross_analysis'
+        : 'politics.russia');
+    const hashtags = card?.hashtags || (msg.sender === 'okatsiya' ? ['IT', 'AI', 'Технологии'] : ['новости', 'повестка']);
     const desc = card?.description || `## ${title}\n\n> **Куратор:** ${msg.senderName} (${msg.senderRole})  \n> **Дата:** ${selectedDate}  \n> **Индекс резонанса:** \`${msg.resonanceScore || 75}%\`\n\n${msg.text}\n\n---\n*Материал верифицирован в Lemon Agent Chat.*`;
 
     setCardTitle(title);
@@ -330,9 +364,26 @@ export const AgentChatPage: React.FC = () => {
                 >
                   <span className="material-symbols-outlined text-primary text-lg">auto_awesome</span>
                   <div className="flex-1 min-w-0">
-                    <div className="truncate text-xs font-semibold">Все агенты (Синтез)</div>
+                    <div className="truncate text-xs font-semibold">Все агенты</div>
                     <div className="text-[10px] opacity-70 font-normal truncate">
                       Круглый стол контуров
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTargetAgent('political-group')}
+                  className={`w-full text-left p-2 rounded-xl border transition-all flex items-center gap-2.5 cursor-pointer ${
+                    targetAgent === 'political-group'
+                      ? 'bg-sky-500/20 border-sky-400 text-sky-200 font-bold shadow-sm'
+                      : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sky-400 text-lg">account_balance</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-xs font-semibold">🏛️ Политическая коллегия</div>
+                    <div className="text-[10px] text-sky-400/80 font-normal truncate">
+                      Сводное резюме дня (РФ + Мир + АТР)
                     </div>
                   </div>
                 </button>
@@ -372,6 +423,40 @@ export const AgentChatPage: React.FC = () => {
                 </button>
 
                 <button
+                  onClick={() => setTargetAgent('chen-wei')}
+                  className={`w-full text-left p-2 rounded-xl border transition-all flex items-center gap-2.5 cursor-pointer ${
+                    targetAgent === 'chen-wei'
+                      ? 'bg-red-500/20 border-red-400 text-red-200 font-bold shadow-sm'
+                      : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-red-400 text-lg">public</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-xs font-semibold">Чэнь Вэй</div>
+                    <div className="text-[10px] text-red-400/80 font-normal truncate">
+                      АТР, Китай & БРИКС
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTargetAgent('okatsiya')}
+                  className={`w-full text-left p-2 rounded-xl border transition-all flex items-center gap-2.5 cursor-pointer ${
+                    targetAgent === 'okatsiya'
+                      ? 'bg-purple-500/20 border-purple-400 text-purple-200 font-bold shadow-sm'
+                      : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-purple-400 text-lg">memory</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-xs font-semibold">⚡ Окация</div>
+                    <div className="text-[10px] text-purple-400/80 font-normal truncate">
+                      IT & AI, DevOps, BigTech, Backend
+                    </div>
+                  </div>
+                </button>
+
+                <button
                   onClick={() => setTargetAgent('independent-analyst')}
                   className={`w-full text-left p-2 rounded-xl border transition-all flex items-center gap-2.5 cursor-pointer ${
                     targetAgent === 'independent-analyst'
@@ -383,7 +468,7 @@ export const AgentChatPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="truncate text-xs font-semibold">Независимый аналитик</div>
                     <div className="text-[10px] text-purple-400/80 font-normal truncate">
-                      Арбитраж и фактологический синтез
+                      Арбитраж и точечный синтез
                     </div>
                   </div>
                 </button>
@@ -451,6 +536,15 @@ export const AgentChatPage: React.FC = () => {
               <span className="material-symbols-outlined text-base">auto_awesome</span>
             </button>
             <button
+              onClick={() => setTargetAgent('political-group')}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center border cursor-pointer transition-colors ${
+                targetAgent === 'political-group' ? 'bg-sky-500/20 border-sky-400 text-sky-300' : 'bg-white/5 border-white/10 text-gray-400'
+              }`}
+              title="🏛️ Политическая коллегия (Сводное резюме)"
+            >
+              <span className="material-symbols-outlined text-base">account_balance</span>
+            </button>
+            <button
               onClick={() => setTargetAgent('ivan-bely')}
               className={`w-9 h-9 rounded-xl flex items-center justify-center border cursor-pointer transition-colors ${
                 targetAgent === 'ivan-bely' ? 'bg-sky-500/20 border-sky-400 text-sky-300' : 'bg-white/5 border-white/10 text-gray-400'
@@ -467,6 +561,24 @@ export const AgentChatPage: React.FC = () => {
               title="Kirk Kitten"
             >
               <span className="material-symbols-outlined text-base">public</span>
+            </button>
+            <button
+              onClick={() => setTargetAgent('chen-wei')}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center border cursor-pointer transition-colors ${
+                targetAgent === 'chen-wei' ? 'bg-red-500/20 border-red-400 text-red-300' : 'bg-white/5 border-white/10 text-gray-400'
+              }`}
+              title="Чэнь Вэй (АТР & БРИКС)"
+            >
+              <span className="material-symbols-outlined text-base">globe_asia</span>
+            </button>
+            <button
+              onClick={() => setTargetAgent('okatsiya')}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center border cursor-pointer transition-colors ${
+                targetAgent === 'okatsiya' ? 'bg-purple-500/20 border-purple-400 text-purple-300' : 'bg-white/5 border-white/10 text-gray-400'
+              }`}
+              title="⚡ Окация (IT & AI)"
+            >
+              <span className="material-symbols-outlined text-base">memory</span>
             </button>
             <button
               onClick={() => setTargetAgent('independent-analyst')}
@@ -492,11 +604,17 @@ export const AgentChatPage: React.FC = () => {
               <h2 className="text-sm font-bold text-white tracking-tight m-0">
                 {targetAgent === 'all'
                   ? '⚡ Круглый стол контуров и фактологический синтез'
+                  : targetAgent === 'political-group'
+                  ? '🏛️ Политическая коллегия (Сводное резюме дня)'
                   : targetAgent === 'ivan-bely'
                   ? '🇷🇺 Диалог с Иваном Белым (Внутренний контур РФ)'
                   : targetAgent === 'kirk-kitten'
                   ? '🌐 Диалог с Kirk Kitten (Международный контур & рынки)'
-                  : '⚖️ Диалог с Независимым аналитиком (Арбитраж)'}
+                  : targetAgent === 'chen-wei'
+                  ? '🇨🇳 Диалог с Чэнь Вэем (АТР, Китай & БРИКС)'
+                  : targetAgent === 'okatsiya'
+                  ? '⚡ Диалог с Окацией (Архитектура IT & AI)'
+                  : '⚖️ Диалог с Независимым аналитиком (Точечный арбитраж)'}
               </h2>
             </div>
           </div>
@@ -533,15 +651,24 @@ export const AgentChatPage: React.FC = () => {
         >
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
+            const isGroup = msg.sender === 'political-group';
             const isIvan = msg.sender === 'ivan-bely';
             const isKirk = msg.sender === 'kirk-kitten';
+            const isChen = msg.sender === 'chen-wei';
+            const isOkatsiya = msg.sender === 'okatsiya';
             const isIndep = msg.sender === 'independent-analyst';
             const isDisp = msg.sender === 'dispatcher';
 
-            const cardBorderColor = isIvan
+            const cardBorderColor = isGroup
+              ? 'border-sky-500/40 bg-gradient-to-br from-sky-950/30 via-[#161b22] to-amber-950/20'
+              : isIvan
               ? 'border-sky-500/30 bg-sky-950/25'
               : isKirk
               ? 'border-amber-500/30 bg-amber-950/25'
+              : isChen
+              ? 'border-red-500/30 bg-red-950/25'
+              : isOkatsiya
+              ? 'border-purple-500/40 bg-purple-950/25'
               : isIndep
               ? 'border-purple-500/30 bg-purple-950/25'
               : isUser
@@ -556,19 +683,31 @@ export const AgentChatPage: React.FC = () => {
                 {!isUser && (
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 border shadow-sm ${
-                      isIvan
+                      isGroup
+                        ? 'bg-sky-900/60 border-sky-400/50 text-sky-200'
+                        : isIvan
                         ? 'bg-sky-900/60 border-sky-400/40 text-sky-200'
                         : isKirk
                         ? 'bg-amber-900/60 border-amber-400/40 text-amber-200'
+                        : isChen
+                        ? 'bg-red-900/60 border-red-400/40 text-red-200'
+                        : isOkatsiya
+                        ? 'bg-purple-900/60 border-purple-400/40 text-purple-200'
                         : isIndep
                         ? 'bg-purple-900/60 border-purple-400/40 text-purple-200'
                         : 'bg-gray-800 border-gray-600 text-gray-200'
                     }`}
                   >
-                    {isIvan ? (
+                    {isGroup ? (
+                      <span className="material-symbols-outlined text-sky-400 text-lg">account_balance</span>
+                    ) : isIvan ? (
                       <span className="material-symbols-outlined text-sky-400 text-lg">shield</span>
                     ) : isKirk ? (
                       <span className="material-symbols-outlined text-amber-400 text-lg">public</span>
+                    ) : isChen ? (
+                      <span className="material-symbols-outlined text-red-400 text-lg">public</span>
+                    ) : isOkatsiya ? (
+                      <span className="material-symbols-outlined text-purple-400 text-lg">memory</span>
                     ) : isIndep ? (
                       <span className="material-symbols-outlined text-purple-400 text-lg">balance</span>
                     ) : (
@@ -620,6 +759,57 @@ export const AgentChatPage: React.FC = () => {
                           {s}
                         </Tag>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Candidate Resonance Nodes for Targeted Synthesis */}
+                  {msg.resonanceNodes && msg.resonanceNodes.length > 0 && (
+                    <div className="my-3 p-3 rounded-xl bg-purple-950/25 border border-purple-500/30 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5 font-mono">
+                          <span className="material-symbols-outlined text-[16px] text-amber-400">offline_bolt</span>
+                          Кандидаты на точечный синтез (Обнаруженные узлы):
+                        </span>
+                        <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                          {msg.resonanceNodes.length} узла
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                        {msg.resonanceNodes.map((node) => (
+                          <div
+                            key={node.id}
+                            className="p-2.5 rounded-lg bg-[#0d1117]/85 border border-purple-500/20 hover:border-purple-400/50 transition-all flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <span className="text-xs font-bold text-white truncate" title={node.title}>
+                                  {node.title}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                  {node.resonanceScore}%
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-gray-300 leading-relaxed mb-2 line-clamp-3">
+                                {node.reasoning}
+                              </div>
+                              <div className="text-[10px] text-purple-300/80 font-mono mb-2.5 flex items-center gap-1">
+                                <span>Контуры:</span>
+                                <span className="font-semibold text-purple-200">{node.curatorNames.join(' ⟷ ')}</span>
+                              </div>
+                            </div>
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => handleTriggerTargetedSynthesis(node)}
+                              loading={agentChatMutation.isPending}
+                              className="bg-purple-600 hover:bg-purple-500 text-white font-medium text-[11px] h-7 flex items-center justify-center gap-1.5 w-full shadow-sm"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">balance</span>
+                              Точечный синтез узла
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -729,6 +919,17 @@ export const AgentChatPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setTargetAgent('political-group')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                    targetAgent === 'political-group'
+                      ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-bold'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  🏛️ Коллегия
+                </button>
+                <button
+                  type="button"
                   onClick={() => setTargetAgent('ivan-bely')}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                     targetAgent === 'ivan-bely'
@@ -748,6 +949,28 @@ export const AgentChatPage: React.FC = () => {
                   }`}
                 >
                   🌐 Kirk (Мир)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetAgent('chen-wei')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                    targetAgent === 'chen-wei'
+                      ? 'bg-red-500/20 border-red-400 text-red-300 font-bold'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  🇨🇳 Чэнь (АТР)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetAgent('okatsiya')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                    targetAgent === 'okatsiya'
+                      ? 'bg-purple-500/20 border-purple-400 text-purple-300 font-bold'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  ⚡ Окация (IT & AI)
                 </button>
                 <button
                   type="button"
