@@ -390,10 +390,46 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     emoji: '🏛️',
     description: 'Объединенная группа кураторов внутренней политики РФ, международных рынков и восточного контура',
     curatorIds: ['ivan-bely', 'kirk-kitten', 'chen-wei'],
-    coordinatorId: 'independent-analyst',
+    coordinatorId: 'survey-coordinator',
     accentColor: '#38bdf8',
     badgeBg: 'rgba(56, 189, 248, 0.16)',
     defaultScope: 'Внутренний контур РФ, международная дипломатия, санкции, рынки АТР и сырьевой баланс',
+  },
+  'tech-group': {
+    id: 'tech-group',
+    name: 'IT & AI Совет',
+    shortName: 'Технологии',
+    emoji: '⚡',
+    description: 'Технологический совет по искусственному интеллекту, BigTech, инфраструктуре и информационной безопасности',
+    curatorIds: ['okatsiya'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#a855f7',
+    badgeBg: 'rgba(168, 85, 247, 0.16)',
+    defaultScope: 'AI/LLM, системная разработка, облака, микроэлектроника и безопасность',
+  },
+  'macro-group': {
+    id: 'macro-group',
+    name: 'Макроэкономический консилиум',
+    shortName: 'Макро',
+    emoji: '📊',
+    description: 'Аналитический консилиум по сбалансированности внутреннего и внешнего экономических контуров',
+    curatorIds: ['ivan-bely', 'kirk-kitten'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#fbbf24',
+    badgeBg: 'rgba(251, 191, 36, 0.16)',
+    defaultScope: 'Демпфер, валютные курсы, санкционное воздействие, фрахт и инфляция',
+  },
+  'all-curators': {
+    id: 'all-curators',
+    name: 'Полная коллегия кураторов',
+    shortName: 'Все кураторы',
+    emoji: '🌐',
+    description: 'Объединенный совет всех предметных кураторов Project Lenta (РФ, Мир, АТР, IT & AI)',
+    curatorIds: ['ivan-bely', 'kirk-kitten', 'chen-wei', 'okatsiya'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#3b82f6',
+    badgeBg: 'rgba(59, 130, 246, 0.16)',
+    defaultScope: 'Сквозная панорама всех ключевых мировых, внутренних и технологических событий',
   },
 };
 
@@ -412,8 +448,118 @@ export function getCuratorGroup(idOrName?: string | null): CuratorGroup | null {
   ) {
     return CURATOR_GROUPS['political-group'];
   }
+  if (clean === 'it' || clean === 'ai' || clean === 'технологии' || clean === 'tech-group' || clean === 'tech') {
+    return CURATOR_GROUPS['tech-group'];
+  }
+  if (clean === 'макро' || clean === 'macro' || clean === 'macro-group') {
+    return CURATOR_GROUPS['macro-group'];
+  }
+  if (clean === 'все' || clean === 'all' || clean === 'все кураторы' || clean === 'all-curators') {
+    return CURATOR_GROUPS['all-curators'];
+  }
   return CURATOR_GROUPS_LIST.find((g) => g.id.toLowerCase() === clean || g.name.toLowerCase() === clean) || null;
 }
+
+// ---------------------------------------------------------------------------
+// Operational Worker Agents Registry (Функциональные Агенты Lenta)
+// ---------------------------------------------------------------------------
+
+export interface WorkerAgentDefinition {
+  id: string;
+  name: string;
+  shortName: string;
+  role: string;
+  avatar: string;
+  category: 'ingestion' | 'survey' | 'sidework' | 'synthesis' | 'orchestration';
+  accentColor: string;
+  badgeBg: string;
+  description: string;
+  capabilities: string[];
+  suggestedSnippets: string[];
+}
+
+export const WORKER_AGENTS: Record<string, WorkerAgentDefinition> = {
+  'harvester-agent': {
+    id: 'harvester-agent',
+    name: 'Информационный Харвестер',
+    shortName: 'Харвестер',
+    role: 'Агент сбора данных, RSS и мониторинга первоисточников',
+    avatar: '📡',
+    category: 'ingestion',
+    accentColor: '#10b981',
+    badgeBg: 'rgba(16, 185, 129, 0.16)',
+    description: 'Осуществляет непрерывный сбор сырых новостей, парсинг внешних источников, дедупликацию и первичный триаж материалов перед передачей кураторам.',
+    capabilities: ['rss_ingestion', 'web_scraping', 'deduplication', 'source_validation'],
+    suggestedSnippets: ['/harvest', '/sources'],
+  },
+  'survey-coordinator': {
+    id: 'survey-coordinator',
+    name: 'Координатор Опросов',
+    shortName: 'Опросчик',
+    role: 'Агент-опросчик и диспетчер групп кураторов',
+    avatar: '🧭',
+    category: 'survey',
+    accentColor: '#6366f1',
+    badgeBg: 'rgba(99, 102, 241, 0.16)',
+    description: 'Опрашивает выбранную группу кураторов (или всех) за заданный интервал (сегодня, вчера, неделя), сводит их доменные позиции и выявляет точки резонанса.',
+    capabilities: ['group_polling', 'temporal_slicing', 'cross_curator_comparison', 'resonance_detection'],
+    suggestedSnippets: ['/survey', '/survey-today', '/survey-yesterday', '/survey-week'],
+  },
+  'sidework-producer': {
+    id: 'sidework-producer',
+    name: 'Продюсер Сайд-Работы',
+    shortName: 'Сайд-воркер',
+    role: 'Агент контент-продакшна, медиа-обогащения и оформления',
+    avatar: '🎨',
+    category: 'sidework',
+    accentColor: '#ec4899',
+    badgeBg: 'rgba(236, 72, 153, 0.16)',
+    description: 'Ведет прикладную сайд-работу: создает статьи, посты и дайджесты на основе курированных данных, генерирует промпты для AI-иллюстраций, схемы Mermaid и дополняет аналитическими комментариями.',
+    capabilities: ['content_drafting', 'image_prompt_generation', 'mermaid_generation', 'commentary_enrichment', 'obsidian_export'],
+    suggestedSnippets: ['/sidework', '/media', '/comment', '/draft'],
+  },
+  'podcast-producer': {
+    id: 'podcast-producer',
+    name: 'Режиссер Подкастов',
+    shortName: 'Подкастер',
+    role: 'Агент генерации аудио-сценариев NotebookLM',
+    avatar: '🎙️',
+    category: 'sidework',
+    accentColor: '#f97316',
+    badgeBg: 'rgba(249, 115, 22, 0.16)',
+    description: 'Специализированная сайд-работа: превращает подборку курированных новостей в живой диалоговый аудио-сценарий двух ведущих.',
+    capabilities: ['podcast_scripting', 'audio_overview', 'dialogue_balancing'],
+    suggestedSnippets: ['/podcast'],
+  },
+  'independent-analyst': {
+    id: 'independent-analyst',
+    name: 'Независимый Арбитр',
+    shortName: 'Арбитр',
+    role: 'Агент беспристрастного синтеза и фактчекинга',
+    avatar: '⚖️',
+    category: 'synthesis',
+    accentColor: '#14b8a6',
+    badgeBg: 'rgba(20, 184, 166, 0.16)',
+    description: 'Проводит объективный кросс-контурный анализ при столкновении оценок разных кураторов, оценивает достоверность и рассчитывает процент резонанса.',
+    capabilities: ['neutral_arbitration', 'resonance_scoring', 'conflict_resolution'],
+    suggestedSnippets: ['/synthesis'],
+  },
+};
+
+export const WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
+
+export function getWorkerAgent(idOrName?: string | null): WorkerAgentDefinition | null {
+  if (!idOrName) return null;
+  const clean = idOrName.trim().toLowerCase();
+  if (WORKER_AGENTS[clean]) return WORKER_AGENTS[clean];
+  if (clean === 'харвестер' || clean === 'сбор' || clean === 'harvester') return WORKER_AGENTS['harvester-agent'];
+  if (clean === 'опрос' || clean === 'опросчик' || clean === 'survey' || clean === 'survey-coordinator') return WORKER_AGENTS['survey-coordinator'];
+  if (clean === 'сайд' || clean === 'сайд-работа' || clean === 'sidework' || clean === 'контент') return WORKER_AGENTS['sidework-producer'];
+  if (clean === 'подкаст' || clean === 'podcast') return WORKER_AGENTS['podcast-producer'];
+  if (clean === 'арбитр' || clean === 'синтез' || clean === 'synthesis') return WORKER_AGENTS['independent-analyst'];
+  return WORKER_AGENTS_LIST.find((a) => a.id.toLowerCase() === clean || a.name.toLowerCase() === clean) || null;
+}
+
 
 // ---------------------------------------------------------------------------
 // Compact IT & AI Sectors Registry (Архитектура отраслей IT)

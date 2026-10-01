@@ -864,6 +864,115 @@ export interface GDriveSyncResult {
   syncedAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// Curator vs Operational Worker Agent Types (Lenta Architecture)
+// ---------------------------------------------------------------------------
+
+export type CuratorId = 'ivan-bely' | 'kirk-kitten' | 'okatsiya' | 'chen-wei';
+
+export type WorkerAgentId =
+  | 'harvester-agent'
+  | 'survey-coordinator'
+  | 'sidework-producer'
+  | 'podcast-agent'
+  | 'independent-analyst'
+  | 'dispatcher';
+
+export type AgentRoleType = 'curator' | 'operational_agent' | 'user';
+
+export type SurveyTimeframe = 'today' | 'yesterday' | 'three_days' | 'week' | 'custom';
+
+export interface CuratorSurveyRequest {
+  targetCurators?: (CuratorId | string)[] | 'all';
+  groupId?: string; // e.g. 'political-group', 'tech-group'
+  timeframe: SurveyTimeframe;
+  customStartDate?: string; // YYYY-MM-DD
+  customEndDate?: string; // YYYY-MM-DD
+  focusTopic?: string;
+}
+
+export interface CuratorTake {
+  curatorId: string;
+  curatorName: string;
+  emoji: string;
+  domain: string;
+  itemsCount: number;
+  keyTheses: string[];
+  resonancePoints: string[];
+  sourceCitations: string[];
+}
+
+export interface CrossDomainResonance {
+  title: string;
+  score: number;
+  involvedCurators: string[];
+  analysis: string;
+  suggestedFollowupPrompt?: string;
+}
+
+export interface CuratorSurveyResult {
+  id: string;
+  timeframe: SurveyTimeframe;
+  dateRange: { from: string; to: string };
+  requestedCurators: string[];
+  headline: string;
+  executiveSummary: string;
+  curatorTakes: CuratorTake[];
+  crossDomainResonances: CrossDomainResonance[];
+  generatedAt: string;
+}
+
+export type SideWorkTaskType =
+  | 'content_draft'      // Написание статьи, лонгрида, дайджеста, заметки типа DONE/EVENT/PERIOD
+  | 'media_enrichment'   // Генерация промптов для иллюстраций (DALL-E, Midjourney), подбор визуалов, диаграммы Mermaid
+  | 'expert_commentary'  // Дополнение аналитическим комментарием, фактчеком, историческим бэкграундом
+  | 'digest_synthesis'   // Сводный дайджест по материалам опроса или новостной подборке
+  | 'podcast_script';    // Аудио-сценарий NotebookLM
+
+export interface SideWorkMediaItem {
+  type: 'image_prompt' | 'mermaid_diagram' | 'quote_card' | 'key_stat' | 'external_media';
+  title: string;
+  content: string; // The prompt, Mermaid code, or quote text
+  aspectRatio?: string;
+  suggestedCaption?: string;
+  styleKeywords?: string[];
+}
+
+export interface SideWorkCommentaryItem {
+  curatorId: string;
+  curatorName: string;
+  emoji: string;
+  commentary: string;
+}
+
+export interface SideWorkRequest {
+  taskType: SideWorkTaskType;
+  title?: string;
+  sourceContext: string;
+  sourceNewsIds?: string[];
+  surveyResultId?: string;
+  targetFormat?: 'obsidian_note' | 'telegram_post' | 'longread' | 'quick_brief';
+  requestedCuratorCommentary?: (CuratorId | string)[];
+  mediaPreferences?: {
+    includeImagePrompts?: boolean;
+    includeMermaidDiagrams?: boolean;
+    style?: 'modern_minimal' | 'cyberpunk' | 'editorial_infographic' | 'realistic';
+  };
+}
+
+export interface SideWorkResult {
+  id: string;
+  taskType: SideWorkTaskType;
+  title: string;
+  targetFormat: string;
+  contentMarkdown: string;
+  enrichedMedia: SideWorkMediaItem[];
+  curatorCommentaries: SideWorkCommentaryItem[];
+  suggestedObsidianFrontmatter?: Record<string, any>;
+  createdAt: string;
+}
+
+
 
 
 

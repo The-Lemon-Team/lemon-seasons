@@ -1,4 +1,33 @@
-import { NoteType } from '@lenta/shared';
+import {
+  NoteType,
+  CuratorId,
+  WorkerAgentId,
+  CuratorSurveyRequest,
+  CuratorSurveyResult,
+  CuratorTake,
+  SurveyTimeframe,
+  CrossDomainResonance,
+  SideWorkTaskType,
+  SideWorkRequest,
+  SideWorkResult,
+  SideWorkMediaItem,
+  SideWorkCommentaryItem,
+} from '@lenta/shared';
+
+export type {
+  CuratorId,
+  WorkerAgentId,
+  CuratorSurveyRequest,
+  CuratorSurveyResult,
+  CuratorTake,
+  SurveyTimeframe,
+  CrossDomainResonance,
+  SideWorkTaskType,
+  SideWorkRequest,
+  SideWorkResult,
+  SideWorkMediaItem,
+  SideWorkCommentaryItem,
+};
 
 export type DailyNewsStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED';
 
@@ -57,14 +86,14 @@ export interface DailySummaryData {
 // ---------------------------------------------------------------------------
 
 export type AgentId =
-  | 'ivan-bely'
-  | 'kirk-kitten'
-  | 'chen-wei'
-  | 'okatsiya'
-  | 'independent-analyst'
-  | 'dispatcher'
+  | CuratorId
+  | WorkerAgentId
   | 'user'
-  | 'political-group';
+  | 'political-group'
+  | 'tech-group'
+  | 'macro-group'
+  | 'all-curators'
+  | 'all';
 
 export interface ResonanceNodeCandidate {
   id: string;
@@ -109,6 +138,8 @@ export interface ChatMessage {
   sources?: string[];
   resonanceNodes?: ResonanceNodeCandidate[];
   groupSummary?: GroupSummaryPayload;
+  curatorSurvey?: CuratorSurveyResult;
+  sideWorkResult?: SideWorkResult;
   suggestedCard?: {
     title: string;
     description: string;
@@ -132,6 +163,59 @@ export interface ChatSnippet {
 }
 
 export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
+  // --- 1. Опрос Кураторов (Survey Coordinator Agent) ---
+  {
+    id: 'snip-survey-today',
+    command: '/survey-today',
+    label: '🧭 Опрос: Срез на сегодня',
+    prompt: 'Опросчик, собери позиции всех кураторов по главным событиям на сегодняшнюю дату и выдели узлы пересечения.',
+    description: 'Агент-опросчик опрашивает кураторов (Иван, Kirk, Окация, Чэнь) по повестке дня',
+    targetAgent: 'survey-coordinator',
+  },
+  {
+    id: 'snip-survey-yesterday',
+    command: '/survey-yesterday',
+    label: '⏪ Опрос: Срез за вчера',
+    prompt: 'Опросчик, опроси группу политических кураторов и Окацию по событиям за вчерашний день.',
+    description: 'Опрос кураторов за вчерашний день с анализом реакции рынков и регуляторов',
+    targetAgent: 'survey-coordinator',
+  },
+  {
+    id: 'snip-survey-week',
+    command: '/survey-week',
+    label: '📊 Опрос: Панорама за неделю',
+    prompt: 'Опросчик, проведи комплексный опрос всех кураторов по ключевым сюжетам и трендам за последние 7 дней.',
+    description: 'Недельный аналитический опрос с определением главных долгосрочных резонансов',
+    targetAgent: 'survey-coordinator',
+  },
+
+  // --- 2. Сайд-Работа и Медиа (Side-Work & Content Producer Agent) ---
+  {
+    id: 'snip-sidework-post',
+    command: '/sidework-post',
+    label: '📝 Сайд: Создать пост/дайджест',
+    prompt: 'Сайд-воркер, на основе последних собранных данных подготовь структурированный пост/дайджест для публикации с ключевыми выводами.',
+    description: 'Агент сайд-работы создает готовый пост/статью на основе курированных новостей',
+    targetAgent: 'sidework-producer',
+  },
+  {
+    id: 'snip-sidework-media',
+    command: '/media',
+    label: '🎨 Сайд: Медиа и промпты для AI',
+    prompt: 'Сайд-воркер, сгенерируй профессиональные промпты для иллюстраций (DALL-E / Midjourney) и составь диаграмму связей Mermaid для этой темы.',
+    description: 'Медиа-обогащение: генерация визуальных промптов, обложек, схем связей и цитат',
+    targetAgent: 'sidework-producer',
+  },
+  {
+    id: 'snip-sidework-comment',
+    command: '/comment',
+    label: '💬 Сайд: Дополнить комментарием',
+    prompt: 'Сайд-воркер, дополни собранные материалы аналитическим комментарием кураторов и фактологической справкой.',
+    description: 'Обогащение материала экспертным комментарием и проверкой фактов',
+    targetAgent: 'sidework-producer',
+  },
+
+  // --- 3. Предметные Кураторы (Domain Curators) ---
   {
     id: 'snip-okatsiya-it-ai',
     command: '/it',
@@ -197,6 +281,24 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     targetAgent: 'kirk-kitten',
   },
   {
+    id: 'snip-chen-asia',
+    command: '/chen',
+    label: '🇨🇳 Чэнь: АТР и БРИКС',
+    prompt: 'Чэнь, какие ключевые сигналы по Китаю, торговым коридорам, расчетам в нацвалютах и БРИКС актуальны на сегодня?',
+    description: 'Восточный контур: Китай, АТР, товарооборот, логистические коридоры и расчеты',
+    targetAgent: 'chen-wei',
+  },
+
+  // --- 4. Коллегии и Арбитраж ---
+  {
+    id: 'snip-group-politics',
+    command: '/politics',
+    label: '🏛️ Политическая коллегия: Резюме',
+    prompt: 'Коллегия, сформируйте модульное резюме политической повестки на сегодня по всем контурам с выявлением ключевых точек пересечения для синтеза.',
+    description: 'Сводный срез от кураторов РФ, международного контура и АТР с точками резонанса',
+    targetAgent: 'political-group',
+  },
+  {
     id: 'snip-synthesis',
     command: '/synthesis',
     label: '⚖️ Независимый синтез',
@@ -205,44 +307,12 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     targetAgent: 'independent-analyst',
   },
   {
-    id: 'snip-today',
-    command: '/today',
-    label: '📅 Повестка на сегодня',
-    prompt: 'Собери сводку главных событий и новостных сюжетов по всем контурам на текущую дату.',
-    description: 'Комплексный опрос всех агентов с итоговым резюме дня',
-    targetAgent: 'all',
-  },
-  {
-    id: 'snip-group-politics',
-    command: '/politics',
-    label: '🏛️ Политическая коллегия: Резюме дня',
-    prompt: 'Коллегия, сформируйте модульное резюме политической повестки на сегодня по всем контурам с выявлением ключевых точек пересечения для синтеза.',
-    description: 'Сводный срез от кураторов РФ, международного контура и АТР с точками резонанса',
-    targetAgent: 'political-group',
-  },
-  {
-    id: 'snip-chen-asia',
-    command: '/chen',
-    label: '🇨🇳 Чэнь: АТР и БРИКС',
-    prompt: 'Чэнь, какие ключевые сигналы по Китаю, торговым коридорам, расчетам в нацвалютах и БРИКС актуальны на сегодня?',
-    description: 'Восточный контур: Китай, АТР, товарооборот, логистические коридоры и расчеты',
-    targetAgent: 'chen-wei',
-  },
-  {
-    id: 'snip-energy',
-    command: '/energy',
-    label: '⛽ Топливо и ФАС',
-    prompt: 'Какова ситуация с оптовыми ценами на топливо на СПбМТСБ, демпфером и проверками ФАС?',
-    description: 'Фокус на оптовом и розничном рынке нефтепродуктов РФ',
-    targetAgent: 'ivan-bely',
-  },
-  {
-    id: 'snip-sanctions',
-    command: '/sanctions',
-    label: '⚓ Санкции и фрахт',
-    prompt: 'Какова динамика фрахта танкеров и морского страхования в связи с директивами OFAC и ЕС?',
-    description: 'Фокус на морских перевозках, проверках P&I и балтийских портах',
-    targetAgent: 'kirk-kitten',
+    id: 'snip-harvest',
+    command: '/harvest',
+    label: '📡 Харвестер: Сбор данных',
+    prompt: 'Харвестер, выполни проверку входящих фидов и источников, собери свежие сигналы для передачи кураторам.',
+    description: 'Агент сбора новостей сканирует первоисточники и формирует карточки на триаж',
+    targetAgent: 'harvester-agent',
   },
 ];
 
@@ -258,4 +328,5 @@ export interface AgentChatResponse {
   date: string;
   replies: ChatMessage[];
 }
+
 

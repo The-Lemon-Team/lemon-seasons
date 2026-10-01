@@ -1,5 +1,19 @@
-# 🤖 @lemon/agents — Autonomous Multi-Agent Intelligence Engine
+# 🤖 @lemon/agents — Multi-Agent Intelligence Engine (Curator & Worker Architecture)
 
-This package encapsulates the modular agentic workflows for Lemon Seasons:
-- **`NewsTriageAgent`**: Autonomous evaluation, classification (Ivan Bely vs Kirk Kitten), and resonance scoring of raw breaking news.
-- **`PodcastAgent`**: NotebookLM-style Two-Host Conversational Audio Overview generator using Google Gemini AI, converting daily accepted news into dynamic audio dialogue.
+Пакет модульного искусственного интеллекта и агентско-кураторской координации для **Lemon Seasons / Project Lenta**.
+
+Реализует строгое разделение между **Предметными Кураторами** (Domain Curators & Analytical Lenses) и **Функциональными Агентами** (Operational Worker Agents):
+
+## 🏛️ 1. Предметные Кураторы (Domain Curators)
+- **🇷🇺 Иван Белый (`ivan-bely`)**: Внутренняя политика РФ, регуляторика ФАС/ЦБ, топливный демпфер, налоги и ЕДГ-2026.
+- **🌐 Kirk Kitten (`kirk-kitten`)**: Внешний контур, директивы OFAC, санкции ЕС, фрахт танкеров и мировые рынки.
+- **⚡ Окация (`okatsiya`)**: IT & AI, BigTech, архитектура распределенных систем, Kubernetes, DevOps, InfoSec и микроэлектроника.
+- **🇨🇳 Чэнь Вэй (`chen-wei`)**: АТР, Китай, БРИКС+, клиринг в нацвалютах и логистические коридоры.
+
+## ⚙️ 2. Функциональные Агенты (Operational Workers & Coordinators)
+- **🧭 `CuratorSurveyAgent` (`survey-coordinator`)**: Опрашивает заданную группу кураторов (или всех) за выбранный интервал времени (`today`, `yesterday`, `three_days`, `week`, `custom`), сопоставляет их тезисы и выявляет точки взаимного резонанса.
+- **🎨 `SideWorkAgent` (`sidework-producer`)**: Проводит прикладную сайд-работу: генерация готовых постов и статей, создание профессиональных AI-промптов для генераторов изображений (DALL-E, Midjourney), построение диаграмм связей Mermaid и дополнение экспертными комментариями.
+- **📡 `NewsHarvesterAgent` (`harvester-agent`)**: Сбор сырых новостных лент, мониторинг источников, дедупликация и подготовка карточек к триажу.
+- **⚙️ `NewsTriageAgent`**: Первичная разметка, определение куратора и расчет индекса резонанса карточек новостей.
+- **🎙️ `PodcastAgent`**: Генерация диалоговых аудио-сценариев в стиле Google NotebookLM Audio Overview.
+- **⚖️ `AgentChatEngine`**: Унифицированный оркестратор чатов, командных сниппетов (`/survey`, `/sidework`, `/media`, `/comment`, `/harvest`) и контекстных окон.

@@ -49,13 +49,23 @@ export class ChatsService implements OnModuleInit {
       this.logger.log('🌱 Seeding initial Chat Folders and Starter Threads...');
 
       // 1. Create Default Folders
+      const agentsFolder = await this.prisma.chatFolder.create({
+        data: {
+          name: 'Функциональные Агенты & Сайд-Работа',
+          path: 'operational-agents',
+          icon: 'Sparkles',
+          color: '#ec4899',
+          order: 1,
+        },
+      });
+
       const politicsFolder = await this.prisma.chatFolder.create({
         data: {
           name: 'Политика & Макроконтур',
           path: 'politics',
           icon: 'Landmark',
           color: '#38bdf8',
-          order: 1,
+          order: 2,
         },
       });
 
@@ -65,7 +75,7 @@ export class ChatsService implements OnModuleInit {
           path: 'tech-it',
           icon: 'Cpu',
           color: '#a855f7',
-          order: 2,
+          order: 3,
         },
       });
 
@@ -75,12 +85,74 @@ export class ChatsService implements OnModuleInit {
           path: 'curators-direct',
           icon: 'UserCheck',
           color: '#10b981',
-          order: 3,
+          order: 4,
         },
       });
 
       // 2. Create Starter Threads
       const today = new Date().toISOString().split('T')[0];
+
+      // Thread: Координатор Опросов (Worker Agent)
+      const surveyThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🧭 Координатор Опросов (Опрос групп кураторов)',
+          type: ChatType.GROUP,
+          folderId: agentsFolder.id,
+          targetAgent: 'survey-coordinator',
+          participantAgents: ['survey-coordinator', 'ivan-bely', 'kirk-kitten', 'chen-wei', 'okatsiya'],
+          dateScope: today,
+          isPinned: true,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: surveyThread.id,
+          sender: 'survey-coordinator',
+          senderName: 'Координатор Опросов',
+          senderRole: 'Агент-опросчик и диспетчер групп кураторов',
+          avatar: '🧭',
+          text: `Добро пожаловать в хаб **Координатора Опросов**! 
+
+К агенту можно обратиться в любой момент, чтобы опросить определенную группу кураторов (или всех кураторов) на:
+- **Сегодняшние новости:** \`/survey-today\` или «Опроси кураторов на сегодня»
+- **Новости за вчера:** \`/survey-yesterday\` или «Опроси политическую коллегию за вчера»
+- **Новости за неделю:** \`/survey-week\` или «Сделай недельный опрос всех кураторов»
+
+Координатор сопоставит позиции кураторов, выявит точки взаимного резонанса и подготовит структурированный брифинг.`,
+        },
+      });
+
+      // Thread: Продюсер Сайд-Работы (Worker Agent)
+      const sideWorkThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🎨 Продюсер Сайд-Работы (Контент & Медиа)',
+          type: ChatType.GROUP,
+          folderId: agentsFolder.id,
+          targetAgent: 'sidework-producer',
+          participantAgents: ['sidework-producer', 'independent-analyst'],
+          dateScope: today,
+          isPinned: true,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: sideWorkThread.id,
+          sender: 'sidework-producer',
+          senderName: 'Продюсер Сайд-Работы',
+          senderRole: 'Агент контент-продакшна и медиа-обогащения',
+          avatar: '🎨',
+          text: `Приветствую в мастерской **Сайд-Работы**!
+
+Здесь мы превращаем курированные данные и результаты опросов кураторов в готовый контент:
+- **Написание материалов:** \`/sidework-post\` — готовые публикации, статьи или Obsidian заметки \`DONE\`.
+- **Медиа-обогащение:** \`/media\` — генерация визуальных AI-промптов (DALL-E / Midjourney), подбор схем и диаграмм Mermaid.
+- **Экспертные комментарии:** \`/comment\` — дополнение материалов встречными комментариями кураторов и фактчеком.
+
+*Отправьте сырые тезисы или дайте команду, и мы оформим сайд-продукт!*`,
+        },
+      });
 
       // Thread: Политическая коллегия (Group)
       const politicsThread = await this.prisma.chatThread.create({
@@ -522,7 +594,20 @@ export class ChatsService implements OnModuleInit {
     } else {
       // In GROUP chats: check for mentions or route according to question
       const lower = rawMessage.toLowerCase();
-      if (lower.startsWith('@ivan') || lower.startsWith('/ivan')) {
+      if (lower.startsWith('/survey') || lower.startsWith('@survey') || lower.includes('опроси') || lower.includes('опрос кураторов')) {
+        resolvedTarget = 'survey-coordinator';
+      } else if (
+        lower.startsWith('/sidework') ||
+        lower.startsWith('/media') ||
+        lower.startsWith('/comment') ||
+        lower.startsWith('@sidework') ||
+        lower.includes('сайд') ||
+        lower.includes('промпт')
+      ) {
+        resolvedTarget = 'sidework-producer';
+      } else if (lower.startsWith('/harvest') || lower.startsWith('@harvest') || lower.includes('харвестер')) {
+        resolvedTarget = 'harvester-agent';
+      } else if (lower.startsWith('@ivan') || lower.startsWith('/ivan')) {
         resolvedTarget = 'ivan-bely';
       } else if (lower.startsWith('@okatsiya') || lower.startsWith('/it') || lower.startsWith('/ai') || lower.startsWith('/okatsiya')) {
         resolvedTarget = 'okatsiya';
