@@ -18,9 +18,12 @@ export class GDriveStorageService {
   private readonly logger = new Logger(GDriveStorageService.name);
 
   // Configuration for local relay or direct Google Drive
-  private readonly defaultSyncDir =
-    process.env.GDRIVE_SYNC_FOLDER ||
-    path.join(os.homedir(), '.lemon', 'gdrive-relay', 'LemonCalendarium');
+  public get defaultSyncDir(): string {
+    return (
+      process.env.GDRIVE_SYNC_FOLDER ||
+      path.join(os.homedir(), '.lemon', 'gdrive-relay', 'LemonCalendarium')
+    );
+  }
 
   private readonly tokensPath = path.join(os.homedir(), '.lemon', 'gdrive-tokens.json');
 

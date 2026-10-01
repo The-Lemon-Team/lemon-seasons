@@ -10,6 +10,7 @@ import {
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { LemonLogo } from './LemonLogo';
+import { WorkstationSyncBar } from './WorkstationSyncBar';
 
 interface NavbarProps {
   startDate?: string;
@@ -65,8 +66,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Right: Language Switcher & Profile / Auth */}
+      {/* Right: Sync Status / Viewer Bar, Admin CMS Launcher & Profile */}
       <div className="flex items-center gap-2">
+        <WorkstationSyncBar />
+
         {/* Admin CMS Direct Launcher (Admin Role Only) */}
         {isAdmin && (
           <a

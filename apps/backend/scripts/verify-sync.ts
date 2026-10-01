@@ -1,10 +1,31 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Load .env without extra dependencies
+const envPath = path.resolve(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      let val = trimmed.slice(idx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
 import { PrismaService } from '../src/prisma/prisma.service';
 import { SessionService } from '../src/sync/session.service';
 import { GDriveStorageService } from '../src/sync/gdrive-storage.service';
 import { MergeService } from '../src/sync/merge.service';
 import { SyncOrchestratorService } from '../src/sync/sync-orchestrator.service';
-import * as fs from 'fs';
-import * as path from 'path';
 
 async function run() {
   console.log('🚀 Starting end-to-end verification of Distributed Sync & Workstation Sessions...\n');
