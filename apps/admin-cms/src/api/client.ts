@@ -21,7 +21,13 @@ import {
   CreateTaxonomyInput,
   SyncChangesResponse,
   SystemStats,
+  SyncStatusResponse,
+  SyncSession,
+  StartSessionInput,
+  CommitSessionInput,
+  GDriveSyncResult,
 } from '../types';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -302,7 +308,40 @@ export const syncApi = {
     });
     return res.data;
   },
+  getStatus: async (deviceId?: string): Promise<SyncStatusResponse> => {
+    const res = await apiClient.get<SyncStatusResponse>('/sync/status', { params: { deviceId } });
+    return res.data;
+  },
+  getActiveSession: async (deviceId?: string): Promise<SyncSession | null> => {
+    const res = await apiClient.get<SyncSession | null>('/sync/session/active', { params: { deviceId } });
+    return res.data;
+  },
+  startSession: async (data: StartSessionInput): Promise<SyncSession> => {
+    const res = await apiClient.post<SyncSession>('/sync/session/start', data);
+    return res.data;
+  },
+  commitSession: async (id: string, data: CommitSessionInput, deviceId?: string): Promise<any> => {
+    const res = await apiClient.post(`/sync/session/${id}/commit`, data, { params: { deviceId } });
+    return res.data;
+  },
+  cancelSession: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/sync/session/${id}/cancel`);
+    return res.data;
+  },
+  push: async (deviceId?: string): Promise<{ pushedCount: number; commits: string[] }> => {
+    const res = await apiClient.post('/sync/push', {}, { params: { deviceId } });
+    return res.data;
+  },
+  pull: async (deviceId?: string): Promise<GDriveSyncResult> => {
+    const res = await apiClient.post('/sync/pull', {}, { params: { deviceId } });
+    return res.data;
+  },
+  getGDriveAuthUrl: async (): Promise<{ url: string }> => {
+    const res = await apiClient.get<{ url: string }>('/sync/gdrive/auth-url');
+    return res.data;
+  },
 };
+
 
 // Ingestion & AI Generator Lab API
 export interface IngestionStatus {
@@ -521,6 +560,3 @@ export const chatsApi = {
     await apiClient.post('/chats/seed-defaults');
   },
 };
-
-
-

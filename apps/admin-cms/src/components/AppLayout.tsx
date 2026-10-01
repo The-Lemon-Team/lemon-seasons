@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { QuickAddModal } from './QuickAddModal';
 import { LemonLogo } from './LemonLogo';
+import { WorkstationSessionBar } from './WorkstationSessionBar';
 import { ErrorBoundary } from './common/ErrorBoundary';
 import { useSyncChanges } from '../api/queries';
 import { useAdminI18n } from '../i18n';
@@ -239,6 +240,9 @@ export const AppLayout: React.FC = () => {
               <span>RU</span>
             </button>
 
+            {/* Workstation Live Session & GDrive Sync */}
+            <WorkstationSessionBar />
+
             {/* Open Calendar App Link */}
             <a
               href="http://localhost:5174"
@@ -250,6 +254,7 @@ export const AppLayout: React.FC = () => {
               <span className="material-symbols-outlined text-[16px]">calendar_month</span>
               <span className="hidden sm:inline">В Календарь</span>
             </a>
+
 
             <button
               onClick={() => navigate('/sync')}

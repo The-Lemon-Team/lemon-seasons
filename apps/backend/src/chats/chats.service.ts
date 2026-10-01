@@ -13,6 +13,8 @@ import { UpdateChatThreadDto } from './dto/update-chat-thread.dto';
 import { SendThreadMessageDto } from './dto/send-thread-message.dto';
 import { QueryThreadsDto } from './dto/query-threads.dto';
 
+import { SessionService } from '../sync/session.service';
+
 @Injectable()
 export class ChatsService implements OnModuleInit {
   private readonly logger = new Logger(ChatsService.name);
@@ -24,9 +26,11 @@ export class ChatsService implements OnModuleInit {
     private readonly politicalEngineService: PoliticalEngineService,
     private readonly configService: ConfigService,
     private readonly notesService: NotesService,
+    private readonly sessionService: SessionService,
   ) {
     this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
   }
+
 
   async onModuleInit() {
     await this.seedDefaultDataIfEmpty();
@@ -490,7 +494,19 @@ export class ChatsService implements OnModuleInit {
       },
     });
 
+    try {
+      await this.sessionService.recordChange({
+        entityType: 'CHAT_MESSAGE',
+        entityId: userMessageRecord.id,
+        action: 'INSERT',
+        payload: { threadId, text: userMessageRecord.text },
+      });
+    } catch {
+      // Continue even if session tracking fails
+    }
+
     // 2. Resolve target date and news context
+
     const targetDate = dto.date || thread.dateScope || new Date().toISOString().split('T')[0];
     const candidateCards = await this.curationService.getDailyNews(targetDate);
     const politicalEvents = this.politicalEngineService.getPoliticalEvents2026();

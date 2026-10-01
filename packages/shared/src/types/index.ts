@@ -696,5 +696,174 @@ export interface SendThreadMessageInput {
   date?: string;
 }
 
+// ==========================================
+// Distributed Sync, Sessions & Commit Contracts
+// ==========================================
+
+export type SyncSessionStatus = 'ACTIVE' | 'COMMITTED' | 'CANCELLED';
+
+export type PendingChangeAction = 'UPSERT' | 'DELETE' | 'INSERT';
+
+export type PendingChangeEntityType =
+  | 'NOTE'
+  | 'CHAT_THREAD'
+  | 'CHAT_MESSAGE'
+  | 'LINK'
+  | 'FOLDER'
+  | 'TAG';
+
+export interface PendingChange {
+  id: string;
+  sessionId: string;
+  entityType: PendingChangeEntityType;
+  entityId: string;
+  action: PendingChangeAction;
+  payload: any;
+  createdAt: string;
+}
+
+export interface SyncSession {
+  id: string;
+  title: string;
+  deviceId: string;
+  author: string;
+  status: SyncSessionStatus;
+  startedAt: string;
+  closedAt?: string | null;
+  summary?: string | null;
+  changes?: PendingChange[];
+  commit?: SyncCommit | null;
+  _count?: {
+    changes: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SyncCommit {
+  id: string;
+  parentCommitIds: string[];
+  deviceId: string;
+  author: string;
+  sessionId?: string | null;
+  session?: SyncSession | null;
+  summary?: string | null;
+  entitiesCount: number;
+  payloadJson: CommitPackage;
+  isPushed: boolean;
+  pushedAt?: string | null;
+  createdAt: string;
+}
+
+export interface CommitPackage {
+  commitId: string;
+  parentCommitIds: string[];
+  deviceId: string;
+  author: string;
+  timestamp: string; // ISO 8601
+  session: {
+    sessionId: string;
+    title: string;
+    summary?: string;
+  };
+  changes: {
+    notes?: Array<{
+      action: 'UPSERT' | 'DELETE';
+      id: string;
+      version: number;
+      data?: Partial<Note>;
+    }>;
+    chatThreads?: Array<{
+      action: 'UPSERT' | 'DELETE';
+      id: string;
+      data?: Partial<ChatThread>;
+    }>;
+    chatMessages?: Array<{
+      action: 'INSERT';
+      id: string;
+      threadId: string;
+      sender: string;
+      senderName: string;
+      senderRole: string;
+      avatar?: string | null;
+      text: string;
+      createdAt: string;
+      resonanceScore?: number | null;
+      sources?: string[];
+    }>;
+    links?: Array<{
+      action: 'INSERT' | 'DELETE';
+      id: string;
+      url: string;
+      title?: string | null;
+      noteId?: string;
+    }>;
+    folders?: Array<{
+      action: 'UPSERT' | 'DELETE';
+      id: string;
+      path: string;
+      name: string;
+    }>;
+  };
+}
+
+export interface DeviceRef {
+  deviceId: string;
+  deviceName?: string;
+  headCommitId: string;
+  updatedAt: string;
+}
+
+export interface GDriveAuthStatus {
+  authenticated: boolean;
+  userEmail?: string | null;
+  tokenExpiry?: string | null;
+}
+
+export interface SyncStatusResponse {
+  deviceId: string;
+  activeSession: SyncSession | null;
+  lastCommit: {
+    id: string;
+    createdAt: string;
+    entitiesCount: number;
+    summary?: string | null;
+    isPushed: boolean;
+  } | null;
+  pendingChangesCount: number;
+  gdrive: {
+    connected: boolean;
+    userEmail?: string | null;
+    remoteHeadCommitId?: string | null;
+    unpushedCommitsCount: number;
+  };
+}
+
+export interface StartSessionInput {
+  title?: string;
+  author?: string;
+  deviceId?: string;
+}
+
+export interface CommitSessionInput {
+  summary?: string;
+  autoPush?: boolean;
+}
+
+export interface RecordChangeInput {
+  entityType: PendingChangeEntityType;
+  entityId: string;
+  action: PendingChangeAction;
+  payload: any;
+}
+
+export interface GDriveSyncResult {
+  pushedCommits: string[];
+  pulledCommits: string[];
+  conflictNotes: string[];
+  syncedAt: string;
+}
+
+
 
 

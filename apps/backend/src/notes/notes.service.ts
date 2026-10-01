@@ -13,6 +13,7 @@ import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 import { AiQuickAddService } from './ai-quick-add.service';
 import { Prisma } from '@prisma/client';
 import { suggestFolderPathFromTaxonomyPath } from '@lenta/shared';
+import { SessionService } from '../sync/session.service';
 
 @Injectable()
 export class NotesService {
@@ -24,7 +25,9 @@ export class NotesService {
     private hashtagsService: HashtagsService,
     private foldersService: FoldersService,
     private aiQuickAddService: AiQuickAddService,
+    private sessionService: SessionService,
   ) {}
+
 
   private async resolveTagIds(tagIdentifiers?: string[]): Promise<string[]> {
     if (!tagIdentifiers || tagIdentifiers.length === 0) {
@@ -205,8 +208,21 @@ export class NotesService {
     });
 
     this.logger.log(`Created note "${createdNote.title}" [id: ${createdNote.id}, type: ${createdNote.type}, container: ${targetContainerId || 'public'}]`);
+
+    try {
+      await this.sessionService.recordChange({
+        entityType: 'NOTE',
+        entityId: createdNote.id,
+        action: 'UPSERT',
+        payload: { title: createdNote.title, type: createdNote.type },
+      });
+    } catch {
+      // Continue even if session tracking fails
+    }
+
     return createdNote;
   }
+
 
   async parseAiNotes(dto: ParseNotesDto) {
     return this.aiQuickAddService.parseNotes(dto);
@@ -644,6 +660,18 @@ export class NotesService {
     });
 
     this.logger.log(`Updated note "${updatedNote.title}" [id: ${updatedNote.id}]`);
+
+    try {
+      await this.sessionService.recordChange({
+        entityType: 'NOTE',
+        entityId: updatedNote.id,
+        action: 'UPSERT',
+        payload: { title: updatedNote.title, type: updatedNote.type },
+      });
+    } catch {
+      // Continue even if session tracking fails
+    }
+
     return updatedNote;
   }
 
@@ -654,8 +682,21 @@ export class NotesService {
       data: { deletedAt: new Date() },
     });
     this.logger.log(`Soft-deleted note [id: ${id}]`);
+
+    try {
+      await this.sessionService.recordChange({
+        entityType: 'NOTE',
+        entityId: id,
+        action: 'DELETE',
+        payload: { id },
+      });
+    } catch {
+      // Continue even if session tracking fails
+    }
+
     return deleted;
   }
+
 
   async restore(id: string) {
     const note = await this.prisma.note.findUnique({ where: { id } });

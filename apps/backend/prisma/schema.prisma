@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model Feed {
@@ -12,41 +12,41 @@ model Feed {
   title       String
   description String?
   slug        String    @unique
-  notes       Note[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  notes       Note[]
 }
 
 model Note {
-  id          String    @id @default(uuid())
-  feedId      String?
-  feed        Feed?     @relation(fields: [feedId], references: [id])
-  containerId String?
-  container   Container? @relation(fields: [containerId], references: [id], onDelete: Cascade)
-  filePath    String?
-  title       String
-  description String?   // Markdown
-  type        NoteType  @default(SINGLE)
-  startDate   DateTime  @default(now())
-  endDate     DateTime?
-  sourceLink  String?
-  icon        String?
-  curator     String?
+  id             String         @id @default(uuid())
+  feedId         String?
+  containerId    String?
+  filePath       String?
+  title          String
+  description    String?
+  type           NoteType       @default(SINGLE)
+  startDate      DateTime       @default(now())
+  endDate        DateTime?
+  sourceLink     String?
+  icon           String?
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+  curator        String?
+  parentNoteId   String?
   resonanceScore Int?
-  parentNoteId String?
-  parentNote  Note?     @relation("NoteSynthesis", fields: [parentNoteId], references: [id], onDelete: SetNull)
-  childNotes  Note[]    @relation("NoteSynthesis")
-  version     Int       @default(1)
-  tags        TaxonomyNode[]
-  hashtags    Hashtag[]
-  images      NoteImage[]
-  links       NoteLink[]
-  folders     NoteFolder[]
-  versions    NoteVersion[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  container      Container?     @relation(fields: [containerId], references: [id], onDelete: Cascade)
+  feed           Feed?          @relation(fields: [feedId], references: [id])
+  parentNote     Note?          @relation("NoteSynthesis", fields: [parentNoteId], references: [id])
+  childNotes     Note[]         @relation("NoteSynthesis")
+  folders        NoteFolder[]
+  images         NoteImage[]
+  links          NoteLink[]
+  versions       NoteVersion[]
+  hashtags       Hashtag[]      @relation("HashtagToNote")
+  tags           TaxonomyNode[] @relation("NoteToTaxonomyNode")
 
   @@index([startDate, endDate])
   @@index([updatedAt])
@@ -68,11 +68,11 @@ model Folder {
   color       String?
   privacy     String       @default("public")
   containerId String?
-  container   Container?   @relation(fields: [containerId], references: [id], onDelete: Cascade)
-  noteFolders NoteFolder[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
+  container   Container?   @relation(fields: [containerId], references: [id], onDelete: Cascade)
+  noteFolders NoteFolder[]
 
   @@index([path])
   @@index([containerId])
@@ -83,13 +83,13 @@ model Folder {
 model NoteFolder {
   id        String   @id @default(uuid())
   noteId    String
-  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
   folderId  String
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
   isPrimary Boolean  @default(false)
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@unique([noteId, folderId])
   @@index([noteId])
@@ -100,10 +100,10 @@ model NoteFolder {
 model Hashtag {
   id        String    @id @default(uuid())
   name      String    @unique
-  notes     Note[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  notes     Note[]    @relation("HashtagToNote")
 
   @@index([name])
   @@index([updatedAt])
@@ -111,9 +111,8 @@ model Hashtag {
 }
 
 model NoteImage {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   noteId       String
-  note         Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
   url          String
   thumbnailUrl String?
   filename     String
@@ -123,10 +122,11 @@ model NoteImage {
   height       Int?
   caption      String?
   alt          String?
-  isMain       Boolean   @default(false)
-  order        Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isMain       Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  note         Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@index([noteId])
   @@index([noteId, isMain])
@@ -134,15 +134,15 @@ model NoteImage {
 }
 
 model NoteLink {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   noteId    String
-  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
   url       String
   title     String?
-  isSource  Boolean   @default(false)
-  order     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isSource  Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@index([noteId])
   @@index([noteId, isSource])
@@ -150,25 +150,16 @@ model NoteLink {
 }
 
 model TaxonomyNode {
-  id          String    @id @default(uuid())
-  name        String
-  path        String    @unique // To be converted to ltree in migration
-  icon        String?
-  notes       Note[]
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  path      String    @unique
+  icon      String?
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  notes     Note[]    @relation("NoteToTaxonomyNode")
 
   @@index([path])
   @@index([deletedAt])
-}
-
-enum NoteType {
-  SINGLE
-  PERIOD
-  EVENT
-  FILM_RELEASE
-  MENTION
-  DONE
 }
 
 model Container {
@@ -178,28 +169,28 @@ model Container {
   description String?
   visibility  String    @default("public")
   ownerUserId String?
-  ownerUser   User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  notes       Note[]
-  folders     Folder[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  ownerUser   User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  folders     Folder[]
+  notes       Note[]
 
   @@index([ownerUserId])
   @@index([visibility])
 }
 
 model NoteVersion {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   noteId        String
-  note          Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  version       Int       @default(1)
+  version       Int      @default(1)
   content       String
   commitHash    String?
   authorName    String?
   authorEmail   String?
   commitMessage String?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
+  note          Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@index([noteId])
   @@index([commitHash])
@@ -211,16 +202,15 @@ model User {
   name       String
   password   String?
   role       String      @default("user")
-  keys       UserKey[]
-  containers Container[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  containers Container[]
+  keys       UserKey[]
 }
 
 model UserKey {
   id         String    @id @default(uuid())
   userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
   provider   String
   key        String    @unique
@@ -228,14 +218,10 @@ model UserKey {
   isRevoked  Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([provider])
-}
-
-enum ChatType {
-  DIRECT
-  GROUP
 }
 
 model ChatFolder {
@@ -246,12 +232,12 @@ model ChatFolder {
   color     String?
   order     Int          @default(0)
   parentId  String?
-  parent    ChatFolder?  @relation("ChatFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  ChatFolder[] @relation("ChatFolderHierarchy")
-  threads   ChatThread[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   deletedAt DateTime?
+  parent    ChatFolder?  @relation("ChatFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  ChatFolder[] @relation("ChatFolderHierarchy")
+  threads   ChatThread[]
 
   @@index([path])
   @@index([parentId])
@@ -263,17 +249,17 @@ model ChatThread {
   title             String
   type              ChatType            @default(DIRECT)
   folderId          String?
-  folder            ChatFolder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
   targetAgent       String?
   participantAgents String[]            @default([])
   dateScope         String?
   isPinned          Boolean             @default(false)
   isArchived        Boolean             @default(false)
   lastMessageAt     DateTime?           @default(now())
-  messages          ChatMessageRecord[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   deletedAt         DateTime?
+  messages          ChatMessageRecord[]
+  folder            ChatFolder?         @relation(fields: [folderId], references: [id])
 
   @@index([folderId])
   @@index([type])
@@ -285,19 +271,84 @@ model ChatThread {
 model ChatMessageRecord {
   id             String     @id @default(uuid())
   threadId       String
-  thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sender         String
   senderName     String
   senderRole     String
   avatar         String?
-  text           String     @db.Text
+  text           String
   resonanceScore Int?
   sources        String[]   @default([])
   resonanceNodes Json?
   groupSummary   Json?
   suggestedCard  Json?
   createdAt      DateTime   @default(now())
+  thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([threadId, createdAt])
 }
 
+enum NoteType {
+  SINGLE
+  PERIOD
+  EVENT
+  FILM_RELEASE
+  MENTION
+  DONE
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+}
+
+model SyncSession {
+  id        String          @id @default(uuid())
+  title     String
+  deviceId  String
+  author    String
+  status    String          @default("ACTIVE") // ACTIVE, COMMITTED, CANCELLED
+  startedAt DateTime        @default(now())
+  closedAt  DateTime?
+  summary   String?
+  changes   PendingChange[]
+  commit    SyncCommit?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([status])
+  @@index([deviceId])
+  @@index([startedAt])
+}
+
+model PendingChange {
+  id         String      @id @default(uuid())
+  sessionId  String
+  session    SyncSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  entityType String      // NOTE, CHAT_THREAD, CHAT_MESSAGE, LINK, FOLDER, TAG
+  entityId   String
+  action     String      // UPSERT, DELETE, INSERT
+  payload    Json
+  createdAt  DateTime    @default(now())
+
+  @@index([sessionId])
+  @@index([entityType, entityId])
+}
+
+model SyncCommit {
+  id              String       @id // Hash or UUID of the commit
+  parentCommitIds String[]     @default([])
+  deviceId        String
+  author          String
+  sessionId       String?      @unique
+  session         SyncSession? @relation(fields: [sessionId], references: [id])
+  summary         String?
+  entitiesCount   Int          @default(0)
+  payloadJson     Json         // Full sealed CommitPackage
+  isPushed        Boolean      @default(false)
+  pushedAt        DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([deviceId])
+  @@index([createdAt])
+  @@index([isPushed])
+}
