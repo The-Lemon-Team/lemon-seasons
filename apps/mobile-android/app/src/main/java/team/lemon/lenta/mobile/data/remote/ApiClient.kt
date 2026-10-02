@@ -9,12 +9,14 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
 
     private var currentBaseUrl: String = ""
+    private var currentUserKey: String = ""
     private var currentService: LentaApiService? = null
 
     fun getService(baseUrl: String, userKey: String? = null): LentaApiService {
         val normalizedUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        val cleanKey = userKey?.trim() ?: ""
 
-        if (normalizedUrl == currentBaseUrl && currentService != null) {
+        if (normalizedUrl == currentBaseUrl && cleanKey == currentUserKey && currentService != null) {
             return currentService!!
         }
 
@@ -45,6 +47,7 @@ object ApiClient {
 
         val service = retrofit.create(LentaApiService::class.java)
         currentBaseUrl = normalizedUrl
+        currentUserKey = cleanKey
         currentService = service
         return service
     }

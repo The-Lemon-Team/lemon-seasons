@@ -24,13 +24,16 @@ import team.lemon.lenta.mobile.data.model.PendingShare
 import team.lemon.lenta.mobile.data.model.ShareTemplate
 import team.lemon.lenta.mobile.data.model.SyncStatus
 import team.lemon.lenta.mobile.data.preferences.SettingsManager
+import team.lemon.lenta.mobile.data.repository.NotesRepository
 import team.lemon.lenta.mobile.data.repository.ShareRepository
+import team.lemon.lenta.mobile.ui.notes.NotesScreen
 import team.lemon.lenta.mobile.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 enum class MainTab {
-    QUEUE,
+    NOTES,
+    BOOKMARKS,
     SETTINGS
 }
 
@@ -39,10 +42,11 @@ enum class MainTab {
 fun MainScreen() {
     val context = LocalContext.current
     val repository = remember { ShareRepository(context) }
+    val notesRepository = remember { NotesRepository(context) }
     val settingsManager = remember { SettingsManager(context) }
     val scope = rememberCoroutineScope()
 
-    var selectedTab by remember { mutableStateOf(MainTab.QUEUE) }
+    var selectedTab by remember { mutableStateOf(MainTab.NOTES) }
     val shares by repository.allSharesFlow.collectAsState(initial = emptyList())
     val pendingCount by repository.pendingCountFlow.collectAsState(initial = 0)
     val settings by settingsManager.settingsFlow.collectAsState(initial = null)
@@ -65,7 +69,7 @@ fun MainScreen() {
                     }
                 },
                 actions = {
-                    if (selectedTab == MainTab.QUEUE) {
+                    if (selectedTab == MainTab.BOOKMARKS || selectedTab == MainTab.NOTES) {
                         IconButton(
                             onClick = {
                                 scope.launch {
@@ -99,8 +103,21 @@ fun MainScreen() {
         bottomBar = {
             NavigationBar(containerColor = Slate800) {
                 NavigationBarItem(
-                    selected = selectedTab == MainTab.QUEUE,
-                    onClick = { selectedTab = MainTab.QUEUE },
+                    selected = selectedTab == MainTab.NOTES,
+                    onClick = { selectedTab = MainTab.NOTES },
+                    icon = { Icon(Icons.Default.Lightbulb, contentDescription = "Keep Notes") },
+                    label = { Text("Notes") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Slate900,
+                        selectedTextColor = LemonYellow,
+                        indicatorColor = LemonYellow,
+                        unselectedIconColor = Slate400,
+                        unselectedTextColor = Slate400
+                    )
+                )
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.BOOKMARKS,
+                    onClick = { selectedTab = MainTab.BOOKMARKS },
                     icon = {
                         BadgedBox(badge = {
                             if (pendingCount > 0) {
@@ -109,10 +126,10 @@ fun MainScreen() {
                                 }
                             }
                         }) {
-                            Icon(Icons.Default.List, contentDescription = "Queue")
+                            Icon(Icons.Default.Bookmark, contentDescription = "Bookmarks")
                         }
                     },
-                    label = { Text("Queue") },
+                    label = { Text("Bookmarks") },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Slate900,
                         selectedTextColor = LemonYellow,
@@ -143,7 +160,10 @@ fun MainScreen() {
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                MainTab.QUEUE -> QueueTab(
+                MainTab.NOTES -> NotesScreen(
+                    repository = notesRepository
+                )
+                MainTab.BOOKMARKS -> QueueTab(
                     shares = shares,
                     pendingCount = pendingCount,
                     isSyncing = isSyncing,
@@ -435,8 +455,8 @@ fun SettingsTab(
                     serverUrl = it
                     onSaveServerUrl(it)
                 },
-                label = { Text("Local Server URL") },
-                supportingText = { Text("e.g. http://192.168.1.50:3001 or http://10.0.2.2:3001 (emulator)", color = Slate400) },
+                label = { Text("Backend Server URL") },
+                supportingText = { Text("LAN IP (http://192.168.1.50:3001) or Cloud URL (https://api.yourdomain.com)", color = Slate400) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(

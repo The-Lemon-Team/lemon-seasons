@@ -4,11 +4,26 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import team.lemon.lenta.mobile.data.model.MobileNote
+import team.lemon.lenta.mobile.data.model.MobileSession
+import team.lemon.lenta.mobile.data.model.MobileTodoItem
 import team.lemon.lenta.mobile.data.model.PendingShare
 
-@Database(entities = [PendingShare::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        PendingShare::class,
+        MobileNote::class,
+        MobileTodoItem::class,
+        MobileSession::class
+    ],
+    version = 2,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingShareDao(): PendingShareDao
+    abstract fun mobileNoteDao(): MobileNoteDao
+    abstract fun mobileTodoDao(): MobileTodoDao
+    abstract fun mobileSessionDao(): MobileSessionDao
 
     companion object {
         @Volatile
@@ -20,7 +35,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "lemon_lenta_mobile.db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
