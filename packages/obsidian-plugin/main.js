@@ -4136,7 +4136,7 @@ var init_zod = __esm({
 });
 
 // ../shared/dist/index.mjs
-var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, WORKER_AGENTS, WORKER_AGENTS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -4325,13 +4325,117 @@ var init_dist = __esm({
         emoji: "\u{1F3DB}\uFE0F",
         description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u0430\u044F \u0433\u0440\u0443\u043F\u043F\u0430 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0439 \u043F\u043E\u043B\u0438\u0442\u0438\u043A\u0438 \u0420\u0424, \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u044B\u0445 \u0440\u044B\u043D\u043A\u043E\u0432 \u0438 \u0432\u043E\u0441\u0442\u043E\u0447\u043D\u043E\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430",
         curatorIds: ["ivan-bely", "kirk-kitten", "chen-wei"],
-        coordinatorId: "independent-analyst",
+        coordinatorId: "survey-coordinator",
         accentColor: "#38bdf8",
         badgeBg: "rgba(56, 189, 248, 0.16)",
         defaultScope: "\u0412\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424, \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u0430\u044F \u0434\u0438\u043F\u043B\u043E\u043C\u0430\u0442\u0438\u044F, \u0441\u0430\u043D\u043A\u0446\u0438\u0438, \u0440\u044B\u043D\u043A\u0438 \u0410\u0422\u0420 \u0438 \u0441\u044B\u0440\u044C\u0435\u0432\u043E\u0439 \u0431\u0430\u043B\u0430\u043D\u0441"
+      },
+      "tech-group": {
+        id: "tech-group",
+        name: "IT & AI \u0421\u043E\u0432\u0435\u0442",
+        shortName: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0438",
+        emoji: "\u26A1",
+        description: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u0441\u043E\u0432\u0435\u0442 \u043F\u043E \u0438\u0441\u043A\u0443\u0441\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u043C\u0443 \u0438\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442\u0443, BigTech, \u0438\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0435 \u0438 \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u043E\u0439 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438",
+        curatorIds: ["okatsiya"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#a855f7",
+        badgeBg: "rgba(168, 85, 247, 0.16)",
+        defaultScope: "AI/LLM, \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u0430\u044F \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0430, \u043E\u0431\u043B\u0430\u043A\u0430, \u043C\u0438\u043A\u0440\u043E\u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043D\u0438\u043A\u0430 \u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C"
+      },
+      "macro-group": {
+        id: "macro-group",
+        name: "\u041C\u0430\u043A\u0440\u043E\u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C",
+        shortName: "\u041C\u0430\u043A\u0440\u043E",
+        emoji: "\u{1F4CA}",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u0441\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0441\u0442\u0438 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u0438 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u043E\u043D\u0442\u0443\u0440\u043E\u0432",
+        curatorIds: ["ivan-bely", "kirk-kitten"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#fbbf24",
+        badgeBg: "rgba(251, 191, 36, 0.16)",
+        defaultScope: "\u0414\u0435\u043C\u043F\u0444\u0435\u0440, \u0432\u0430\u043B\u044E\u0442\u043D\u044B\u0435 \u043A\u0443\u0440\u0441\u044B, \u0441\u0430\u043D\u043A\u0446\u0438\u043E\u043D\u043D\u043E\u0435 \u0432\u043E\u0437\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435, \u0444\u0440\u0430\u0445\u0442 \u0438 \u0438\u043D\u0444\u043B\u044F\u0446\u0438\u044F"
+      },
+      "all-curators": {
+        id: "all-curators",
+        name: "\u041F\u043E\u043B\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
+        shortName: "\u0412\u0441\u0435 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u044B",
+        emoji: "\u{1F310}",
+        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442 \u0432\u0441\u0435\u0445 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 Project Lenta (\u0420\u0424, \u041C\u0438\u0440, \u0410\u0422\u0420, IT & AI)",
+        curatorIds: ["ivan-bely", "kirk-kitten", "chen-wei", "okatsiya"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#3b82f6",
+        badgeBg: "rgba(59, 130, 246, 0.16)",
+        defaultScope: "\u0421\u043A\u0432\u043E\u0437\u043D\u0430\u044F \u043F\u0430\u043D\u043E\u0440\u0430\u043C\u0430 \u0432\u0441\u0435\u0445 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0445 \u043C\u0438\u0440\u043E\u0432\u044B\u0445, \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0445 \u0438 \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u043E\u0431\u044B\u0442\u0438\u0439"
       }
     };
     CURATOR_GROUPS_LIST = Object.values(CURATOR_GROUPS);
+    WORKER_AGENTS = {
+      "harvester-agent": {
+        id: "harvester-agent",
+        name: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u044B\u0439 \u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
+        shortName: "\u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0441\u0431\u043E\u0440\u0430 \u0434\u0430\u043D\u043D\u044B\u0445, RSS \u0438 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433\u0430 \u043F\u0435\u0440\u0432\u043E\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432",
+        avatar: "\u{1F4E1}",
+        category: "ingestion",
+        accentColor: "#10b981",
+        badgeBg: "rgba(16, 185, 129, 0.16)",
+        description: "\u041E\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043B\u044F\u0435\u0442 \u043D\u0435\u043F\u0440\u0435\u0440\u044B\u0432\u043D\u044B\u0439 \u0441\u0431\u043E\u0440 \u0441\u044B\u0440\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439, \u043F\u0430\u0440\u0441\u0438\u043D\u0433 \u0432\u043D\u0435\u0448\u043D\u0438\u0445 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432, \u0434\u0435\u0434\u0443\u043F\u043B\u0438\u043A\u0430\u0446\u0438\u044E \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0439 \u0442\u0440\u0438\u0430\u0436 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u043E\u0432 \u043F\u0435\u0440\u0435\u0434 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0435\u0439 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u0430\u043C.",
+        capabilities: ["rss_ingestion", "web_scraping", "deduplication", "source_validation"],
+        suggestedSnippets: ["/harvest", "/sources"]
+      },
+      "survey-coordinator": {
+        id: "survey-coordinator",
+        name: "\u041A\u043E\u043E\u0440\u0434\u0438\u043D\u0430\u0442\u043E\u0440 \u041E\u043F\u0440\u043E\u0441\u043E\u0432",
+        shortName: "\u041E\u043F\u0440\u043E\u0441\u0447\u0438\u043A",
+        role: "\u0410\u0433\u0435\u043D\u0442-\u043E\u043F\u0440\u043E\u0441\u0447\u0438\u043A \u0438 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0433\u0440\u0443\u043F\u043F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
+        avatar: "\u{1F9ED}",
+        category: "survey",
+        accentColor: "#6366f1",
+        badgeBg: "rgba(99, 102, 241, 0.16)",
+        description: "\u041E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0433\u0440\u0443\u043F\u043F\u0443 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 (\u0438\u043B\u0438 \u0432\u0441\u0435\u0445) \u0437\u0430 \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B (\u0441\u0435\u0433\u043E\u0434\u043D\u044F, \u0432\u0447\u0435\u0440\u0430, \u043D\u0435\u0434\u0435\u043B\u044F), \u0441\u0432\u043E\u0434\u0438\u0442 \u0438\u0445 \u0434\u043E\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0437\u0438\u0446\u0438\u0438 \u0438 \u0432\u044B\u044F\u0432\u043B\u044F\u0435\u0442 \u0442\u043E\u0447\u043A\u0438 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430.",
+        capabilities: ["group_polling", "temporal_slicing", "cross_curator_comparison", "resonance_detection"],
+        suggestedSnippets: ["/survey", "/survey-today", "/survey-yesterday", "/survey-week"]
+      },
+      "sidework-producer": {
+        id: "sidework-producer",
+        name: "\u041F\u0440\u043E\u0434\u044E\u0441\u0435\u0440 \u0421\u0430\u0439\u0434-\u0420\u0430\u0431\u043E\u0442\u044B",
+        shortName: "\u0421\u0430\u0439\u0434-\u0432\u043E\u0440\u043A\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u0440\u043E\u0434\u0430\u043A\u0448\u043D\u0430, \u043C\u0435\u0434\u0438\u0430-\u043E\u0431\u043E\u0433\u0430\u0449\u0435\u043D\u0438\u044F \u0438 \u043E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u044F",
+        avatar: "\u{1F3A8}",
+        category: "sidework",
+        accentColor: "#ec4899",
+        badgeBg: "rgba(236, 72, 153, 0.16)",
+        description: "\u0412\u0435\u0434\u0435\u0442 \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u0443\u044E \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0443: \u0441\u043E\u0437\u0434\u0430\u0435\u0442 \u0441\u0442\u0430\u0442\u044C\u0438, \u043F\u043E\u0441\u0442\u044B \u0438 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u044B \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0434\u0430\u043D\u043D\u044B\u0445, \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043F\u0440\u043E\u043C\u043F\u0442\u044B \u0434\u043B\u044F AI-\u0438\u043B\u043B\u044E\u0441\u0442\u0440\u0430\u0446\u0438\u0439, \u0441\u0445\u0435\u043C\u044B Mermaid \u0438 \u0434\u043E\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u043C\u0438 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u043C\u0438.",
+        capabilities: ["content_drafting", "image_prompt_generation", "mermaid_generation", "commentary_enrichment", "obsidian_export"],
+        suggestedSnippets: ["/sidework", "/media", "/comment", "/draft"]
+      },
+      "podcast-producer": {
+        id: "podcast-producer",
+        name: "\u0420\u0435\u0436\u0438\u0441\u0441\u0435\u0440 \u041F\u043E\u0434\u043A\u0430\u0441\u0442\u043E\u0432",
+        shortName: "\u041F\u043E\u0434\u043A\u0430\u0441\u0442\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0435\u0432 NotebookLM",
+        avatar: "\u{1F399}\uFE0F",
+        category: "sidework",
+        accentColor: "#f97316",
+        badgeBg: "rgba(249, 115, 22, 0.16)",
+        description: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u0430\u044F \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0430: \u043F\u0440\u0435\u0432\u0440\u0430\u0449\u0430\u0435\u0442 \u043F\u043E\u0434\u0431\u043E\u0440\u043A\u0443 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0432 \u0436\u0438\u0432\u043E\u0439 \u0434\u0438\u0430\u043B\u043E\u0433\u043E\u0432\u044B\u0439 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0439 \u0434\u0432\u0443\u0445 \u0432\u0435\u0434\u0443\u0449\u0438\u0445.",
+        capabilities: ["podcast_scripting", "audio_overview", "dialogue_balancing"],
+        suggestedSnippets: ["/podcast"]
+      },
+      "independent-analyst": {
+        id: "independent-analyst",
+        name: "\u041D\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043C\u044B\u0439 \u0410\u0440\u0431\u0438\u0442\u0440",
+        shortName: "\u0410\u0440\u0431\u0438\u0442\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0431\u0435\u0441\u043F\u0440\u0438\u0441\u0442\u0440\u0430\u0441\u0442\u043D\u043E\u0433\u043E \u0441\u0438\u043D\u0442\u0435\u0437\u0430 \u0438 \u0444\u0430\u043A\u0442\u0447\u0435\u043A\u0438\u043D\u0433\u0430",
+        avatar: "\u2696\uFE0F",
+        category: "synthesis",
+        accentColor: "#14b8a6",
+        badgeBg: "rgba(20, 184, 166, 0.16)",
+        description: "\u041F\u0440\u043E\u0432\u043E\u0434\u0438\u0442 \u043E\u0431\u044A\u0435\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u043A\u0440\u043E\u0441\u0441-\u043A\u043E\u043D\u0442\u0443\u0440\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0437 \u043F\u0440\u0438 \u0441\u0442\u043E\u043B\u043A\u043D\u043E\u0432\u0435\u043D\u0438\u0438 \u043E\u0446\u0435\u043D\u043E\u043A \u0440\u0430\u0437\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432, \u043E\u0446\u0435\u043D\u0438\u0432\u0430\u0435\u0442 \u0434\u043E\u0441\u0442\u043E\u0432\u0435\u0440\u043D\u043E\u0441\u0442\u044C \u0438 \u0440\u0430\u0441\u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u0442 \u043F\u0440\u043E\u0446\u0435\u043D\u0442 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430.",
+        capabilities: ["neutral_arbitration", "resonance_scoring", "conflict_resolution"],
+        suggestedSnippets: ["/synthesis"]
+      }
+    };
+    WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
     IT_SECTOR_REGISTRY = {
       ai: {
         id: "ai",
@@ -4857,7 +4961,7 @@ __export(main_exports, {
   default: () => WorkspaceLentaPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 
 // src/services/lenta-api-client.ts
 var import_obsidian = require("obsidian");
@@ -5124,6 +5228,114 @@ var LentaApiClient = class {
     const query = params.toString() ? `?${params.toString()}` : "";
     return this.request({
       url: `${this.baseUrl}/sync/changes${query}`,
+      method: "GET"
+    });
+  }
+  // ==========================================
+  // Workstation Sessions & Google Drive Sync
+  // ==========================================
+  /**
+   * Retrieves overall sync status, active session, unpushed commits count, and Google Drive state.
+   */
+  async getSyncStatus(deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/status${query}`,
+      method: "GET"
+    });
+  }
+  /**
+   * Gets current active session for this workstation device.
+   */
+  async getActiveSession(deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/session/active${query}`,
+      method: "GET"
+    });
+  }
+  /**
+   * Starts a new active workstation session.
+   */
+  async startSession(input) {
+    return this.request({
+      url: `${this.baseUrl}/sync/session/start`,
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  }
+  /**
+   * Records a pending change in the current workstation session.
+   */
+  async recordSessionChange(input, deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/session/change${query}`,
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  }
+  /**
+   * Fetches pending changes recorded in an active session.
+   */
+  async getPendingSessionChanges(sessionId, deviceId) {
+    const params = new URLSearchParams();
+    if (sessionId)
+      params.set("sessionId", sessionId);
+    if (deviceId)
+      params.set("deviceId", deviceId);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/session/changes${qs}`,
+      method: "GET"
+    });
+  }
+  /**
+   * Seals and commits the active session into an immutable SyncCommit.
+   */
+  async commitSession(sessionId, input, deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/session/${encodeURIComponent(sessionId)}/commit${query}`,
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  }
+  /**
+   * Cancels an active session and discards pending uncommitted changes.
+   */
+  async cancelSession(sessionId) {
+    return this.request({
+      url: `${this.baseUrl}/sync/session/${encodeURIComponent(sessionId)}/cancel`,
+      method: "POST"
+    });
+  }
+  /**
+   * Pushes unpushed local commits to Google Drive cloud relay.
+   */
+  async pushSync(deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/push${query}`,
+      method: "POST"
+    });
+  }
+  /**
+   * Pulls remote commits from Google Drive cloud relay and merges into local database.
+   */
+  async pullSync(deviceId) {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : "";
+    return this.request({
+      url: `${this.baseUrl}/sync/pull${query}`,
+      method: "POST"
+    });
+  }
+  /**
+   * Gets Google Drive authentication and storage relay directory status.
+   */
+  async getGDriveStatus() {
+    return this.request({
+      url: `${this.baseUrl}/sync/gdrive/status`,
       method: "GET"
     });
   }
@@ -5896,6 +6108,51 @@ var LentaSyncEngine = class {
     };
   }
   /**
+   * Distributed Cloud Pull:
+   * 1. Fetches remote commits from Google Drive cloud relay into local PostgreSQL database (3-way merge).
+   * 2. Reconciles local Obsidian vault markdown files with updated records.
+   */
+  async pullCloudChanges(deviceId) {
+    const settings = this.getSettings();
+    const targetDevice = deviceId || settings.deviceId || "obsidian-workstation";
+    let cloudResult = { pulledCommits: [] };
+    try {
+      cloudResult = await this.apiClient.pullSync(targetDevice);
+    } catch (err) {
+      console.warn("Google Drive cloud pull warning:", err?.message);
+      cloudResult = { pulledCommits: [], errors: [err?.message || "Cloud pull failed"] };
+    }
+    const vaultRes = await this.pullChanges();
+    return {
+      cloudResult,
+      ...vaultRes
+    };
+  }
+  /**
+   * Commits the active workstation session into an immutable SyncCommit
+   * and pushes to Google Drive relay storage.
+   */
+  async commitWorkstationSession(summary, autoPush = true) {
+    const settings = this.getSettings();
+    const targetDevice = settings.deviceId || "obsidian-workstation";
+    const activeSession = await this.apiClient.getActiveSession(targetDevice);
+    if (!activeSession) {
+      throw new Error("No active workstation session to commit.");
+    }
+    const commitSummary = summary?.trim() || activeSession.title || `Obsidian Session ${(/* @__PURE__ */ new Date()).toLocaleDateString()}`;
+    const res = await this.apiClient.commitSession(
+      activeSession.id,
+      { summary: commitSummary, autoPush },
+      targetDevice
+    );
+    if (res.commit?.id) {
+      settings.lastSyncedCommit = res.commit.id;
+    }
+    settings.lastSyncedAt = (/* @__PURE__ */ new Date()).toISOString();
+    await this.saveSettings();
+    return res;
+  }
+  /**
    * Pushes modified and new local markdown files from vault to Lenta server.
    * Intercepts local image attachments (![[image.png]]), uploads to /storage, and updates links.
    */
@@ -5944,6 +6201,19 @@ var LentaSyncEngine = class {
         processedBody
       );
       await this.ledgerManager.saveLedger();
+      try {
+        const settings = this.getSettings();
+        await this.apiClient.recordSessionChange(
+          {
+            entityType: "NOTE",
+            entityId: updated.id,
+            action: "UPSERT",
+            payload: { title: updated.title, type: updated.type, path: file.path }
+          },
+          settings.deviceId
+        );
+      } catch {
+      }
       return { success: true, note: updated };
     } else {
       const settings = this.getSettings();
@@ -5977,6 +6247,18 @@ var LentaSyncEngine = class {
         processedBody
       );
       await this.ledgerManager.saveLedger();
+      try {
+        await this.apiClient.recordSessionChange(
+          {
+            entityType: "NOTE",
+            entityId: created.id,
+            action: "UPSERT",
+            payload: { title: created.title, type: created.type, path: file.path }
+          },
+          settings.deviceId
+        );
+      } catch {
+      }
       return { success: true, note: created };
     }
   }
@@ -6278,7 +6560,10 @@ var DEFAULT_SETTINGS = {
   autoSyncOnEdit: false,
   containerServerUrl: "http://localhost:3001",
   containerApiKey: "",
-  containerPrivacyFilter: "all"
+  containerPrivacyFilter: "all",
+  deviceId: "obsidian-workstation",
+  sessionAuthor: "Obsidian",
+  autoPullOnStartup: true
 };
 
 // src/ui/quick-add-modal.ts
@@ -11446,8 +11731,299 @@ var LentaContainersFoldersModal = class extends import_obsidian10.Modal {
 };
 
 // src/ui/sidebar-view.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 init_lenta_frontmatter();
+
+// src/ui/session-commit-modal.ts
+var import_obsidian11 = require("obsidian");
+var LentaSessionCommitModal = class extends import_obsidian11.Modal {
+  constructor(app, apiClient, syncEngine, getSettings, onSessionUpdated) {
+    super(app);
+    this.syncStatus = null;
+    this.activeSession = null;
+    this.pendingChanges = [];
+    this.isLoading = true;
+    this.isCommitting = false;
+    this.isPulling = false;
+    this.commitSummary = "";
+    this.autoPush = true;
+    this.newSessionTitle = "";
+    this.apiClient = apiClient;
+    this.syncEngine = syncEngine;
+    this.getSettings = getSettings;
+    this.onSessionUpdated = onSessionUpdated;
+  }
+  async onOpen() {
+    this.modalEl.addClass("lenta-session-modal");
+    this.modalEl.style.cssText = "max-width: 680px; width: 90vw; max-height: 85vh; border-radius: 12px; border: 1px solid rgba(201, 205, 88, 0.35); overflow-y: auto;";
+    await this.loadData();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  async loadData() {
+    this.isLoading = true;
+    this.render();
+    try {
+      const settings = this.getSettings();
+      const deviceId = settings.deviceId || "obsidian-workstation";
+      const status = await this.apiClient.getSyncStatus(deviceId).catch(() => null);
+      this.syncStatus = status;
+      this.activeSession = status?.activeSession || null;
+      if (this.activeSession) {
+        this.commitSummary = this.activeSession.title || "";
+        this.pendingChanges = await this.apiClient.getPendingSessionChanges(this.activeSession.id, deviceId).catch(() => []);
+      } else {
+        this.pendingChanges = [];
+        this.newSessionTitle = `\u0421\u0435\u0441\u0441\u0438\u044F Obsidian ${(/* @__PURE__ */ new Date()).toLocaleDateString("ru-RU")} ${(/* @__PURE__ */ new Date()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+      }
+    } catch (err) {
+      new import_obsidian11.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0441\u0442\u0430\u0442\u0443\u0441\u0430 \u0441\u0435\u0441\u0441\u0438\u0438: ${err.message}`);
+    } finally {
+      this.isLoading = false;
+      this.render();
+    }
+  }
+  render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const header = contentEl.createDiv({ cls: "lenta-modal-header" });
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 12px; margin-bottom: 16px;";
+    const titleWrap = header.createDiv({ cls: "lenta-header-title-wrap" });
+    const title = titleWrap.createEl("h3", {
+      text: "\u{1F34B} \u0421\u0435\u0441\u0441\u0438\u044F \u0440\u0430\u0431\u043E\u0447\u0435\u0439 \u0441\u0442\u0430\u043D\u0446\u0438\u0438 & Google Drive"
+    });
+    title.style.cssText = "margin: 0; color: #c9cd58; font-size: 1.2em; display: flex; align-items: center; gap: 8px;";
+    const deviceSub = titleWrap.createEl("span");
+    deviceSub.style.cssText = "font-size: 0.8em; color: var(--text-muted); font-family: var(--font-monospace);";
+    deviceSub.setText(`\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E: ${this.getSettings().deviceId || "obsidian-workstation"}`);
+    if (this.isLoading) {
+      const loadingEl = contentEl.createDiv({ cls: "lenta-loading" });
+      loadingEl.style.cssText = "padding: 40px; text-align: center; color: var(--text-muted);";
+      loadingEl.setText("\u23F3 \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0441\u0442\u0430\u0442\u0443\u0441\u0430 \u0441\u0435\u0441\u0441\u0438\u0438 \u0438 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 Google Drive...");
+      return;
+    }
+    const relayCard = contentEl.createDiv();
+    relayCard.style.cssText = "background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); padding: 12px 14px; margin-bottom: 16px; font-size: 0.88em;";
+    const relayRow = relayCard.createDiv();
+    relayRow.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
+    const relayInfo = relayRow.createDiv();
+    relayInfo.style.cssText = "display: flex; align-items: center; gap: 8px;";
+    const relayDot = relayInfo.createSpan();
+    relayDot.style.cssText = "width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;";
+    const relayText = relayInfo.createSpan();
+    relayText.innerHTML = `<strong>Google Drive Storage Relay:</strong> <code>C:\\remote</code>`;
+    if (this.syncStatus?.lastCommit) {
+      const commitInfo = relayCard.createDiv();
+      commitInfo.style.cssText = "margin-top: 6px; color: var(--text-muted); font-family: var(--font-monospace); font-size: 0.9em;";
+      const c = this.syncStatus.lastCommit;
+      commitInfo.setText(
+        `\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043A\u043E\u043C\u043C\u0438\u0442: #${c.id.slice(0, 10)} (${c.entitiesCount} \u0441\u0443\u0449\u043D.) \u2022 ${new Date(c.createdAt).toLocaleTimeString()}`
+      );
+    }
+    if (this.activeSession) {
+      this.renderActiveSessionView(contentEl);
+    } else {
+      this.renderIdleSessionView(contentEl);
+    }
+    this.renderCloudPullSection(contentEl);
+  }
+  renderActiveSessionView(container) {
+    const sessionCard = container.createDiv();
+    sessionCard.style.cssText = "background: rgba(201, 205, 88, 0.06); border: 1px solid rgba(201, 205, 88, 0.35); border-radius: 8px; padding: 16px; margin-bottom: 16px;";
+    const sessionHeader = sessionCard.createDiv();
+    sessionHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;";
+    const sTitle = sessionHeader.createDiv();
+    sTitle.style.cssText = "font-weight: 600; color: #e5e971; font-size: 1.05em; display: flex; align-items: center; gap: 6px;";
+    sTitle.innerHTML = `<span style="color: #c9cd58">\u26A1</span> ${this.activeSession?.title}`;
+    const deltasBadge = sessionHeader.createSpan();
+    const count = this.pendingChanges.length || this.syncStatus?.pendingChangesCount || 0;
+    deltasBadge.style.cssText = "background: rgba(201, 205, 88, 0.2); color: #c9cd58; font-weight: bold; font-family: var(--font-monospace); padding: 2px 8px; border-radius: 12px; font-size: 0.85em;";
+    deltasBadge.setText(`+${count} \u043F\u0440\u0430\u0432\u043E\u043A`);
+    const metaRow = sessionCard.createDiv();
+    metaRow.style.cssText = "color: var(--text-muted); font-size: 0.85em; margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap;";
+    metaRow.innerHTML = `
+      <span>\u0410\u0432\u0442\u043E\u0440: <strong>${this.activeSession?.author || "\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C"}</strong></span>
+      <span>\u041D\u0430\u0447\u0430\u043B\u043E: <strong>${new Date(this.activeSession?.startedAt || "").toLocaleTimeString()}</strong></span>
+    `;
+    if (this.pendingChanges.length > 0) {
+      const changesListTitle = sessionCard.createEl("div", { text: "\u041D\u0430\u043A\u043E\u043F\u043B\u0435\u043D\u043D\u044B\u0435 \u0434\u0435\u043B\u044C\u0442\u044B \u0441\u0435\u0441\u0441\u0438\u0438:" });
+      changesListTitle.style.cssText = "font-size: 0.85em; font-weight: 600; margin-bottom: 6px; color: var(--text-normal);";
+      const listContainer = sessionCard.createDiv();
+      listContainer.style.cssText = "max-height: 140px; overflow-y: auto; background: var(--background-primary); border-radius: 6px; border: 1px solid var(--background-modifier-border); padding: 6px 8px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px;";
+      for (const change of this.pendingChanges) {
+        const itemRow = listContainer.createDiv();
+        itemRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; font-size: 0.8em; font-family: var(--font-monospace); padding: 3px 6px; border-radius: 4px; background: var(--background-secondary);";
+        const left = itemRow.createDiv();
+        left.style.cssText = "display: flex; align-items: center; gap: 6px; overflow: hidden;";
+        const tagBadge = left.createSpan();
+        tagBadge.style.cssText = "padding: 1px 4px; border-radius: 3px; font-size: 0.75em; font-weight: bold; background: rgba(59, 130, 246, 0.15); color: #60a5fa;";
+        tagBadge.setText(change.entityType);
+        const changeName = left.createSpan();
+        changeName.style.cssText = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;";
+        changeName.setText(change.payload?.title || change.entityId);
+        const actionBadge = itemRow.createSpan();
+        actionBadge.style.cssText = "color: #22c55e; font-weight: 600; font-size: 0.75em; flex-shrink: 0;";
+        actionBadge.setText(change.action);
+      }
+    }
+    new import_obsidian11.Setting(sessionCard).setName("\u041E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u0430 (Summary)").setDesc("\u041A\u0440\u0430\u0442\u043A\u043E \u0437\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u0443\u0439\u0442\u0435, \u043A\u0430\u043A\u0438\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0431\u044B\u043B\u0438 \u0432\u043D\u0435\u0441\u0435\u043D\u044B \u0432 \u0440\u0430\u043C\u043A\u0430\u0445 \u044D\u0442\u043E\u0439 \u0441\u0435\u0441\u0441\u0438\u0438.").addText(
+      (text2) => text2.setPlaceholder("\u041D\u0430\u043F\u0440\u0438\u043C\u0435\u0440: \u0414\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u044B \u0437\u0430\u043C\u0435\u0442\u043A\u0438 \u043F\u043E \u0440\u0435\u043B\u0438\u0437\u0430\u043C Marvel \u0438 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0435").setValue(this.commitSummary).onChange((val) => {
+        this.commitSummary = val;
+      })
+    );
+    new import_obsidian11.Setting(sessionCard).setName("\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0432 Google Drive Relay").setDesc("\u0410\u0442\u043E\u043C\u0430\u0440\u043D\u043E \u0437\u0430\u043F\u0435\u0447\u0430\u0442\u0430\u0442\u044C \u043A\u043E\u043C\u043C\u0438\u0442 \u0432 C:\\remote\\commits \u0438 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441 \u043E\u0431\u043B\u0430\u043A\u043E\u043C.").addToggle(
+      (toggle) => toggle.setValue(this.autoPush).onChange((val) => {
+        this.autoPush = val;
+      })
+    );
+    const btnRow = sessionCard.createDiv();
+    btnRow.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;";
+    const cancelBtn = btnRow.createEl("button", {
+      text: "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0441\u0435\u0441\u0441\u0438\u044E",
+      cls: "mod-warning"
+    });
+    cancelBtn.style.cssText = "cursor: pointer; padding: 6px 12px; font-size: 0.85em;";
+    cancelBtn.onclick = async () => {
+      if (confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u043E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u044D\u0442\u0443 \u0441\u0435\u0441\u0441\u0438\u044E \u0438 \u0441\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043D\u0430\u043A\u043E\u043F\u043B\u0435\u043D\u043D\u044B\u0435 \u0434\u0435\u043B\u044C\u0442\u044B?")) {
+        await this.handleCancelSession();
+      }
+    };
+    const commitBtn = btnRow.createEl("button", {
+      text: this.isCommitting ? "\u0424\u0438\u043A\u0441\u0430\u0446\u0438\u044F..." : "\u0417\u0430\u043A\u043E\u043C\u043C\u0438\u0442\u0438\u0442\u044C \u0441\u0435\u0441\u0441\u0438\u044E \u2713",
+      cls: "mod-cta lenta-btn-lemon"
+    });
+    commitBtn.style.cssText = "cursor: pointer; padding: 6px 16px; font-weight: 600; font-size: 0.9em; background: #c9cd58; color: #121414;";
+    commitBtn.disabled = this.isCommitting;
+    commitBtn.onclick = () => this.handleCommitSession();
+  }
+  renderIdleSessionView(container) {
+    const idleCard = container.createDiv();
+    idleCard.style.cssText = "background: var(--background-secondary); border-radius: 8px; border: 1px dashed var(--background-modifier-border); padding: 18px; margin-bottom: 16px; text-align: center;";
+    const idleTitle = idleCard.createEl("h4", { text: "\u{1F7E2} \u0420\u0430\u0431\u043E\u0447\u0430\u044F \u0441\u0442\u0430\u043D\u0446\u0438\u044F \u0433\u043E\u0442\u043E\u0432\u0430 (Live \u0420\u0435\u0436\u0438\u043C)" });
+    idleTitle.style.cssText = "margin-top: 0; margin-bottom: 6px; color: var(--text-normal);";
+    const idleDesc = idleCard.createEl("p");
+    idleDesc.style.cssText = "color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px;";
+    idleDesc.setText(
+      "\u0410\u043A\u0442\u0438\u0432\u043D\u043E\u0439 \u0441\u0435\u0441\u0441\u0438\u0438 \u0441\u0435\u0439\u0447\u0430\u0441 \u043D\u0435\u0442. \u0421\u0435\u0441\u0441\u0438\u044F \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u043F\u0440\u0438 \u0432\u043D\u0435\u0441\u0435\u043D\u0438\u0438 \u043F\u0440\u0430\u0432\u043E\u043A \u0432 \u0437\u0430\u043C\u0435\u0442\u043A\u0438, \u043B\u0438\u0431\u043E \u0432\u044B \u043C\u043E\u0436\u0435\u0442\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u0435\u0451 \u0432\u0440\u0443\u0447\u043D\u0443\u044E \u0441 \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u043C \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u043E\u043C."
+    );
+    const startRow = idleCard.createDiv();
+    startRow.style.cssText = "display: flex; gap: 8px; justify-content: center; max-width: 440px; margin: 0 auto;";
+    const input = startRow.createEl("input", {
+      type: "text",
+      placeholder: "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043D\u043E\u0432\u043E\u0439 \u0441\u0435\u0441\u0441\u0438\u0438...",
+      value: this.newSessionTitle
+    });
+    input.style.cssText = "flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--background-modifier-border);";
+    input.oninput = (e) => {
+      this.newSessionTitle = e.target.value;
+    };
+    const startBtn = startRow.createEl("button", {
+      text: "\u041D\u0430\u0447\u0430\u0442\u044C \u0441\u0435\u0441\u0441\u0438\u044E",
+      cls: "mod-cta"
+    });
+    startBtn.style.cssText = "cursor: pointer; font-weight: 600; padding: 6px 14px;";
+    startBtn.onclick = () => this.handleStartSession();
+  }
+  renderCloudPullSection(container) {
+    const pullCard = container.createDiv();
+    pullCard.style.cssText = "background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); padding: 14px; display: flex; justify-content: space-between; align-items: center;";
+    const pullInfo = pullCard.createDiv();
+    const pullTitle = pullInfo.createDiv();
+    pullTitle.style.cssText = "font-weight: 600; font-size: 0.9em; margin-bottom: 2px;";
+    pullTitle.setText("\u0421\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F \u0441 Google Drive (Cloud Pull)");
+    const pullDesc = pullInfo.createDiv();
+    pullDesc.style.cssText = "color: var(--text-muted); font-size: 0.82em;";
+    pullDesc.setText("\u0421\u043A\u0430\u0447\u0438\u0432\u0430\u0435\u0442 \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u0441 \u0434\u0440\u0443\u0433\u0438\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 (Android, \u041F\u041A 2) \u0438 \u043D\u0430\u043A\u0430\u0442\u044B\u0432\u0430\u0435\u0442 \u0438\u0445 \u0432 Obsidian.");
+    const pullBtn = pullCard.createEl("button", {
+      text: this.isPulling ? "\u041E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435..." : "\u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u044C \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u2B07",
+      cls: "lenta-pull-btn"
+    });
+    pullBtn.style.cssText = "cursor: pointer; padding: 7px 14px; font-weight: 600; border-radius: 6px; border: 1px solid rgba(201, 205, 88, 0.4); background: rgba(201, 205, 88, 0.12); color: #e5e971;";
+    pullBtn.disabled = this.isPulling;
+    pullBtn.onclick = () => this.handlePullFromCloud();
+  }
+  async handleCommitSession() {
+    if (!this.activeSession)
+      return;
+    this.isCommitting = true;
+    this.render();
+    try {
+      const summary = this.commitSummary.trim() || this.activeSession.title;
+      const res = await this.syncEngine.commitWorkstationSession(summary, this.autoPush);
+      new import_obsidian11.Notice(
+        `\u{1F34B} \u0421\u0435\u0441\u0441\u0438\u044F \u0437\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u0430! \u041A\u043E\u043C\u043C\u0438\u0442 #${res.commit?.id?.slice(0, 8)} \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D \u0432 Google Drive.`
+      );
+      if (this.onSessionUpdated) {
+        await this.onSessionUpdated();
+      }
+      this.close();
+    } catch (err) {
+      new import_obsidian11.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0444\u0438\u043A\u0441\u0430\u0446\u0438\u0438 \u0441\u0435\u0441\u0441\u0438\u0438: ${err.message}`);
+      this.isCommitting = false;
+      this.render();
+    }
+  }
+  async handleCancelSession() {
+    if (!this.activeSession)
+      return;
+    try {
+      await this.apiClient.cancelSession(this.activeSession.id);
+      new import_obsidian11.Notice("\u{1F34B} \u0421\u0435\u0441\u0441\u0438\u044F \u043E\u0442\u043C\u0435\u043D\u0435\u043D\u0430, \u043D\u0435\u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043D\u044B\u0435 \u0434\u0435\u043B\u044C\u0442\u044B \u0441\u0431\u0440\u043E\u0448\u0435\u043D\u044B.");
+      if (this.onSessionUpdated) {
+        await this.onSessionUpdated();
+      }
+      await this.loadData();
+    } catch (err) {
+      new import_obsidian11.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u043E\u0442\u043C\u0435\u043D\u044B \u0441\u0435\u0441\u0441\u0438\u0438: ${err.message}`);
+    }
+  }
+  async handleStartSession() {
+    const title = this.newSessionTitle.trim();
+    if (!title) {
+      new import_obsidian11.Notice("\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0441\u0435\u0441\u0441\u0438\u0438.");
+      return;
+    }
+    try {
+      const settings = this.getSettings();
+      await this.apiClient.startSession({
+        title,
+        deviceId: settings.deviceId || "obsidian-workstation",
+        author: settings.sessionAuthor || settings.username || "Obsidian"
+      });
+      new import_obsidian11.Notice(`\u{1F34B} \u0421\u0435\u0441\u0441\u0438\u044F "${title}" \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u0430!`);
+      if (this.onSessionUpdated) {
+        await this.onSessionUpdated();
+      }
+      await this.loadData();
+    } catch (err) {
+      new import_obsidian11.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u043F\u0443\u0441\u043A\u0430 \u0441\u0435\u0441\u0441\u0438\u0438: ${err.message}`);
+    }
+  }
+  async handlePullFromCloud() {
+    this.isPulling = true;
+    this.render();
+    try {
+      const res = await this.syncEngine.pullCloudChanges();
+      const count = res.cloudResult.pulledCommits?.length || 0;
+      if (count > 0) {
+        new import_obsidian11.Notice(
+          `\u{1F34B} \u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u043E ${count} \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0438\u0437 Google Drive! \u041E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u043E ${res.pulledCount} \u0444\u0430\u0439\u043B\u043E\u0432 \u0437\u0430\u043C\u0435\u0442\u043E\u043A.`
+        );
+      } else {
+        new import_obsidian11.Notice("\u{1F34B} \u0412\u0441\u0435 \u0434\u0430\u043D\u043D\u044B\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B. \u041D\u043E\u0432\u044B\u0445 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0432 Google Drive \u043D\u0435\u0442.");
+      }
+      if (this.onSessionUpdated) {
+        await this.onSessionUpdated();
+      }
+      await this.loadData();
+    } catch (err) {
+      new import_obsidian11.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u0438 \u0441 \u043E\u0431\u043B\u0430\u043A\u043E\u043C: ${err.message}`);
+      this.isPulling = false;
+      this.render();
+    }
+  }
+};
 
 // ../../node_modules/.pnpm/svelte@4.2.20/node_modules/svelte/src/runtime/easing/index.js
 function cubicOut(t) {
@@ -11484,10 +12060,10 @@ function slide(node, { delay = 0, duration = 400, easing = cubicOut, axis = "y" 
 }
 
 // src/ui/svelte/LentaSidebar.svelte
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/ui/svelte/ContainerCard.svelte
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/ui/svelte/tree-flattener.ts
 function isTodayMatch(node, todayStr) {
@@ -11611,7 +12187,7 @@ function computeVirtualWindow(items, scrollTop, viewportHeight, itemHeight = 30,
 }
 
 // src/ui/svelte/TreeNodeRow.svelte
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 function create_if_block_62(ctx) {
   let div;
   let span;
@@ -12300,13 +12876,13 @@ function instance2($$self, $$props, $$invalidate) {
   const dispatch2 = createEventDispatcher();
   function obsIcon(node, iconName) {
     if (iconName) {
-      (0, import_obsidian11.setIcon)(node, iconName);
+      (0, import_obsidian12.setIcon)(node, iconName);
     }
     return {
       update(newIconName) {
         node.empty();
         if (newIconName) {
-          (0, import_obsidian11.setIcon)(node, newIconName);
+          (0, import_obsidian12.setIcon)(node, newIconName);
         }
       }
     };
@@ -13318,13 +13894,13 @@ function instance4($$self, $$props, $$invalidate) {
   const dispatch2 = createEventDispatcher();
   function obsIcon(node, iconName) {
     if (iconName) {
-      (0, import_obsidian12.setIcon)(node, iconName);
+      (0, import_obsidian13.setIcon)(node, iconName);
     }
     return {
       update(newIconName) {
         node.empty();
         if (newIconName) {
-          (0, import_obsidian12.setIcon)(node, newIconName);
+          (0, import_obsidian13.setIcon)(node, newIconName);
         }
       }
     };
@@ -13354,7 +13930,7 @@ function instance4($$self, $$props, $$invalidate) {
   }
   function handlePlusMenuClick(e) {
     e.stopPropagation();
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian13.Menu();
     menu.addItem((item) => {
       item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
         dispatch2("addNote", {
@@ -13385,7 +13961,7 @@ function instance4($$self, $$props, $$invalidate) {
   }
   function handleFolderAddMenu(e) {
     const { item, mouseEvent } = e.detail;
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian13.Menu();
     menu.addItem((mItem) => {
       mItem.setTitle(`\u{1F4DD} New Note in "${item.name}"`).setIcon("file-plus").onClick(() => {
         dispatch2("addNote", {
@@ -13587,30 +14163,30 @@ function add_css4(target) {
 }
 function get_each_context_3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[114] = list[i];
+  child_ctx[122] = list[i];
   return child_ctx;
 }
 function get_each_context_4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[111] = list[i];
+  child_ctx[119] = list[i];
   return child_ctx;
 }
 function get_each_context_12(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[108] = list[i];
+  child_ctx[116] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[111] = list[i];
+  child_ctx[119] = list[i];
   return child_ctx;
 }
 function get_each_context3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[105] = list[i];
+  child_ctx[113] = list[i];
   return child_ctx;
 }
-function create_if_block_21(ctx) {
+function create_if_block_24(ctx) {
   let span;
   let t0;
   let t1;
@@ -13621,11 +14197,11 @@ function create_if_block_21(ctx) {
       t0 = text("CONTAINERS: ");
       t1 = text(
         /*selectedCount*/
-        ctx[19]
+        ctx[20]
       );
       attr(span, "class", "lenta-badge svelte-7ir8ul");
       attr(span, "title", span_title_value = "Connected containers (" + /*selectedCount*/
-      ctx[19] + "): " + /*settings*/
+      ctx[20] + "): " + /*settings*/
       ctx[0].activeContainerIds?.join(", "));
     },
     m(target, anchor) {
@@ -13635,15 +14211,15 @@ function create_if_block_21(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*selectedCount*/
-      524288)
+      1048576)
         set_data(
           t1,
           /*selectedCount*/
-          ctx2[19]
+          ctx2[20]
         );
       if (dirty[0] & /*selectedCount, settings*/
-      524289 && span_title_value !== (span_title_value = "Connected containers (" + /*selectedCount*/
-      ctx2[19] + "): " + /*settings*/
+      1048577 && span_title_value !== (span_title_value = "Connected containers (" + /*selectedCount*/
+      ctx2[20] + "): " + /*settings*/
       ctx2[0].activeContainerIds?.join(", "))) {
         attr(span, "title", span_title_value);
       }
@@ -13655,7 +14231,7 @@ function create_if_block_21(ctx) {
     }
   };
 }
-function create_if_block_20(ctx) {
+function create_if_block_232(ctx) {
   let button;
   let obsIcon_action;
   let mounted;
@@ -13675,10 +14251,135 @@ function create_if_block_20(ctx) {
             button,
             "click",
             /*click_handler_6*/
-            ctx[64]
+            ctx[68]
           ),
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(null, button, "link-2"))
+          ctx[36].call(null, button, "link-2"))
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_222(ctx) {
+  let span;
+  let t0;
+  let t1_value = (
+    /*lastCommit*/
+    ctx[21].id.slice(-6) + ""
+  );
+  let t1;
+  let span_title_value;
+  return {
+    c() {
+      span = element("span");
+      t0 = text("#");
+      t1 = text(t1_value);
+      attr(span, "class", "lenta-session-hash");
+      attr(span, "title", span_title_value = "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u0437\u0430\u043F\u0435\u0447\u0430\u0442\u0430\u043D\u043D\u044B\u0439 \u043A\u043E\u043C\u043C\u0438\u0442: #" + /*lastCommit*/
+      ctx[21].id);
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t0);
+      append(span, t1);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*lastCommit*/
+      2097152 && t1_value !== (t1_value = /*lastCommit*/
+      ctx2[21].id.slice(-6) + ""))
+        set_data(t1, t1_value);
+      if (dirty[0] & /*lastCommit*/
+      2097152 && span_title_value !== (span_title_value = "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u0437\u0430\u043F\u0435\u0447\u0430\u0442\u0430\u043D\u043D\u044B\u0439 \u043A\u043E\u043C\u043C\u0438\u0442: #" + /*lastCommit*/
+      ctx2[21].id)) {
+        attr(span, "title", span_title_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_21(ctx) {
+  let span;
+  let t0;
+  let t1;
+  return {
+    c() {
+      span = element("span");
+      t0 = text("+");
+      t1 = text(
+        /*pendingCount*/
+        ctx[22]
+      );
+      attr(span, "class", "lenta-session-deltas-pill");
+    },
+    m(target, anchor) {
+      insert(target, span, anchor);
+      append(span, t0);
+      append(span, t1);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*pendingCount*/
+      4194304)
+        set_data(
+          t1,
+          /*pendingCount*/
+          ctx2[22]
+        );
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(span);
+      }
+    }
+  };
+}
+function create_if_block_20(ctx) {
+  let button;
+  let span0;
+  let obsIcon_action;
+  let t0;
+  let span1;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button = element("button");
+      span0 = element("span");
+      t0 = space();
+      span1 = element("span");
+      span1.textContent = "Commit";
+      attr(span0, "class", "btn-icon");
+      attr(button, "type", "button");
+      attr(button, "class", "lenta-session-quick-btn mod-commit");
+      attr(button, "title", "\u0417\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0441\u0441\u0438\u044E \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0432 Google Drive");
+    },
+    m(target, anchor) {
+      insert(target, button, anchor);
+      append(button, span0);
+      append(button, t0);
+      append(button, span1);
+      if (!mounted) {
+        dispose = [
+          action_destroyer(obsIcon_action = /*obsIcon*/
+          ctx[36].call(null, span0, "git-commit")),
+          listen(
+            button,
+            "click",
+            /*click_handler_9*/
+            ctx[72]
+          )
         ];
         mounted = true;
       }
@@ -13711,8 +14412,8 @@ function create_if_block_19(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_8*/
-          ctx[67]
+          /*click_handler_11*/
+          ctx[75]
         );
         mounted = true;
       }
@@ -13743,7 +14444,7 @@ function create_else_block_3(ctx) {
   let button2;
   let t4_value = (
     /*activeTab*/
-    ctx[12] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"
+    ctx[13] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"
   );
   let t4;
   let button2_aria_checked_value;
@@ -13752,7 +14453,7 @@ function create_else_block_3(ctx) {
   let button3;
   let t6_value = (
     /*activeTab*/
-    ctx[12] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"
+    ctx[13] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"
   );
   let t6;
   let button3_aria_checked_value;
@@ -13771,17 +14472,17 @@ function create_else_block_3(ctx) {
   function select_block_type_4(ctx2, dirty) {
     if (
       /*isLoading*/
-      ctx2[6]
+      ctx2[7]
     )
       return create_if_block_54;
     if (
       /*activeTab*/
-      ctx2[12] === "folders"
+      ctx2[13] === "folders"
     )
       return create_if_block_63;
     return create_else_block_7;
   }
-  let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -13814,30 +14515,30 @@ function create_else_block_3(ctx) {
       attr(button0, "type", "button");
       attr(button0, "role", "tab");
       attr(button0, "aria-selected", button0_aria_selected_value = /*activeTab*/
-      ctx[12] === "folders");
+      ctx[13] === "folders");
       attr(button0, "class", button0_class_value = "lenta-tab " + /*activeTab*/
-      (ctx[12] === "folders" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[13] === "folders" ? "active" : "") + " svelte-7ir8ul");
       attr(button1, "type", "button");
       attr(button1, "role", "tab");
       attr(button1, "aria-selected", button1_aria_selected_value = /*activeTab*/
-      ctx[12] === "feeds");
+      ctx[13] === "feeds");
       attr(button1, "class", button1_class_value = "lenta-tab " + /*activeTab*/
-      (ctx[12] === "feeds" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[13] === "feeds" ? "active" : "") + " svelte-7ir8ul");
       attr(div0, "class", "lenta-sidebar-tabs svelte-7ir8ul");
       attr(div0, "role", "tablist");
       attr(div0, "aria-label", "Notes sub-navigation");
       attr(button2, "type", "button");
       attr(button2, "role", "radio");
       attr(button2, "aria-checked", button2_aria_checked_value = /*scopeFilter*/
-      ctx[9] === "my");
+      ctx[10] === "my");
       attr(button2, "class", button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "my" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[10] === "my" ? "active" : "") + " svelte-7ir8ul");
       attr(button3, "type", "button");
       attr(button3, "role", "radio");
       attr(button3, "aria-checked", button3_aria_checked_value = /*scopeFilter*/
-      ctx[9] === "public");
+      ctx[10] === "public");
       attr(button3, "class", button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "public" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[10] === "public" ? "active" : "") + " svelte-7ir8ul");
       attr(div1, "class", "lenta-scope-filter-bar svelte-7ir8ul");
       attr(div1, "role", "radiogroup");
       attr(div1, "aria-label", "Scope filter");
@@ -13867,7 +14568,7 @@ function create_else_block_3(ctx) {
       insert(target, t7, anchor);
       insert(target, div2, anchor);
       if_block.m(div2, null);
-      ctx[100](div2);
+      ctx[108](div2);
       insert(target, t8, anchor);
       insert(target, footer, anchor);
       append(footer, button4);
@@ -13880,44 +14581,44 @@ function create_else_block_3(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_17*/
-            ctx[85]
+            /*click_handler_20*/
+            ctx[93]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_18*/
-            ctx[86]
+            /*click_handler_21*/
+            ctx[94]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_19*/
-            ctx[87]
+            /*click_handler_22*/
+            ctx[95]
           ),
           listen(
             button3,
             "click",
-            /*click_handler_20*/
-            ctx[88]
+            /*click_handler_23*/
+            ctx[96]
           ),
           listen(
             button4,
             "click",
-            /*click_handler_28*/
-            ctx[101]
+            /*click_handler_31*/
+            ctx[109]
           ),
           listen(
             button5,
             "click",
-            /*click_handler_29*/
-            ctx[102]
+            /*click_handler_32*/
+            ctx[110]
           ),
           listen(
             button6,
             "click",
-            /*click_handler_30*/
-            ctx[103]
+            /*click_handler_33*/
+            ctx[111]
           )
         ];
         mounted = true;
@@ -13925,51 +14626,51 @@ function create_else_block_3(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*activeTab*/
-      4096 && button0_aria_selected_value !== (button0_aria_selected_value = /*activeTab*/
-      ctx2[12] === "folders")) {
+      8192 && button0_aria_selected_value !== (button0_aria_selected_value = /*activeTab*/
+      ctx2[13] === "folders")) {
         attr(button0, "aria-selected", button0_aria_selected_value);
       }
       if (dirty[0] & /*activeTab*/
-      4096 && button0_class_value !== (button0_class_value = "lenta-tab " + /*activeTab*/
-      (ctx2[12] === "folders" ? "active" : "") + " svelte-7ir8ul")) {
+      8192 && button0_class_value !== (button0_class_value = "lenta-tab " + /*activeTab*/
+      (ctx2[13] === "folders" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button0, "class", button0_class_value);
       }
       if (dirty[0] & /*activeTab*/
-      4096 && button1_aria_selected_value !== (button1_aria_selected_value = /*activeTab*/
-      ctx2[12] === "feeds")) {
+      8192 && button1_aria_selected_value !== (button1_aria_selected_value = /*activeTab*/
+      ctx2[13] === "feeds")) {
         attr(button1, "aria-selected", button1_aria_selected_value);
       }
       if (dirty[0] & /*activeTab*/
-      4096 && button1_class_value !== (button1_class_value = "lenta-tab " + /*activeTab*/
-      (ctx2[12] === "feeds" ? "active" : "") + " svelte-7ir8ul")) {
+      8192 && button1_class_value !== (button1_class_value = "lenta-tab " + /*activeTab*/
+      (ctx2[13] === "feeds" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button1, "class", button1_class_value);
       }
       if (dirty[0] & /*activeTab*/
-      4096 && t4_value !== (t4_value = /*activeTab*/
-      ctx2[12] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"))
+      8192 && t4_value !== (t4_value = /*activeTab*/
+      ctx2[13] === "folders" ? "\u{1F512} My Folders" : "\u{1F512} My Feeds"))
         set_data(t4, t4_value);
       if (dirty[0] & /*scopeFilter*/
-      512 && button2_aria_checked_value !== (button2_aria_checked_value = /*scopeFilter*/
-      ctx2[9] === "my")) {
+      1024 && button2_aria_checked_value !== (button2_aria_checked_value = /*scopeFilter*/
+      ctx2[10] === "my")) {
         attr(button2, "aria-checked", button2_aria_checked_value);
       }
       if (dirty[0] & /*scopeFilter*/
-      512 && button2_class_value !== (button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "my" ? "active" : "") + " svelte-7ir8ul")) {
+      1024 && button2_class_value !== (button2_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[10] === "my" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button2, "class", button2_class_value);
       }
       if (dirty[0] & /*activeTab*/
-      4096 && t6_value !== (t6_value = /*activeTab*/
-      ctx2[12] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"))
+      8192 && t6_value !== (t6_value = /*activeTab*/
+      ctx2[13] === "folders" ? "\u{1F310} Public Folders" : "\u{1F310} Public Feeds"))
         set_data(t6, t6_value);
       if (dirty[0] & /*scopeFilter*/
-      512 && button3_aria_checked_value !== (button3_aria_checked_value = /*scopeFilter*/
-      ctx2[9] === "public")) {
+      1024 && button3_aria_checked_value !== (button3_aria_checked_value = /*scopeFilter*/
+      ctx2[10] === "public")) {
         attr(button3, "aria-checked", button3_aria_checked_value);
       }
       if (dirty[0] & /*scopeFilter*/
-      512 && button3_class_value !== (button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "public" ? "active" : "") + " svelte-7ir8ul")) {
+      1024 && button3_class_value !== (button3_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[10] === "public" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button3, "class", button3_class_value);
       }
       if (current_block_type === (current_block_type = select_block_type_4(ctx2, dirty)) && if_block) {
@@ -13996,7 +14697,7 @@ function create_else_block_3(ctx) {
         detach(footer);
       }
       if_block.d();
-      ctx[100](null);
+      ctx[108](null);
       mounted = false;
       run_all(dispose);
     }
@@ -14032,29 +14733,29 @@ function create_if_block4(ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*currentKey*/
-      ctx2[18]
+      ctx2[19]
     )
       return create_if_block_44;
     return create_else_block_2;
   }
-  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_1(ctx, [-1, -1, -1, -1, -1]);
   let if_block0 = current_block_type(ctx);
-  const if_block_creators = [create_if_block_110, create_if_block_24, create_else_block_12];
+  const if_block_creators = [create_if_block_110, create_if_block_25, create_else_block_12];
   const if_blocks = [];
   function select_block_type_2(ctx2, dirty) {
     if (
       /*isLoading*/
-      ctx2[6]
+      ctx2[7]
     )
       return 0;
     if (
       /*displayedContainers*/
-      ctx2[17].length === 0
+      ctx2[18].length === 0
     )
       return 1;
     return 2;
   }
-  current_block_type_index = select_block_type_2(ctx, [-1, -1, -1, -1]);
+  current_block_type_index = select_block_type_2(ctx, [-1, -1, -1, -1, -1]);
   if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
   return {
     c() {
@@ -14084,15 +14785,15 @@ function create_if_block4(ctx) {
       attr(button0, "type", "button");
       attr(button0, "role", "radio");
       attr(button0, "aria-checked", button0_aria_checked_value = /*scopeFilter*/
-      ctx[9] === "my");
+      ctx[10] === "my");
       attr(button0, "class", button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "my" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[10] === "my" ? "active" : "") + " svelte-7ir8ul");
       attr(button1, "type", "button");
       attr(button1, "role", "radio");
       attr(button1, "aria-checked", button1_aria_checked_value = /*scopeFilter*/
-      ctx[9] === "public");
+      ctx[10] === "public");
       attr(button1, "class", button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx[9] === "public" ? "active" : "") + " svelte-7ir8ul");
+      (ctx[10] === "public" ? "active" : "") + " svelte-7ir8ul");
       attr(div1, "class", "lenta-scope-filter-bar svelte-7ir8ul");
       attr(div1, "role", "radiogroup");
       attr(div1, "aria-label", "Container privacy filter");
@@ -14118,7 +14819,7 @@ function create_if_block4(ctx) {
       insert(target, t4, anchor);
       insert(target, div2, anchor);
       if_blocks[current_block_type_index].m(div2, null);
-      ctx[81](div2);
+      ctx[89](div2);
       insert(target, t5, anchor);
       insert(target, footer, anchor);
       append(footer, button2);
@@ -14132,32 +14833,32 @@ function create_if_block4(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_11*/
-            ctx[72]
+            /*click_handler_14*/
+            ctx[80]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_12*/
-            ctx[73]
+            /*click_handler_15*/
+            ctx[81]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_14*/
-            ctx[82]
+            /*click_handler_17*/
+            ctx[90]
           ),
           listen(
             button3,
             "click",
-            /*click_handler_15*/
-            ctx[83]
+            /*click_handler_18*/
+            ctx[91]
           ),
           listen(
             button4,
             "click",
-            /*click_handler_16*/
-            ctx[84]
+            /*click_handler_19*/
+            ctx[92]
           )
         ];
         mounted = true;
@@ -14175,23 +14876,23 @@ function create_if_block4(ctx) {
         }
       }
       if (!current || dirty[0] & /*scopeFilter*/
-      512 && button0_aria_checked_value !== (button0_aria_checked_value = /*scopeFilter*/
-      ctx2[9] === "my")) {
+      1024 && button0_aria_checked_value !== (button0_aria_checked_value = /*scopeFilter*/
+      ctx2[10] === "my")) {
         attr(button0, "aria-checked", button0_aria_checked_value);
       }
       if (!current || dirty[0] & /*scopeFilter*/
-      512 && button0_class_value !== (button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "my" ? "active" : "") + " svelte-7ir8ul")) {
+      1024 && button0_class_value !== (button0_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[10] === "my" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button0, "class", button0_class_value);
       }
       if (!current || dirty[0] & /*scopeFilter*/
-      512 && button1_aria_checked_value !== (button1_aria_checked_value = /*scopeFilter*/
-      ctx2[9] === "public")) {
+      1024 && button1_aria_checked_value !== (button1_aria_checked_value = /*scopeFilter*/
+      ctx2[10] === "public")) {
         attr(button1, "aria-checked", button1_aria_checked_value);
       }
       if (!current || dirty[0] & /*scopeFilter*/
-      512 && button1_class_value !== (button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
-      (ctx2[9] === "public" ? "active" : "") + " svelte-7ir8ul")) {
+      1024 && button1_class_value !== (button1_class_value = "lenta-scope-pill " + /*scopeFilter*/
+      (ctx2[10] === "public" ? "active" : "") + " svelte-7ir8ul")) {
         attr(button1, "class", button1_class_value);
       }
       let previous_block_index = current_block_type_index;
@@ -14237,7 +14938,7 @@ function create_if_block4(ctx) {
       }
       if_block0.d();
       if_blocks[current_block_type_index].d();
-      ctx[81](null);
+      ctx[89](null);
       mounted = false;
       run_all(dispose);
     }
@@ -14248,12 +14949,12 @@ function create_else_block_7(ctx) {
   function select_block_type_8(ctx2, dirty) {
     if (
       /*displayedFeeds*/
-      ctx2[15].length === 0
+      ctx2[16].length === 0
     )
       return create_if_block_14;
     return create_else_block_9;
   }
-  let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_8(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -14290,12 +14991,12 @@ function create_if_block_63(ctx) {
   function select_block_type_5(ctx2, dirty) {
     if (
       /*displayedFolders*/
-      ctx2[16].length === 0
+      ctx2[17].length === 0
     )
       return create_if_block_72;
     return create_else_block_5;
   }
-  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -14352,11 +15053,11 @@ function create_else_block_9(ctx) {
   let each_1_anchor;
   let each_value_3 = ensure_array_like(
     /*displayedFeeds*/
-    ctx[15]
+    ctx[16]
   );
   const get_key = (ctx2) => (
     /*feed*/
-    ctx2[114].id
+    ctx2[122].id
   );
   for (let i = 0; i < each_value_3.length; i += 1) {
     let child_ctx = get_each_context_3(ctx, each_value_3, i);
@@ -14380,11 +15081,11 @@ function create_else_block_9(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*$loadingPreviewNotes, displayedFeeds, feedNotesList, api, $expandedPreviews*/
-      36732960 | dirty[1] & /*handleToggleFeedNotes*/
-      64) {
+      293666880 | dirty[1] & /*handleToggleFeedNotes*/
+      512) {
         each_value_3 = ensure_array_like(
           /*displayedFeeds*/
-          ctx2[15]
+          ctx2[16]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_3, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_3, each_1_anchor, get_each_context_3);
       }
@@ -14404,12 +15105,12 @@ function create_if_block_14(ctx) {
   function select_block_type_9(ctx2, dirty) {
     if (
       /*searchQuery*/
-      ctx2[10]
+      ctx2[11]
     )
       return create_if_block_15;
     return create_else_block_8;
   }
-  let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_9(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -14449,34 +15150,34 @@ function create_if_block_16(ctx) {
   let current;
   function select_block_type_10(ctx2, dirty) {
     if (dirty[0] & /*$loadingPreviewNotes, displayedFeeds*/
-    1081344)
+    8454144)
       show_if = null;
     if (dirty[0] & /*feedNotesList, displayedFeeds*/
-    32800)
+    65600)
       show_if_1 = null;
     if (show_if == null)
       show_if = !!/*$loadingPreviewNotes*/
-      ctx2[20].has(
+      ctx2[23].has(
         /*feed*/
-        ctx2[114].id
+        ctx2[122].id
       );
     if (show_if)
       return create_if_block_17;
     if (show_if_1 == null)
       show_if_1 = !!(!/*feedNotesList*/
-      ctx2[5].get(
+      ctx2[6].get(
         /*feed*/
-        ctx2[114].id
+        ctx2[122].id
       ) || /*feedNotesList*/
-      ctx2[5].get(
+      ctx2[6].get(
         /*feed*/
-        ctx2[114].id
+        ctx2[122].id
       )?.length === 0);
     if (show_if_1)
       return create_if_block_18;
     return create_else_block_10;
   }
-  let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_10(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -14539,14 +15240,14 @@ function create_else_block_10(ctx) {
   let each_1_lookup = new Map_1();
   let each_value_4 = ensure_array_like(
     /*feedNotesList*/
-    (ctx[5].get(
+    (ctx[6].get(
       /*feed*/
-      ctx[114].id
+      ctx[122].id
     ) || []).slice(0, 50)
   );
   const get_key = (ctx2) => (
     /*note*/
-    ctx2[111].id
+    ctx2[119].id
   );
   for (let i = 0; i < each_value_4.length; i += 1) {
     let child_ctx = get_each_context_4(ctx, each_value_4, i);
@@ -14571,12 +15272,12 @@ function create_else_block_10(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*api, feedNotesList, displayedFeeds*/
-      33587232) {
+      268501056) {
         each_value_4 = ensure_array_like(
           /*feedNotesList*/
-          (ctx2[5].get(
+          (ctx2[6].get(
             /*feed*/
-            ctx2[114].id
+            ctx2[122].id
           ) || []).slice(0, 50)
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_4, each_1_lookup, div, destroy_block, create_each_block_4, null, get_each_context_4);
@@ -14638,27 +15339,27 @@ function create_each_block_4(key_1, ctx) {
   let span1;
   let t1_value = (
     /*note*/
-    ctx[111].title + ""
+    ctx[119].title + ""
   );
   let t1;
   let t2;
   let mounted;
   let dispose;
-  function click_handler_27() {
+  function click_handler_30() {
     return (
-      /*click_handler_27*/
-      ctx[98](
+      /*click_handler_30*/
+      ctx[106](
         /*note*/
-        ctx[111]
+        ctx[119]
       )
     );
   }
-  function keydown_handler_4(...args) {
+  function keydown_handler_5(...args) {
     return (
-      /*keydown_handler_4*/
-      ctx[99](
+      /*keydown_handler_5*/
+      ctx[107](
         /*note*/
-        ctx[111],
+        ctx[119],
         ...args
       )
     );
@@ -14690,14 +15391,14 @@ function create_each_block_4(key_1, ctx) {
       if (!mounted) {
         dispose = [
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(
+          ctx[36].call(
             null,
             span0,
             /*note*/
-            ctx[111].icon || "file-text"
+            ctx[119].icon || "file-text"
           )),
-          listen(div, "click", click_handler_27),
-          listen(div, "keydown", keydown_handler_4)
+          listen(div, "click", click_handler_30),
+          listen(div, "keydown", keydown_handler_5)
         ];
         mounted = true;
       }
@@ -14705,15 +15406,15 @@ function create_each_block_4(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*feedNotesList, displayedFeeds*/
-      32800)
+      65600)
         obsIcon_action.update.call(
           null,
           /*note*/
-          ctx[111].icon || "file-text"
+          ctx[119].icon || "file-text"
         );
       if (dirty[0] & /*feedNotesList, displayedFeeds*/
-      32800 && t1_value !== (t1_value = /*note*/
-      ctx[111].title + ""))
+      65600 && t1_value !== (t1_value = /*note*/
+      ctx[119].title + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -14734,7 +15435,7 @@ function create_each_block_3(key_1, ctx) {
   let span1;
   let t1_value = (
     /*feed*/
-    ctx[114].title + ""
+    ctx[122].title + ""
   );
   let t1;
   let t2;
@@ -14743,27 +15444,27 @@ function create_each_block_3(key_1, ctx) {
   let t3;
   let show_if = (
     /*$expandedPreviews*/
-    ctx[21].has(`feed-${/*feed*/
-    ctx[114].id}`)
+    ctx[24].has(`feed-${/*feed*/
+    ctx[122].id}`)
   );
   let t4;
   let mounted;
   let dispose;
-  function click_handler_26() {
+  function click_handler_29() {
     return (
-      /*click_handler_26*/
-      ctx[96](
+      /*click_handler_29*/
+      ctx[104](
         /*feed*/
-        ctx[114]
+        ctx[122]
       )
     );
   }
-  function keydown_handler_3(...args) {
+  function keydown_handler_4(...args) {
     return (
-      /*keydown_handler_3*/
-      ctx[97](
+      /*keydown_handler_4*/
+      ctx[105](
         /*feed*/
-        ctx[114],
+        ctx[122],
         ...args
       )
     );
@@ -14810,17 +15511,17 @@ function create_each_block_3(key_1, ctx) {
       if (!mounted) {
         dispose = [
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(null, span0, "rss")),
+          ctx[36].call(null, span0, "rss")),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
-          ctx[33].call(
+          ctx[36].call(
             null,
             span2,
             /*$expandedPreviews*/
-            ctx[21].has(`feed-${/*feed*/
-            ctx[114].id}`) ? "chevron-up" : "chevron-down"
+            ctx[24].has(`feed-${/*feed*/
+            ctx[122].id}`) ? "chevron-up" : "chevron-down"
           )),
-          listen(div0, "click", click_handler_26),
-          listen(div0, "keydown", keydown_handler_3)
+          listen(div0, "click", click_handler_29),
+          listen(div0, "keydown", keydown_handler_4)
         ];
         mounted = true;
       }
@@ -14828,27 +15529,27 @@ function create_each_block_3(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[0] & /*displayedFeeds*/
-      32768 && t1_value !== (t1_value = /*feed*/
-      ctx[114].title + ""))
+      65536 && t1_value !== (t1_value = /*feed*/
+      ctx[122].title + ""))
         set_data(t1, t1_value);
       if (obsIcon_action_1 && is_function(obsIcon_action_1.update) && dirty[0] & /*$expandedPreviews, displayedFeeds*/
-      2129920)
+      16842752)
         obsIcon_action_1.update.call(
           null,
           /*$expandedPreviews*/
-          ctx[21].has(`feed-${/*feed*/
-          ctx[114].id}`) ? "chevron-up" : "chevron-down"
+          ctx[24].has(`feed-${/*feed*/
+          ctx[122].id}`) ? "chevron-up" : "chevron-down"
         );
       if (dirty[0] & /*$expandedPreviews, displayedFeeds*/
-      2129920)
+      16842752)
         show_if = /*$expandedPreviews*/
-        ctx[21].has(`feed-${/*feed*/
-        ctx[114].id}`);
+        ctx[24].has(`feed-${/*feed*/
+        ctx[122].id}`);
       if (show_if) {
         if (if_block) {
           if_block.p(ctx, dirty);
           if (dirty[0] & /*$expandedPreviews, displayedFeeds*/
-          2129920) {
+          16842752) {
             transition_in(if_block, 1);
           }
         } else {
@@ -14905,7 +15606,7 @@ function create_if_block_15(ctx) {
       t0 = text('\u{1F50D} No feeds match "');
       t1 = text(
         /*searchQuery*/
-        ctx[10]
+        ctx[11]
       );
       t2 = text('"\n                ');
       button = element("button");
@@ -14922,19 +15623,19 @@ function create_if_block_15(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_25*/
-          ctx[95]
+          /*click_handler_28*/
+          ctx[103]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*searchQuery*/
-      1024)
+      2048)
         set_data(
           t1,
           /*searchQuery*/
-          ctx2[10]
+          ctx2[11]
         );
     },
     d(detaching) {
@@ -14955,11 +15656,11 @@ function create_else_block_5(ctx) {
   let each_1_anchor;
   let each_value_1 = ensure_array_like(
     /*displayedFolders*/
-    ctx[16]
+    ctx[17]
   );
   const get_key = (ctx2) => (
     /*folder*/
-    ctx2[108].id
+    ctx2[116].id
   );
   for (let i = 0; i < each_value_1.length; i += 1) {
     let child_ctx = get_each_context_12(ctx, each_value_1, i);
@@ -14983,11 +15684,11 @@ function create_else_block_5(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedFolders, $loadingFolderNotes, folderPreviewNotes, api, $expandedPreviews*/
-      39911440 | dirty[1] & /*handleToggleFolderNotes*/
-      32) {
+      318898208 | dirty[1] & /*handleToggleFolderNotes*/
+      256) {
         each_value_1 = ensure_array_like(
           /*displayedFolders*/
-          ctx2[16]
+          ctx2[17]
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, destroy_block, create_each_block_12, each_1_anchor, get_each_context_12);
       }
@@ -15007,12 +15708,12 @@ function create_if_block_72(ctx) {
   function select_block_type_6(ctx2, dirty) {
     if (
       /*searchQuery*/
-      ctx2[10]
+      ctx2[11]
     )
       return create_if_block_8;
     return create_else_block_4;
   }
-  let current_block_type = select_block_type_6(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_6(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -15048,7 +15749,7 @@ function create_if_block_132(ctx) {
   let span;
   let t_value = (
     /*folder*/
-    ctx[108].noteCount + ""
+    ctx[116].noteCount + ""
   );
   let t;
   return {
@@ -15063,8 +15764,8 @@ function create_if_block_132(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedFolders*/
-      65536 && t_value !== (t_value = /*folder*/
-      ctx2[108].noteCount + ""))
+      131072 && t_value !== (t_value = /*folder*/
+      ctx2[116].noteCount + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -15082,34 +15783,34 @@ function create_if_block_9(ctx) {
   let current;
   function select_block_type_7(ctx2, dirty) {
     if (dirty[0] & /*$loadingFolderNotes, displayedFolders*/
-    4259840)
+    33685504)
       show_if = null;
     if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
-    65552)
+    131104)
       show_if_1 = null;
     if (show_if == null)
       show_if = !!/*$loadingFolderNotes*/
-      ctx2[22].has(
+      ctx2[25].has(
         /*folder*/
-        ctx2[108].id
+        ctx2[116].id
       );
     if (show_if)
       return create_if_block_10;
     if (show_if_1 == null)
       show_if_1 = !!(!/*folderPreviewNotes*/
-      ctx2[4].get(
+      ctx2[5].get(
         /*folder*/
-        ctx2[108].id
+        ctx2[116].id
       ) || /*folderPreviewNotes*/
-      ctx2[4].get(
+      ctx2[5].get(
         /*folder*/
-        ctx2[108].id
+        ctx2[116].id
       )?.length === 0);
     if (show_if_1)
       return create_if_block_11;
     return create_else_block_6;
   }
-  let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_7(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -15172,14 +15873,14 @@ function create_else_block_6(ctx) {
   let each_1_lookup = new Map_1();
   let each_value_2 = ensure_array_like(
     /*folderPreviewNotes*/
-    (ctx[4].get(
+    (ctx[5].get(
       /*folder*/
-      ctx[108].id
+      ctx[116].id
     ) || []).slice(0, 50)
   );
   const get_key = (ctx2) => (
     /*note*/
-    ctx2[111].id
+    ctx2[119].id
   );
   for (let i = 0; i < each_value_2.length; i += 1) {
     let child_ctx = get_each_context_2(ctx, each_value_2, i);
@@ -15204,12 +15905,12 @@ function create_else_block_6(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*api, folderPreviewNotes, displayedFolders*/
-      33619984) {
+      268566560) {
         each_value_2 = ensure_array_like(
           /*folderPreviewNotes*/
-          (ctx2[4].get(
+          (ctx2[5].get(
             /*folder*/
-            ctx2[108].id
+            ctx2[116].id
           ) || []).slice(0, 50)
         );
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_2, each_1_lookup, div, destroy_block, create_each_block_2, null, get_each_context_2);
@@ -15249,7 +15950,7 @@ function create_if_block_10(ctx) {
   let t0;
   let t1_value = (
     /*folder*/
-    ctx[108].name + ""
+    ctx[116].name + ""
   );
   let t1;
   let t2;
@@ -15269,8 +15970,8 @@ function create_if_block_10(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedFolders*/
-      65536 && t1_value !== (t1_value = /*folder*/
-      ctx2[108].name + ""))
+      131072 && t1_value !== (t1_value = /*folder*/
+      ctx2[116].name + ""))
         set_data(t1, t1_value);
     },
     d(detaching) {
@@ -15284,7 +15985,7 @@ function create_if_block_122(ctx) {
   let span;
   let t_value = (
     /*note*/
-    ctx[111].startDate.slice(0, 10) + ""
+    ctx[119].startDate.slice(0, 10) + ""
   );
   let t;
   return {
@@ -15299,8 +16000,8 @@ function create_if_block_122(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
-      65552 && t_value !== (t_value = /*note*/
-      ctx2[111].startDate.slice(0, 10) + ""))
+      131104 && t_value !== (t_value = /*note*/
+      ctx2[119].startDate.slice(0, 10) + ""))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -15318,7 +16019,7 @@ function create_each_block_2(key_1, ctx) {
   let span1;
   let t1_value = (
     /*note*/
-    ctx[111].title + ""
+    ctx[119].title + ""
   );
   let t1;
   let t2;
@@ -15327,23 +16028,23 @@ function create_each_block_2(key_1, ctx) {
   let dispose;
   let if_block = (
     /*note*/
-    ctx[111].startDate && create_if_block_122(ctx)
+    ctx[119].startDate && create_if_block_122(ctx)
   );
-  function click_handler_24() {
+  function click_handler_27() {
     return (
-      /*click_handler_24*/
-      ctx[93](
+      /*click_handler_27*/
+      ctx[101](
         /*note*/
-        ctx[111]
+        ctx[119]
       )
     );
   }
-  function keydown_handler_2(...args) {
+  function keydown_handler_3(...args) {
     return (
-      /*keydown_handler_2*/
-      ctx[94](
+      /*keydown_handler_3*/
+      ctx[102](
         /*note*/
-        ctx[111],
+        ctx[119],
         ...args
       )
     );
@@ -15381,14 +16082,14 @@ function create_each_block_2(key_1, ctx) {
       if (!mounted) {
         dispose = [
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(
+          ctx[36].call(
             null,
             span0,
             /*note*/
-            ctx[111].icon || "file-text"
+            ctx[119].icon || "file-text"
           )),
-          listen(div, "click", click_handler_24),
-          listen(div, "keydown", keydown_handler_2)
+          listen(div, "click", click_handler_27),
+          listen(div, "keydown", keydown_handler_3)
         ];
         mounted = true;
       }
@@ -15396,19 +16097,19 @@ function create_each_block_2(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*folderPreviewNotes, displayedFolders*/
-      65552)
+      131104)
         obsIcon_action.update.call(
           null,
           /*note*/
-          ctx[111].icon || "file-text"
+          ctx[119].icon || "file-text"
         );
       if (dirty[0] & /*folderPreviewNotes, displayedFolders*/
-      65552 && t1_value !== (t1_value = /*note*/
-      ctx[111].title + ""))
+      131104 && t1_value !== (t1_value = /*note*/
+      ctx[119].title + ""))
         set_data(t1, t1_value);
       if (
         /*note*/
-        ctx[111].startDate
+        ctx[119].startDate
       ) {
         if (if_block) {
           if_block.p(ctx, dirty);
@@ -15442,7 +16143,7 @@ function create_each_block_12(key_1, ctx) {
   let span1;
   let t1_value = (
     /*folder*/
-    ctx[108].path + ""
+    ctx[116].path + ""
   );
   let t1;
   let t2;
@@ -15456,41 +16157,41 @@ function create_each_block_12(key_1, ctx) {
   let t5;
   let show_if = (
     /*$expandedPreviews*/
-    ctx[21].has(`folder-${/*folder*/
-    ctx[108].id}`)
+    ctx[24].has(`folder-${/*folder*/
+    ctx[116].id}`)
   );
   let t6;
   let mounted;
   let dispose;
   let if_block0 = (
     /*folder*/
-    ctx[108].noteCount !== void 0 && /*folder*/
-    ctx[108].noteCount !== null && create_if_block_132(ctx)
+    ctx[116].noteCount !== void 0 && /*folder*/
+    ctx[116].noteCount !== null && create_if_block_132(ctx)
   );
-  function click_handler_22() {
+  function click_handler_25() {
     return (
-      /*click_handler_22*/
-      ctx[90](
+      /*click_handler_25*/
+      ctx[98](
         /*folder*/
-        ctx[108]
+        ctx[116]
       )
     );
   }
-  function click_handler_23() {
+  function click_handler_26() {
     return (
-      /*click_handler_23*/
-      ctx[91](
+      /*click_handler_26*/
+      ctx[99](
         /*folder*/
-        ctx[108]
+        ctx[116]
       )
     );
   }
-  function keydown_handler_1(...args) {
+  function keydown_handler_2(...args) {
     return (
-      /*keydown_handler_1*/
-      ctx[92](
+      /*keydown_handler_2*/
+      ctx[100](
         /*folder*/
-        ctx[108],
+        ctx[116],
         ...args
       )
     );
@@ -15522,7 +16223,7 @@ function create_each_block_12(key_1, ctx) {
       attr(button, "type", "button");
       attr(button, "class", "lenta-folder-add-note clickable-icon svelte-7ir8ul");
       attr(button, "aria-label", button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
-      ctx[108].path);
+      ctx[116].path);
       attr(span2, "class", "lenta-preview-toggle clickable-icon");
       attr(div0, "class", "lenta-folder-header-row svelte-7ir8ul");
       attr(div0, "role", "button");
@@ -15551,25 +16252,25 @@ function create_each_block_12(key_1, ctx) {
       if (!mounted) {
         dispose = [
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(
+          ctx[36].call(
             null,
             span0,
             /*folder*/
-            ctx[108].icon || "folder"
+            ctx[116].icon || "folder"
           )),
-          listen(button, "click", stop_propagation(click_handler_22)),
+          listen(button, "click", stop_propagation(click_handler_25)),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
-          ctx[33].call(null, button, "plus")),
+          ctx[36].call(null, button, "plus")),
           action_destroyer(obsIcon_action_2 = /*obsIcon*/
-          ctx[33].call(
+          ctx[36].call(
             null,
             span2,
             /*$expandedPreviews*/
-            ctx[21].has(`folder-${/*folder*/
-            ctx[108].id}`) ? "chevron-up" : "chevron-down"
+            ctx[24].has(`folder-${/*folder*/
+            ctx[116].id}`) ? "chevron-up" : "chevron-down"
           )),
-          listen(div0, "click", click_handler_23),
-          listen(div0, "keydown", keydown_handler_1)
+          listen(div0, "click", click_handler_26),
+          listen(div0, "keydown", keydown_handler_2)
         ];
         mounted = true;
       }
@@ -15577,20 +16278,20 @@ function create_each_block_12(key_1, ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (obsIcon_action && is_function(obsIcon_action.update) && dirty[0] & /*displayedFolders*/
-      65536)
+      131072)
         obsIcon_action.update.call(
           null,
           /*folder*/
-          ctx[108].icon || "folder"
+          ctx[116].icon || "folder"
         );
       if (dirty[0] & /*displayedFolders*/
-      65536 && t1_value !== (t1_value = /*folder*/
-      ctx[108].path + ""))
+      131072 && t1_value !== (t1_value = /*folder*/
+      ctx[116].path + ""))
         set_data(t1, t1_value);
       if (
         /*folder*/
-        ctx[108].noteCount !== void 0 && /*folder*/
-        ctx[108].noteCount !== null
+        ctx[116].noteCount !== void 0 && /*folder*/
+        ctx[116].noteCount !== null
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
@@ -15604,28 +16305,28 @@ function create_each_block_12(key_1, ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*displayedFolders*/
-      65536 && button_aria_label_value !== (button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
-      ctx[108].path)) {
+      131072 && button_aria_label_value !== (button_aria_label_value = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 " + /*folder*/
+      ctx[116].path)) {
         attr(button, "aria-label", button_aria_label_value);
       }
       if (obsIcon_action_2 && is_function(obsIcon_action_2.update) && dirty[0] & /*$expandedPreviews, displayedFolders*/
-      2162688)
+      16908288)
         obsIcon_action_2.update.call(
           null,
           /*$expandedPreviews*/
-          ctx[21].has(`folder-${/*folder*/
-          ctx[108].id}`) ? "chevron-up" : "chevron-down"
+          ctx[24].has(`folder-${/*folder*/
+          ctx[116].id}`) ? "chevron-up" : "chevron-down"
         );
       if (dirty[0] & /*$expandedPreviews, displayedFolders*/
-      2162688)
+      16908288)
         show_if = /*$expandedPreviews*/
-        ctx[21].has(`folder-${/*folder*/
-        ctx[108].id}`);
+        ctx[24].has(`folder-${/*folder*/
+        ctx[116].id}`);
       if (show_if) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
           if (dirty[0] & /*$expandedPreviews, displayedFolders*/
-          2162688) {
+          16908288) {
             transition_in(if_block1, 1);
           }
         } else {
@@ -15684,7 +16385,7 @@ function create_if_block_8(ctx) {
       t0 = text('\u{1F50D} No folders match "');
       t1 = text(
         /*searchQuery*/
-        ctx[10]
+        ctx[11]
       );
       t2 = text('"\n                ');
       button = element("button");
@@ -15701,19 +16402,19 @@ function create_if_block_8(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_21*/
-          ctx[89]
+          /*click_handler_24*/
+          ctx[97]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*searchQuery*/
-      1024)
+      2048)
         set_data(
           t1,
           /*searchQuery*/
-          ctx2[10]
+          ctx2[11]
         );
     },
     d(detaching) {
@@ -15755,7 +16456,7 @@ function create_else_block_2(ctx) {
       set_input_value(
         input,
         /*keyInputText*/
-        ctx[13]
+        ctx[14]
       );
       append(div, t0);
       append(div, button);
@@ -15765,19 +16466,19 @@ function create_else_block_2(ctx) {
             input,
             "input",
             /*input_input_handler_1*/
-            ctx[70]
+            ctx[78]
           ),
           listen(
             input,
             "keydown",
-            /*keydown_handler*/
-            ctx[71]
+            /*keydown_handler_1*/
+            ctx[79]
           ),
           listen(
             button,
             "click",
             /*handleConnectKeySubmit*/
-            ctx[39]
+            ctx[42]
           )
         ];
         mounted = true;
@@ -15785,12 +16486,12 @@ function create_else_block_2(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*keyInputText*/
-      8192 && input.value !== /*keyInputText*/
-      ctx2[13]) {
+      16384 && input.value !== /*keyInputText*/
+      ctx2[14]) {
         set_input_value(
           input,
           /*keyInputText*/
-          ctx2[13]
+          ctx2[14]
         );
       }
     },
@@ -15810,7 +16511,7 @@ function create_if_block_44(ctx) {
   let t1_value = (
     /*settings*/
     (ctx[0].connectedContainerName || /*currentKey*/
-    ctx[18].slice(0, 18)) + ""
+    ctx[19].slice(0, 18)) + ""
   );
   let t1;
   let span_title_value;
@@ -15829,7 +16530,7 @@ function create_if_block_44(ctx) {
       button.textContent = "Disconnect Key";
       attr(span, "class", "lenta-key-badge svelte-7ir8ul");
       attr(span, "title", span_title_value = "Active container key: " + /*currentKey*/
-      ctx[18]);
+      ctx[19]);
       attr(button, "type", "button");
       attr(button, "class", "lenta-key-action-btn mod-warning svelte-7ir8ul");
       attr(div, "class", "lenta-key-connected-row svelte-7ir8ul");
@@ -15846,20 +16547,20 @@ function create_if_block_44(ctx) {
           button,
           "click",
           /*handleDisconnectKey*/
-          ctx[40]
+          ctx[43]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*settings, currentKey*/
-      262145 && t1_value !== (t1_value = /*settings*/
+      524289 && t1_value !== (t1_value = /*settings*/
       (ctx2[0].connectedContainerName || /*currentKey*/
-      ctx2[18].slice(0, 18)) + ""))
+      ctx2[19].slice(0, 18)) + ""))
         set_data(t1, t1_value);
       if (dirty[0] & /*currentKey*/
-      262144 && span_title_value !== (span_title_value = "Active container key: " + /*currentKey*/
-      ctx2[18])) {
+      524288 && span_title_value !== (span_title_value = "Active container key: " + /*currentKey*/
+      ctx2[19])) {
         attr(span, "title", span_title_value);
       }
     },
@@ -15879,11 +16580,11 @@ function create_else_block_12(ctx) {
   let current;
   let each_value = ensure_array_like(
     /*displayedContainers*/
-    ctx[17]
+    ctx[18]
   );
   const get_key = (ctx2) => (
     /*c*/
-    ctx2[105].id
+    ctx2[113].id
   );
   for (let i = 0; i < each_value.length; i += 1) {
     let child_ctx = get_each_context3(ctx, each_value, i);
@@ -15908,11 +16609,11 @@ function create_else_block_12(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*displayedContainers, $expandedPreviews, settings, $loadingContainerFiles, containerFilesList, containerFoldersList, $expandedContainerFolders, scrollContainerEl, api*/
-      60964877 | dirty[1] & /*todayStr, todayHumanStr, handleToggleContainerExpand, handleToggleFolder*/
-      27) {
+      486834201 | dirty[1] & /*todayStr, todayHumanStr, handleToggleContainerExpand, handleToggleFolder*/
+      216) {
         each_value = ensure_array_like(
           /*displayedContainers*/
-          ctx2[17]
+          ctx2[18]
         );
         group_outros();
         each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block3, each_1_anchor, get_each_context3);
@@ -15943,17 +16644,17 @@ function create_else_block_12(ctx) {
     }
   };
 }
-function create_if_block_24(ctx) {
+function create_if_block_25(ctx) {
   let div;
   function select_block_type_3(ctx2, dirty) {
     if (
       /*searchQuery*/
-      ctx2[10]
+      ctx2[11]
     )
       return create_if_block_34;
     return create_else_block3;
   }
-  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1]);
+  let current_block_type = select_block_type_3(ctx, [-1, -1, -1, -1, -1]);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -16015,18 +16716,18 @@ function create_each_block3(key_1, ctx) {
   function toggleExpand_handler() {
     return (
       /*toggleExpand_handler*/
-      ctx[75](
+      ctx[83](
         /*c*/
-        ctx[105]
+        ctx[113]
       )
     );
   }
   function toggleConnect_handler() {
     return (
       /*toggleConnect_handler*/
-      ctx[76](
+      ctx[84](
         /*c*/
-        ctx[105]
+        ctx[113]
       )
     );
   }
@@ -16034,12 +16735,12 @@ function create_each_block3(key_1, ctx) {
     props: {
       container: (
         /*c*/
-        ctx[105]
+        ctx[113]
       ),
       isExpanded: (
         /*$expandedPreviews*/
-        ctx[21].has(`container-${/*c*/
-        ctx[105].id}`)
+        ctx[24].has(`container-${/*c*/
+        ctx[113].id}`)
       ),
       isActiveContainer: Array.isArray(
         /*settings*/
@@ -16047,44 +16748,44 @@ function create_each_block3(key_1, ctx) {
       ) && /*settings*/
       ctx[0].activeContainerIds.includes(
         /*c*/
-        ctx[105].id
+        ctx[113].id
       ),
       isLoadingFiles: (
         /*$loadingContainerFiles*/
-        ctx[23].has(
+        ctx[26].has(
           /*c*/
-          ctx[105].id
+          ctx[113].id
         )
       ),
       files: (
         /*containerFilesList*/
-        ctx[2].get(
+        ctx[3].get(
           /*c*/
-          ctx[105].id
+          ctx[113].id
         )
       ),
       folders: (
         /*containerFoldersList*/
-        ctx[3].get(
+        ctx[4].get(
           /*c*/
-          ctx[105].id
+          ctx[113].id
         )
       ),
       expandedFolders: (
         /*$expandedContainerFolders*/
-        ctx[24]
+        ctx[27]
       ),
       todayStr: (
         /*todayStr*/
-        ctx[31]
+        ctx[34]
       ),
       todayHumanStr: (
         /*todayHumanStr*/
-        ctx[32]
+        ctx[35]
       ),
       scrollContainer: (
         /*scrollContainerEl*/
-        ctx[14]
+        ctx[15]
       )
     }
   });
@@ -16093,22 +16794,22 @@ function create_each_block3(key_1, ctx) {
   containercard.$on(
     "addNote",
     /*addNote_handler*/
-    ctx[77]
+    ctx[85]
   );
   containercard.$on(
     "addFolder",
     /*addFolder_handler*/
-    ctx[78]
+    ctx[86]
   );
   containercard.$on(
     "openNote",
     /*openNote_handler*/
-    ctx[79]
+    ctx[87]
   );
   containercard.$on(
     "toggleFolder",
     /*toggleFolder_handler*/
-    ctx[80]
+    ctx[88]
   );
   return {
     key: key_1,
@@ -16127,53 +16828,53 @@ function create_each_block3(key_1, ctx) {
       ctx = new_ctx;
       const containercard_changes = {};
       if (dirty[0] & /*displayedContainers*/
-      131072)
+      262144)
         containercard_changes.container = /*c*/
-        ctx[105];
+        ctx[113];
       if (dirty[0] & /*$expandedPreviews, displayedContainers*/
-      2228224)
+      17039360)
         containercard_changes.isExpanded = /*$expandedPreviews*/
-        ctx[21].has(`container-${/*c*/
-        ctx[105].id}`);
+        ctx[24].has(`container-${/*c*/
+        ctx[113].id}`);
       if (dirty[0] & /*settings, displayedContainers*/
-      131073)
+      262145)
         containercard_changes.isActiveContainer = Array.isArray(
           /*settings*/
           ctx[0].activeContainerIds
         ) && /*settings*/
         ctx[0].activeContainerIds.includes(
           /*c*/
-          ctx[105].id
+          ctx[113].id
         );
       if (dirty[0] & /*$loadingContainerFiles, displayedContainers*/
-      8519680)
+      67371008)
         containercard_changes.isLoadingFiles = /*$loadingContainerFiles*/
-        ctx[23].has(
+        ctx[26].has(
           /*c*/
-          ctx[105].id
+          ctx[113].id
         );
       if (dirty[0] & /*containerFilesList, displayedContainers*/
-      131076)
+      262152)
         containercard_changes.files = /*containerFilesList*/
-        ctx[2].get(
-          /*c*/
-          ctx[105].id
-        );
-      if (dirty[0] & /*containerFoldersList, displayedContainers*/
-      131080)
-        containercard_changes.folders = /*containerFoldersList*/
         ctx[3].get(
           /*c*/
-          ctx[105].id
+          ctx[113].id
+        );
+      if (dirty[0] & /*containerFoldersList, displayedContainers*/
+      262160)
+        containercard_changes.folders = /*containerFoldersList*/
+        ctx[4].get(
+          /*c*/
+          ctx[113].id
         );
       if (dirty[0] & /*$expandedContainerFolders*/
-      16777216)
+      134217728)
         containercard_changes.expandedFolders = /*$expandedContainerFolders*/
-        ctx[24];
+        ctx[27];
       if (dirty[0] & /*scrollContainerEl*/
-      16384)
+      32768)
         containercard_changes.scrollContainer = /*scrollContainerEl*/
-        ctx[14];
+        ctx[15];
       containercard.$set(containercard_changes);
     },
     i(local) {
@@ -16197,7 +16898,7 @@ function create_each_block3(key_1, ctx) {
 function create_else_block3(ctx) {
   let t_value = (
     /*scopeFilter*/
-    ctx[9] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."
+    ctx[10] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."
   );
   let t;
   return {
@@ -16209,8 +16910,8 @@ function create_else_block3(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*scopeFilter*/
-      512 && t_value !== (t_value = /*scopeFilter*/
-      ctx2[9] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."))
+      1024 && t_value !== (t_value = /*scopeFilter*/
+      ctx2[10] === "my" ? "\u{1F512} No personal containers found." : "\u{1F310} No public containers available."))
         set_data(t, t_value);
     },
     d(detaching) {
@@ -16232,7 +16933,7 @@ function create_if_block_34(ctx) {
       t0 = text('\u{1F50D} No containers match "');
       t1 = text(
         /*searchQuery*/
-        ctx[10]
+        ctx[11]
       );
       t2 = text('"\n            ');
       button = element("button");
@@ -16249,19 +16950,19 @@ function create_if_block_34(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_13*/
-          ctx[74]
+          /*click_handler_16*/
+          ctx[82]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*searchQuery*/
-      1024)
+      2048)
         set_data(
           t1,
           /*searchQuery*/
-          ctx2[10]
+          ctx2[11]
         );
     },
     d(detaching) {
@@ -16277,7 +16978,7 @@ function create_if_block_34(ctx) {
   };
 }
 function create_fragment5(ctx) {
-  let div4;
+  let div8;
   let header;
   let div0;
   let h4;
@@ -16309,58 +17010,98 @@ function create_fragment5(ctx) {
   let button7;
   let obsIcon_action_7;
   let t11;
+  let div4;
   let div2;
-  let div1;
-  let span;
-  let obsIcon_action_8;
+  let span0;
   let t12;
-  let input;
+  let div1;
+  let span1;
+  let t13_value = (
+    /*activeSession*/
+    (ctx[2] ? (
+      /*activeSession*/
+      ctx[2].title
+    ) : "Live \u0440\u0435\u0436\u0438\u043C") + ""
+  );
   let t13;
   let t14;
-  let div3;
-  let button8;
   let t15;
-  let button8_aria_selected_value;
-  let button8_class_value;
+  let div2_class_value;
+  let div2_title_value;
   let t16;
-  let button9;
+  let div3;
   let t17;
+  let button8;
+  let span2;
+  let obsIcon_action_8;
+  let t18;
+  let span3;
+  let t20;
+  let div6;
+  let div5;
+  let span4;
+  let obsIcon_action_9;
+  let t21;
+  let input;
+  let t22;
+  let t23;
+  let div7;
+  let button9;
+  let t24;
   let button9_aria_selected_value;
   let button9_class_value;
-  let t18;
+  let t25;
+  let button10;
+  let t26;
+  let button10_aria_selected_value;
+  let button10_class_value;
+  let t27;
   let current_block_type_index;
-  let if_block3;
+  let if_block6;
   let current;
   let mounted;
   let dispose;
   let if_block0 = (
     /*selectedCount*/
-    ctx[19] > 0 && create_if_block_21(ctx)
+    ctx[20] > 0 && create_if_block_24(ctx)
   );
   let if_block1 = (
     /*bridge*/
-    (ctx[7]?.openConnectionsModal || /*onOpenConnectionsModal*/
-    ctx[8]) && create_if_block_20(ctx)
+    (ctx[8]?.openConnectionsModal || /*onOpenConnectionsModal*/
+    ctx[9]) && create_if_block_232(ctx)
   );
   let if_block2 = (
+    /*lastCommit*/
+    ctx[21] && create_if_block_222(ctx)
+  );
+  let if_block3 = (
+    /*activeSession*/
+    ctx[2] && /*pendingCount*/
+    ctx[22] > 0 && create_if_block_21(ctx)
+  );
+  let if_block4 = (
+    /*activeSession*/
+    ctx[2] && create_if_block_20(ctx)
+  );
+  let if_block5 = (
     /*searchQuery*/
-    ctx[10] && create_if_block_19(ctx)
+    ctx[11] && create_if_block_19(ctx)
   );
   const if_block_creators = [create_if_block4, create_else_block_3];
   const if_blocks = [];
   function select_block_type(ctx2, dirty) {
     if (
       /*sidebarMode*/
-      ctx2[11] === "containers"
+      ctx2[12] === "containers"
     )
       return 0;
     return 1;
   }
-  current_block_type_index = select_block_type(ctx, [-1, -1, -1, -1]);
-  if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  current_block_type_index = select_block_type(ctx, [-1, -1, -1, -1, -1]);
+  if_block6 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
   return {
     c() {
-      div4 = element("div");
+      div8 = element("div");
       header = element("header");
       div0 = element("div");
       h4 = element("h4");
@@ -16389,23 +17130,47 @@ function create_fragment5(ctx) {
       t10 = space();
       button7 = element("button");
       t11 = space();
+      div4 = element("div");
       div2 = element("div");
-      div1 = element("div");
-      span = element("span");
+      span0 = element("span");
       t12 = space();
-      input = element("input");
-      t13 = space();
+      div1 = element("div");
+      span1 = element("span");
+      t13 = text(t13_value);
+      t14 = space();
       if (if_block2)
         if_block2.c();
-      t14 = space();
-      div3 = element("div");
-      button8 = element("button");
-      t15 = text("\u{1F4DD} Notes");
+      t15 = space();
+      if (if_block3)
+        if_block3.c();
       t16 = space();
-      button9 = element("button");
-      t17 = text("\u{1F4E6} Containers");
+      div3 = element("div");
+      if (if_block4)
+        if_block4.c();
+      t17 = space();
+      button8 = element("button");
+      span2 = element("span");
       t18 = space();
-      if_block3.c();
+      span3 = element("span");
+      span3.textContent = "GDrive";
+      t20 = space();
+      div6 = element("div");
+      div5 = element("div");
+      span4 = element("span");
+      t21 = space();
+      input = element("input");
+      t22 = space();
+      if (if_block5)
+        if_block5.c();
+      t23 = space();
+      div7 = element("div");
+      button9 = element("button");
+      t24 = text("\u{1F4DD} Notes");
+      t25 = space();
+      button10 = element("button");
+      t26 = text("\u{1F4E6} Containers");
+      t27 = space();
+      if_block6.c();
       attr(h4, "class", "lenta-title-text svelte-7ir8ul");
       attr(div0, "class", "lenta-sidebar-title svelte-7ir8ul");
       attr(button0, "type", "button");
@@ -16436,32 +17201,51 @@ function create_fragment5(ctx) {
       attr(nav, "class", "lenta-sidebar-toolbar svelte-7ir8ul");
       attr(nav, "aria-label", "Lenta actions");
       attr(header, "class", "lenta-sidebar-header svelte-7ir8ul");
-      attr(span, "class", "lenta-search-icon svelte-7ir8ul");
+      attr(span0, "class", "lenta-session-indicator-dot");
+      attr(span1, "class", "lenta-session-name");
+      attr(div1, "class", "lenta-session-label-group");
+      attr(div2, "class", div2_class_value = "lenta-session-badge " + /*activeSession*/
+      (ctx[2] ? "is-active" : "is-idle"));
+      attr(div2, "role", "button");
+      attr(div2, "tabindex", "0");
+      attr(div2, "title", div2_title_value = /*activeSession*/
+      ctx[2] ? `\u0412 \u0440\u0430\u0431\u043E\u0442\u0435: ${/*activeSession*/
+      ctx[2].title} (+${/*pendingCount*/
+      ctx[22]} \u043D\u0435\u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043D\u044B\u0445 \u0434\u0435\u043B\u044C\u0442). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u0444\u0438\u043A\u0441\u0430\u0446\u0438\u0438.` : "Live \u0440\u0435\u0436\u0438\u043C (\u0441\u0435\u0441\u0441\u0438\u044F \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438/\u043F\u0440\u0430\u0432\u043A\u0435 \u0437\u0430\u043C\u0435\u0442\u043E\u043A). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u043E\u0442\u043A\u0440\u044B\u0442\u0438\u044F \u0441\u0435\u0441\u0441\u0438\u0438.");
+      attr(span2, "class", "btn-icon");
+      attr(button8, "type", "button");
+      attr(button8, "class", "lenta-session-quick-btn mod-pull");
+      attr(button8, "title", "\u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u044C \u0441\u0432\u0435\u0436\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u0438\u0437 Google Drive (Cloud Pull)");
+      attr(div3, "class", "lenta-session-btn-group");
+      attr(div4, "class", "lenta-workstation-session-bar");
+      attr(div4, "role", "region");
+      attr(div4, "aria-label", "Workstation Session Status");
+      attr(span4, "class", "lenta-search-icon svelte-7ir8ul");
       attr(input, "type", "text");
       attr(input, "class", "lenta-search-input svelte-7ir8ul");
       attr(input, "placeholder", "Search notes, folders, containers...");
-      attr(div1, "class", "lenta-search-input-wrap svelte-7ir8ul");
-      attr(div2, "class", "lenta-search-container svelte-7ir8ul");
-      attr(button8, "type", "button");
-      attr(button8, "role", "tab");
-      attr(button8, "aria-selected", button8_aria_selected_value = /*sidebarMode*/
-      ctx[11] === "notes");
-      attr(button8, "class", button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx[11] === "notes" ? "is-active" : "") + " svelte-7ir8ul");
+      attr(div5, "class", "lenta-search-input-wrap svelte-7ir8ul");
+      attr(div6, "class", "lenta-search-container svelte-7ir8ul");
       attr(button9, "type", "button");
       attr(button9, "role", "tab");
       attr(button9, "aria-selected", button9_aria_selected_value = /*sidebarMode*/
-      ctx[11] === "containers");
+      ctx[12] === "notes");
       attr(button9, "class", button9_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx[11] === "containers" ? "is-active" : "") + " svelte-7ir8ul");
-      attr(div3, "class", "lenta-mode-switcher svelte-7ir8ul");
-      attr(div3, "role", "tablist");
-      attr(div3, "aria-label", "Sidebar view mode");
-      attr(div4, "class", "lenta-sidebar-container svelte-7ir8ul");
+      (ctx[12] === "notes" ? "is-active" : "") + " svelte-7ir8ul");
+      attr(button10, "type", "button");
+      attr(button10, "role", "tab");
+      attr(button10, "aria-selected", button10_aria_selected_value = /*sidebarMode*/
+      ctx[12] === "containers");
+      attr(button10, "class", button10_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx[12] === "containers" ? "is-active" : "") + " svelte-7ir8ul");
+      attr(div7, "class", "lenta-mode-switcher svelte-7ir8ul");
+      attr(div7, "role", "tablist");
+      attr(div7, "aria-label", "Sidebar view mode");
+      attr(div8, "class", "lenta-sidebar-container svelte-7ir8ul");
     },
     m(target, anchor) {
-      insert(target, div4, anchor);
-      append(div4, header);
+      insert(target, div8, anchor);
+      append(div8, header);
       append(header, div0);
       append(div0, h4);
       append(div0, t1);
@@ -16487,29 +17271,52 @@ function create_fragment5(ctx) {
       append(nav, button6);
       append(nav, t10);
       append(nav, button7);
-      append(div4, t11);
+      append(div8, t11);
+      append(div8, div4);
       append(div4, div2);
+      append(div2, span0);
+      append(div2, t12);
       append(div2, div1);
-      append(div1, span);
-      append(div1, t12);
-      append(div1, input);
+      append(div1, span1);
+      append(span1, t13);
+      append(div1, t14);
+      if (if_block2)
+        if_block2.m(div1, null);
+      append(div2, t15);
+      if (if_block3)
+        if_block3.m(div2, null);
+      append(div4, t16);
+      append(div4, div3);
+      if (if_block4)
+        if_block4.m(div3, null);
+      append(div3, t17);
+      append(div3, button8);
+      append(button8, span2);
+      append(button8, t18);
+      append(button8, span3);
+      append(div8, t20);
+      append(div8, div6);
+      append(div6, div5);
+      append(div5, span4);
+      append(div5, t21);
+      append(div5, input);
       set_input_value(
         input,
         /*searchQuery*/
-        ctx[10]
+        ctx[11]
       );
-      append(div1, t13);
-      if (if_block2)
-        if_block2.m(div1, null);
-      append(div4, t14);
-      append(div4, div3);
-      append(div3, button8);
-      append(button8, t15);
-      append(div3, t16);
-      append(div3, button9);
-      append(button9, t17);
-      append(div4, t18);
-      if_blocks[current_block_type_index].m(div4, null);
+      append(div5, t22);
+      if (if_block5)
+        if_block5.m(div5, null);
+      append(div8, t23);
+      append(div8, div7);
+      append(div7, button9);
+      append(button9, t24);
+      append(div7, t25);
+      append(div7, button10);
+      append(button10, t26);
+      append(div8, t27);
+      if_blocks[current_block_type_index].m(div8, null);
       current = true;
       if (!mounted) {
         dispose = [
@@ -16517,85 +17324,105 @@ function create_fragment5(ctx) {
             button0,
             "click",
             /*click_handler*/
-            ctx[58]
+            ctx[62]
           ),
           action_destroyer(obsIcon_action = /*obsIcon*/
-          ctx[33].call(null, button0, "sparkles")),
+          ctx[36].call(null, button0, "sparkles")),
           listen(
             button1,
             "click",
             /*click_handler_1*/
-            ctx[59]
+            ctx[63]
           ),
           action_destroyer(obsIcon_action_1 = /*obsIcon*/
-          ctx[33].call(null, button1, "plus")),
+          ctx[36].call(null, button1, "plus")),
           listen(
             button2,
             "click",
             /*click_handler_2*/
-            ctx[60]
+            ctx[64]
           ),
           action_destroyer(obsIcon_action_2 = /*obsIcon*/
-          ctx[33].call(null, button2, "folder-plus")),
+          ctx[36].call(null, button2, "folder-plus")),
           listen(
             button3,
             "click",
             /*click_handler_3*/
-            ctx[61]
+            ctx[65]
           ),
           action_destroyer(obsIcon_action_3 = /*obsIcon*/
-          ctx[33].call(null, button3, "download")),
+          ctx[36].call(null, button3, "download")),
           listen(
             button4,
             "click",
             /*click_handler_4*/
-            ctx[62]
+            ctx[66]
           ),
           action_destroyer(obsIcon_action_4 = /*obsIcon*/
-          ctx[33].call(null, button4, "upload")),
+          ctx[36].call(null, button4, "upload")),
           listen(
             button5,
             "click",
             /*click_handler_5*/
-            ctx[63]
+            ctx[67]
           ),
           action_destroyer(obsIcon_action_5 = /*obsIcon*/
-          ctx[33].call(null, button5, "zap")),
+          ctx[36].call(null, button5, "zap")),
           listen(
             button6,
             "click",
             /*handleCollapseAll*/
-            ctx[38]
+            ctx[41]
           ),
           action_destroyer(obsIcon_action_6 = /*obsIcon*/
-          ctx[33].call(null, button6, "chevrons-down-up")),
+          ctx[36].call(null, button6, "chevrons-down-up")),
           listen(
             button7,
             "click",
             /*click_handler_7*/
-            ctx[65]
+            ctx[69]
           ),
           action_destroyer(obsIcon_action_7 = /*obsIcon*/
-          ctx[33].call(null, button7, "refresh-cw")),
+          ctx[36].call(null, button7, "refresh-cw")),
+          listen(
+            div2,
+            "click",
+            /*click_handler_8*/
+            ctx[70]
+          ),
+          listen(
+            div2,
+            "keydown",
+            /*keydown_handler*/
+            ctx[71]
+          ),
           action_destroyer(obsIcon_action_8 = /*obsIcon*/
-          ctx[33].call(null, span, "search")),
+          ctx[36].call(null, span2, "refresh-cw")),
+          listen(
+            button8,
+            "click",
+            /*click_handler_10*/
+            ctx[73]
+          ),
+          action_destroyer(obsIcon_action_9 = /*obsIcon*/
+          ctx[36].call(null, span4, "search")),
           listen(
             input,
             "input",
             /*input_input_handler*/
-            ctx[66]
-          ),
-          listen(
-            button8,
-            "click",
-            /*click_handler_9*/
-            ctx[68]
+            ctx[74]
           ),
           listen(
             button9,
             "click",
-            /*click_handler_10*/
-            ctx[69]
+            /*click_handler_12*/
+            ctx[76]
+          ),
+          listen(
+            button10,
+            "click",
+            /*click_handler_13*/
+            ctx[77]
           )
         ];
         mounted = true;
@@ -16604,12 +17431,12 @@ function create_fragment5(ctx) {
     p(ctx2, dirty) {
       if (
         /*selectedCount*/
-        ctx2[19] > 0
+        ctx2[20] > 0
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_21(ctx2);
+          if_block0 = create_if_block_24(ctx2);
           if_block0.c();
           if_block0.m(div0, null);
         }
@@ -16619,13 +17446,13 @@ function create_fragment5(ctx) {
       }
       if (
         /*bridge*/
-        ctx2[7]?.openConnectionsModal || /*onOpenConnectionsModal*/
-        ctx2[8]
+        ctx2[8]?.openConnectionsModal || /*onOpenConnectionsModal*/
+        ctx2[9]
       ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_20(ctx2);
+          if_block1 = create_if_block_232(ctx2);
           if_block1.c();
           if_block1.m(nav, t9);
         }
@@ -16633,23 +17460,21 @@ function create_fragment5(ctx) {
         if_block1.d(1);
         if_block1 = null;
       }
-      if (dirty[0] & /*searchQuery*/
-      1024 && input.value !== /*searchQuery*/
-      ctx2[10]) {
-        set_input_value(
-          input,
-          /*searchQuery*/
-          ctx2[10]
-        );
-      }
+      if ((!current || dirty[0] & /*activeSession*/
+      4) && t13_value !== (t13_value = /*activeSession*/
+      (ctx2[2] ? (
+        /*activeSession*/
+        ctx2[2].title
+      ) : "Live \u0440\u0435\u0436\u0438\u043C") + ""))
+        set_data(t13, t13_value);
       if (
-        /*searchQuery*/
-        ctx2[10]
+        /*lastCommit*/
+        ctx2[21]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_19(ctx2);
+          if_block2 = create_if_block_222(ctx2);
           if_block2.c();
           if_block2.m(div1, null);
         }
@@ -16657,25 +17482,92 @@ function create_fragment5(ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button8_aria_selected_value !== (button8_aria_selected_value = /*sidebarMode*/
-      ctx2[11] === "notes")) {
-        attr(button8, "aria-selected", button8_aria_selected_value);
+      if (
+        /*activeSession*/
+        ctx2[2] && /*pendingCount*/
+        ctx2[22] > 0
+      ) {
+        if (if_block3) {
+          if_block3.p(ctx2, dirty);
+        } else {
+          if_block3 = create_if_block_21(ctx2);
+          if_block3.c();
+          if_block3.m(div2, null);
+        }
+      } else if (if_block3) {
+        if_block3.d(1);
+        if_block3 = null;
+      }
+      if (!current || dirty[0] & /*activeSession*/
+      4 && div2_class_value !== (div2_class_value = "lenta-session-badge " + /*activeSession*/
+      (ctx2[2] ? "is-active" : "is-idle"))) {
+        attr(div2, "class", div2_class_value);
+      }
+      if (!current || dirty[0] & /*activeSession, pendingCount*/
+      4194308 && div2_title_value !== (div2_title_value = /*activeSession*/
+      ctx2[2] ? `\u0412 \u0440\u0430\u0431\u043E\u0442\u0435: ${/*activeSession*/
+      ctx2[2].title} (+${/*pendingCount*/
+      ctx2[22]} \u043D\u0435\u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043D\u044B\u0445 \u0434\u0435\u043B\u044C\u0442). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u0444\u0438\u043A\u0441\u0430\u0446\u0438\u0438.` : "Live \u0440\u0435\u0436\u0438\u043C (\u0441\u0435\u0441\u0441\u0438\u044F \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438/\u043F\u0440\u0430\u0432\u043A\u0435 \u0437\u0430\u043C\u0435\u0442\u043E\u043A). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u043E\u0442\u043A\u0440\u044B\u0442\u0438\u044F \u0441\u0435\u0441\u0441\u0438\u0438.")) {
+        attr(div2, "title", div2_title_value);
+      }
+      if (
+        /*activeSession*/
+        ctx2[2]
+      ) {
+        if (if_block4) {
+          if_block4.p(ctx2, dirty);
+        } else {
+          if_block4 = create_if_block_20(ctx2);
+          if_block4.c();
+          if_block4.m(div3, t17);
+        }
+      } else if (if_block4) {
+        if_block4.d(1);
+        if_block4 = null;
+      }
+      if (dirty[0] & /*searchQuery*/
+      2048 && input.value !== /*searchQuery*/
+      ctx2[11]) {
+        set_input_value(
+          input,
+          /*searchQuery*/
+          ctx2[11]
+        );
+      }
+      if (
+        /*searchQuery*/
+        ctx2[11]
+      ) {
+        if (if_block5) {
+          if_block5.p(ctx2, dirty);
+        } else {
+          if_block5 = create_if_block_19(ctx2);
+          if_block5.c();
+          if_block5.m(div5, null);
+        }
+      } else if (if_block5) {
+        if_block5.d(1);
+        if_block5 = null;
       }
       if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button8_class_value !== (button8_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx2[11] === "notes" ? "is-active" : "") + " svelte-7ir8ul")) {
-        attr(button8, "class", button8_class_value);
-      }
-      if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button9_aria_selected_value !== (button9_aria_selected_value = /*sidebarMode*/
-      ctx2[11] === "containers")) {
+      4096 && button9_aria_selected_value !== (button9_aria_selected_value = /*sidebarMode*/
+      ctx2[12] === "notes")) {
         attr(button9, "aria-selected", button9_aria_selected_value);
       }
       if (!current || dirty[0] & /*sidebarMode*/
-      2048 && button9_class_value !== (button9_class_value = "lenta-mode-tab " + /*sidebarMode*/
-      (ctx2[11] === "containers" ? "is-active" : "") + " svelte-7ir8ul")) {
+      4096 && button9_class_value !== (button9_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx2[12] === "notes" ? "is-active" : "") + " svelte-7ir8ul")) {
         attr(button9, "class", button9_class_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      4096 && button10_aria_selected_value !== (button10_aria_selected_value = /*sidebarMode*/
+      ctx2[12] === "containers")) {
+        attr(button10, "aria-selected", button10_aria_selected_value);
+      }
+      if (!current || dirty[0] & /*sidebarMode*/
+      4096 && button10_class_value !== (button10_class_value = "lenta-mode-tab " + /*sidebarMode*/
+      (ctx2[12] === "containers" ? "is-active" : "") + " svelte-7ir8ul")) {
+        attr(button10, "class", button10_class_value);
       }
       let previous_block_index = current_block_type_index;
       current_block_type_index = select_block_type(ctx2, dirty);
@@ -16687,30 +17579,30 @@ function create_fragment5(ctx) {
           if_blocks[previous_block_index] = null;
         });
         check_outros();
-        if_block3 = if_blocks[current_block_type_index];
-        if (!if_block3) {
-          if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
-          if_block3.c();
+        if_block6 = if_blocks[current_block_type_index];
+        if (!if_block6) {
+          if_block6 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block6.c();
         } else {
-          if_block3.p(ctx2, dirty);
+          if_block6.p(ctx2, dirty);
         }
-        transition_in(if_block3, 1);
-        if_block3.m(div4, null);
+        transition_in(if_block6, 1);
+        if_block6.m(div8, null);
       }
     },
     i(local) {
       if (current)
         return;
-      transition_in(if_block3);
+      transition_in(if_block6);
       current = true;
     },
     o(local) {
-      transition_out(if_block3);
+      transition_out(if_block6);
       current = false;
     },
     d(detaching) {
       if (detaching) {
-        detach(div4);
+        detach(div8);
       }
       if (if_block0)
         if_block0.d();
@@ -16718,6 +17610,12 @@ function create_fragment5(ctx) {
         if_block1.d();
       if (if_block2)
         if_block2.d();
+      if (if_block3)
+        if_block3.d();
+      if (if_block4)
+        if_block4.d();
+      if (if_block5)
+        if_block5.d();
       if_blocks[current_block_type_index].d();
       mounted = false;
       run_all(dispose);
@@ -16731,6 +17629,8 @@ function onKeyAction(e, action) {
   }
 }
 function instance5($$self, $$props, $$invalidate) {
+  let pendingCount;
+  let lastCommit;
   let selectedCount;
   let currentKey;
   let myContainers;
@@ -16748,6 +17648,8 @@ function instance5($$self, $$props, $$invalidate) {
   let { containers = [] } = $$props;
   let { folders = [] } = $$props;
   let { feeds = [] } = $$props;
+  let { syncStatus = null } = $$props;
+  let { activeSession = null } = $$props;
   let { containerFilesList = /* @__PURE__ */ new Map() } = $$props;
   let { containerFoldersList = /* @__PURE__ */ new Map() } = $$props;
   let { folderPreviewNotes = /* @__PURE__ */ new Map() } = $$props;
@@ -16774,6 +17676,9 @@ function instance5($$self, $$props, $$invalidate) {
     quickAddContainer: (cId, name, path, d) => bridge?.openQuickAddForContainer ? bridge.openQuickAddForContainer(cId, name, path, d) : onOpenQuickAddForContainer?.(cId, name, path, d),
     createFolderContainer: (cId, name, pId, pPath) => bridge?.openCreateFolderForContainer ? bridge.openCreateFolderForContainer(cId, name, pId, pPath) : onOpenCreateFolderForContainer?.(cId, name, pId, pPath),
     syncModal: (mode) => bridge?.openSyncModal ? bridge.openSyncModal(mode) : onOpenSyncModal?.(mode),
+    sessionModal: () => bridge?.openSessionCommitModal ? bridge.openSessionCommitModal() : void 0,
+    startSession: (title) => bridge?.startWorkstationSession ? bridge.startWorkstationSession(title) : void 0,
+    pullCloud: () => bridge?.pullCloudCommits ? bridge.pullCloudCommits() : void 0,
     connectionsModal: () => bridge?.openConnectionsModal ? bridge.openConnectionsModal() : onOpenConnectionsModal?.(),
     openNote: (path) => bridge?.openNoteInVault ? bridge.openNoteInVault(path) : onOpenNoteInVault?.(path),
     refresh: () => bridge?.refreshData ? bridge.refreshData() : onRefreshData?.(),
@@ -16817,10 +17722,10 @@ function instance5($$self, $$props, $$invalidate) {
         let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
         if (currentIds.includes(containerId)) {
           currentIds = currentIds.filter((id) => id !== containerId);
-          new import_obsidian13.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian14.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         } else {
           currentIds.push(containerId);
-          new import_obsidian13.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian14.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         }
         $$invalidate(0, settings.activeContainerIds = currentIds, settings);
         $$invalidate(0, settings.activeContainerId = currentIds[0] || "", settings);
@@ -16830,15 +17735,15 @@ function instance5($$self, $$props, $$invalidate) {
     }
   };
   const expandedPreviews = createSetStore();
-  component_subscribe($$self, expandedPreviews, (value) => $$invalidate(21, $expandedPreviews = value));
+  component_subscribe($$self, expandedPreviews, (value) => $$invalidate(24, $expandedPreviews = value));
   const expandedContainerFolders = createSetStore();
-  component_subscribe($$self, expandedContainerFolders, (value) => $$invalidate(24, $expandedContainerFolders = value));
+  component_subscribe($$self, expandedContainerFolders, (value) => $$invalidate(27, $expandedContainerFolders = value));
   const loadingContainerFiles = createSetStore();
-  component_subscribe($$self, loadingContainerFiles, (value) => $$invalidate(23, $loadingContainerFiles = value));
+  component_subscribe($$self, loadingContainerFiles, (value) => $$invalidate(26, $loadingContainerFiles = value));
   const loadingFolderNotes = createSetStore();
-  component_subscribe($$self, loadingFolderNotes, (value) => $$invalidate(22, $loadingFolderNotes = value));
+  component_subscribe($$self, loadingFolderNotes, (value) => $$invalidate(25, $loadingFolderNotes = value));
   const loadingPreviewNotes = createSetStore();
-  component_subscribe($$self, loadingPreviewNotes, (value) => $$invalidate(20, $loadingPreviewNotes = value));
+  component_subscribe($$self, loadingPreviewNotes, (value) => $$invalidate(23, $loadingPreviewNotes = value));
   let sidebarMode = "containers";
   let activeTab = "folders";
   let scopeFilter = "my";
@@ -16854,12 +17759,12 @@ function instance5($$self, $$props, $$invalidate) {
   });
   function obsIcon(node, iconName) {
     if (iconName)
-      (0, import_obsidian13.setIcon)(node, iconName);
+      (0, import_obsidian14.setIcon)(node, iconName);
     return {
       update(newIconName) {
         node.empty();
         if (newIconName)
-          (0, import_obsidian13.setIcon)(node, newIconName);
+          (0, import_obsidian14.setIcon)(node, newIconName);
       }
     };
   }
@@ -16917,16 +17822,16 @@ function instance5($$self, $$props, $$invalidate) {
   function handleCollapseAll() {
     expandedPreviews.clear();
     expandedContainerFolders.clear();
-    new import_obsidian13.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+    new import_obsidian14.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
   }
   async function handleConnectKeySubmit() {
     const key = keyInputText.trim();
     if (!key) {
-      new import_obsidian13.Notice("Please enter a container key");
+      new import_obsidian14.Notice("Please enter a container key");
       return;
     }
     await api.connectKey(key);
-    $$invalidate(13, keyInputText = "");
+    $$invalidate(14, keyInputText = "");
   }
   async function handleDisconnectKey() {
     await api.disconnectKey();
@@ -16939,24 +17844,28 @@ function instance5($$self, $$props, $$invalidate) {
   const click_handler_5 = () => api.syncModal("push");
   const click_handler_6 = () => api.connectionsModal();
   const click_handler_7 = () => api.refresh();
+  const click_handler_8 = () => api.sessionModal();
+  const keydown_handler = (e) => onKeyAction(e, () => api.sessionModal());
+  const click_handler_9 = () => api.sessionModal();
+  const click_handler_10 = () => api.pullCloud();
   function input_input_handler() {
     searchQuery = this.value;
-    $$invalidate(10, searchQuery);
+    $$invalidate(11, searchQuery);
   }
-  const click_handler_8 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_9 = () => $$invalidate(11, sidebarMode = "notes");
-  const click_handler_10 = () => $$invalidate(11, sidebarMode = "containers");
+  const click_handler_11 = () => $$invalidate(11, searchQuery = "");
+  const click_handler_12 = () => $$invalidate(12, sidebarMode = "notes");
+  const click_handler_13 = () => $$invalidate(12, sidebarMode = "containers");
   function input_input_handler_1() {
     keyInputText = this.value;
-    $$invalidate(13, keyInputText);
+    $$invalidate(14, keyInputText);
   }
-  const keydown_handler = (e) => {
+  const keydown_handler_1 = (e) => {
     if (e.key === "Enter")
       handleConnectKeySubmit();
   };
-  const click_handler_11 = () => $$invalidate(9, scopeFilter = "my");
-  const click_handler_12 = () => $$invalidate(9, scopeFilter = "public");
-  const click_handler_13 = () => $$invalidate(10, searchQuery = "");
+  const click_handler_14 = () => $$invalidate(10, scopeFilter = "my");
+  const click_handler_15 = () => $$invalidate(10, scopeFilter = "public");
+  const click_handler_16 = () => $$invalidate(11, searchQuery = "");
   const toggleExpand_handler = (c) => handleToggleContainerExpand(c.id);
   const toggleConnect_handler = (c) => api.toggleConnect(c.id);
   const addNote_handler = (e) => api.quickAddContainer(e.detail.containerId, e.detail.containerName, e.detail.folderPath, e.detail.initialDate);
@@ -16966,12 +17875,12 @@ function instance5($$self, $$props, $$invalidate) {
   function div2_binding($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       scrollContainerEl = $$value;
-      $$invalidate(14, scrollContainerEl);
+      $$invalidate(15, scrollContainerEl);
     });
   }
-  const click_handler_14 = () => api.syncModal("push");
-  const click_handler_15 = () => api.createFolder(void 0, void 0, "obsidian", settings.activeContainerId || containers[0]?.id);
-  const click_handler_16 = () => {
+  const click_handler_17 = () => api.syncModal("push");
+  const click_handler_18 = () => api.createFolder(void 0, void 0, "obsidian", settings.activeContainerId || containers[0]?.id);
+  const click_handler_19 = () => {
     const activeContainer = containers.find((c) => c.id === settings.activeContainerId) || containers[0];
     if (activeContainer) {
       api.quickAddContainer(activeContainer.id, activeContainer.name);
@@ -16979,127 +17888,143 @@ function instance5($$self, $$props, $$invalidate) {
       api.quickAdd();
     }
   };
-  const click_handler_17 = () => $$invalidate(12, activeTab = "folders");
-  const click_handler_18 = () => $$invalidate(12, activeTab = "feeds");
-  const click_handler_19 = () => $$invalidate(9, scopeFilter = "my");
-  const click_handler_20 = () => $$invalidate(9, scopeFilter = "public");
-  const click_handler_21 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_22 = (folder) => api.quickAdd(folder.id, folder.path);
-  const click_handler_23 = (folder) => handleToggleFolderNotes(folder);
-  const keydown_handler_1 = (folder, e) => onKeyAction(e, () => handleToggleFolderNotes(folder));
-  const click_handler_24 = (note) => api.openNote(note.filePath || note.title + ".md");
-  const keydown_handler_2 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
-  const click_handler_25 = () => $$invalidate(10, searchQuery = "");
-  const click_handler_26 = (feed) => handleToggleFeedNotes(feed);
-  const keydown_handler_3 = (feed, e) => onKeyAction(e, () => handleToggleFeedNotes(feed));
+  const click_handler_20 = () => $$invalidate(13, activeTab = "folders");
+  const click_handler_21 = () => $$invalidate(13, activeTab = "feeds");
+  const click_handler_22 = () => $$invalidate(10, scopeFilter = "my");
+  const click_handler_23 = () => $$invalidate(10, scopeFilter = "public");
+  const click_handler_24 = () => $$invalidate(11, searchQuery = "");
+  const click_handler_25 = (folder) => api.quickAdd(folder.id, folder.path);
+  const click_handler_26 = (folder) => handleToggleFolderNotes(folder);
+  const keydown_handler_2 = (folder, e) => onKeyAction(e, () => handleToggleFolderNotes(folder));
   const click_handler_27 = (note) => api.openNote(note.filePath || note.title + ".md");
-  const keydown_handler_4 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
+  const keydown_handler_3 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
+  const click_handler_28 = () => $$invalidate(11, searchQuery = "");
+  const click_handler_29 = (feed) => handleToggleFeedNotes(feed);
+  const keydown_handler_4 = (feed, e) => onKeyAction(e, () => handleToggleFeedNotes(feed));
+  const click_handler_30 = (note) => api.openNote(note.filePath || note.title + ".md");
+  const keydown_handler_5 = (note, e) => onKeyAction(e, () => api.openNote(note.filePath || note.title + ".md"));
   function div2_binding_1($$value) {
     binding_callbacks[$$value ? "unshift" : "push"](() => {
       scrollContainerEl = $$value;
-      $$invalidate(14, scrollContainerEl);
+      $$invalidate(15, scrollContainerEl);
     });
   }
-  const click_handler_28 = () => api.syncModal("push");
-  const click_handler_29 = () => api.createFolder();
-  const click_handler_30 = () => api.quickAdd();
+  const click_handler_31 = () => api.syncModal("push");
+  const click_handler_32 = () => api.createFolder();
+  const click_handler_33 = () => api.quickAdd();
   $$self.$$set = ($$props2) => {
     if ("settings" in $$props2)
       $$invalidate(0, settings = $$props2.settings);
     if ("containers" in $$props2)
       $$invalidate(1, containers = $$props2.containers);
     if ("folders" in $$props2)
-      $$invalidate(41, folders = $$props2.folders);
+      $$invalidate(44, folders = $$props2.folders);
     if ("feeds" in $$props2)
-      $$invalidate(42, feeds = $$props2.feeds);
+      $$invalidate(45, feeds = $$props2.feeds);
+    if ("syncStatus" in $$props2)
+      $$invalidate(46, syncStatus = $$props2.syncStatus);
+    if ("activeSession" in $$props2)
+      $$invalidate(2, activeSession = $$props2.activeSession);
     if ("containerFilesList" in $$props2)
-      $$invalidate(2, containerFilesList = $$props2.containerFilesList);
+      $$invalidate(3, containerFilesList = $$props2.containerFilesList);
     if ("containerFoldersList" in $$props2)
-      $$invalidate(3, containerFoldersList = $$props2.containerFoldersList);
+      $$invalidate(4, containerFoldersList = $$props2.containerFoldersList);
     if ("folderPreviewNotes" in $$props2)
-      $$invalidate(4, folderPreviewNotes = $$props2.folderPreviewNotes);
+      $$invalidate(5, folderPreviewNotes = $$props2.folderPreviewNotes);
     if ("feedNotesList" in $$props2)
-      $$invalidate(5, feedNotesList = $$props2.feedNotesList);
+      $$invalidate(6, feedNotesList = $$props2.feedNotesList);
     if ("isLoading" in $$props2)
-      $$invalidate(6, isLoading = $$props2.isLoading);
+      $$invalidate(7, isLoading = $$props2.isLoading);
     if ("bridge" in $$props2)
-      $$invalidate(7, bridge = $$props2.bridge);
+      $$invalidate(8, bridge = $$props2.bridge);
     if ("onOpenAiQuickAdd" in $$props2)
-      $$invalidate(43, onOpenAiQuickAdd = $$props2.onOpenAiQuickAdd);
+      $$invalidate(47, onOpenAiQuickAdd = $$props2.onOpenAiQuickAdd);
     if ("onOpenQuickAdd" in $$props2)
-      $$invalidate(44, onOpenQuickAdd = $$props2.onOpenQuickAdd);
+      $$invalidate(48, onOpenQuickAdd = $$props2.onOpenQuickAdd);
     if ("onOpenCreateFolder" in $$props2)
-      $$invalidate(45, onOpenCreateFolder = $$props2.onOpenCreateFolder);
+      $$invalidate(49, onOpenCreateFolder = $$props2.onOpenCreateFolder);
     if ("onOpenQuickAddForContainer" in $$props2)
-      $$invalidate(46, onOpenQuickAddForContainer = $$props2.onOpenQuickAddForContainer);
+      $$invalidate(50, onOpenQuickAddForContainer = $$props2.onOpenQuickAddForContainer);
     if ("onOpenCreateFolderForContainer" in $$props2)
-      $$invalidate(47, onOpenCreateFolderForContainer = $$props2.onOpenCreateFolderForContainer);
+      $$invalidate(51, onOpenCreateFolderForContainer = $$props2.onOpenCreateFolderForContainer);
     if ("onOpenSyncModal" in $$props2)
-      $$invalidate(48, onOpenSyncModal = $$props2.onOpenSyncModal);
+      $$invalidate(52, onOpenSyncModal = $$props2.onOpenSyncModal);
     if ("onOpenConnectionsModal" in $$props2)
-      $$invalidate(8, onOpenConnectionsModal = $$props2.onOpenConnectionsModal);
+      $$invalidate(9, onOpenConnectionsModal = $$props2.onOpenConnectionsModal);
     if ("onRefreshData" in $$props2)
-      $$invalidate(49, onRefreshData = $$props2.onRefreshData);
+      $$invalidate(53, onRefreshData = $$props2.onRefreshData);
     if ("onSaveSettings" in $$props2)
-      $$invalidate(50, onSaveSettings = $$props2.onSaveSettings);
+      $$invalidate(54, onSaveSettings = $$props2.onSaveSettings);
     if ("onOpenNoteInVault" in $$props2)
-      $$invalidate(51, onOpenNoteInVault = $$props2.onOpenNoteInVault);
+      $$invalidate(55, onOpenNoteInVault = $$props2.onOpenNoteInVault);
     if ("onLoadContainerFiles" in $$props2)
-      $$invalidate(52, onLoadContainerFiles = $$props2.onLoadContainerFiles);
+      $$invalidate(56, onLoadContainerFiles = $$props2.onLoadContainerFiles);
     if ("onLoadFolderNotes" in $$props2)
-      $$invalidate(53, onLoadFolderNotes = $$props2.onLoadFolderNotes);
+      $$invalidate(57, onLoadFolderNotes = $$props2.onLoadFolderNotes);
     if ("onLoadFeedNotes" in $$props2)
-      $$invalidate(54, onLoadFeedNotes = $$props2.onLoadFeedNotes);
+      $$invalidate(58, onLoadFeedNotes = $$props2.onLoadFeedNotes);
   };
   $$self.$$.update = () => {
-    if ($$self.$$.dirty[0] & /*settings*/
-    1) {
+    if ($$self.$$.dirty[0] & /*activeSession*/
+    4 | $$self.$$.dirty[1] & /*syncStatus*/
+    32768) {
       $:
-        $$invalidate(19, selectedCount = Array.isArray(settings?.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds.length : settings?.activeContainerId ? 1 : 0);
+        $$invalidate(22, pendingCount = activeSession?._count?.changes ?? syncStatus?.pendingChangesCount ?? 0);
+    }
+    if ($$self.$$.dirty[1] & /*syncStatus*/
+    32768) {
+      $:
+        $$invalidate(21, lastCommit = syncStatus?.lastCommit ?? null);
     }
     if ($$self.$$.dirty[0] & /*settings*/
     1) {
       $:
-        $$invalidate(18, currentKey = settings?.containerKey || settings?.activeContainerIds && settings.activeContainerIds[0] || "");
+        $$invalidate(20, selectedCount = Array.isArray(settings?.activeContainerIds) && settings.activeContainerIds.length > 0 ? settings.activeContainerIds.length : settings?.activeContainerId ? 1 : 0);
+    }
+    if ($$self.$$.dirty[0] & /*settings*/
+    1) {
+      $:
+        $$invalidate(19, currentKey = settings?.containerKey || settings?.activeContainerIds && settings.activeContainerIds[0] || "");
     }
     if ($$self.$$.dirty[0] & /*containers*/
     2) {
       $:
-        $$invalidate(57, myContainers = containers.filter((c) => !isContainerPublic(c)));
+        $$invalidate(61, myContainers = containers.filter((c) => !isContainerPublic(c)));
     }
     if ($$self.$$.dirty[0] & /*containers*/
     2) {
       $:
-        $$invalidate(56, publicContainers = containers.filter((c) => isContainerPublic(c)));
+        $$invalidate(60, publicContainers = containers.filter((c) => isContainerPublic(c)));
     }
     if ($$self.$$.dirty[0] & /*scopeFilter*/
-    512 | $$self.$$.dirty[1] & /*myContainers, publicContainers*/
-    100663296) {
+    1024 | $$self.$$.dirty[1] & /*myContainers, publicContainers*/
+    1610612736) {
       $:
-        $$invalidate(55, scopedContainers = scopeFilter === "my" ? myContainers : publicContainers);
+        $$invalidate(59, scopedContainers = scopeFilter === "my" ? myContainers : publicContainers);
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
-    1024 | $$self.$$.dirty[1] & /*scopedContainers*/
-    16777216) {
+    2048 | $$self.$$.dirty[1] & /*scopedContainers*/
+    268435456) {
       $:
-        $$invalidate(17, displayedContainers = searchQuery.trim() ? scopedContainers.filter((c) => c.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || c.id.toLowerCase().includes(searchQuery.trim().toLowerCase())) : scopedContainers);
+        $$invalidate(18, displayedContainers = searchQuery.trim() ? scopedContainers.filter((c) => c.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || c.id.toLowerCase().includes(searchQuery.trim().toLowerCase())) : scopedContainers);
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
-    1024 | $$self.$$.dirty[1] & /*folders*/
-    1024) {
+    2048 | $$self.$$.dirty[1] & /*folders*/
+    8192) {
       $:
-        $$invalidate(16, displayedFolders = searchQuery.trim() ? folders.filter((f) => f.path.toLowerCase().includes(searchQuery.trim().toLowerCase()) || f.name.toLowerCase().includes(searchQuery.trim().toLowerCase())) : folders);
+        $$invalidate(17, displayedFolders = searchQuery.trim() ? folders.filter((f) => f.path.toLowerCase().includes(searchQuery.trim().toLowerCase()) || f.name.toLowerCase().includes(searchQuery.trim().toLowerCase())) : folders);
     }
     if ($$self.$$.dirty[0] & /*searchQuery*/
-    1024 | $$self.$$.dirty[1] & /*feeds*/
-    2048) {
+    2048 | $$self.$$.dirty[1] & /*feeds*/
+    16384) {
       $:
-        $$invalidate(15, displayedFeeds = searchQuery.trim() ? feeds.filter((feed) => feed.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) || feed.slug.toLowerCase().includes(searchQuery.trim().toLowerCase())) : feeds);
+        $$invalidate(16, displayedFeeds = searchQuery.trim() ? feeds.filter((feed) => feed.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) || feed.slug.toLowerCase().includes(searchQuery.trim().toLowerCase())) : feeds);
     }
   };
   return [
     settings,
     containers,
+    activeSession,
     containerFilesList,
     containerFoldersList,
     folderPreviewNotes,
@@ -17118,6 +18043,8 @@ function instance5($$self, $$props, $$invalidate) {
     displayedContainers,
     currentKey,
     selectedCount,
+    lastCommit,
+    pendingCount,
     $loadingPreviewNotes,
     $expandedPreviews,
     $loadingFolderNotes,
@@ -17141,6 +18068,7 @@ function instance5($$self, $$props, $$invalidate) {
     handleDisconnectKey,
     folders,
     feeds,
+    syncStatus,
     onOpenAiQuickAdd,
     onOpenQuickAdd,
     onOpenCreateFolder,
@@ -17164,15 +18092,19 @@ function instance5($$self, $$props, $$invalidate) {
     click_handler_5,
     click_handler_6,
     click_handler_7,
-    input_input_handler,
     click_handler_8,
+    keydown_handler,
     click_handler_9,
     click_handler_10,
-    input_input_handler_1,
-    keydown_handler,
+    input_input_handler,
     click_handler_11,
     click_handler_12,
     click_handler_13,
+    input_input_handler_1,
+    keydown_handler_1,
+    click_handler_14,
+    click_handler_15,
+    click_handler_16,
     toggleExpand_handler,
     toggleConnect_handler,
     addNote_handler,
@@ -17180,9 +18112,6 @@ function instance5($$self, $$props, $$invalidate) {
     openNote_handler,
     toggleFolder_handler,
     div2_binding,
-    click_handler_14,
-    click_handler_15,
-    click_handler_16,
     click_handler_17,
     click_handler_18,
     click_handler_19,
@@ -17190,18 +18119,21 @@ function instance5($$self, $$props, $$invalidate) {
     click_handler_21,
     click_handler_22,
     click_handler_23,
-    keydown_handler_1,
     click_handler_24,
-    keydown_handler_2,
     click_handler_25,
     click_handler_26,
-    keydown_handler_3,
+    keydown_handler_2,
     click_handler_27,
-    keydown_handler_4,
-    div2_binding_1,
+    keydown_handler_3,
     click_handler_28,
     click_handler_29,
-    click_handler_30
+    keydown_handler_4,
+    click_handler_30,
+    keydown_handler_5,
+    div2_binding_1,
+    click_handler_31,
+    click_handler_32,
+    click_handler_33
   ];
 }
 var LentaSidebar = class extends SvelteComponent {
@@ -17216,30 +18148,32 @@ var LentaSidebar = class extends SvelteComponent {
       {
         settings: 0,
         containers: 1,
-        folders: 41,
-        feeds: 42,
-        containerFilesList: 2,
-        containerFoldersList: 3,
-        folderPreviewNotes: 4,
-        feedNotesList: 5,
-        isLoading: 6,
-        bridge: 7,
-        onOpenAiQuickAdd: 43,
-        onOpenQuickAdd: 44,
-        onOpenCreateFolder: 45,
-        onOpenQuickAddForContainer: 46,
-        onOpenCreateFolderForContainer: 47,
-        onOpenSyncModal: 48,
-        onOpenConnectionsModal: 8,
-        onRefreshData: 49,
-        onSaveSettings: 50,
-        onOpenNoteInVault: 51,
-        onLoadContainerFiles: 52,
-        onLoadFolderNotes: 53,
-        onLoadFeedNotes: 54
+        folders: 44,
+        feeds: 45,
+        syncStatus: 46,
+        activeSession: 2,
+        containerFilesList: 3,
+        containerFoldersList: 4,
+        folderPreviewNotes: 5,
+        feedNotesList: 6,
+        isLoading: 7,
+        bridge: 8,
+        onOpenAiQuickAdd: 47,
+        onOpenQuickAdd: 48,
+        onOpenCreateFolder: 49,
+        onOpenQuickAddForContainer: 50,
+        onOpenCreateFolderForContainer: 51,
+        onOpenSyncModal: 52,
+        onOpenConnectionsModal: 9,
+        onRefreshData: 53,
+        onSaveSettings: 54,
+        onOpenNoteInVault: 55,
+        onLoadContainerFiles: 56,
+        onLoadFolderNotes: 57,
+        onLoadFeedNotes: 58
       },
       add_css4,
-      [-1, -1, -1, -1]
+      [-1, -1, -1, -1, -1]
     );
   }
 };
@@ -17337,8 +18271,8 @@ function buildFileTree(files, folders = []) {
   sortNodes(rootChildren);
   return rootChildren;
 }
-var LentaSidebarView = class extends import_obsidian14.ItemView {
-  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder, onSaveSettings) {
+var LentaSidebarView = class extends import_obsidian15.ItemView {
+  constructor(leaf, apiClient, getSettings, onOpenQuickAdd, onOpenSyncModal, onOpenConnectionsModal, onOpenContainersFoldersModal, onQuickPull, onQuickPush, onOpenCreateFolder, onSaveSettings, syncEngine, onOpenSessionCommitModal) {
     super(leaf);
     this.onQuickPull = onQuickPull;
     this.onQuickPush = onQuickPush;
@@ -17372,6 +18306,9 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
     // Key connection state
     this.isConnectingKey = false;
     this.keyInputText = "";
+    // Workstation session state
+    this.syncStatus = null;
+    this.activeSession = null;
     this.svelteComponent = null;
     this.apiClient = apiClient;
     this.getSettings = getSettings;
@@ -17381,7 +18318,9 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.onOpenCreateFolder = onOpenCreateFolder;
     this.onSaveSettings = onSaveSettings;
-    this.mdComponent = new import_obsidian14.Component();
+    this.syncEngine = syncEngine;
+    this.onOpenSessionCommitModal = onOpenSessionCommitModal;
+    this.mdComponent = new import_obsidian15.Component();
   }
   selectFolder(folderId, folderPath) {
     this.selectedFolderId = folderId;
@@ -17567,7 +18506,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian14.Notice("\u{1F34B} Container key disconnected");
+        new import_obsidian15.Notice("\u{1F34B} Container key disconnected");
         await this.refreshData();
       },
       toggleContainerConnect: async (containerId) => {
@@ -17575,10 +18514,10 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         let currentIds = Array.isArray(settings.activeContainerIds) ? [...settings.activeContainerIds] : [];
         if (currentIds.includes(containerId)) {
           currentIds = currentIds.filter((id) => id !== containerId);
-          new import_obsidian14.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian15.Notice(`\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         } else {
           currentIds.push(containerId);
-          new import_obsidian14.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
+          new import_obsidian15.Notice(`\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440: ${containerId}`);
         }
         settings.activeContainerIds = currentIds;
         settings.activeContainerId = currentIds[0] || "";
@@ -17586,8 +18525,62 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           await this.onSaveSettings();
         }
         this.updateSvelteProps();
+      },
+      openSessionCommitModal: () => {
+        if (this.onOpenSessionCommitModal) {
+          this.onOpenSessionCommitModal();
+        } else {
+          this.openSessionCommitModal();
+        }
+      },
+      startWorkstationSession: async (title) => {
+        const settings = this.getSettings();
+        const sessionTitle = title?.trim() || `\u0421\u0435\u0441\u0441\u0438\u044F ${(/* @__PURE__ */ new Date()).toLocaleDateString("ru-RU")} ${(/* @__PURE__ */ new Date()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+        try {
+          await this.apiClient.startSession({
+            title: sessionTitle,
+            deviceId: settings.deviceId || "obsidian-workstation",
+            author: settings.sessionAuthor || settings.username || "Obsidian"
+          });
+          new import_obsidian15.Notice(`\u{1F34B} \u0421\u0435\u0441\u0441\u0438\u044F "${sessionTitle}" \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u0430!`);
+        } catch (err) {
+          new import_obsidian15.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u043F\u0443\u0441\u043A\u0430 \u0441\u0435\u0441\u0441\u0438\u0438: ${err.message}`);
+        }
+        await this.refreshData();
+      },
+      pullCloudCommits: async () => {
+        try {
+          if (this.syncEngine) {
+            const res = await this.syncEngine.pullCloudChanges();
+            const count = res.cloudResult?.pulledCommits?.length || 0;
+            if (count > 0) {
+              new import_obsidian15.Notice(`\u{1F34B} \u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u043E ${count} \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0438\u0437 Google Drive! \u041E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u043E ${res.pulledCount} \u0444\u0430\u0439\u043B\u043E\u0432.`);
+            } else {
+              new import_obsidian15.Notice("\u{1F34B} \u0414\u0430\u043D\u043D\u044B\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B. \u041D\u043E\u0432\u044B\u0445 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0432 Google Drive \u043D\u0435\u0442.");
+            }
+          } else {
+            await this.apiClient.pullSync(this.getSettings().deviceId);
+            new import_obsidian15.Notice("\u{1F34B} \u0421\u0432\u0435\u0436\u0438\u0435 \u043A\u043E\u043C\u043C\u0438\u0442\u044B \u043F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u044B \u0438\u0437 Google Drive");
+          }
+        } catch (err) {
+          new import_obsidian15.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u0438: ${err.message}`);
+        }
+        await this.refreshData();
       }
     };
+  }
+  openSessionCommitModal() {
+    if (this.syncEngine) {
+      new LentaSessionCommitModal(
+        this.app,
+        this.apiClient,
+        this.syncEngine,
+        () => this.getSettings(),
+        async () => {
+          await this.refreshData();
+        }
+      ).open();
+    }
   }
   async onOpen() {
     this.containerEl.style.minWidth = "300px";
@@ -17604,6 +18597,8 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
             containers: this.containers,
             folders: this.folders,
             feeds: this.feeds,
+            syncStatus: this.syncStatus,
+            activeSession: this.activeSession,
             containerFilesList: this.containerFilesList,
             containerFoldersList: this.containerFoldersList,
             folderPreviewNotes: this.folderPreviewNotes,
@@ -17648,6 +18643,8 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           containers: this.containers,
           folders: this.folders,
           feeds: this.feeds,
+          syncStatus: this.syncStatus,
+          activeSession: this.activeSession,
           containerFilesList: this.containerFilesList,
           containerFoldersList: this.containerFoldersList,
           folderPreviewNotes: this.folderPreviewNotes,
@@ -17676,16 +18673,19 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       this.render();
     }
     try {
-      const [feeds, folders, taxonomy, containers] = await Promise.all([
+      const [feeds, folders, taxonomy, containers, syncStatus] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
         this.apiClient.getFolders({ scope: "all" }).catch(() => []),
         this.apiClient.getTaxonomyTree().catch(() => []),
-        this.apiClient.listContainers({ fetchAll: true }).catch(() => [])
+        this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
+        this.apiClient.getSyncStatus(this.getSettings().deviceId).catch(() => null)
       ]);
       this.feeds = feeds;
       this.folders = folders;
       this.taxonomy = taxonomy;
       this.containers = containers;
+      this.syncStatus = syncStatus;
+      this.activeSession = syncStatus?.activeSession || null;
       const foldersToFetch = /* @__PURE__ */ new Set();
       for (const key of this.expandedPreviews) {
         if (key.startsWith("folder-")) {
@@ -17730,7 +18730,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         })
       );
     } catch (err) {
-      new import_obsidian14.Notice(`Failed to load Lenta data: ${err.message}`);
+      new import_obsidian15.Notice(`Failed to load Lenta data: ${err.message}`);
     } finally {
       this.isLoading = false;
       if (this.svelteComponent) {
@@ -17847,7 +18847,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
     }
     const toolbar = header.createDiv({ cls: "lenta-sidebar-toolbar" });
     const addBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Quick Add Note" } });
-    (0, import_obsidian14.setIcon)(addBtn, "plus");
+    (0, import_obsidian15.setIcon)(addBtn, "plus");
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -17855,46 +18855,46 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       cls: "clickable-icon",
       attr: { "aria-label": "New Folder" }
     });
-    (0, import_obsidian14.setIcon)(addFolderToolbarBtn, "folder-plus");
+    (0, import_obsidian15.setIcon)(addFolderToolbarBtn, "folder-plus");
     addFolderToolbarBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
     const pullBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Pull from Lenta Server (\u2B07)" } });
-    (0, import_obsidian14.setIcon)(pullBtn, "download");
+    (0, import_obsidian15.setIcon)(pullBtn, "download");
     pullBtn.onclick = () => {
       this.onOpenSyncModal("pull");
     };
     const pushBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Push Changed to Server (\u2B06)" } });
-    (0, import_obsidian14.setIcon)(pushBtn, "upload");
+    (0, import_obsidian15.setIcon)(pushBtn, "upload");
     pushBtn.onclick = () => {
       if (!this.isMyScopeActive()) {
-        new import_obsidian14.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
+        new import_obsidian15.Notice("\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043E\u043A (My Folders).");
         return;
       }
       this.onOpenSyncModal("push");
     };
     const syncBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Sync Hub" } });
-    (0, import_obsidian14.setIcon)(syncBtn, "zap");
+    (0, import_obsidian15.setIcon)(syncBtn, "zap");
     syncBtn.onclick = () => this.onOpenSyncModal("push");
     if (this.onOpenConnectionsModal) {
       const connBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Connections & Auth" } });
-      (0, import_obsidian14.setIcon)(connBtn, "link-2");
+      (0, import_obsidian15.setIcon)(connBtn, "link-2");
       connBtn.onclick = () => this.onOpenConnectionsModal();
     }
     const collapseBtn = toolbar.createEl("button", {
       cls: "clickable-icon",
       attr: { "aria-label": "\u0421\u043A\u0440\u044B\u0442\u044C \u0432\u0441\u0435 (Collapse all)" }
     });
-    (0, import_obsidian14.setIcon)(collapseBtn, "chevrons-down-up");
+    (0, import_obsidian15.setIcon)(collapseBtn, "chevrons-down-up");
     collapseBtn.onclick = () => {
       this.expandedPreviews.clear();
       this.expandedContainerFolders.clear();
       this.scrollPositions.clear();
       this.render();
-      new import_obsidian14.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
+      new import_obsidian15.Notice("\u{1F34B} \u0412\u0441\u0435 \u043F\u0430\u043F\u043A\u0438 \u0438 \u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B \u0441\u0432\u0435\u0440\u043D\u0443\u0442\u044B");
     };
     const refreshBtn = toolbar.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Refresh Data" } });
-    (0, import_obsidian14.setIcon)(refreshBtn, "refresh-cw");
+    (0, import_obsidian15.setIcon)(refreshBtn, "refresh-cw");
     refreshBtn.onclick = () => this.refreshData();
     const modeSwitcher = container.createDiv({ cls: "lenta-mode-switcher" });
     const notesTab = modeSwitcher.createDiv({
@@ -18029,7 +19029,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian14.Notice("\u{1F34B} Container key disconnected");
+        new import_obsidian15.Notice("\u{1F34B} Container key disconnected");
         await this.refreshData();
       };
     } else {
@@ -18061,7 +19061,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
   async connectKeyAction() {
     const key = this.keyInputText.trim();
     if (!key) {
-      new import_obsidian14.Notice("Please enter a container key");
+      new import_obsidian15.Notice("Please enter a container key");
       return;
     }
     this.isConnectingKey = true;
@@ -18083,13 +19083,13 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           await this.onSaveSettings();
         }
         this.keyInputText = "";
-        new import_obsidian14.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
+        new import_obsidian15.Notice(`\u{1F34B} Connected to container: ${res.container.name}`);
         await this.refreshData();
       } else {
-        new import_obsidian14.Notice("Could not connect container with provided key");
+        new import_obsidian15.Notice("Could not connect container with provided key");
       }
     } catch (err) {
-      new import_obsidian14.Notice(`Connection failed: ${err.message}`);
+      new import_obsidian15.Notice(`Connection failed: ${err.message}`);
     } finally {
       this.isConnectingKey = false;
       this.render();
@@ -18131,7 +19131,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       cls: `lenta-container-header-row ${isExpanded ? "is-active" : ""} ${isActiveContainer ? "is-connected" : ""}`
     });
     const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
-    (0, import_obsidian14.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
+    (0, import_obsidian15.setIcon)(iconSpan, c.type === "git" ? "folder-git" : "box");
     const nameSpan = headerRow.createSpan({ text: getContainerDisplayTitle2(c), cls: "lenta-item-name" });
     if (isActiveContainer) {
       nameSpan.title = "Active connected container";
@@ -18145,10 +19145,10 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       cls: "lenta-container-add-btn clickable-icon",
       attr: { "aria-label": `Create Note or Folder in "${c.name}"` }
     });
-    (0, import_obsidian14.setIcon)(addBtn, "plus");
+    (0, import_obsidian15.setIcon)(addBtn, "plus");
     addBtn.onclick = (e) => {
       e.stopPropagation();
-      const menu = new import_obsidian14.Menu();
+      const menu = new import_obsidian15.Menu();
       menu.addItem((item) => {
         item.setTitle("\u{1F4DD} New Note in Container").setIcon("file-plus").onClick(() => {
           this.openQuickAddForContainer(c.id, c.name);
@@ -18165,7 +19165,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse container" : "Expand container files" }
     });
-    (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian15.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -18212,7 +19212,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         if (this.onSaveSettings) {
           await this.onSaveSettings();
         }
-        new import_obsidian14.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
+        new import_obsidian15.Notice(`\u{1F34B} Container "${c.name}" selected as active`);
         this.render();
       };
       const addNoteBtn = actionToolbar.createEl("button", {
@@ -18220,7 +19220,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         text: "+ Note",
         attr: { "aria-label": `Create note in "${c.name}"` }
       });
-      (0, import_obsidian14.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian15.setIcon)(addNoteBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(c.id, c.name);
@@ -18230,7 +19230,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         text: "+ Folder",
         attr: { "aria-label": `Create folder in "${c.name}"` }
       });
-      (0, import_obsidian14.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
+      (0, import_obsidian15.setIcon)(addFolderBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "folder-plus");
       addFolderBtn.onclick = (e) => {
         e.stopPropagation();
         this.openCreateFolderForContainer(c.id, c.name);
@@ -18297,7 +19297,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
       markerEl.createSpan({ cls: "lenta-today-marker-line" });
       const pill = markerEl.createSpan({ cls: "lenta-today-marker-pill" });
       const iconSpan = pill.createSpan({ cls: "lenta-today-pill-icon" });
-      (0, import_obsidian14.setIcon)(iconSpan, "calendar");
+      (0, import_obsidian15.setIcon)(iconSpan, "calendar");
       pill.createSpan({ text: `\u0421\u0435\u0433\u043E\u0434\u043D\u044F: ${todayHumanStr}` });
       pill.createSpan({ cls: "lenta-today-pill-status", text: "(\u0441\u043E\u0431\u044B\u0442\u0438\u0439 \u043D\u0435\u0442)" });
       const addBtn = markerEl.createEl("button", {
@@ -18305,7 +19305,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
         text: "+ \u0417\u0430\u043C\u0435\u0442\u043A\u0430",
         attr: { "aria-label": `\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F (${todayStr}) \u0432 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435` }
       });
-      (0, import_obsidian14.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
+      (0, import_obsidian15.setIcon)(addBtn.createSpan({ cls: "lenta-btn-inline-icon" }), "plus");
       addBtn.onclick = (e) => {
         e.stopPropagation();
         this.openQuickAddForContainer(containerId, void 0, currentFolderPath || void 0, todayStr);
@@ -18326,7 +19326,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = folderRow.createSpan({ cls: "lenta-item-icon" });
-        (0, import_obsidian14.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
+        (0, import_obsidian15.setIcon)(iconEl, isFolderExpanded ? "folder-open" : "folder");
         folderRow.createSpan({ text: node.name, cls: "lenta-item-name" });
         if (node.children && node.children.length > 0) {
           folderRow.createSpan({ text: `${node.children.length}`, cls: "lenta-count-pill" });
@@ -18335,10 +19335,10 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           cls: "lenta-folder-add-note clickable-icon",
           attr: { "aria-label": `Add note or subfolder in ${node.name}` }
         });
-        (0, import_obsidian14.setIcon)(folderAddBtn, "plus");
+        (0, import_obsidian15.setIcon)(folderAddBtn, "plus");
         folderAddBtn.onclick = (e) => {
           e.stopPropagation();
-          const menu = new import_obsidian14.Menu();
+          const menu = new import_obsidian15.Menu();
           menu.addItem((item) => {
             item.setTitle(`\u{1F4DD} New Note in "${node.name}"`).setIcon("file-plus").onClick(() => {
               this.openQuickAddForContainer(containerId, void 0, node.path);
@@ -18387,7 +19387,7 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
           attr: { style: `padding-left: ${depth * 14 + 6}px;` }
         });
         const iconEl = fileRow.createSpan({ cls: `lenta-item-icon lenta-note-icon ${isToday ? "is-today" : ""}` });
-        (0, import_obsidian14.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
+        (0, import_obsidian15.setIcon)(iconEl, isToday ? "calendar-check" : "file-text");
         const nameSpan = fileRow.createSpan({ text: node.name, cls: `lenta-note-title ${isToday ? "is-today" : ""}` });
         nameSpan.title = node.path;
         if (isToday) {
@@ -18424,11 +19424,11 @@ var LentaSidebarView = class extends import_obsidian14.ItemView {
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian14.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian15.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian14.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
+      new import_obsidian15.Notice(`\u23F3 Downloading "${fileName}" into vault...`);
       const cachedFiles = this.containerFilesList.get(containerId) || [];
       const fileEntry = cachedFiles.find((f) => f.path === filePath);
       let content = fileEntry?.content;
@@ -18455,9 +19455,9 @@ Downloaded from container \`${containerId}\`.
       }
       const newFile = await this.app.vault.create(targetPath, content);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian14.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian15.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian14.Notice(`Failed to open file: ${err.message}`);
+      new import_obsidian15.Notice(`Failed to open file: ${err.message}`);
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -18502,7 +19502,7 @@ Downloaded from container \`${containerId}\`.
       const iconSpan = headerRow.createSpan({ cls: "lenta-item-icon" });
       const fIcon = folder.icon || "folder";
       if (fIcon.match(/^[a-z0-9-]+$/)) {
-        (0, import_obsidian14.setIcon)(iconSpan, fIcon);
+        (0, import_obsidian15.setIcon)(iconSpan, fIcon);
       } else {
         iconSpan.setText(fIcon);
       }
@@ -18517,7 +19517,7 @@ Downloaded from container \`${containerId}\`.
           title: `\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u043C\u0435\u0442\u043A\u0443 \u0432 \u043F\u0430\u043F\u043A\u0443 ${folder.path || folder.name}`
         }
       });
-      (0, import_obsidian14.setIcon)(addNoteBtn, "plus");
+      (0, import_obsidian15.setIcon)(addNoteBtn, "plus");
       addNoteBtn.onclick = (e) => {
         e.stopPropagation();
         this.selectedFolderId = folder.id;
@@ -18528,7 +19528,7 @@ Downloaded from container \`${containerId}\`.
         cls: "lenta-preview-toggle clickable-icon",
         attr: { "aria-label": isExpanded ? "Collapse folder" : "Expand folder notes" }
       });
-      (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+      (0, import_obsidian15.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
       headerRow.onclick = async () => {
         this.selectedFolderId = folder.id;
         this.selectedFolderPath = folder.path;
@@ -18567,7 +19567,7 @@ Downloaded from container \`${containerId}\`.
               const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
               const nIcon = note.icon || "file-text";
               if (nIcon.match(/^[a-z0-9-]+$/)) {
-                (0, import_obsidian14.setIcon)(noteIconSpan, nIcon);
+                (0, import_obsidian15.setIcon)(noteIconSpan, nIcon);
               } else {
                 noteIconSpan.setText(nIcon);
               }
@@ -18609,10 +19609,10 @@ Downloaded from container \`${containerId}\`.
               slug: "my-notes",
               description: "Personal notes and reflections feed"
             });
-            new import_obsidian14.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
+            new import_obsidian15.Notice(`\u{1F34B} Created feed: ${newFeed.title}`);
             await this.refreshData();
           } catch (err) {
-            new import_obsidian14.Notice(`Failed to create feed: ${err.message}`);
+            new import_obsidian15.Notice(`Failed to create feed: ${err.message}`);
           }
         };
       } else {
@@ -18640,7 +19640,7 @@ Downloaded from container \`${containerId}\`.
       cls: "lenta-preview-toggle clickable-icon",
       attr: { "aria-label": isExpanded ? "Collapse feed" : "Show feed notes" }
     });
-    (0, import_obsidian14.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
+    (0, import_obsidian15.setIcon)(toggleBtn, isExpanded ? "chevron-up" : "chevron-down");
     headerRow.onclick = async () => {
       if (isExpanded) {
         this.expandedPreviews.delete(previewKey);
@@ -18677,7 +19677,7 @@ Downloaded from container \`${containerId}\`.
             const noteIconSpan = row.createSpan({ cls: "lenta-item-icon lenta-note-icon" });
             const nIcon = note.icon || "file-text";
             if (nIcon.match(/^[a-z0-9-]+$/)) {
-              (0, import_obsidian14.setIcon)(noteIconSpan, nIcon);
+              (0, import_obsidian15.setIcon)(noteIconSpan, nIcon);
             } else {
               noteIconSpan.setText(nIcon);
             }
@@ -18719,11 +19719,11 @@ Downloaded from container \`${containerId}\`.
     }
     if (matched) {
       await this.app.workspace.getLeaf(false).openFile(matched);
-      new import_obsidian14.Notice(`\u{1F34B} Opened "${matched.basename}"`);
+      new import_obsidian15.Notice(`\u{1F34B} Opened "${matched.basename}"`);
       return;
     }
     try {
-      new import_obsidian14.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
+      new import_obsidian15.Notice(`\u23F3 Downloading "${note.title}" into vault...`);
       const root = this.getSettings().vaultRootFolder || "Lemon-Seasons";
       const folderPath = note.folders && note.folders.length > 0 && note.folders[0].folder ? note.folders[0].folder.path : "01_Daily_Logs";
       const safeTitle = note.title.replace(/[:\/\\*?"<>|]/g, "-").trim();
@@ -18735,9 +19735,9 @@ Downloaded from container \`${containerId}\`.
       const mdContent = LentaFrontmatterUtil.serializeNoteToMarkdown(note);
       const newFile = await this.app.vault.create(targetPath, mdContent);
       await this.app.workspace.getLeaf(false).openFile(newFile);
-      new import_obsidian14.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
+      new import_obsidian15.Notice(`\u{1F34B} Downloaded & opened "${newFile.basename}"!`);
     } catch (err) {
-      new import_obsidian14.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
+      new import_obsidian15.Notice(`\u{1F4C4} ${note.title} (${note.startDate ? note.startDate.slice(0, 10) : "Lenta"})`);
     }
   }
   renderQuickAddFooter(container) {
@@ -18752,12 +19752,12 @@ Downloaded from container \`${containerId}\`.
     });
     pushCurrentBtn.onclick = () => {
       if (!isMyActive) {
-        new import_obsidian14.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
+        new import_obsidian15.Notice('\u{1F512} \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0437\u0430\u043C\u0435\u0442\u043E\u043A \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u0438\u0447\u043D\u044B\u0445 \u043F\u0430\u043F\u043A\u0430\u0445 (My Folders). \u041F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0444\u0438\u043B\u044C\u0442\u0440 \u043D\u0430 "My".');
         return;
       }
       const file = this.app.workspace.getActiveFile();
       if (!file) {
-        new import_obsidian14.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
+        new import_obsidian15.Notice("Open a Lenta markdown note, then use Sync Hub (\u26A1) to push it.");
         return;
       }
       this.onOpenSyncModal();
@@ -18769,7 +19769,7 @@ Downloaded from container \`${containerId}\`.
         "aria-label": this.selectedFolderPath ? `Create new folder inside "${this.selectedFolderPath}"` : "Create new folder in Lenta & Vault"
       }
     });
-    (0, import_obsidian14.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian15.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       this.openCreateFolderModal(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
     };
@@ -18781,7 +19781,7 @@ Downloaded from container \`${containerId}\`.
       }
     });
     if (isMyActive) {
-      (0, import_obsidian14.setIcon)(addBtn.createSpan(), "plus");
+      (0, import_obsidian15.setIcon)(addBtn.createSpan(), "plus");
     }
     addBtn.onclick = () => {
       this.onOpenQuickAdd(this.selectedFolderId || void 0, this.selectedFolderPath || void 0);
@@ -18812,10 +19812,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create folder in container "${containerName}"` : "Create folder in container"
       }
     });
-    (0, import_obsidian14.setIcon)(addFolderBtn.createSpan(), "folder-plus");
+    (0, import_obsidian15.setIcon)(addFolderBtn.createSpan(), "folder-plus");
     addFolderBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian14.Notice("Please select or connect a container first");
+        new import_obsidian15.Notice("Please select or connect a container first");
         return;
       }
       this.openCreateFolderForContainer(activeId, containerName);
@@ -18827,10 +19827,10 @@ Downloaded from container \`${containerId}\`.
         "aria-label": activeId ? `Create note in container "${containerName}"` : "Create note in container"
       }
     });
-    (0, import_obsidian14.setIcon)(addNoteBtn.createSpan(), "plus");
+    (0, import_obsidian15.setIcon)(addNoteBtn.createSpan(), "plus");
     addNoteBtn.onclick = () => {
       if (!activeId) {
-        new import_obsidian14.Notice("Please select or connect a container first");
+        new import_obsidian15.Notice("Please select or connect a container first");
         return;
       }
       this.openQuickAddForContainer(activeId, containerName);
@@ -18839,8 +19839,8 @@ Downloaded from container \`${containerId}\`.
 };
 
 // src/ui/settings-tab.ts
-var import_obsidian15 = require("obsidian");
-var LentaSettingTab = class extends import_obsidian15.PluginSettingTab {
+var import_obsidian16 = require("obsidian");
+var LentaSettingTab = class extends import_obsidian16.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -18883,19 +19883,19 @@ var LentaSettingTab = class extends import_obsidian15.PluginSettingTab {
       this.plugin.openConnectionsModal();
     };
     containerEl.createEl("h3", { text: "\u2699\uFE0F Core Server & Sync Settings" });
-    new import_obsidian15.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
+    new import_obsidian16.Setting(containerEl).setName("Lenta Server URL").setDesc("Base address of the Project Lenta NestJS backend API.").addText(
       (text2) => text2.setPlaceholder("http://localhost:3001").setValue(this.plugin.settings.serverUrl).onChange(async (val) => {
         this.plugin.settings.serverUrl = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian15.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
+    new import_obsidian16.Setting(containerEl).setName("Default Feed").setDesc("Default feed slug assigned when creating new notes from Obsidian.").addText(
       (text2) => text2.setPlaceholder("e.g. tech-strategy").setValue(this.plugin.settings.defaultFeedSlug).onChange(async (val) => {
         this.plugin.settings.defaultFeedSlug = val.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian15.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
+    new import_obsidian16.Setting(containerEl).setName("Default Conflict Resolution Strategy").setDesc("Behavior when both local Obsidian note and remote Lenta record were modified.").addDropdown((dropdown) => {
       dropdown.addOption("create_backup_fork", "Create Backup (.local-backup.md)");
       dropdown.addOption("client_wins", "Keep Local (Client Wins)");
       dropdown.addOption("server_wins", "Keep Remote (Server Wins)");
@@ -18906,14 +19906,33 @@ var LentaSettingTab = class extends import_obsidian15.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian15.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
+    new import_obsidian16.Setting(containerEl).setName("Last Synced Timestamp").setDesc("ISO timestamp of the last delta synchronization.").addText(
       (text2) => text2.setValue(this.plugin.settings.lastSyncedAt || "Never").setDisabled(true)
+    );
+    containerEl.createEl("h3", { text: "\u{1F4BE} Workstation Sessions & Google Drive Sync" });
+    new import_obsidian16.Setting(containerEl).setName("Workstation Device ID").setDesc("Unique identifier of this workstation machine for DAG commit tracking.").addText(
+      (text2) => text2.setPlaceholder("obsidian-workstation").setValue(this.plugin.settings.deviceId || "obsidian-workstation").onChange(async (val) => {
+        this.plugin.settings.deviceId = val.trim() || "obsidian-workstation";
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian16.Setting(containerEl).setName("Default Session Author").setDesc("Author name attached to workstation sessions and sealed commits.").addText(
+      (text2) => text2.setPlaceholder("Obsidian").setValue(this.plugin.settings.sessionAuthor || "Obsidian").onChange(async (val) => {
+        this.plugin.settings.sessionAuthor = val.trim() || "Obsidian";
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian16.Setting(containerEl).setName("Auto-Pull on Startup").setDesc("Automatically pull latest remote commits from Google Drive relay on plugin startup.").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.autoPullOnStartup !== false).onChange(async (val) => {
+        this.plugin.settings.autoPullOnStartup = val;
+        await this.plugin.saveSettings();
+      })
     );
   }
 };
 
 // src/main.ts
-var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
+var WorkspaceLentaPlugin = class extends import_obsidian17.Plugin {
   async onload() {
     await this.loadSettings();
     this.apiClient = new LentaApiClient(
@@ -18946,7 +19965,9 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
           this.openSyncModal("push");
         },
         (folderId, folderPath, defaultPrivacy, targetContainerId) => this.openCreateFolderModal(folderId, folderPath, defaultPrivacy, targetContainerId),
-        async () => this.saveSettings()
+        async () => this.saveSettings(),
+        this.syncEngine,
+        () => this.openSessionCommitModal()
       )
     );
     const sidebarRibbonIcon = this.addRibbonIcon("calendar-range", "\u{1F34B} Lemon Lenta: Open Lenta Hub Sidebar", () => {
@@ -18959,7 +19980,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
       this.activateSidebarView();
       if (isVisible && leaves[0].view instanceof LentaSidebarView) {
         leaves[0].view.refreshData();
-        new import_obsidian16.Notice("\u{1F34B} Lenta Hub refreshed");
+        new import_obsidian17.Notice("\u{1F34B} Lenta Hub refreshed");
       }
     });
     sidebarRibbonIcon.addClass("lenta-ribbon-btn");
@@ -18983,10 +20004,46 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
       this.openQuickAddModal();
     });
     addRibbonIcon.addClass("lenta-ribbon-btn");
+    const sessionRibbonIcon = this.addRibbonIcon("git-commit", "\u{1F34B} Lemon Lenta: Workstation Session & Commit (Google Drive)", () => {
+      this.openSessionCommitModal();
+    });
+    sessionRibbonIcon.addClass("lenta-ribbon-btn");
     this.statusBarItemEl = this.addStatusBarItem();
     this.updateStatusBar("Ready");
     this.statusBarItemEl.addClass("mod-clickable");
-    this.statusBarItemEl.onclick = () => this.openSyncModal();
+    this.statusBarItemEl.onclick = () => this.openSessionCommitModal();
+    this.addCommand({
+      id: "lenta-commit-workstation-session",
+      name: "Commit Workstation Session to Google Drive (\u0417\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0441\u0441\u0438\u044E)",
+      callback: () => {
+        this.openSessionCommitModal();
+      }
+    });
+    this.addCommand({
+      id: "lenta-pull-cloud-commits",
+      name: "Pull Commits from Google Drive Cloud Relay (\u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u044C \u043A\u043E\u043C\u043C\u0438\u0442\u044B)",
+      callback: async () => {
+        try {
+          const res = await this.syncEngine.pullCloudChanges();
+          const count = res.cloudResult?.pulledCommits?.length || 0;
+          if (count > 0) {
+            new import_obsidian17.Notice(`\u{1F34B} \u041F\u043E\u0434\u0442\u044F\u043D\u0443\u0442\u043E ${count} \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0438\u0437 Google Drive! \u041E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u043E ${res.pulledCount} \u0444\u0430\u0439\u043B\u043E\u0432.`);
+          } else {
+            new import_obsidian17.Notice("\u{1F34B} \u0414\u0430\u043D\u043D\u044B\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B. \u041D\u043E\u0432\u044B\u0445 \u043A\u043E\u043C\u043C\u0438\u0442\u043E\u0432 \u0432 Google Drive \u043D\u0435\u0442.");
+          }
+          await this.updateLiveSessionStatusBar();
+        } catch (err) {
+          new import_obsidian17.Notice(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u0438: ${err.message}`);
+        }
+      }
+    });
+    this.addCommand({
+      id: "lenta-start-workstation-session",
+      name: "Start New Workstation Session (\u041D\u0430\u0447\u0430\u0442\u044C \u043D\u043E\u0432\u0443\u044E \u0441\u0435\u0441\u0441\u0438\u044E)",
+      callback: () => {
+        this.openSessionCommitModal();
+      }
+    });
     this.addCommand({
       id: "lenta-open-containers-folders-modal",
       name: "Open Containers & Folders Workspace Modal",
@@ -19049,16 +20106,16 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new import_obsidian16.Notice("No active markdown file open.");
+          new import_obsidian17.Notice("No active markdown file open.");
           return;
         }
         try {
           const res = await this.syncEngine.pushLocalNote(file);
           if (res.success) {
-            new import_obsidian16.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
+            new import_obsidian17.Notice(`\u{1F34B} Note "${res.note?.title}" pushed to Lenta!`);
           }
         } catch (err) {
-          new import_obsidian16.Notice(`Push failed: ${err.message}`);
+          new import_obsidian17.Notice(`Push failed: ${err.message}`);
         }
       }
     });
@@ -19072,7 +20129,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
     this.addSettingTab(new LentaSettingTab(this.app, this));
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
-        if (file instanceof import_obsidian16.TFile) {
+        if (file instanceof import_obsidian17.TFile) {
           await this.syncEngine.handleFileRename(file, oldPath);
         }
       })
@@ -19091,13 +20148,19 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
           this.settings.containerKey = "";
           this.settings.connectedContainerName = "";
           await this.saveSettings();
-          new import_obsidian16.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
+          new import_obsidian17.Notice(`\u{1F34B} Container folder "${matchPath}" deleted locally. Container disconnected (remote data safe).`);
         }
       })
     );
-    this.app.workspace.onLayoutReady(() => {
+    this.app.workspace.onLayoutReady(async () => {
       this.activateSidebarView();
+      await this.updateLiveSessionStatusBar();
     });
+    this.registerInterval(
+      window.setInterval(() => {
+        this.updateLiveSessionStatusBar();
+      }, 25e3)
+    );
     console.log("Project Lenta Obsidian Plugin loaded successfully.");
   }
   onunload() {
@@ -19110,7 +20173,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
     const { scanChangedFiles: scanChangedFiles2 } = await Promise.resolve().then(() => (init_changed_files_scanner(), changed_files_scanner_exports));
     const changed = await scanChangedFiles2(this.app, this.settings);
     if (changed.length === 0) {
-      new import_obsidian16.Notice("\u{1F34B} No local changes since last sync.");
+      new import_obsidian17.Notice("\u{1F34B} No local changes since last sync.");
       return;
     }
     this.updateStatusBar(`Pushing ${changed.length} files...`);
@@ -19124,7 +20187,7 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
         console.warn("Push failed for", item.relPath, err?.message);
       }
     }
-    new import_obsidian16.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
+    new import_obsidian17.Notice(`\u{1F34B} Pushed ${pushed}/${changed.length} modified notes.`);
     this.updateStatusBar("Synced \u2713");
     setTimeout(() => this.updateStatusBar("Ready"), 3e3);
   }
@@ -19248,9 +20311,61 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
       (mode) => this.openSyncModal(mode)
     ).open();
   }
+  openSessionCommitModal() {
+    new LentaSessionCommitModal(
+      this.app,
+      this.apiClient,
+      this.syncEngine,
+      () => this.settings,
+      async () => {
+        await this.updateLiveSessionStatusBar();
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            await leaf.view.refreshData();
+          }
+        }
+      }
+    ).open();
+  }
   updateStatusBar(text2) {
     if (this.statusBarItemEl) {
       this.statusBarItemEl.setText(`\u{1F34B} Lenta: ${text2}`);
+    }
+  }
+  async updateLiveSessionStatusBar() {
+    if (!this.statusBarItemEl)
+      return;
+    try {
+      const status = await this.apiClient.getSyncStatus(this.settings.deviceId || "obsidian-workstation").catch(() => null);
+      if (!status) {
+        this.statusBarItemEl.setText("\u{1F34B} Lenta: Offline");
+        return;
+      }
+      if (status.activeSession) {
+        const count = status.pendingChangesCount || 0;
+        const rawTitle = status.activeSession.title || "\u0421\u0435\u0441\u0441\u0438\u044F";
+        const title = rawTitle.length > 18 ? rawTitle.slice(0, 15) + "..." : rawTitle;
+        this.statusBarItemEl.setText(`\u{1F34B} \u25CF ${title}${count > 0 ? ` (+${count})` : ""}`);
+        this.statusBarItemEl.setAttribute(
+          "title",
+          `\u0410\u043A\u0442\u0438\u0432\u043D\u0430\u044F \u0441\u0435\u0441\u0441\u0438\u044F: ${status.activeSession.title} (+${count} \u0434\u0435\u043B\u044C\u0442). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u0444\u0438\u043A\u0441\u0430\u0446\u0438\u0438.`
+        );
+      } else if (status.lastCommit) {
+        this.statusBarItemEl.setText(`\u{1F34B} GDrive #${status.lastCommit.id.slice(-6)} \u2713`);
+        this.statusBarItemEl.setAttribute(
+          "title",
+          `Google Drive Relay \u0430\u043A\u0442\u0443\u0430\u043B\u0435\u043D. \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043A\u043E\u043C\u043C\u0438\u0442 #${status.lastCommit.id}. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u0434\u0435\u0442\u0430\u043B\u0435\u0439.`
+        );
+      } else {
+        this.statusBarItemEl.setText("\u{1F34B} Lenta: Live");
+        this.statusBarItemEl.setAttribute(
+          "title",
+          "\u0413\u043E\u0442\u043E\u0432 \u043A \u0440\u0430\u0431\u043E\u0442\u0435. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0434\u043B\u044F \u043E\u0442\u043A\u0440\u044B\u0442\u0438\u044F \u0441\u0435\u0441\u0441\u0438\u0438."
+        );
+      }
+    } catch {
+      this.statusBarItemEl.setText("\u{1F34B} Lenta: Ready");
     }
   }
   async loadSettings() {
@@ -19260,6 +20375,12 @@ var WorkspaceLentaPlugin = class extends import_obsidian16.Plugin {
     }
     if (this.settings.connectedContainerType === "git") {
       this.settings.connectedContainerType = "obsidian";
+    }
+    if (!this.settings.deviceId) {
+      this.settings.deviceId = "obsidian-workstation";
+    }
+    if (!this.settings.sessionAuthor) {
+      this.settings.sessionAuthor = "Obsidian";
     }
     if (!Array.isArray(this.settings.activeContainerIds)) {
       this.settings.activeContainerIds = [];

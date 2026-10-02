@@ -8,6 +8,7 @@ import {
   FileDiffItemDto,
   ConflictStrategy,
   NoteType,
+  SyncCommit,
 } from '../types';
 import { Note } from '@lenta/shared';
 
@@ -253,6 +254,77 @@ export class LentaSyncEngine {
   }
 
   /**
+   * Distributed Cloud Pull:
+   * 1. Fetches remote commits from Google Drive cloud relay into local PostgreSQL database (3-way merge).
+   * 2. Reconciles local Obsidian vault markdown files with updated records.
+   */
+  async pullCloudChanges(deviceId?: string): Promise<{
+    cloudResult: { pulledCommits: string[]; errors?: string[] };
+    pulledCount: number;
+    deletedCount: number;
+    conflicts: FileDiffItemDto[];
+    downloadedFilesList: Array<{
+      path: string;
+      title: string;
+      content: string;
+      size: number;
+      isNew: boolean;
+    }>;
+  }> {
+    const settings = this.getSettings();
+    const targetDevice = deviceId || settings.deviceId || 'obsidian-workstation';
+
+    // Step 1: Trigger Google Drive cloud pull on the NestJS backend
+    let cloudResult: { pulledCommits: string[]; errors?: string[] } = { pulledCommits: [] };
+    try {
+      cloudResult = await this.apiClient.pullSync(targetDevice);
+    } catch (err: any) {
+      console.warn('Google Drive cloud pull warning:', err?.message);
+      cloudResult = { pulledCommits: [], errors: [err?.message || 'Cloud pull failed'] };
+    }
+
+    // Step 2: Reconcile local vault markdown notes from local PostgreSQL
+    const vaultRes = await this.pullChanges();
+
+    return {
+      cloudResult,
+      ...vaultRes,
+    };
+  }
+
+  /**
+   * Commits the active workstation session into an immutable SyncCommit
+   * and pushes to Google Drive relay storage.
+   */
+  async commitWorkstationSession(
+    summary?: string,
+    autoPush = true
+  ): Promise<{ success: boolean; commit?: SyncCommit }> {
+    const settings = this.getSettings();
+    const targetDevice = settings.deviceId || 'obsidian-workstation';
+
+    const activeSession = await this.apiClient.getActiveSession(targetDevice);
+    if (!activeSession) {
+      throw new Error('No active workstation session to commit.');
+    }
+
+    const commitSummary = summary?.trim() || activeSession.title || `Obsidian Session ${new Date().toLocaleDateString()}`;
+    const res = await this.apiClient.commitSession(
+      activeSession.id,
+      { summary: commitSummary, autoPush },
+      targetDevice
+    );
+
+    if (res.commit?.id) {
+      settings.lastSyncedCommit = res.commit.id;
+    }
+    settings.lastSyncedAt = new Date().toISOString();
+    await this.saveSettings();
+
+    return res;
+  }
+
+  /**
    * Pushes modified and new local markdown files from vault to Lenta server.
    * Intercepts local image attachments (![[image.png]]), uploads to /storage, and updates links.
    */
@@ -325,6 +397,22 @@ export class LentaSyncEngine {
       );
       await this.ledgerManager.saveLedger();
 
+      // Track change in active workstation session for this device
+      try {
+        const settings = this.getSettings();
+        await this.apiClient.recordSessionChange(
+          {
+            entityType: 'NOTE',
+            entityId: updated.id,
+            action: 'UPSERT',
+            payload: { title: updated.title, type: updated.type, path: file.path },
+          },
+          settings.deviceId
+        );
+      } catch {
+        // Session tracking warning ignored to prevent blocking note push
+      }
+
       return { success: true, note: updated };
     } else {
       // Create new note
@@ -362,6 +450,21 @@ export class LentaSyncEngine {
         processedBody
       );
       await this.ledgerManager.saveLedger();
+
+      // Track change in active workstation session for this device
+      try {
+        await this.apiClient.recordSessionChange(
+          {
+            entityType: 'NOTE',
+            entityId: created.id,
+            action: 'UPSERT',
+            payload: { title: created.title, type: created.type, path: file.path },
+          },
+          settings.deviceId
+        );
+      } catch {
+        // Ignored
+      }
 
       return { success: true, note: created };
     }

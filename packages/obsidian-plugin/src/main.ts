@@ -12,6 +12,7 @@ import { LentaConnectionsModal } from './ui/connections-modal';
 import { LentaContainersFoldersModal } from './ui/containers-folders-modal';
 import { LentaSidebarView, VIEW_TYPE_LENTA_SIDEBAR } from './ui/sidebar-view';
 import { LentaSettingTab } from './ui/settings-tab';
+import { LentaSessionCommitModal } from './ui/session-commit-modal';
 
 export default class WorkspaceLentaPlugin extends Plugin {
   settings: LentaPluginSettings;
@@ -60,7 +61,9 @@ export default class WorkspaceLentaPlugin extends Plugin {
             defaultPrivacy?: 'private' | 'public' | 'obsidian',
             targetContainerId?: string
           ) => this.openCreateFolderModal(folderId, folderPath, defaultPrivacy, targetContainerId),
-          async () => this.saveSettings()
+          async () => this.saveSettings(),
+          this.syncEngine,
+          () => this.openSessionCommitModal()
         )
     );
 
@@ -107,13 +110,53 @@ export default class WorkspaceLentaPlugin extends Plugin {
     });
     addRibbonIcon.addClass('lenta-ribbon-btn');
 
+    const sessionRibbonIcon = this.addRibbonIcon('git-commit', '🍋 Lemon Lenta: Workstation Session & Commit (Google Drive)', () => {
+      this.openSessionCommitModal();
+    });
+    sessionRibbonIcon.addClass('lenta-ribbon-btn');
+
     // 3. Status Bar Item
     this.statusBarItemEl = this.addStatusBarItem();
     this.updateStatusBar('Ready');
     this.statusBarItemEl.addClass('mod-clickable');
-    this.statusBarItemEl.onclick = () => this.openSyncModal();
+    this.statusBarItemEl.onclick = () => this.openSessionCommitModal();
 
     // 4. Command Palette Commands
+    this.addCommand({
+      id: 'lenta-commit-workstation-session',
+      name: 'Commit Workstation Session to Google Drive (Зафиксировать сессию)',
+      callback: () => {
+        this.openSessionCommitModal();
+      },
+    });
+
+    this.addCommand({
+      id: 'lenta-pull-cloud-commits',
+      name: 'Pull Commits from Google Drive Cloud Relay (Подтянуть коммиты)',
+      callback: async () => {
+        try {
+          const res = await this.syncEngine.pullCloudChanges();
+          const count = res.cloudResult?.pulledCommits?.length || 0;
+          if (count > 0) {
+            new Notice(`🍋 Подтянуто ${count} коммитов из Google Drive! Обновлено ${res.pulledCount} файлов.`);
+          } else {
+            new Notice('🍋 Данные актуальны. Новых коммитов в Google Drive нет.');
+          }
+          await this.updateLiveSessionStatusBar();
+        } catch (err: any) {
+          new Notice(`Ошибка синхронизации: ${err.message}`);
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'lenta-start-workstation-session',
+      name: 'Start New Workstation Session (Начать новую сессию)',
+      callback: () => {
+        this.openSessionCommitModal();
+      },
+    });
+
     this.addCommand({
       id: 'lenta-open-containers-folders-modal',
       name: 'Open Containers & Folders Workspace Modal',
@@ -245,9 +288,16 @@ export default class WorkspaceLentaPlugin extends Plugin {
       })
     );
 
-    this.app.workspace.onLayoutReady(() => {
+    this.app.workspace.onLayoutReady(async () => {
       this.activateSidebarView();
+      await this.updateLiveSessionStatusBar();
     });
+
+    this.registerInterval(
+      window.setInterval(() => {
+        this.updateLiveSessionStatusBar();
+      }, 25000)
+    );
 
     console.log('Project Lenta Obsidian Plugin loaded successfully.');
   }
@@ -429,9 +479,66 @@ export default class WorkspaceLentaPlugin extends Plugin {
     ).open();
   }
 
+  openSessionCommitModal() {
+    new LentaSessionCommitModal(
+      this.app,
+      this.apiClient,
+      this.syncEngine,
+      () => this.settings,
+      async () => {
+        await this.updateLiveSessionStatusBar();
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LENTA_SIDEBAR);
+        for (const leaf of leaves) {
+          if (leaf.view instanceof LentaSidebarView) {
+            await leaf.view.refreshData();
+          }
+        }
+      }
+    ).open();
+  }
+
   updateStatusBar(text: string) {
     if (this.statusBarItemEl) {
       this.statusBarItemEl.setText(`🍋 Lenta: ${text}`);
+    }
+  }
+
+  async updateLiveSessionStatusBar() {
+    if (!this.statusBarItemEl) return;
+    try {
+      const status = await this.apiClient
+        .getSyncStatus(this.settings.deviceId || 'obsidian-workstation')
+        .catch(() => null);
+
+      if (!status) {
+        this.statusBarItemEl.setText('🍋 Lenta: Offline');
+        return;
+      }
+
+      if (status.activeSession) {
+        const count = status.pendingChangesCount || 0;
+        const rawTitle = status.activeSession.title || 'Сессия';
+        const title = rawTitle.length > 18 ? rawTitle.slice(0, 15) + '...' : rawTitle;
+        this.statusBarItemEl.setText(`🍋 ● ${title}${count > 0 ? ` (+${count})` : ''}`);
+        this.statusBarItemEl.setAttribute(
+          'title',
+          `Активная сессия: ${status.activeSession.title} (+${count} дельт). Нажмите для фиксации.`
+        );
+      } else if (status.lastCommit) {
+        this.statusBarItemEl.setText(`🍋 GDrive #${status.lastCommit.id.slice(-6)} ✓`);
+        this.statusBarItemEl.setAttribute(
+          'title',
+          `Google Drive Relay актуален. Последний коммит #${status.lastCommit.id}. Нажмите для деталей.`
+        );
+      } else {
+        this.statusBarItemEl.setText('🍋 Lenta: Live');
+        this.statusBarItemEl.setAttribute(
+          'title',
+          'Готов к работе. Нажмите для открытия сессии.'
+        );
+      }
+    } catch {
+      this.statusBarItemEl.setText('🍋 Lenta: Ready');
     }
   }
 
@@ -442,6 +549,12 @@ export default class WorkspaceLentaPlugin extends Plugin {
     }
     if (this.settings.connectedContainerType === 'git') {
       this.settings.connectedContainerType = 'obsidian';
+    }
+    if (!this.settings.deviceId) {
+      this.settings.deviceId = 'obsidian-workstation';
+    }
+    if (!this.settings.sessionAuthor) {
+      this.settings.sessionAuthor = 'Obsidian';
     }
     if (!Array.isArray(this.settings.activeContainerIds)) {
       this.settings.activeContainerIds = [];

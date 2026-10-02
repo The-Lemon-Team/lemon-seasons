@@ -1512,6 +1512,148 @@
   color: var(--text-muted) !important;
 }
 
+/* ==========================================================================
+   Workstation Sessions & Google Drive Sync Bar
+   ========================================================================== */
+
+.lenta-workstation-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 6px 10px 10px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.lenta-session-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.lenta-session-badge:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lenta-session-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lenta-session-badge.is-active .lenta-session-indicator-dot {
+  background: #c9cd58;
+  box-shadow: 0 0 8px rgba(201, 205, 88, 0.7);
+  animation: lenta-dot-pulse 1.8s infinite;
+}
+
+.lenta-session-badge.is-idle .lenta-session-indicator-dot {
+  background: #22c55e;
+}
+
+@keyframes lenta-dot-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+.lenta-session-label-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.lenta-session-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lenta-session-hash {
+  font-size: 0.68rem;
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+}
+
+.lenta-session-deltas-pill {
+  font-size: 0.72rem;
+  font-family: var(--font-monospace);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(201, 205, 88, 0.2);
+  color: #c9cd58;
+  flex-shrink: 0;
+}
+
+.lenta-session-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.lenta-session-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lenta-session-quick-btn:hover {
+  background: rgba(201, 205, 88, 0.15);
+  border-color: rgba(201, 205, 88, 0.4);
+  color: #e5e971;
+}
+
+.lenta-session-quick-btn.mod-commit {
+  background: rgba(201, 205, 88, 0.18);
+  border-color: rgba(201, 205, 88, 0.45);
+  color: #e5e971;
+}
+
+.lenta-session-quick-btn.mod-commit:hover {
+  background: #c9cd58;
+  color: #121414;
+}
+
+.lenta-session-quick-btn .btn-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
 
 
 

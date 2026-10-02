@@ -73,4 +73,7 @@ export interface ObsidianBridge {
   connectKey(key: string): Promise<void>;
   disconnectKey(): Promise<void>;
   toggleContainerConnect?(containerId: string): Promise<void>;
+  openSessionCommitModal?(): void;
+  startWorkstationSession?(title?: string): Promise<void>;
+  pullCloudCommits?(): Promise<void>;
 }

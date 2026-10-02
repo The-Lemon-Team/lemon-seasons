@@ -150,6 +150,13 @@ export interface LentaPluginSettings {
    */
   containerApiKey: string;
   containerPrivacyFilter: 'all' | 'public' | 'private';
+
+  /** Workstation unique device ID for session versioning and Google Drive sync. */
+  deviceId: string;
+  /** Author name for workstation sessions and commits. */
+  sessionAuthor?: string;
+  /** Automatically pull latest commits from cloud on startup. */
+  autoPullOnStartup?: boolean;
 }
 
 export const DEFAULT_SETTINGS: LentaPluginSettings = {
@@ -173,6 +180,9 @@ export const DEFAULT_SETTINGS: LentaPluginSettings = {
   containerServerUrl: 'http://localhost:3001',
   containerApiKey: '',
   containerPrivacyFilter: 'all',
+  deviceId: 'obsidian-workstation',
+  sessionAuthor: 'Obsidian',
+  autoPullOnStartup: true,
 };
 
 export interface CommitSummaryDto {
@@ -225,6 +235,17 @@ export type {
   ParseNotesResponse,
   BatchCreateNotesInput,
   BatchCreateNotesResponse,
+  SyncSessionStatus,
+  PendingChangeAction,
+  PendingChangeEntityType,
+  PendingChange,
+  SyncSession,
+  SyncCommit,
+  SyncStatusResponse,
+  CommitPackage,
+  StartSessionInput,
+  CommitSessionInput,
+  RecordChangeInput,
 } from '@lenta/shared';
 
 

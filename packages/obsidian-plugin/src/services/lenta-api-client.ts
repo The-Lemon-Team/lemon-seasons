@@ -12,6 +12,13 @@ import {
   FileVersionDto,
   ParsedNoteCard,
   ParseNotesContext,
+  SyncStatusResponse,
+  SyncSession,
+  PendingChange,
+  SyncCommit,
+  StartSessionInput,
+  CommitSessionInput,
+  RecordChangeInput,
 } from '../types';
 import { isContainerPublic } from '../utils/container-privacy';
 
@@ -339,6 +346,133 @@ export class LentaApiClient {
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.request({
       url: `${this.baseUrl}/sync/changes${query}`,
+      method: 'GET',
+    });
+  }
+
+  // ==========================================
+  // Workstation Sessions & Google Drive Sync
+  // ==========================================
+
+  /**
+   * Retrieves overall sync status, active session, unpushed commits count, and Google Drive state.
+   */
+  async getSyncStatus(deviceId?: string): Promise<SyncStatusResponse> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<SyncStatusResponse>({
+      url: `${this.baseUrl}/sync/status${query}`,
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Gets current active session for this workstation device.
+   */
+  async getActiveSession(deviceId?: string): Promise<SyncSession | null> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<SyncSession | null>({
+      url: `${this.baseUrl}/sync/session/active${query}`,
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Starts a new active workstation session.
+   */
+  async startSession(input: StartSessionInput): Promise<SyncSession> {
+    return this.request<SyncSession>({
+      url: `${this.baseUrl}/sync/session/start`,
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  /**
+   * Records a pending change in the current workstation session.
+   */
+  async recordSessionChange(input: RecordChangeInput, deviceId?: string): Promise<PendingChange> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<PendingChange>({
+      url: `${this.baseUrl}/sync/session/change${query}`,
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  /**
+   * Fetches pending changes recorded in an active session.
+   */
+  async getPendingSessionChanges(sessionId?: string, deviceId?: string): Promise<PendingChange[]> {
+    const params = new URLSearchParams();
+    if (sessionId) params.set('sessionId', sessionId);
+    if (deviceId) params.set('deviceId', deviceId);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<PendingChange[]>({
+      url: `${this.baseUrl}/sync/session/changes${qs}`,
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Seals and commits the active session into an immutable SyncCommit.
+   */
+  async commitSession(
+    sessionId: string,
+    input: CommitSessionInput,
+    deviceId?: string
+  ): Promise<{ success: boolean; commit: SyncCommit }> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<{ success: boolean; commit: SyncCommit }>({
+      url: `${this.baseUrl}/sync/session/${encodeURIComponent(sessionId)}/commit${query}`,
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  /**
+   * Cancels an active session and discards pending uncommitted changes.
+   */
+  async cancelSession(sessionId: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>({
+      url: `${this.baseUrl}/sync/session/${encodeURIComponent(sessionId)}/cancel`,
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Pushes unpushed local commits to Google Drive cloud relay.
+   */
+  async pushSync(deviceId?: string): Promise<{ pushedCount: number; commits: string[] }> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<{ pushedCount: number; commits: string[] }>({
+      url: `${this.baseUrl}/sync/push${query}`,
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Pulls remote commits from Google Drive cloud relay and merges into local database.
+   */
+  async pullSync(deviceId?: string): Promise<{ pulledCommits: string[]; errors?: string[] }> {
+    const query = deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : '';
+    return this.request<{ pulledCommits: string[]; errors?: string[] }>({
+      url: `${this.baseUrl}/sync/pull${query}`,
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Gets Google Drive authentication and storage relay directory status.
+   */
+  async getGDriveStatus(): Promise<{
+    auth: { authenticated: boolean; userEmail?: string };
+    storagePath: string;
+  }> {
+    return this.request<{
+      auth: { authenticated: boolean; userEmail?: string };
+      storagePath: string;
+    }>({
+      url: `${this.baseUrl}/sync/gdrive/status`,
       method: 'GET',
     });
   }

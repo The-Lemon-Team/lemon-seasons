@@ -8,10 +8,14 @@ import {
   LentaTaxonomyNodeDto,
   LentaNoteDto,
   LentaContainerSummaryDto,
+  SyncStatusResponse,
+  SyncSession,
 } from '../types';
+import { LentaSyncEngine } from '../services/lenta-sync-engine';
 import { LentaCreateFolderModal } from './create-folder-modal';
 import { LentaQuickAddModal } from './quick-add-modal';
 import { LentaAiQuickAddModal } from './ai-quick-add-modal';
+import { LentaSessionCommitModal } from './session-commit-modal';
 import { isContainerPublic } from '../utils/container-privacy';
 
 import { getContainerDisplayTitle } from '../utils/container-title';
@@ -190,6 +194,12 @@ export class LentaSidebarView extends ItemView {
   private isConnectingKey = false;
   private keyInputText = '';
 
+  // Workstation session state
+  public syncStatus: SyncStatusResponse | null = null;
+  public activeSession: SyncSession | null = null;
+  private syncEngine?: LentaSyncEngine;
+  private onOpenSessionCommitModal?: () => void;
+
   private mdComponent: Component;
   private svelteComponent: any = null;
 
@@ -209,7 +219,9 @@ export class LentaSidebarView extends ItemView {
       defaultPrivacy?: 'private' | 'public' | 'obsidian',
       targetContainerId?: string
     ) => void,
-    onSaveSettings?: () => Promise<void>
+    onSaveSettings?: () => Promise<void>,
+    syncEngine?: LentaSyncEngine,
+    onOpenSessionCommitModal?: () => void
   ) {
     super(leaf);
     this.apiClient = apiClient;
@@ -220,6 +232,8 @@ export class LentaSidebarView extends ItemView {
     this.onOpenContainersFoldersModal = onOpenContainersFoldersModal;
     this.onOpenCreateFolder = onOpenCreateFolder;
     this.onSaveSettings = onSaveSettings;
+    this.syncEngine = syncEngine;
+    this.onOpenSessionCommitModal = onOpenSessionCommitModal;
     this.mdComponent = new Component();
   }
 
@@ -459,7 +473,62 @@ export class LentaSidebarView extends ItemView {
         }
         this.updateSvelteProps();
       },
+      openSessionCommitModal: () => {
+        if (this.onOpenSessionCommitModal) {
+          this.onOpenSessionCommitModal();
+        } else {
+          this.openSessionCommitModal();
+        }
+      },
+      startWorkstationSession: async (title?: string) => {
+        const settings = this.getSettings();
+        const sessionTitle = title?.trim() || `Сессия ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+        try {
+          await this.apiClient.startSession({
+            title: sessionTitle,
+            deviceId: settings.deviceId || 'obsidian-workstation',
+            author: settings.sessionAuthor || settings.username || 'Obsidian',
+          });
+          new Notice(`🍋 Сессия "${sessionTitle}" запущена!`);
+        } catch (err: any) {
+          new Notice(`Ошибка запуска сессии: ${err.message}`);
+        }
+        await this.refreshData();
+      },
+      pullCloudCommits: async () => {
+        try {
+          if (this.syncEngine) {
+            const res = await this.syncEngine.pullCloudChanges();
+            const count = res.cloudResult?.pulledCommits?.length || 0;
+            if (count > 0) {
+              new Notice(`🍋 Подтянуто ${count} коммитов из Google Drive! Обновлено ${res.pulledCount} файлов.`);
+            } else {
+              new Notice('🍋 Данные актуальны. Новых коммитов в Google Drive нет.');
+            }
+          } else {
+            await this.apiClient.pullSync(this.getSettings().deviceId);
+            new Notice('🍋 Свежие коммиты подтянуты из Google Drive');
+          }
+        } catch (err: any) {
+          new Notice(`Ошибка синхронизации: ${err.message}`);
+        }
+        await this.refreshData();
+      },
     };
+  }
+
+  public openSessionCommitModal() {
+    if (this.syncEngine) {
+      new LentaSessionCommitModal(
+        this.app,
+        this.apiClient,
+        this.syncEngine,
+        () => this.getSettings(),
+        async () => {
+          await this.refreshData();
+        }
+      ).open();
+    }
   }
 
   async onOpen() {
@@ -478,6 +547,8 @@ export class LentaSidebarView extends ItemView {
             containers: this.containers,
             folders: this.folders,
             feeds: this.feeds,
+            syncStatus: this.syncStatus,
+            activeSession: this.activeSession,
             containerFilesList: this.containerFilesList,
             containerFoldersList: this.containerFoldersList,
             folderPreviewNotes: this.folderPreviewNotes,
@@ -527,6 +598,8 @@ export class LentaSidebarView extends ItemView {
           containers: this.containers,
           folders: this.folders,
           feeds: this.feeds,
+          syncStatus: this.syncStatus,
+          activeSession: this.activeSession,
           containerFilesList: this.containerFilesList,
           containerFoldersList: this.containerFoldersList,
           folderPreviewNotes: this.folderPreviewNotes,
@@ -560,17 +633,20 @@ export class LentaSidebarView extends ItemView {
     }
 
     try {
-      const [feeds, folders, taxonomy, containers] = await Promise.all([
+      const [feeds, folders, taxonomy, containers, syncStatus] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
         this.apiClient.getFolders({ scope: 'all' }).catch(() => []),
         this.apiClient.getTaxonomyTree().catch(() => []),
         this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
+        this.apiClient.getSyncStatus(this.getSettings().deviceId).catch(() => null),
       ]);
 
       this.feeds = feeds;
       this.folders = folders;
       this.taxonomy = taxonomy;
       this.containers = containers;
+      this.syncStatus = syncStatus;
+      this.activeSession = syncStatus?.activeSession || null;
 
       // Re-fetch notes for currently expanded folder accordions
       const foldersToFetch = new Set<string>();

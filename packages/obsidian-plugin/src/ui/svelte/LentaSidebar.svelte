@@ -8,6 +8,8 @@
     LentaFolderDto,
     LentaFeedDto,
     LentaNoteDto,
+    SyncStatusResponse,
+    SyncSession,
   } from '../../types';
   import ContainerCard from './ContainerCard.svelte';
   import type { FlattenedTreeNode } from './tree-flattener';
@@ -18,6 +20,8 @@
   export let containers: LentaContainerSummaryDto[] = [];
   export let folders: LentaFolderDto[] = [];
   export let feeds: LentaFeedDto[] = [];
+  export let syncStatus: SyncStatusResponse | null = null;
+  export let activeSession: SyncSession | null = null;
   export let containerFilesList: Map<string, Array<{ path: string; content?: string; mtime?: number; size?: number }>> = new Map();
   export let containerFoldersList: Map<string, LentaFolderDto[]> = new Map();
   export let folderPreviewNotes: Map<string, LentaNoteDto[]> = new Map();
@@ -57,6 +61,12 @@
       bridge?.openCreateFolderForContainer ? bridge.openCreateFolderForContainer(cId, name, pId, pPath) : onOpenCreateFolderForContainer?.(cId, name, pId, pPath),
     syncModal: (mode?: 'push' | 'pull') =>
       bridge?.openSyncModal ? bridge.openSyncModal(mode) : onOpenSyncModal?.(mode),
+    sessionModal: () =>
+      bridge?.openSessionCommitModal ? bridge.openSessionCommitModal() : undefined,
+    startSession: (title?: string) =>
+      bridge?.startWorkstationSession ? bridge.startWorkstationSession(title) : undefined,
+    pullCloud: () =>
+      bridge?.pullCloudCommits ? bridge.pullCloudCommits() : undefined,
     connectionsModal: () =>
       bridge?.openConnectionsModal ? bridge.openConnectionsModal() : onOpenConnectionsModal?.(),
     openNote: (path: string) =>
@@ -149,6 +159,9 @@
   }
 
   // Reactive Derived Values
+  $: pendingCount = activeSession?._count?.changes ?? syncStatus?.pendingChangesCount ?? 0;
+  $: lastCommit = syncStatus?.lastCommit ?? null;
+
   $: selectedCount = Array.isArray(settings?.activeContainerIds) && settings.activeContainerIds.length > 0
     ? settings.activeContainerIds.length
     : settings?.activeContainerId ? 1 : 0;
@@ -346,6 +359,59 @@
       ></button>
     </nav>
   </header>
+
+  <!-- 1.5. Workstation Session & Google Drive Relay Bar -->
+  <div class="lenta-workstation-session-bar" role="region" aria-label="Workstation Session Status">
+    <div
+      class="lenta-session-badge {activeSession ? 'is-active' : 'is-idle'}"
+      role="button"
+      tabindex="0"
+      on:click={() => api.sessionModal()}
+      on:keydown={(e) => onKeyAction(e, () => api.sessionModal())}
+      title={activeSession
+        ? `В работе: ${activeSession.title} (+${pendingCount} несохраненных дельт). Нажмите для фиксации.`
+        : 'Live режим (сессия запустится при создании/правке заметок). Нажмите для открытия сессии.'}
+    >
+      <span class="lenta-session-indicator-dot"></span>
+      <div class="lenta-session-label-group">
+        <span class="lenta-session-name">
+          {activeSession ? activeSession.title : 'Live режим'}
+        </span>
+        {#if lastCommit}
+          <span class="lenta-session-hash" title="Последний запечатанный коммит: #{lastCommit.id}">
+            #{lastCommit.id.slice(-6)}
+          </span>
+        {/if}
+      </div>
+      {#if activeSession && pendingCount > 0}
+        <span class="lenta-session-deltas-pill">+{pendingCount}</span>
+      {/if}
+    </div>
+
+    <div class="lenta-session-btn-group">
+      {#if activeSession}
+        <button
+          type="button"
+          class="lenta-session-quick-btn mod-commit"
+          title="Зафиксировать сессию и отправить в Google Drive"
+          on:click={() => api.sessionModal()}
+        >
+          <span class="btn-icon" use:obsIcon={'git-commit'}></span>
+          <span>Commit</span>
+        </button>
+      {/if}
+
+      <button
+        type="button"
+        class="lenta-session-quick-btn mod-pull"
+        title="Подтянуть свежие коммиты из Google Drive (Cloud Pull)"
+        on:click={() => api.pullCloud()}
+      >
+        <span class="btn-icon" use:obsIcon={'refresh-cw'}></span>
+        <span>GDrive</span>
+      </button>
+    </div>
+  </div>
 
   <!-- 2. Search & Filter Bar -->
   <div class="lenta-search-container">

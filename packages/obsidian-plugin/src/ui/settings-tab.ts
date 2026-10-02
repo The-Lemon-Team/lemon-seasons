@@ -114,5 +114,46 @@ export class LentaSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.lastSyncedAt || 'Never')
           .setDisabled(true)
       );
+
+    // ── Workstation Sessions & Distributed Sync ──────────────────────────────
+    containerEl.createEl('h3', { text: '💾 Workstation Sessions & Google Drive Sync' });
+
+    new Setting(containerEl)
+      .setName('Workstation Device ID')
+      .setDesc('Unique identifier of this workstation machine for DAG commit tracking.')
+      .addText((text) =>
+        text
+          .setPlaceholder('obsidian-workstation')
+          .setValue(this.plugin.settings.deviceId || 'obsidian-workstation')
+          .onChange(async (val) => {
+            this.plugin.settings.deviceId = val.trim() || 'obsidian-workstation';
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Default Session Author')
+      .setDesc('Author name attached to workstation sessions and sealed commits.')
+      .addText((text) =>
+        text
+          .setPlaceholder('Obsidian')
+          .setValue(this.plugin.settings.sessionAuthor || 'Obsidian')
+          .onChange(async (val) => {
+            this.plugin.settings.sessionAuthor = val.trim() || 'Obsidian';
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Auto-Pull on Startup')
+      .setDesc('Automatically pull latest remote commits from Google Drive relay on plugin startup.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoPullOnStartup !== false)
+          .onChange(async (val) => {
+            this.plugin.settings.autoPullOnStartup = val;
+            await this.plugin.saveSettings();
+          })
+      );
   }
 }
