@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
+import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors, CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { useFeeds, useTaxonomyTree, useHashtags } from '../api/queries';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { ObsidianLogo } from './ObsidianLogo';
@@ -354,62 +354,44 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               {!filterState.curator && <Check className="w-3.5 h-3.5 text-[#c9cd58]" />}
             </button>
 
-            {/* Ivan Bely */}
-            <button
-              onClick={() => onSelectCurator?.(filterState.curator === 'Иван Белый' ? undefined : 'Иван Белый')}
-              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                filterState.curator === 'Иван Белый'
-                  ? 'bg-sky-950/50 border-sky-500/70 text-sky-200 font-medium shadow-sm'
-                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-left">
-                <span className="text-base">🇷🇺</span>
-                <div>
-                  <div className="font-semibold leading-tight">Иван Белый</div>
-                  <div className="text-[10px] text-neutral-400">Внутренний контур РФ, регуляторика</div>
-                </div>
-              </div>
-              {filterState.curator === 'Иван Белый' && <Check className="w-3.5 h-3.5 text-sky-400" />}
-            </button>
-
-            {/* Kirk Kitten */}
-            <button
-              onClick={() => onSelectCurator?.(filterState.curator === 'Kirk Kitten' ? undefined : 'Kirk Kitten')}
-              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                filterState.curator === 'Kirk Kitten'
-                  ? 'bg-amber-950/50 border-amber-500/70 text-amber-200 font-medium shadow-sm'
-                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-left">
-                <span className="text-base">🌐</span>
-                <div>
-                  <div className="font-semibold leading-tight">Kirk Kitten</div>
-                  <div className="text-[10px] text-neutral-400">Международные рынки, OFAC, санкции</div>
-                </div>
-              </div>
-              {filterState.curator === 'Kirk Kitten' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-            </button>
-
-            {/* Okatsiya */}
-            <button
-              onClick={() => onSelectCurator?.(filterState.curator === 'Окация' ? undefined : 'Окация')}
-              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                filterState.curator === 'Окация'
-                  ? 'bg-purple-950/50 border-purple-500/70 text-purple-200 font-medium shadow-sm'
-                  : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-left">
-                <span className="text-base">⚡</span>
-                <div>
-                  <div className="font-semibold leading-tight">Окация</div>
-                  <div className="text-[10px] text-neutral-400">IT & AI, DevOps, BigTech, Backend</div>
-                </div>
-              </div>
-              {filterState.curator === 'Окация' && <Check className="w-3.5 h-3.5 text-purple-400" />}
-            </button>
+            {/* All Curators from CURATOR_PERSONAS_LIST */}
+            {CURATOR_PERSONAS_LIST.map((persona) => {
+              const isSelected =
+                filterState.curator === persona.name ||
+                filterState.curator === persona.id ||
+                filterState.curator === persona.shortName;
+              return (
+                <button
+                  key={persona.id}
+                  onClick={() => onSelectCurator?.(isSelected ? undefined : persona.name)}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
+                    isSelected
+                      ? 'font-medium shadow-sm'
+                      : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
+                  }`}
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: persona.badgeBg,
+                          borderColor: persona.borderAccent,
+                          color: persona.accentColor,
+                        }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center gap-2 text-left min-w-0">
+                    <span className="text-base shrink-0">{persona.emoji}</span>
+                    <div className="min-w-0">
+                      <div className="font-semibold leading-tight truncate">{persona.name}</div>
+                      <div className="text-[10px] text-neutral-400 truncate">{persona.scope}</div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 shrink-0" style={{ color: persona.accentColor }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* High Resonance quick-toggle */}
