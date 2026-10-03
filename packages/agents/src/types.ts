@@ -12,6 +12,7 @@ import {
   SideWorkResult,
   SideWorkMediaItem,
   SideWorkCommentaryItem,
+  TelegramNewsPreview,
 } from '@lenta/shared';
 
 export type {
@@ -27,6 +28,7 @@ export type {
   SideWorkResult,
   SideWorkMediaItem,
   SideWorkCommentaryItem,
+  TelegramNewsPreview,
 };
 
 export type DailyNewsStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED';
@@ -41,9 +43,12 @@ export interface DailyNewsCard {
   category: string;
   summary: string;
   keyPoints: string[];
-  suggestedCurator: 'ivan-bely' | 'kirk-kitten' | 'chen-wei' | 'okatsiya' | 'general';
+  suggestedCurator: CuratorId | 'general';
   suggestedType: NoteType;
   resonanceScore: number; // 0 - 100
+  branchingPotentialScore?: number; // 0 - 100 (BPI: Ripple & Contagion potential)
+  isBreaking?: boolean; // Hot World Pulse indicator
+  likelyBranches?: string[]; // Anticipated ripple paths across sectors/regions
   suggestedTags: string[];
   status: DailyNewsStatus;
   transformedNoteId?: string | null;
@@ -92,6 +97,9 @@ export type AgentId =
   | 'political-group'
   | 'tech-group'
   | 'macro-group'
+  | 'hot-pulse-group'
+  | 'domino-nexus-group'
+  | 'mena-security-group'
   | 'all-curators'
   | 'all';
 
@@ -115,6 +123,8 @@ export interface CuratorSummarySection {
   accentColor: string;
   bullets: string[];
   sources: string[];
+  actionPrompt?: string;
+  threadTargetAgent?: string;
 }
 
 export interface GroupSummaryPayload {
@@ -124,6 +134,7 @@ export interface GroupSummaryPayload {
   headline: string;
   sections: CuratorSummarySection[];
   resonanceNodes: ResonanceNodeCandidate[];
+  newsPosts?: TelegramNewsPreview[];
 }
 
 export interface ChatMessage {
@@ -140,6 +151,7 @@ export interface ChatMessage {
   groupSummary?: GroupSummaryPayload;
   curatorSurvey?: CuratorSurveyResult;
   sideWorkResult?: SideWorkResult;
+  newsPosts?: TelegramNewsPreview[];
   suggestedCard?: {
     title: string;
     description: string;
@@ -287,6 +299,14 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     prompt: 'Чэнь, какие ключевые сигналы по Китаю, торговым коридорам, расчетам в нацвалютах и БРИКС актуальны на сегодня?',
     description: 'Восточный контур: Китай, АТР, товарооборот, логистические коридоры и расчеты',
     targetAgent: 'chen-wei',
+  },
+  {
+    id: 'snip-breaking-news',
+    command: '/breaking',
+    label: '🔥 Breaking News: Мировой пульс',
+    prompt: 'Какие самые горячие и важные мировые новости происходят прямо сейчас?',
+    description: 'Экстренные мировые молнии, виральные тренды и срочные новости глобальной повестки',
+    targetAgent: 'alex-vector',
   },
 
   // --- 4. Коллегии и Арбитраж ---

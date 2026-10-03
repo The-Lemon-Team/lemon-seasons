@@ -1,4 +1,11 @@
-import { NoteType, resolveItSectorFromText, SurveyTimeframe } from '@lenta/shared';
+import {
+  NoteType,
+  resolveItSectorFromText,
+  SurveyTimeframe,
+  TelegramNewsPreview,
+  getCuratorPersona,
+  CuratorId,
+} from '@lenta/shared';
 import {
   AgentId,
   ChatMessage,
@@ -41,15 +48,70 @@ export class AgentChatEngine {
       if (snippet) {
         resolvedTarget = snippet.targetAgent;
         cleanPrompt = parts.slice(1).join(' ').trim() || snippet.prompt;
-      } else if (command === '/politics' || command === '/group' || command === '/board') {
+      } else if (
+        command === '/politics' ||
+        command === '/politics-today' ||
+        command === '/politics-week' ||
+        command === '/politics-month' ||
+        command === '/group' ||
+        command === '/board'
+      ) {
         resolvedTarget = 'political-group';
-        cleanPrompt = parts.slice(1).join(' ').trim() || 'Сформируйте совместное резюме дня по всем политическим контурам с выявлением ключевых узлов пересечения.';
+        const subArg = parts.slice(1).join(' ').trim().toLowerCase();
+        let tf = '';
+        if (command === '/politics-today' || subArg === 'today' || subArg.includes('сегодня') || subArg.includes('день')) {
+          tf = 'today';
+        } else if (command === '/politics-week' || subArg === 'week' || subArg.includes('недел') || subArg.includes('7 дней')) {
+          tf = 'week';
+        } else if (command === '/politics-month' || subArg === 'month' || subArg.includes('месяц') || subArg.includes('30 дней')) {
+          tf = 'month';
+        }
+        cleanPrompt = parts.slice(1).join(' ').trim() || (tf ? `/politics ${tf}` : 'today');
       } else if (command === '/chen' || command === '/asia' || command === '/brics') {
         resolvedTarget = 'chen-wei';
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Новости и сигналы по АТР, Китаю и БРИКС на сегодня';
       } else if (
+        command === '/alex' ||
+        command === '/breaking' ||
+        command === '/breaking-news' ||
+        command === '/breaking-today' ||
+        command === '/breaking-week' ||
+        command === '/breaking-month' ||
+        command === '/hot' ||
+        command === '/pulse'
+      ) {
+        resolvedTarget = 'alex-vector';
+        const subArg = parts.slice(1).join(' ').trim().toLowerCase();
+        let tf = '';
+        if (command === '/breaking-today' || subArg === 'today' || subArg.includes('сегодня') || subArg.includes('день')) {
+          tf = 'today';
+        } else if (command === '/breaking-week' || subArg === 'week' || subArg.includes('недел') || subArg.includes('7 дней')) {
+          tf = 'week';
+        } else if (command === '/breaking-month' || subArg === 'month' || subArg.includes('месяц') || subArg.includes('30 дней')) {
+          tf = 'month';
+        }
+        cleanPrompt =
+          parts.slice(1).join(' ').trim() ||
+          (tf === 'week'
+            ? 'Недельная хроника экстренных мировых новостей и ключевых событий'
+            : tf === 'month'
+            ? 'Месячная панорама ключевых мировых происшествий и резонансных тем'
+            : 'Горячие мировые новости и оперативные молнии на сегодня');
+      } else if (command === '/marcus' || command === '/nexus' || command === '/domino' || command === '/branch') {
+        resolvedTarget = 'marcus-vane';
+        cleanPrompt = parts.slice(1).join(' ').trim() || 'Анализ эффекта домино, вакуума силы и смежных веток событий';
+      } else if (command === '/tariq' || command === '/mena' || command === '/mideast' || command === '/gulf') {
+        resolvedTarget = 'tariq-said';
+        cleanPrompt = parts.slice(1).join(' ').trim() || 'Сводка по Ближнему Востоку, зоне Залива и безопасности региона';
+      } else if (command === '/helena' || command === '/energy' || command === '/choke' || command === '/logistics' || command === '/oil') {
+        resolvedTarget = 'helena-brandt';
+        cleanPrompt = parts.slice(1).join(' ').trim() || 'Анализ сырьевых рынков, нефти Brent и проходимости морских проливов';
+      } else if (
         command === '/okatsiya' ||
         command === '/it' ||
+        command === '/it-today' ||
+        command === '/it-week' ||
+        command === '/it-month' ||
         command === '/ai' ||
         command === '/devops' ||
         command === '/backend' ||
@@ -64,15 +126,43 @@ export class AgentChatEngine {
       ) {
         resolvedTarget = 'okatsiya';
         const subSector = command.replace('/', '');
-        cleanPrompt = parts.slice(1).join(' ').trim() || (subSector !== 'it' && subSector !== 'okatsiya' ? `Новости по отрасли ${subSector}` : 'Ключевые новости IT и AI на сегодня');
+        const subArg = parts.slice(1).join(' ').trim().toLowerCase();
+        let tf = '';
+        if (command === '/it-today' || subArg === 'today' || subArg.includes('сегодня') || subArg.includes('день')) {
+          tf = 'today';
+        } else if (command === '/it-week' || subArg === 'week' || subArg.includes('недел') || subArg.includes('7 дней')) {
+          tf = 'week';
+        } else if (command === '/it-month' || subArg === 'month' || subArg.includes('месяц') || subArg.includes('30 дней')) {
+          tf = 'month';
+        }
+        cleanPrompt =
+          parts.slice(1).join(' ').trim() ||
+          (tf === 'week'
+            ? 'Недельный дайджест IT & AI: модели, инфраструктура, BigTech'
+            : tf === 'month'
+            ? 'Месячная панорама IT & AI: ключевые сдвиги, релизы и регулирование'
+            : subSector !== 'it' && subSector !== 'okatsiya'
+            ? `Новости по отрасли ${subSector}`
+            : 'Ключевые новости IT и AI на сегодня');
       } else if (
         command === '/survey' ||
         command === '/survey-today' ||
         command === '/survey-yesterday' ||
-        command === '/survey-week'
+        command === '/survey-week' ||
+        command === '/survey-breaking' ||
+        command === '/survey-nexus' ||
+        command === '/survey-mena'
       ) {
         resolvedTarget = 'survey-coordinator';
-        cleanPrompt = parts.slice(1).join(' ').trim() || 'Проведи опрос кураторов по повестке дня';
+        cleanPrompt =
+          parts.slice(1).join(' ').trim() ||
+          (command === '/survey-breaking'
+            ? 'Проведи опрос группы быстрого реагирования по экстренной повестке'
+            : command === '/survey-nexus'
+            ? 'Проведи опрос коллегии каскадных рисков по эффекту домино и точкам ветвления'
+            : command === '/survey-mena'
+            ? 'Проведи опрос консилиума Ближнего Востока и зоны Залива'
+            : 'Проведи опрос кураторов по повестке дня');
       } else if (
         command === '/sidework' ||
         command === '/sidework-post' ||
@@ -127,6 +217,14 @@ export class AgentChatEngine {
         resolvedTarget = 'okatsiya';
       } else if (lower.includes('чэнь') || lower.includes('китай') || lower.includes('атр') || lower.includes('брикс') || lower.includes('юань')) {
         resolvedTarget = 'chen-wei';
+      } else if (lower.includes('алекс') || lower.includes('alex') || lower.includes('breaking') || lower.includes('горячие новости') || lower.includes('пульс') || lower.includes('молния')) {
+        resolvedTarget = 'alex-vector';
+      } else if (lower.includes('маркус') || lower.includes('marcus') || lower.includes('домино') || lower.includes('ветвление') || lower.includes('nexus') || lower.includes('каскад')) {
+        resolvedTarget = 'marcus-vane';
+      } else if (lower.includes('тарик') || lower.includes('tariq') || lower.includes('ближний восток') || lower.includes('mena') || lower.includes('залив') || lower.includes('ирак') || lower.includes('левант')) {
+        resolvedTarget = 'tariq-said';
+      } else if (lower.includes('хелена') || lower.includes('helena') || lower.includes('нефть') || lower.includes('сырье') || lower.includes('пролив') || lower.includes('ормуз') || lower.includes('суэц') || lower.includes('фрахт')) {
+        resolvedTarget = 'helena-brandt';
       } else if (lower.includes('иван') || lower.includes('рф') || lower.includes('госдум') || lower.includes('бюджет')) {
         resolvedTarget = 'ivan-bely';
       } else if (lower.includes('kirk') || lower.includes('кирк') || lower.includes('оон') || lower.includes('ofac') || lower.includes('санкци')) {
@@ -305,6 +403,72 @@ export class AgentChatEngine {
           prompt: cleanPrompt,
           date,
           stories: chenStories.length > 0 ? chenStories : contextCards.slice(2, 4),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'alex-vector' || resolvedTarget === 'all') {
+      const alexStories = contextCards.filter((c) => c.suggestedCurator === 'alex-vector' || c.isBreaking);
+      replies.push(
+        this.generateGenericCuratorResponse('alex-vector', {
+          prompt: cleanPrompt,
+          date,
+          stories: alexStories.length > 0 ? alexStories : contextCards.slice(0, 2),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'marcus-vane' || resolvedTarget === 'all') {
+      const marcusStories = contextCards.filter(
+        (c) => c.suggestedCurator === 'marcus-vane' || (c.branchingPotentialScore !== undefined && c.branchingPotentialScore >= 60),
+      );
+      replies.push(
+        this.generateGenericCuratorResponse('marcus-vane', {
+          prompt: cleanPrompt,
+          date,
+          stories: marcusStories.length > 0 ? marcusStories : contextCards.slice(0, 2),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'tariq-said' || resolvedTarget === 'all') {
+      const tariqStories = contextCards.filter(
+        (c) =>
+          c.suggestedCurator === 'tariq-said' ||
+          c.summary.toLowerCase().includes('ирак') ||
+          c.summary.toLowerCase().includes('залив') ||
+          c.summary.toLowerCase().includes('иран'),
+      );
+      replies.push(
+        this.generateGenericCuratorResponse('tariq-said', {
+          prompt: cleanPrompt,
+          date,
+          stories: tariqStories.length > 0 ? tariqStories : contextCards.slice(0, 2),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'helena-brandt' || resolvedTarget === 'all') {
+      const helenaStories = contextCards.filter(
+        (c) =>
+          c.suggestedCurator === 'helena-brandt' ||
+          c.summary.toLowerCase().includes('нефть') ||
+          c.summary.toLowerCase().includes('сырье') ||
+          c.summary.toLowerCase().includes('пролив'),
+      );
+      replies.push(
+        this.generateGenericCuratorResponse('helena-brandt', {
+          prompt: cleanPrompt,
+          date,
+          stories: helenaStories.length > 0 ? helenaStories : contextCards.slice(0, 2),
           events: todayEvents,
           timestamp,
         }),
@@ -592,6 +756,24 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceLink: mainStory?.url,
     };
 
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `ivan-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'ivan-bely',
+      curatorName: 'Иван Белый',
+      curatorEmoji: '🇷🇺',
+      curatorRole: 'Внутренний контур РФ',
+      sourceName: s.source || 'СПбМТСБ / ФАС',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['ПолитикаРФ', 'Регуляторика'],
+      resonanceScore: s.resonanceScore || 84,
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Контроль биржевых нормативов моторного топлива.', 'Сохранение оптового ценового баланса.'],
+      contourBadge: '🇷🇺 Внутренний контур РФ',
+      publishedAt: s.publishedAt || '11:30',
+    }));
+
     return {
       id: `msg-ivan-${Date.now()}`,
       sender: 'ivan-bely',
@@ -602,6 +784,7 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       timestamp: ctx.timestamp,
       resonanceScore: 82,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
       suggestedCard,
     };
   }
@@ -661,6 +844,24 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceLink: mainStory?.url,
     };
 
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `kirk-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'kirk-kitten',
+      curatorName: 'Kirk Kitten',
+      curatorEmoji: '🌐',
+      curatorRole: 'Специальный международный корреспондент',
+      sourceName: s.source || 'Bloomberg / Markets',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['OFAC', 'Санкции', 'Фрахт'],
+      resonanceScore: s.resonanceScore || 88,
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Комплаенс-требования к морским фрахтовым контрактам.', 'Мониторинг соблюдения ценового потолка.'],
+      contourBadge: '🌐 Международный контур / Санкции',
+      publishedAt: s.publishedAt || '12:45',
+    }));
+
     return {
       id: `msg-kirk-${Date.now()}`,
       sender: 'kirk-kitten',
@@ -671,6 +872,7 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       timestamp: ctx.timestamp,
       resonanceScore: 87,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
       suggestedCard,
     };
   }
@@ -877,6 +1079,24 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceLink: mainStory?.url,
     };
 
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `chen-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'chen-wei',
+      curatorName: 'Чэнь Вэй',
+      curatorEmoji: '🇨🇳',
+      curatorRole: 'Обозреватель АТР, Китая и глобальных цепочек поставок',
+      sourceName: s.source || 'Xinhua / PBOC',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['Китай', 'БРИКС', 'Логистика'],
+      resonanceScore: s.resonanceScore || 82,
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Прямые валютные расчеты в юанях и рублях.', 'Развитие контейнерного транзита через восточные порты.'],
+      contourBadge: '🇨🇳 Восточный контур / АТР и БРИКС',
+      publishedAt: s.publishedAt || '13:15',
+    }));
+
     return {
       id: `msg-chen-${Date.now()}`,
       sender: 'chen-wei',
@@ -887,6 +1107,7 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       timestamp: ctx.timestamp,
       resonanceScore: 80,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
       suggestedCard,
     };
   }
@@ -904,68 +1125,92 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
     events: any[];
     timestamp: string;
   }): ChatMessage {
-    const ivanBullets = [
-      ctx.ivanStories[0]
-        ? `**${ctx.ivanStories[0].title}** (${ctx.ivanStories[0].source}): регуляторный контроль нормативов и динамика цен на внутреннем рынке.`
-        : 'Завершение нулевых чтений проекта трехлетнего федерального бюджета на 2027–2029 гг. с акцентом на нацпроекты и субсидии.',
-      ctx.ivanStories[1]
-        ? `**${ctx.ivanStories[1].title}**: действие демпферного механизма и мониторинг оптового звена энергоносителей на СПбМТСБ.`
-        : 'ФАС и Минэнерго РФ проводят еженедельный мониторинг баланса поставок моторного топлива в регионы.',
-    ];
+    const lower = (ctx.prompt || '').toLowerCase();
+    const isWeek = lower.includes('week') || lower.includes('недел') || lower.includes('7 дней');
+    const isMonth = lower.includes('month') || lower.includes('месяц') || lower.includes('30 дней');
+    const timeframe: 'today' | 'week' | 'month' = isWeek ? 'week' : isMonth ? 'month' : 'today';
 
-    const kirkBullets = [
-      ctx.kirkStories[0]
-        ? `**${ctx.kirkStories[0].title}** (${ctx.kirkStories[0].source}): Минфин США (OFAC) усилил комплаенс-требования к танкерным перевозкам и портам.`
-        : 'Публикация нового директивного пакета OFAC по контролю условий страхования морских партий нефти.',
-      ctx.kirkStories[1]
-        ? `**${ctx.kirkStories[1].title}**: ставки фрахта и перестрахование судов в портах Балтийского и Черного морей.`
-        : 'Повышение ставок морского фрахта и страховых премий Lloyd\'s для танкеров под нейтральными флагами.',
-    ];
+    let headerTitle = `### 🏛️ Политическая коллегия: Панорама дня (${ctx.date})`;
+    let formatDesc = `Оперативный модульный срез по ключевым контурам`;
+    let timeframeLabel = 'сегодня';
 
-    const chenBullets = [
-      ctx.chenStories[0]
-        ? `**${ctx.chenStories[0].title}** (${ctx.chenStories[0].source}): Народный Банк Китая расширяет каналы прямых межбанковских расчетов со странами БРИКС.`
-        : 'Народный Банк Китая и партнеры по БРИКС наращивают объемы клиринга в нацвалютах без использования SWIFT.',
-      'Рост грузооборота по восточным логистическим коридорам (порты Дальнего Востока, Севморпуть) на 12% с начала квартала.',
-    ];
+    let ivanBullets: string[] = [];
+    let kirkBullets: string[] = [];
+    let chenBullets: string[] = [];
 
-    const curatorSections: CuratorSummarySection[] = [
-      {
-        curatorId: 'ivan-bely',
-        curatorName: 'Иван Белый',
-        curatorRole: 'Обозреватель внутреннего контура РФ',
-        emoji: '🇷🇺',
-        accentColor: '#38bdf8',
-        bullets: ivanBullets,
-        sources: ctx.ivanStories.map((s) => s.source).filter(Boolean).length > 0
-          ? ctx.ivanStories.map((s) => s.source).filter(Boolean)
-          : ['Правительство РФ', 'СПбМТСБ', 'ФАС'],
-      },
-      {
-        curatorId: 'kirk-kitten',
-        curatorName: 'Kirk Kitten',
-        curatorRole: 'Специальный международный корреспондент',
-        emoji: '🌐',
-        accentColor: '#fbbf24',
-        bullets: kirkBullets,
-        sources: ctx.kirkStories.map((s) => s.source).filter(Boolean).length > 0
-          ? ctx.kirkStories.map((s) => s.source).filter(Boolean)
-          : ['OFAC Treasury', 'Lloyd\'s List', 'UN News'],
-      },
-      {
-        curatorId: 'chen-wei',
-        curatorName: 'Чэнь Вэй',
-        curatorRole: 'Обозреватель АТР, Китая и БРИКС',
-        emoji: '🇨🇳',
-        accentColor: '#ef4444',
-        bullets: chenBullets,
-        sources: ctx.chenStories.map((s) => s.source).filter(Boolean).length > 0
-          ? ctx.chenStories.map((s) => s.source).filter(Boolean)
-          : ['Xinhua', 'PBOC', 'МТК Север-Юг'],
-      },
-    ];
+    if (timeframe === 'week') {
+      headerTitle = `### 📅 Политическая коллегия: Панорама за неделю (${ctx.date})`;
+      formatDesc = `Краткое недельное резюме по контурам (без визуального шума)`;
+      timeframeLabel = 'неделю';
 
-    // Detect candidate resonance nodes across curators
+      ivanBullets = [
+        `**Недельный баланс топливного рынка** [⚡ Резонанс: 88%]: Минэнерго и ФАС зафиксировали стабилизацию биржевых цен бензина после корректировки нормативов на СПбМТСБ.`,
+        `**Налоговые и регуляторные пакеты** [⚡ Резонанс: 83%]: Госдума завершила слушания поправок в Бюджетный кодекс и пакета инвестиционных преференций.`,
+        `**Потребительский сектор** [⚡ Резонанс: 80%]: сдерживание инфляционных ожиданий через жесткую денежно-кредитную политику Банка России.`,
+      ];
+
+      kirkBullets = [
+        `**Недельная динамика санкций** [⚡ Резонанс: 90%]: смещение фокуса директив OFAC и ЕС с прямых эмбарго на сквозной аудит морского фрахта и страховых полисов P&I клубов.`,
+        `**Мировые нефтяные рынки и фрахт** [⚡ Резонанс: 87%]: закрепление независимых танкерных пулов на азиатских маршрутах, ставки фрахта стабилизировались.`,
+        `**Многосторонние площадки** [⚡ Резонанс: 82%]: итоги консультаций в органах ООН по трансграничной логистике и минеральным удобрениям.`,
+      ];
+
+      chenBullets = [
+        `**Недельный трек БРИКС и АТР** [⚡ Резонанс: 85%]: оформление межбанковских договоренностей по прямым валютным парам юань/рубль/рупия без участия SWIFT.`,
+        `**Логистические узлы Китая** [⚡ Резонанс: 84%]: порты Шанхай и Нинбо вышли на рекордный недельный грузооборот контейнерных перевозок в восточном направлении.`,
+        `**Промышленные коридоры** [⚡ Резонанс: 78%]: координация прямых поставок высокотехнологичного оборудования и автокомпонентов.`,
+      ];
+    } else if (timeframe === 'month') {
+      headerTitle = `### 🗓️ Политическая коллегия: Стратегическая панорама за месяц (${ctx.date})`;
+      formatDesc = `Стратегический срез за 30 дней по макротрендам и контурам`;
+      timeframeLabel = 'месяц';
+
+      ivanBullets = [
+        `**Стратегический срез законов и бюджета** [⚡ Резонанс: 89%]: утверждение базовых параметров трехлетнего бюджета, инвестиционных стимулов и сохранение демпферного щита.`,
+        `**Антимонопольный контроль** [⚡ Резонанс: 84%]: системный мониторинг оптовых цепочек поставок и сдерживание роста тарифов естественных монополий.`,
+        `**Внутренний рынок труда и производство** [⚡ Резонанс: 81%]: адаптация промышленных мощностей и переориентация сырьевых потоков на дружественные рынки.`,
+      ];
+
+      kirkBullets = [
+        `**Месячный санкционный пакет** [⚡ Резонанс: 91%]: переход регуляторов Запада к постоянному комплаенсу вторичных институтов и танкерного флота.`,
+        `**Трансформация торговых путей** [⚡ Резонанс: 88%]: закрепление независимых страховых пулов и рост фрахтовых мощностей нейтральных юрисдикций.`,
+        `**Сырьевой баланс** [⚡ Резонанс: 85%]: стабильность экспортных котировок при растущем спросе со стороны азиатских НПЗ.`,
+      ];
+
+      chenBullets = [
+        `**Месячные итоги расчетов в нацвалютах** [⚡ Резонанс: 87%]: доля юаня и рубля во взаимной торговле РФ и Китая превысила 92% в совокупном обороте.`,
+        `**Развитие МТК «Север-Юг» и Севморпути** [⚡ Резонанс: 86%]: кратный рост перевалки генеральных и контейнерных грузов по восточному вектору.`,
+        `**Технологический трансфер** [⚡ Резонанс: 82%]: расширение совместных инженерных кластеров в сфере микроэлектроники и оборудования.`,
+      ];
+    } else {
+      // today
+      ivanBullets = [
+        ctx.ivanStories[0]
+          ? `**${ctx.ivanStories[0].title}** [⚡ Резонанс: 86%]: регуляторный контроль биржевых нормативов моторного топлива на СПбМТСБ и проверка наценок.`
+          : 'Завершение нулевых чтений проекта трехлетнего федерального бюджета на 2027–2029 гг. [⚡ Резонанс: 84%].',
+        ctx.ivanStories[1]
+          ? `**${ctx.ivanStories[1].title}** [⚡ Резонанс: 82%]: действие демпферного механизма и мониторинг оптового звена энергоносителей.`
+          : 'ФАС и Минэнерго РФ проводят еженедельный мониторинг баланса поставок моторного топлива в регионы [⚡ Резонанс: 81%].',
+      ];
+
+      kirkBullets = [
+        ctx.kirkStories[0]
+          ? `**${ctx.kirkStories[0].title}** [⚡ Резонанс: 89%]: Минфин США (OFAC) усилил комплаенс-требования к проверке страховых полисов P&I клубов для танкеров.`
+          : 'Публикация нового директивного пакета OFAC по контролю условий страхования морских партий нефти [⚡ Резонанс: 88%].',
+        ctx.kirkStories[1]
+          ? `**${ctx.kirkStories[1].title}** [⚡ Резонанс: 84%]: ставки фрахта и перестрахование судов в портах Балтийского и Черного морей.`
+          : 'Повышение ставок морского фрахта и страховых премий Lloyd\'s для танкеров под нейтральными флагами [⚡ Резонанс: 83%].',
+      ];
+
+      chenBullets = [
+        ctx.chenStories[0]
+          ? `**${ctx.chenStories[0].title}** [⚡ Резонанс: 81%]: Народный Банк Китая расширяет каналы прямых межбанковских расчетов со странами БРИКС в обход SWIFT.`
+          : 'Народный Банк Китая и партнеры по БРИКС наращивают объемы клиринга в нацвалютах без использования SWIFT [⚡ Резонанс: 82%].',
+        'Рост грузооборота по восточным логистическим коридорам (порты Дальнего Востока, Севморпуть) на 12% с начала квартала [⚡ Резонанс: 79%].',
+      ];
+    }
+
+    // Candidate resonance nodes across curators
     const resonanceNodes: ResonanceNodeCandidate[] = [
       {
         id: `node-oil-logistics-${ctx.date}`,
@@ -991,22 +1236,27 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       },
     ];
 
-    const markdownText = `### 🏛️ Политическая коллегия: Панорама дня на ${ctx.date}
+    const markdownText = `${headerTitle}
 
-> **Формат:** Модульное резюме по ключевым контурам  
+> **Формат:** ${formatDesc}  
 > **Оптики в эфире:** 🇷🇺 Иван Белый • 🌐 Kirk Kitten • 🇨🇳 Чэнь Вэй  
-> **Общая экспозиция:** Внешнее давление смещается в сферу комплаенса и фрахта, в то время как внутренний контур РФ и восточные партнеры расширяют автономные каналы торговли и расчетов.
 
 ---
 
 #### 🇷🇺 Внутренний контур РФ (Иван Белый)
 ${ivanBullets.map((b) => `- ${b}`).join('\n')}
 
+👉 [В тред к Ивану Белому (обсудить ${timeframeLabel}) ↗](action:curator:ivan-bely?timeframe=${timeframe})
+
 #### 🌐 Международный контур / Санкции (Kirk Kitten)
 ${kirkBullets.map((b) => `- ${b}`).join('\n')}
 
+👉 [В тред к Kirk Kitten (обсудить ${timeframeLabel}) ↗](action:curator:kirk-kitten?timeframe=${timeframe})
+
 #### 🇨🇳 Восточный контур / АТР и БРИКС (Чэнь Вэй)
 ${chenBullets.map((b) => `- ${b}`).join('\n')}
+
+👉 [В тред к Чэнь Вэю (обсудить ${timeframeLabel}) ↗](action:curator:chen-wei?timeframe=${timeframe})
 
 ---
 
@@ -1015,63 +1265,55 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
 ${resonanceNodes
   .map(
     (n, idx) =>
-      `${idx + 1}. **${n.title}**  
-   • **Контуры:** ${n.curatorNames.join(' ⟷ ')} *(Индекс резонанса: \`${n.resonanceScore}%\`)*  
+      `${idx + 1}. **${n.title}** [⚡ Резонанс: ${n.resonanceScore}%]  
+   • **Контуры:** ${n.curatorNames.join(' ⟷ ')}  
    • **Точка соприкосновения:** ${n.reasoning}  
    • **Команда для синтеза:** \`${n.suggestedPrompt}\``,
   )
   .join('\n\n')}
 
 ---
-💡 *Сводка собрана без навязывания искусственного синтеза. Чтобы детально исследовать любой из узлов, нажмите кнопку «Точечный синтез» ниже или выполните предложенную команду.*`;
+💡 *Сводка собрана в компактном формате без фото и медиа-шума. Вы можете обсудить детали за ${timeframeLabel} в личных тредах кураторов или запустить точечный синтез.*`;
 
     const suggestedCard = {
-      title: `[Резюме] Политическая панорама дня (${ctx.date})`,
-      description: `## Политическая коллегия: Сводное резюме ${ctx.date}
+      title: `[Резюме] Политическая панорама (${timeframe === 'week' ? 'неделя' : timeframe === 'month' ? 'месяц' : 'день'}, ${ctx.date})`,
+      description: `## Политическая коллегия: Панорама за ${timeframeLabel} (${ctx.date})
 
 > **Куратор:** 🏛️ Политическая коллегия (Иван Белый, Kirk Kitten, Чэнь Вэй)  
-> **Тип:** Ежедневная сводная панорама  
+> **Период:** ${timeframe === 'week' ? '7 дней' : timeframe === 'month' ? '30 дней' : 'Сегодня'}  
 > **Узлы резонанса:** ${resonanceNodes.length} обнаружено
 
-### Ключевые сводки:
-- **Контур РФ:** Бюджет 2027–2029 и баланс оптовых цен на энергоносители.
-- **Внешний контур:** Санкционные директивы OFAC и морской фрахт.
-- **Восточный контур:** Расчеты в нацвалютах БРИКС и грузооборот.
-
-### Кандидаты на синтез:
-${resonanceNodes.map((n) => `- **${n.title}** (${n.resonanceScore}%): ${n.reasoning}`).join('\n')}
+### Ключевые аспекты:
+- **Контур РФ:** Регуляторика, бюджет и баланс оптовых цен на энергоносители.
+- **Внешний контур:** Санкционные директивы OFAC, страховой комплаенс и фрахт.
+- **Восточный контур:** Расчеты в нацвалютах БРИКС и грузооборот контейнерных коридоров.
 
 ---
 *Сформировано аналитическим деском Project Lenta.*`,
       type: NoteType.EVENT,
       folder: 'Politics/Daily',
       taxonomyPath: 'politics.daily_summary',
-      hashtags: ['Политика', 'РезюмеДня', 'Коллегия', 'Контуры', 'Резонанс'],
+      hashtags: ['Политика', 'Резюме', 'Коллегия', 'Контуры', 'Резонанс'],
       curator: 'Политическая коллегия',
-      resonanceScore: 84,
-    };
-
-    const groupPayload: GroupSummaryPayload = {
-      groupId: 'political-group',
-      groupName: 'Политическая коллегия',
-      date: ctx.date,
-      headline: 'Сводный мониторинг политических контуров с выявлением узлов резонанса',
-      sections: curatorSections,
-      resonanceNodes,
+      resonanceScore: 86,
     };
 
     return {
       id: `msg-group-${Date.now()}`,
       sender: 'political-group',
       senderName: 'Политическая коллегия',
-      senderRole: 'Сводный деск политических кураторов',
-      avatar: '🏛️',
+      senderRole:
+        timeframe === 'week'
+          ? 'Недельный аналитический деск'
+          : timeframe === 'month'
+          ? 'Месячный стратегический деск'
+          : 'Сводный деск политических кураторов',
+      avatar: timeframe === 'week' ? '📅' : timeframe === 'month' ? '🗓️' : '🏛️',
       text: markdownText,
       timestamp: ctx.timestamp,
-      resonanceScore: 84,
+      resonanceScore: 86,
       sources: ['Правительство РФ', 'СПбМТСБ', 'OFAC', 'Lloyd\'s List', 'Xinhua', 'PBOC'],
       resonanceNodes,
-      groupSummary: groupPayload,
       suggestedCard,
     };
   }
@@ -1196,6 +1438,12 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       groupId = 'tech-group';
     } else if (lower.includes('макро') || lower.includes('рынк')) {
       groupId = 'macro-group';
+    } else if (lower.includes('пульс') || lower.includes('breaking') || lower.includes('hot') || lower.includes('быстрого реагирования')) {
+      groupId = 'hot-pulse-group';
+    } else if (lower.includes('домино') || lower.includes('nexus') || lower.includes('ветвлен') || lower.includes('каскад') || lower.includes('эффект домино')) {
+      groupId = 'domino-nexus-group';
+    } else if (lower.includes('восток') || lower.includes('mena') || lower.includes('залив') || lower.includes('ирак') || lower.includes('левант')) {
+      groupId = 'mena-security-group';
     }
 
     const surveyResult = await CuratorSurveyAgent.survey({
@@ -1310,6 +1558,63 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       avatar: '📡',
       text: markdown,
       timestamp: ctx.timestamp,
+    };
+  }
+
+  private static generateGenericCuratorResponse(
+    curatorId: CuratorId,
+    ctx: {
+      prompt: string;
+      date: string;
+      stories: DailyNewsCard[];
+      events: any[];
+      timestamp: string;
+    },
+  ): ChatMessage {
+    const persona = getCuratorPersona(curatorId);
+    const name = persona?.name || curatorId;
+    const role = persona?.role || 'Предметный куратор';
+    const emoji = persona?.emoji || '👤';
+    const mainStory = ctx.stories[0];
+
+    const text =
+      `### ${emoji} ${name}: Аналитический срез (${ctx.date})\n\n` +
+      `**Оптика:** ${persona?.description || persona?.scope}\n\n` +
+      (mainStory
+        ? `**Ключевой сюжет:** «${mainStory.title}»\n` +
+          `> ${mainStory.summary}\n\n` +
+          `**Оценка контура:** Зафиксирован высокий аналитический приоритет. Потенциал ветвления сюжета в смежные сферы: \`${mainStory.branchingPotentialScore || 85}%\`.\n`
+        : `*Прямых триггеров в оперативной ленте за текущие сутки не зафиксировано. Продолжается непрерывный мониторинг входящих сигналов по домену.*`);
+
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `${curatorId}-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId,
+      curatorName: name,
+      curatorEmoji: emoji,
+      curatorRole: role,
+      sourceName: s.source || 'Primary Wire',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : [name, 'Аналитика'],
+      resonanceScore: s.resonanceScore || 85,
+      keyPoints: s.keyPoints?.length ? s.keyPoints : [s.summary.substring(0, 100)],
+      contourBadge: `${emoji} ${name} / ${persona?.scope?.split(',')[0]}`,
+      publishedAt: s.publishedAt || '12:00',
+    }));
+
+    return {
+      id: `msg-${curatorId}-${Date.now()}`,
+      sender: curatorId,
+      senderName: name,
+      senderRole: role,
+      avatar: emoji,
+      text,
+      timestamp: ctx.timestamp,
+      resonanceScore: mainStory?.resonanceScore || 85,
+      sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
     };
   }
 }

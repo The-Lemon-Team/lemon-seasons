@@ -636,6 +636,25 @@ export interface ChatThread {
   deletedAt?: string | null;
 }
 
+export interface TelegramNewsPreview {
+  id: string;
+  title: string;
+  summary: string;
+  rawText?: string;
+  imageUrl?: string;
+  curatorId: string;
+  curatorName: string;
+  curatorEmoji: string;
+  curatorRole: string;
+  sourceName: string;
+  sourceUrl?: string;
+  tags: string[];
+  resonanceScore: number;
+  keyPoints?: string[];
+  publishedAt?: string;
+  contourBadge?: string;
+}
+
 export interface ChatMessageRecord {
   id: string;
   threadId: string;
@@ -649,6 +668,7 @@ export interface ChatMessageRecord {
   resonanceNodes?: any;
   groupSummary?: any;
   suggestedCard?: any;
+  newsPosts?: TelegramNewsPreview[];
   createdAt: string;
 }
 
@@ -868,7 +888,15 @@ export interface GDriveSyncResult {
 // Curator vs Operational Worker Agent Types (Lenta Architecture)
 // ---------------------------------------------------------------------------
 
-export type CuratorId = 'ivan-bely' | 'kirk-kitten' | 'okatsiya' | 'chen-wei';
+export type CuratorId =
+  | 'ivan-bely'
+  | 'kirk-kitten'
+  | 'okatsiya'
+  | 'chen-wei'
+  | 'alex-vector'
+  | 'marcus-vane'
+  | 'tariq-said'
+  | 'helena-brandt';
 
 export type WorkerAgentId =
   | 'harvester-agent'
@@ -882,9 +910,25 @@ export type AgentRoleType = 'curator' | 'operational_agent' | 'user';
 
 export type SurveyTimeframe = 'today' | 'yesterday' | 'three_days' | 'week' | 'custom';
 
+export interface BranchingContour {
+  contourName: string;
+  curatorId: CuratorId;
+  curatorName: string;
+  emoji: string;
+  impactScore: number; // 0 - 100
+  potentialStory: string;
+}
+
+export interface BranchingAnalysis {
+  sourceCardTitle: string;
+  branchingPotentialScore: number; // 0 - 100 (BPI)
+  statusQuoBreak: string;
+  likelyBranches: BranchingContour[];
+}
+
 export interface CuratorSurveyRequest {
   targetCurators?: (CuratorId | string)[] | 'all';
-  groupId?: string; // e.g. 'political-group', 'tech-group'
+  groupId?: string; // e.g. 'political-group', 'tech-group', 'hot-pulse-group', 'domino-nexus-group', 'mena-security-group'
   timeframe: SurveyTimeframe;
   customStartDate?: string; // YYYY-MM-DD
   customEndDate?: string; // YYYY-MM-DD
@@ -919,6 +963,7 @@ export interface CuratorSurveyResult {
   executiveSummary: string;
   curatorTakes: CuratorTake[];
   crossDomainResonances: CrossDomainResonance[];
+  branchingAnalyses?: BranchingAnalysis[];
   generatedAt: string;
 }
 

@@ -333,6 +333,62 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     iconName: 'Globe2',
     description: 'Аналитическая оптика Азиатско-Тихоокеанского региона и стран БРИКС. Мониторит товарооборот, логистические коридоры (МТК Север-Юг, Севморпуть) и финансовый клиринг.',
   },
+  'alex-vector': {
+    id: 'alex-vector',
+    name: 'Breaking News',
+    shortName: 'Breaking News',
+    role: 'Шеф мирового пульса и Breaking News',
+    scope: 'Мировые молнии, экстренные коммюнике, виральные сюжеты, X/Twitter, саммиты, чрезвычайные события',
+    accentColor: '#f97316', // Orange / Flame
+    borderAccent: '#ea580c',
+    bgLight: 'rgba(249, 115, 22, 0.12)',
+    badgeBg: 'rgba(249, 115, 22, 0.22)',
+    emoji: '🔥',
+    iconName: 'Flame',
+    description: 'Оптика глобального оперативного пульса. Отслеживает взрывные инфоповоды, breaking-ньюс мировых агентств и отделяет виральный шум от тектонических сдвигов.',
+  },
+  'marcus-vane': {
+    id: 'marcus-vane',
+    name: 'Маркус Вейн',
+    shortName: 'Маркус',
+    role: 'Аналитик эффекта домино и ветвления событий',
+    scope: 'Каскадные риски, вакуум силы, геостратегические узлы, триггеры бифуркации, ветвление сюжетов',
+    accentColor: '#10b981', // Emerald
+    borderAccent: '#059669',
+    bgLight: 'rgba(16, 185, 129, 0.12)',
+    badgeBg: 'rgba(16, 185, 129, 0.22)',
+    emoji: '♟️',
+    iconName: 'GitBranch',
+    description: 'Оптика системных каскадов и теории игр. Выявляет события-катализаторы, строит деревья ветвления последствий и прогнозирует реакции смежных контуров.',
+  },
+  'tariq-said': {
+    id: 'tariq-said',
+    name: 'Тарик Саид',
+    shortName: 'Тарик',
+    role: 'Обозреватель Ближнего Востока и зоны Залива (MENA)',
+    scope: 'Ближний Восток, Ирак, Иран, монархии Залива, Левант, безопасность баз, OPEC+, суннитско-шиитский баланс',
+    accentColor: '#eab308', // Desert Gold
+    borderAccent: '#ca8a04',
+    bgLight: 'rgba(234, 179, 8, 0.12)',
+    badgeBg: 'rgba(234, 179, 8, 0.22)',
+    emoji: '🕌',
+    iconName: 'Compass',
+    description: 'Оптика региона MENA и исламского мира. Анализирует закрытые договоренности монархий Залива, влияние проиранских осей, турецкий фактор и безопасность инфраструктуры.',
+  },
+  'helena-brandt': {
+    id: 'helena-brandt',
+    name: 'Хелена Брандт',
+    shortName: 'Хелена',
+    role: 'Аналитик критических артерий, сырья и глобальной логистики',
+    scope: 'Нефть Brent/WTI, СПГ, морские узлы (Ормуз, Суэц, Баб-эль-Мандеб), страховой фрахт Lloyd\'s, редкоземельные металлы',
+    accentColor: '#06b6d4', // Maritime Cyan
+    borderAccent: '#0891b2',
+    bgLight: 'rgba(6, 182, 212, 0.12)',
+    badgeBg: 'rgba(6, 182, 212, 0.22)',
+    emoji: '⚓',
+    iconName: 'Anchor',
+    description: 'Оптика физических артерий глобальной экономики. Измеряет материальные последствия геополитики: уязвимость проливов, стоимость фрахта танкеров и дефициты сырья.',
+  },
 };
 
 export const CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
@@ -354,6 +410,18 @@ export function getCuratorPersona(idOrName?: string | null): CuratorPersona | nu
   }
   if (clean === 'чэнь' || clean === 'чэнь вэй' || clean === 'chen' || clean === 'chen-wei') {
     return CURATOR_PERSONAS['chen-wei'];
+  }
+  if (clean === 'алекс' || clean === 'алекс вектор' || clean === 'alex' || clean === 'alex-vector' || clean === 'breaking' || clean === 'breaking news' || clean === 'пульс') {
+    return CURATOR_PERSONAS['alex-vector'];
+  }
+  if (clean === 'маркус' || clean === 'маркус вейн' || clean === 'marcus' || clean === 'marcus-vane' || clean === 'nexus' || clean === 'домино' || clean === 'ветвление') {
+    return CURATOR_PERSONAS['marcus-vane'];
+  }
+  if (clean === 'тарик' || clean === 'тарик саид' || clean === 'tariq' || clean === 'tariq-said' || clean === 'мена' || clean === 'mena' || clean === 'восток') {
+    return CURATOR_PERSONAS['tariq-said'];
+  }
+  if (clean === 'хелена' || clean === 'хелена брандт' || clean === 'helena' || clean === 'helena-brandt' || clean === 'логистика' || clean === 'сырье' || clean === 'нефть') {
+    return CURATOR_PERSONAS['helena-brandt'];
   }
 
   const found = CURATOR_PERSONAS_LIST.find(
@@ -419,17 +487,62 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     badgeBg: 'rgba(251, 191, 36, 0.16)',
     defaultScope: 'Демпфер, валютные курсы, санкционное воздействие, фрахт и инфляция',
   },
+  'hot-pulse-group': {
+    id: 'hot-pulse-group',
+    name: 'Группа быстрого реагирования (Мировой пульс)',
+    shortName: 'Горячий пульс',
+    emoji: '🔥',
+    description: 'Оперативный консилиум по экстренным мировым событиям, breaking news и виральным трендам',
+    curatorIds: ['alex-vector', 'kirk-kitten', 'marcus-vane'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#f97316',
+    badgeBg: 'rgba(249, 115, 22, 0.16)',
+    defaultScope: 'Свежие мировые молнии, первичная проверка фактов и детекция потенциала резонанса',
+  },
+  'domino-nexus-group': {
+    id: 'domino-nexus-group',
+    name: 'Коллегия каскадных рисков и ветвления',
+    shortName: 'Эффект домино',
+    emoji: '♟️',
+    description: 'Аналитическая группа прогнозирования эффекта домино, вакуума силы и смежных веток событий',
+    curatorIds: ['marcus-vane', 'tariq-said', 'helena-brandt', 'chen-wei'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#10b981',
+    badgeBg: 'rgba(168, 85, 247, 0.16)',
+    defaultScope: 'Оценка точек бифуркации, ветвление региональных конфликтов, цепочки сырьевых и логистических шоков',
+  },
+  'mena-security-group': {
+    id: 'mena-security-group',
+    name: 'Консилиум Ближнего Востока и Южного периметра',
+    shortName: 'Ближний Восток',
+    emoji: '🕌',
+    description: 'Коллегия безопасности зоны Залива, Леванта, Суэцкого коридора и энергетического баланса',
+    curatorIds: ['tariq-said', 'ivan-bely', 'kirk-kitten', 'helena-brandt'],
+    coordinatorId: 'survey-coordinator',
+    accentColor: '#eab308',
+    badgeBg: 'rgba(234, 179, 8, 0.16)',
+    defaultScope: 'Военно-политическая динамика MENA, Ормузский пролив, рынок нефти и позиция РФ/США',
+  },
   'all-curators': {
     id: 'all-curators',
     name: 'Полная коллегия кураторов',
     shortName: 'Все кураторы',
     emoji: '🌐',
-    description: 'Объединенный совет всех предметных кураторов Project Lenta (РФ, Мир, АТР, IT & AI)',
-    curatorIds: ['ivan-bely', 'kirk-kitten', 'chen-wei', 'okatsiya'],
+    description: 'Объединенный совет всех 8 предметных кураторов Project Lenta (РФ, Мир, АТР, IT & AI, Breaking, Nexus, MENA, Сырье)',
+    curatorIds: [
+      'ivan-bely',
+      'kirk-kitten',
+      'chen-wei',
+      'okatsiya',
+      'alex-vector',
+      'marcus-vane',
+      'tariq-said',
+      'helena-brandt',
+    ],
     coordinatorId: 'survey-coordinator',
     accentColor: '#3b82f6',
     badgeBg: 'rgba(59, 130, 246, 0.16)',
-    defaultScope: 'Сквозная панорама всех ключевых мировых, внутренних и технологических событий',
+    defaultScope: 'Сквозная 360-панорама всех ключевых мировых, внутренних, энергетических и технологических событий',
   },
 };
 
@@ -453,6 +566,15 @@ export function getCuratorGroup(idOrName?: string | null): CuratorGroup | null {
   }
   if (clean === 'макро' || clean === 'macro' || clean === 'macro-group') {
     return CURATOR_GROUPS['macro-group'];
+  }
+  if (clean === 'пульс' || clean === 'hot' || clean === 'breaking' || clean === 'горячий пульс' || clean === 'быстрое реагирование' || clean === 'hot-pulse-group') {
+    return CURATOR_GROUPS['hot-pulse-group'];
+  }
+  if (clean === 'домино' || clean === 'nexus' || clean === 'каскад' || clean === 'ветвление' || clean === 'эффект домино' || clean === 'domino-nexus-group') {
+    return CURATOR_GROUPS['domino-nexus-group'];
+  }
+  if (clean === 'ближний восток' || clean === 'мена' || clean === 'mena' || clean === 'залив' || clean === 'восток' || clean === 'mena-security-group') {
+    return CURATOR_GROUPS['mena-security-group'];
   }
   if (clean === 'все' || clean === 'all' || clean === 'все кураторы' || clean === 'all-curators') {
     return CURATOR_GROUPS['all-curators'];

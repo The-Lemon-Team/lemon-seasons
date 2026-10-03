@@ -311,6 +311,102 @@ export class ChatsService implements OnModuleInit {
         },
       });
 
+      // Thread: Алекс Вектор (Direct 1-on-1)
+      const alexThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🔥 Алекс Вектор: Мировой пульс & Breaking News',
+          type: ChatType.DIRECT,
+          folderId: directFolder.id,
+          targetAgent: 'alex-vector',
+          participantAgents: ['alex-vector'],
+          dateScope: today,
+          isPinned: false,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: alexThread.id,
+          sender: 'alex-vector',
+          senderName: 'Алекс Вектор',
+          senderRole: 'Шеф мирового пульса и Breaking News',
+          avatar: '🔥',
+          text: `Приветствую! Мониторю экстренные мировые молнии, виральные тренды и ключевые инфоповоды. Команда \`/alex\` вызовет оперативный срез повестки дня.`,
+        },
+      });
+
+      // Thread: Маркус Вейн (Direct 1-on-1)
+      const marcusThread = await this.prisma.chatThread.create({
+        data: {
+          title: '♟️ Маркус Вейн: Эффект домино & Каскадные риски',
+          type: ChatType.DIRECT,
+          folderId: directFolder.id,
+          targetAgent: 'marcus-vane',
+          participantAgents: ['marcus-vane'],
+          dateScope: today,
+          isPinned: false,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: marcusThread.id,
+          sender: 'marcus-vane',
+          senderName: 'Маркус Вейн',
+          senderRole: 'Аналитик эффекта домино и ветвления событий',
+          avatar: '♟️',
+          text: `Приветствую. Моя оптика — слом статус-кво, вакуум силы и расчет эффекта домино по смежным контурам (BPI). Вызывайте команду \`/marcus\` для анализа ветвления.`,
+        },
+      });
+
+      // Thread: Тарик Саид (Direct 1-on-1)
+      const tariqThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🕌 Тарик Саид: Ближний Восток & Залив (MENA)',
+          type: ChatType.DIRECT,
+          folderId: directFolder.id,
+          targetAgent: 'tariq-said',
+          participantAgents: ['tariq-said'],
+          dateScope: today,
+          isPinned: false,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: tariqThread.id,
+          sender: 'tariq-said',
+          senderName: 'Тарик Саид',
+          senderRole: 'Обозреватель Ближнего Востока и зоны Залива',
+          avatar: '🕌',
+          text: `Мир вам! Мониторю Ирак, Сирию, Иран, монархии Залива, Левант и безопасность региональных артерий. Используйте команду \`/tariq\`.`,
+        },
+      });
+
+      // Thread: Хелена Брандт (Direct 1-on-1)
+      const helenaThread = await this.prisma.chatThread.create({
+        data: {
+          title: '⚓ Хелена Брандт: Сырьевые артерии & Логистика',
+          type: ChatType.DIRECT,
+          folderId: directFolder.id,
+          targetAgent: 'helena-brandt',
+          participantAgents: ['helena-brandt'],
+          dateScope: today,
+          isPinned: false,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: helenaThread.id,
+          sender: 'helena-brandt',
+          senderName: 'Хелена Брандт',
+          senderRole: 'Аналитик критических артерий, сырья и глобальной логистики',
+          avatar: '⚓',
+          text: `Приветствую! Анализирую котировки Brent, ставки фрахта Lloyd's War Risk, проходимость Ормузского и Баб-эль-Мандебского проливов. Команда: \`/helena\`.`,
+        },
+      });
+
       this.logger.log('✅ Successfully seeded default Chat Folders and Starter Threads!');
     } catch (err) {
       this.logger.error('Error seeding chat defaults:', err);
@@ -615,6 +711,8 @@ export class ChatsService implements OnModuleInit {
         resolvedTarget = 'kirk-kitten';
       } else if (lower.startsWith('@chen') || lower.startsWith('/chen')) {
         resolvedTarget = 'chen-wei';
+      } else if (lower.startsWith('@alex') || lower.startsWith('/alex') || lower.startsWith('/breaking') || lower.startsWith('@breaking')) {
+        resolvedTarget = 'alex-vector';
       } else if (lower.startsWith('/politics') || lower.startsWith('/group') || lower.includes('коллегия')) {
         resolvedTarget = 'political-group';
       } else if (thread.targetAgent) {
