@@ -65,7 +65,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       confirmLoading={isPending}
       okText="Создать чат"
       cancelText="Отмена"
-      destroyOnHidden
+      destroyOnClose
     >
       <div className="space-y-4 pt-2">
         <div>

@@ -42,7 +42,7 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       confirmLoading={isPending}
       okText="Создать папку"
       cancelText="Отмена"
-      destroyOnHidden
+      destroyOnClose
     >
       <div className="space-y-4 pt-2">
         <div>
