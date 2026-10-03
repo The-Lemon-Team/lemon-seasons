@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  MessageSquare,
+  Newspaper,
+  Rss,
+  FileText,
+  FolderTree,
+  Sparkles,
+  RefreshCw,
+  BookOpen,
+  Search,
+  Globe,
+  Calendar,
+  Cloud,
+} from 'lucide-react';
 import { QuickAddModal } from './QuickAddModal';
 import { LemonLogo } from './LemonLogo';
 import { WorkstationSessionBar } from './WorkstationSessionBar';
@@ -59,9 +74,7 @@ export const AppLayout: React.FC = () => {
             onClick={() => setQuickAddOpen(true)}
             className="w-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary rounded py-2 px-4 font-sans text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px] group-hover:rotate-90 transition-transform duration-200">
-              add
-            </span>
+            <Plus className="w-[18px] h-[18px] group-hover:rotate-90 transition-transform duration-200" />
             {t.quickAdd}
           </button>
         </div>
@@ -78,7 +91,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px] text-primary">forum</span>
+            <MessageSquare className="w-5 h-5 text-primary shrink-0" />
             <span className="flex-1 truncate">{t.agentChat}</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
           </NavLink>
@@ -93,7 +106,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px] text-primary">newspaper</span>
+            <Newspaper className="w-5 h-5 text-primary shrink-0" />
             <span className="flex-1 truncate">Новости & AI</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
           </NavLink>
@@ -109,7 +122,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px]">dynamic_feed</span>
+            <Rss className="w-5 h-5 shrink-0" />
             {t.feeds}
           </NavLink>
 
@@ -123,7 +136,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px]">description</span>
+            <FileText className="w-5 h-5 shrink-0" />
             {t.allNotes}
           </NavLink>
 
@@ -137,7 +150,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px]">account_tree</span>
+            <FolderTree className="w-5 h-5 shrink-0" />
             {t.taxonomy}
           </NavLink>
 
@@ -151,7 +164,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px] text-primary">auto_awesome</span>
+            <Sparkles className="w-5 h-5 text-primary shrink-0" />
             <span className="flex-1 truncate">{t.generatorLab}</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">AI</span>
           </NavLink>
@@ -166,7 +179,7 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined text-[20px]">sync</span>
+            <RefreshCw className="w-5 h-5 shrink-0" />
             {t.syncHub}
           </NavLink>
         </nav>
@@ -199,7 +212,7 @@ export const AppLayout: React.FC = () => {
             rel="noreferrer"
             className="flex items-center gap-3 px-3.5 py-2 rounded text-sm text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface transition-colors"
           >
-            <span className="material-symbols-outlined text-[18px]">menu_book</span>
+            <BookOpen className="w-[18px] h-[18px] shrink-0" />
             {t.apiDocs}
           </a>
         </div>
@@ -218,9 +231,7 @@ export const AppLayout: React.FC = () => {
           <div className="flex items-center gap-5">
             {/* Global Search */}
             <form onSubmit={handleSearchSubmit} className="relative group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors text-[18px]">
-                search
-              </span>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors w-[18px] h-[18px] pointer-events-none" />
               <input
                 type="text"
                 value={globalSearch}
@@ -236,7 +247,7 @@ export const AppLayout: React.FC = () => {
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-surface-container-high border border-outline-variant/40 text-on-surface-variant/50 opacity-60 cursor-not-allowed shadow-sm"
               title="Английский язык временно отключен / English is disabled"
             >
-              <span className="material-symbols-outlined text-[16px]">language</span>
+              <Globe className="w-4 h-4 shrink-0" />
               <span>RU</span>
             </button>
 
@@ -251,7 +262,7 @@ export const AppLayout: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-semibold bg-[#e5e971]/10 border border-[#e5e971]/40 text-[#e5e971] hover:bg-[#e5e971]/20 transition-all cursor-pointer shadow-sm"
               title="Открыть клиентское приложение Календаря (порт 5174)"
             >
-              <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+              <Calendar className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">В Календарь</span>
             </a>
 
@@ -261,7 +272,7 @@ export const AppLayout: React.FC = () => {
               className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-white/5 relative cursor-pointer"
               title={t.syncStatus}
             >
-              <span className="material-symbols-outlined text-[20px]">cloud_sync</span>
+              <Cloud className="w-5 h-5 shrink-0" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
 

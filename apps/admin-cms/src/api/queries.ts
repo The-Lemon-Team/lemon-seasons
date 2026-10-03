@@ -574,6 +574,7 @@ export function useChatFolders() {
   return useQuery({
     queryKey: ['chat-folders'],
     queryFn: () => chatsApi.getFolders(),
+    staleTime: 60_000,
   });
 }
 
@@ -613,14 +614,26 @@ export function useChatThreads(params?: { folderId?: string; type?: string; sear
   return useQuery({
     queryKey: ['chat-threads', params],
     queryFn: () => chatsApi.getThreads(params),
+    staleTime: 30_000,
   });
 }
 
 export function useChatThread(id?: string) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: ['chat-thread', id],
     queryFn: () => chatsApi.getThread(id!),
     enabled: Boolean(id),
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    placeholderData: (previousData) => {
+      if (!id) return undefined;
+      const cached = queryClient.getQueryData<any[]>(['chat-threads'])
+        || queryClient.getQueriesData<any[]>({ queryKey: ['chat-threads'] })
+            .flatMap(([, data]) => (Array.isArray(data) ? data : []));
+      const found = cached.find((t) => t.id === id);
+      return found || previousData;
+    },
   });
 }
 
@@ -628,7 +641,10 @@ export function useCreateChatThread() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: any) => chatsApi.createThread(data),
-    onSuccess: () => {
+    onSuccess: (newThread) => {
+      if (newThread?.id) {
+        queryClient.setQueryData(['chat-thread', newThread.id], newThread);
+      }
       queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
     },
@@ -663,6 +679,8 @@ export function useThreadMessages(threadId?: string) {
     queryKey: ['thread-messages', threadId],
     queryFn: () => chatsApi.getMessages(threadId!),
     enabled: Boolean(threadId),
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 }
 
@@ -670,8 +688,48 @@ export function useSendThreadMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ threadId, data }: { threadId: string; data: any }) => chatsApi.sendMessage(threadId, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['thread-messages', variables.threadId] });
+    onMutate: async ({ threadId, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['thread-messages', threadId] });
+      const previousMessages = queryClient.getQueryData<any[]>(['thread-messages', threadId]);
+
+      const optimisticMsg = {
+        id: `optimistic-${Date.now()}`,
+        threadId,
+        sender: 'user',
+        senderName: 'Куратор редакции',
+        senderRole: 'Редактор / Пользователь',
+        avatar: '👤',
+        text: data.message,
+        createdAt: new Date().toISOString(),
+        isOptimistic: true,
+      };
+
+      if (previousMessages) {
+        queryClient.setQueryData(['thread-messages', threadId], [...previousMessages, optimisticMsg]);
+      } else {
+        queryClient.setQueryData(['thread-messages', threadId], [optimisticMsg]);
+      }
+
+      return { previousMessages, threadId };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousMessages) {
+        queryClient.setQueryData(['thread-messages', context.threadId], context.previousMessages);
+      }
+    },
+    onSuccess: (data, variables) => {
+      if (data?.userMessage && data?.replies) {
+        queryClient.setQueryData<any[]>(['thread-messages', variables.threadId], (old = []) => {
+          const cleaned = old.filter((m) => !m.isOptimistic);
+          const hasUserMsg = cleaned.some((m) => m.id === data.userMessage.id);
+          const withUser = hasUserMsg ? cleaned : [...cleaned, data.userMessage];
+          const existingIds = new Set(withUser.map((m) => m.id));
+          const newReplies = data.replies.filter((r: any) => !existingIds.has(r.id));
+          return [...withUser, ...newReplies];
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['thread-messages', variables.threadId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
     },
   });

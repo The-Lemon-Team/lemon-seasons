@@ -1,7 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Check, Layers, Pin, CalendarRange, Calendar, Film, AtSign, CheckCircle2, Tag } from 'lucide-react';
 import { NoteType } from '../types';
 import { NOTE_TYPE_CONFIGS, NOTE_TYPE_LIST } from '../constants/noteTypes';
 import { useAdminI18n } from '../i18n';
+
+const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  SINGLE: Pin,
+  PERIOD: CalendarRange,
+  EVENT: Calendar,
+  FILM_RELEASE: Film,
+  MENTION: AtSign,
+  DONE: CheckCircle2,
+};
 
 interface NoteTypeSelectProps {
   value?: NoteType;
@@ -102,26 +112,17 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {selectedConfig ? (
             <>
-              <span
-                className={`material-symbols-outlined shrink-0 ${
-                  isSmall ? 'text-[16px]' : 'text-[18px]'
-                } ${selectedConfig.text}`}
-              >
-                {selectedConfig.icon}
-              </span>
+              {(() => {
+                const Icon = TYPE_ICONS[selectedConfig.value] || Tag;
+                return <Icon className={`shrink-0 ${isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'} ${selectedConfig.text}`} />;
+              })()}
               <span className="font-semibold text-on-surface truncate">
                 {getTypeLabel(selectedConfig.value)}
               </span>
             </>
           ) : allowAll ? (
             <>
-              <span
-                className={`material-symbols-outlined shrink-0 ${
-                  isSmall ? 'text-[16px]' : 'text-[18px]'
-                } text-on-surface-variant`}
-              >
-                category
-              </span>
+              <Layers className={`shrink-0 ${isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'} text-on-surface-variant`} />
               <span className="text-on-surface font-semibold truncate">
                 {allLabel}
               </span>
@@ -133,13 +134,11 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
           )}
         </div>
 
-        <span
-          className={`material-symbols-outlined shrink-0 text-on-surface-variant transition-transform duration-200 ${
-            isSmall ? 'text-[16px]' : 'text-[18px]'
+        <ChevronDown
+          className={`shrink-0 text-on-surface-variant transition-transform duration-200 ${
+            isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'
           } ${isOpen ? 'rotate-180 text-primary' : ''}`}
-        >
-          expand_more
-        </span>
+        />
       </button>
 
       {/* Options Dropdown */}
@@ -158,19 +157,18 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                     : 'text-on-surface hover:bg-white/5'
                 }`}
               >
-                <span
-                  className={`material-symbols-outlined text-[18px] shrink-0 ${
+                <Layers
+                  className={`w-4 h-4 shrink-0 ${
                     !value ? 'text-on-primary' : 'text-on-surface-variant'
                   }`}
-                >
-                  category
-                </span>
+                />
                 <span className="flex-1 truncate">{allLabel}</span>
               </div>
             )}
 
             {NOTE_TYPE_LIST.map((item) => {
               const isSelected = value === item.value;
+              const Icon = TYPE_ICONS[item.value] || Tag;
               return (
                 <div
                   key={item.value}
@@ -185,13 +183,11 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                   }`}
                 >
                   {/* Icon */}
-                  <span
-                    className={`material-symbols-outlined text-[18px] shrink-0 ${
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
                       isSelected ? 'text-on-primary' : item.text
                     }`}
-                  >
-                    {item.icon}
-                  </span>
+                  />
 
                   {/* Title */}
                   <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
@@ -205,9 +201,7 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                   </div>
 
                   {isSelected && (
-                    <span className="material-symbols-outlined text-[16px] text-on-primary shrink-0">
-                      check
-                    </span>
+                    <Check className="w-4 h-4 text-on-primary shrink-0" />
                   )}
                 </div>
               );

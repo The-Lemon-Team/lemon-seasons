@@ -11,6 +11,18 @@ import {
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../components/HashtagBadge';
 import { useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  Rss,
+  FileText,
+  FolderTree,
+  FolderGit2,
+  Cloud,
+  ShieldCheck,
+  Link2,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react';
 import { useAdminI18n } from '../../i18n';
 
 export const DashboardPage: React.FC = () => {
@@ -48,7 +60,7 @@ export const DashboardPage: React.FC = () => {
           onClick={() => navigate('/notes/new')}
           className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
+          <Plus className="w-[18px] h-[18px]" />
           {t.addNoteBtn}
         </button>
       </div>
@@ -61,9 +73,7 @@ export const DashboardPage: React.FC = () => {
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.activeFeedsMetric}</span>
-            <span className="material-symbols-outlined text-primary text-[20px] group-hover:scale-110 transition-transform">
-              dynamic_feed
-            </span>
+            <Rss className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-3xl text-on-surface">{feeds.length}</div>
           <p className="text-xs text-outline mt-1 font-mono">{t.dataStreamsSub}</p>
@@ -75,9 +85,7 @@ export const DashboardPage: React.FC = () => {
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.totalNotesMetric}</span>
-            <span className="material-symbols-outlined text-secondary text-[20px] group-hover:scale-110 transition-transform">
-              description
-            </span>
+            <FileText className="w-5 h-5 text-secondary group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-3xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
           <p className="text-xs text-outline mt-1 font-mono">{t.singleTruthSub}</p>
@@ -89,9 +97,7 @@ export const DashboardPage: React.FC = () => {
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.vaultFoldersMetric}</span>
-            <span className="material-symbols-outlined text-primary text-[20px] group-hover:scale-110 transition-transform">
-              folder_managed
-            </span>
+            <FolderGit2 className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-3xl text-primary">{folders.length}</div>
           <p className="text-xs text-outline mt-1 font-mono">{t.obsidianPathsSub}</p>
@@ -103,9 +109,7 @@ export const DashboardPage: React.FC = () => {
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.taxonomyTagsMetric}</span>
-            <span className="material-symbols-outlined text-tertiary text-[20px] group-hover:scale-110 transition-transform">
-              account_tree
-            </span>
+            <FolderTree className="w-5 h-5 text-tertiary group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-3xl text-on-surface flex items-baseline gap-2">
             <span>{tags.length}</span>
@@ -117,7 +121,7 @@ export const DashboardPage: React.FC = () => {
         <div className="bg-surface-container rounded-lg border border-white/5 p-5">
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.syncStateMetric}</span>
-            <span className="material-symbols-outlined text-[#bfecda] text-[20px]">cloud_sync</span>
+            <Cloud className="w-5 h-5 text-[#bfecda]" />
           </div>
           <div className="font-sans font-bold text-xl text-on-surface flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-primary" /> {t.activeStatus}
@@ -135,7 +139,7 @@ export const DashboardPage: React.FC = () => {
         <div className="bg-surface-container rounded-lg border border-white/5 p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary text-[22px]">health_and_safety</span>
+              <ShieldCheck className="w-[22px] h-[22px] text-primary shrink-0" />
               <div>
                 <h3 className="font-sans font-bold text-sm text-on-surface">Состояние системы и хранилища</h3>
                 <p className="text-xs text-on-surface-variant font-mono">
@@ -252,8 +256,8 @@ export const DashboardPage: React.FC = () => {
                             </span>
                           )}
                           {note.sourceLink && (
-                            <span className="inline-flex items-center gap-0.5 text-primary/80">
-                              • <span className="material-symbols-outlined text-[13px]">link</span>
+                            <span className="inline-flex items-center gap-1 text-primary/80">
+                              • <Link2 className="w-3 h-3" />
                               source
                               {note.links && note.links.length > 1 && (
                                 <span className="text-[10px] text-on-surface-variant font-mono">
@@ -266,9 +270,7 @@ export const DashboardPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <span className="material-symbols-outlined text-outline text-[18px]">
-                      chevron_right
-                    </span>
+                    <ChevronRight className="w-4 h-4 text-outline" />
                   </div>
                 );
               })
@@ -279,7 +281,7 @@ export const DashboardPage: React.FC = () => {
         {/* Obsidian Sync Hub (Span 1) */}
         <div className="space-y-4 bg-surface-container rounded-lg border border-white/5 p-5">
           <h2 className="font-sans font-bold text-base text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]">sync</span>
+            <RefreshCw className="w-5 h-5 text-primary" />
             {t.deltaInspectorTitle}
           </h2>
           <p className="text-xs text-on-surface-variant leading-relaxed">

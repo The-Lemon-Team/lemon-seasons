@@ -20,19 +20,38 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            const normalized = id.replace(/\\/g, '/');
+            if (
+              normalized.includes('/node_modules/react/') ||
+              normalized.includes('/node_modules/react-dom/') ||
+              normalized.includes('/node_modules/scheduler/') ||
+              normalized.includes('/node_modules/react-router/') ||
+              normalized.includes('/node_modules/react-router-dom/')
+            ) {
               return 'vendor-react';
             }
-            if (id.includes('lucide-react')) {
+            if (normalized.includes('/node_modules/lucide-react/')) {
               return 'vendor-icons';
             }
-            if (id.includes('@tanstack')) {
+            if (normalized.includes('/node_modules/@tanstack/')) {
               return 'vendor-tanstack';
             }
-            if (id.includes('react-markdown') || id.includes('remark-gfm')) {
+            if (
+              normalized.includes('/node_modules/react-markdown/') ||
+              normalized.includes('/node_modules/remark-gfm/') ||
+              normalized.includes('/node_modules/unified/') ||
+              normalized.includes('/node_modules/micromark')
+            ) {
               return 'vendor-markdown';
             }
-            if (id.includes('dayjs')) {
+            if (
+              normalized.includes('/node_modules/antd/') ||
+              normalized.includes('/node_modules/@ant-design/') ||
+              normalized.includes('/node_modules/rc-')
+            ) {
+              return 'vendor-antd';
+            }
+            if (normalized.includes('/node_modules/dayjs/')) {
               return 'vendor-dayjs';
             }
           }

@@ -1,4 +1,19 @@
 import React, { useState, useMemo } from 'react';
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  FolderGit2,
+  ChevronsUpDown,
+  ChevronsDownUp,
+  Plus,
+  Search,
+  X,
+  Files,
+  FileQuestion,
+} from 'lucide-react';
 import { useFolderTree, useCreateFolder } from '../api/queries';
 import { FolderTreeNode } from '../types';
 import { message, Modal } from 'antd';
@@ -152,9 +167,11 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
                 onClick={(e) => toggleExpand(node.path, e)}
                 className="w-4 h-4 flex items-center justify-center rounded hover:bg-white/10 text-on-surface-variant/70 hover:text-on-surface transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[15px]">
-                  {isExpanded ? 'expand_more' : 'chevron_right'}
-                </span>
+                {isExpanded ? (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5" />
+                )}
               </button>
             ) : (
               <span className="w-4 h-4 flex items-center justify-center text-on-surface-variant/30 text-[10px]">
@@ -163,13 +180,19 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             )}
 
             {/* Folder Icon */}
-            <span
-              className={`material-symbols-outlined text-[16px] flex-shrink-0 ${
-                isSelected ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
-              }`}
-            >
-              {isExpanded ? 'folder_open' : 'folder'}
-            </span>
+            {isExpanded ? (
+              <FolderOpen
+                className={`w-4 h-4 shrink-0 ${
+                  isSelected ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
+                }`}
+              />
+            ) : (
+              <Folder
+                className={`w-4 h-4 shrink-0 ${
+                  isSelected ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
+                }`}
+              />
+            )}
 
             {/* Name */}
             <span className="truncate font-mono text-[12px]" title={node.path}>
@@ -188,7 +211,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all cursor-pointer"
               title={`Create subfolder inside ${node.path}`}
             >
-              <span className="material-symbols-outlined text-[14px]">create_new_folder</span>
+              <FolderPlus className="w-3.5 h-3.5" />
             </button>
 
             {/* Notes count badge */}
@@ -222,9 +245,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       <div className="p-3 border-b border-white/5 bg-surface-container-high/40">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">
-              folder_managed
-            </span>
+            <FolderGit2 className="w-[18px] h-[18px] text-primary shrink-0" />
             <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
               {t.vaultFoldersMetric}
             </span>
@@ -237,7 +258,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
               title="Expand all"
             >
-              <span className="material-symbols-outlined text-[15px]">unfold_more</span>
+              <ChevronsUpDown className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -245,7 +266,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
               title="Collapse all"
             >
-              <span className="material-symbols-outlined text-[15px]">unfold_less</span>
+              <ChevronsDownUp className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -253,16 +274,14 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               className="p-1 rounded hover:bg-primary/20 text-primary transition-colors cursor-pointer"
               title="Add folder"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Search inside folder hierarchy */}
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[14px]">
-            search
-          </span>
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 w-3.5 h-3.5 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
@@ -276,7 +295,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-on-surface p-0.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[12px]">close</span>
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
@@ -294,7 +313,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px]">library_books</span>
+            <Files className="w-4 h-4 shrink-0" />
             <span className="font-sans text-[12px]">{t.allNotes}</span>
           </div>
           <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant/80">
@@ -312,9 +331,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-outline/70">
-              draft
-            </span>
+            <FileQuestion className="w-4 h-4 text-outline/70 shrink-0" />
             <span className="font-sans text-[12px]">Unfiled (Root)</span>
           </div>
           <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant/80">
@@ -354,9 +371,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
         footer={null}
         title={
           <span className="font-sans font-bold text-base text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]">
-              create_new_folder
-            </span>
+            <FolderPlus className="w-5 h-5 text-primary shrink-0" />
             {t.folderInputLabel}
           </span>
         }

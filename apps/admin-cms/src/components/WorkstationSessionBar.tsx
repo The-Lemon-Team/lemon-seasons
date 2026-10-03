@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Modal, Input, message, Tooltip } from 'antd';
+import { Save, RefreshCw } from 'lucide-react';
 import { syncApi } from '../api/client';
 import { SyncStatusResponse } from '../types';
 
@@ -106,10 +107,10 @@ export const WorkstationSessionBar: React.FC = () => {
         <button
           onClick={handleOpenCommit}
           disabled={commitMutation.isPending || !activeSession}
-          className="flex items-center gap-1 px-2.5 py-1 rounded bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all font-sans font-semibold text-[11px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all font-sans font-semibold text-[11px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
           title="Зафиксировать сессию в коммит и запушить на Google Drive"
         >
-          <span className="material-symbols-outlined text-[14px]">save</span>
+          <Save className="w-3.5 h-3.5 shrink-0" />
           <span>{commitMutation.isPending ? 'Запись...' : 'Закоммитить'}</span>
         </button>
 
@@ -124,16 +125,14 @@ export const WorkstationSessionBar: React.FC = () => {
           <button
             onClick={() => pullMutation.mutate()}
             disabled={pullMutation.isPending}
-            className="flex items-center gap-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-all font-mono text-[11px] cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-all font-mono text-[11px] cursor-pointer"
             title="Проверить и подтянуть свежие коммиты с Google Drive"
           >
-            <span
-              className={`material-symbols-outlined text-[14px] ${
+            <RefreshCw
+              className={`w-3.5 h-3.5 shrink-0 ${
                 pullMutation.isPending ? 'animate-spin text-primary' : ''
               }`}
-            >
-              sync
-            </span>
+            />
             <span>GDrive</span>
             {unpushedCount > 0 && (
               <span className="bg-amber-500/20 text-amber-400 font-mono text-[9px] px-1 rounded">

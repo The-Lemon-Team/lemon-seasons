@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 
 interface HashtagBadgeProps {
   name: string;
@@ -71,7 +72,7 @@ export const HashtagBadge: React.FC<HashtagBadgeProps> = ({
           className="p-0.5 -mr-0.5 hover:bg-cyan-800/60 rounded-full text-cyan-400 hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
           title={`Remove #${cleanName}`}
         >
-          <span className="material-symbols-outlined text-[12px] leading-none">close</span>
+          <X className="w-3 h-3" />
         </button>
       )}
     </span>

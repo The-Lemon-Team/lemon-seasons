@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Star, X, Folder, FolderPlus } from 'lucide-react';
 import { useFolders } from '../api/queries';
 import { FolderInputItem, NoteFolder } from '../types';
 
@@ -153,9 +154,11 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
                       : 'Click to make Primary Location'
                   }
                 >
-                  <span className="material-symbols-outlined text-[15px] leading-none">
-                    {item.isPrimary ? 'star' : 'star_border'}
-                  </span>
+                  <Star
+                    className={`w-3.5 h-3.5 ${
+                      item.isPrimary ? 'fill-primary text-primary' : 'text-on-surface-variant/40'
+                    }`}
+                  />
                 </button>
 
                 <span className="truncate max-w-[200px]" title={item.path}>
@@ -175,9 +178,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
                   className="p-0.5 hover:bg-white/10 rounded-full text-on-surface-variant hover:text-error transition-colors flex items-center justify-center cursor-pointer ml-0.5"
                   title="Remove from folder"
                 >
-                  <span className="material-symbols-outlined text-[13px] leading-none">
-                    close
-                  </span>
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
@@ -188,9 +189,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
       {/* Input / Combobox */}
       <div className="relative">
         <div className="flex items-center relative">
-          <span className="material-symbols-outlined absolute left-2.5 text-on-surface-variant/60 text-[16px] pointer-events-none select-none">
-            folder
-          </span>
+          <Folder className="absolute left-2.5 text-on-surface-variant/60 w-4 h-4 pointer-events-none select-none" />
           <input
             type="text"
             value={inputVal}
@@ -231,7 +230,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
                 onClick={() => handleAddPath(inputVal)}
                 className="w-full px-3 py-2 text-left hover:bg-primary/20 text-xs font-mono text-primary flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <span className="material-symbols-outlined text-[16px]">create_new_folder</span>
+                <FolderPlus className="w-4 h-4 shrink-0" />
                 <span>
                   Create new folder path: <strong>&ldquo;{inputVal.trim()}&rdquo;</strong>
                 </span>
@@ -247,9 +246,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
                   className="w-full px-3 py-1.5 text-left hover:bg-white/5 text-xs font-mono text-on-surface flex items-center justify-between group cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="material-symbols-outlined text-[15px] text-primary/70 group-hover:text-primary">
-                      {f.icon || 'folder'}
-                    </span>
+                    <Folder className="w-3.5 h-3.5 text-primary/70 group-hover:text-primary shrink-0" />
                     <span className="truncate">{f.path}</span>
                     {f.name && f.name.toLowerCase() !== f.path.toLowerCase() && (
                       <span className="text-[10px] text-on-surface-variant/60 font-sans">
