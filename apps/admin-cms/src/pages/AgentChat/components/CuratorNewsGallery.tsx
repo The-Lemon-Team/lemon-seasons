@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Layers,
   LayoutGrid,
+  FolderPlus,
 } from 'lucide-react';
 import { TelegramNewsPreview } from '../../../types';
 
@@ -16,10 +17,11 @@ interface CuratorNewsGalleryProps {
   posts: TelegramNewsPreview[];
   onSaveToCalendar?: (post: TelegramNewsPreview) => void;
   onDiscussInChat?: (post: TelegramNewsPreview) => void;
+  onAddToNote?: (post: TelegramNewsPreview) => void;
 }
 
 export const CuratorNewsGallery: React.FC<CuratorNewsGalleryProps> = React.memo(
-  ({ posts, onSaveToCalendar, onDiscussInChat }) => {
+  ({ posts, onSaveToCalendar, onDiscussInChat, onAddToNote }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
     const [visibleGridCount, setVisibleGridCount] = useState(3);
@@ -183,6 +185,19 @@ export const CuratorNewsGallery: React.FC<CuratorNewsGalleryProps> = React.memo(
               </div>
 
               <div className="flex items-center gap-1.5">
+                {onAddToNote && (
+                  <Button
+                    type="text"
+                    size="small"
+                    onClick={() => onAddToNote(activePost)}
+                    className="text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 text-[10px] h-6 px-2 rounded flex items-center gap-1 border border-amber-500/20"
+                    title="Добавить в Note + (собрать материалы для подкаста / NotebookLM)"
+                  >
+                    <FolderPlus className="w-2.5 h-2.5" />
+                    <span>+ В Note</span>
+                  </Button>
+                )}
+
                 {onDiscussInChat && (
                   <Button
                     type="text"
@@ -247,6 +262,18 @@ export const CuratorNewsGallery: React.FC<CuratorNewsGalleryProps> = React.memo(
                     </span>
 
                     <div className="flex items-center gap-1">
+                      {onAddToNote && (
+                        <button
+                          type="button"
+                          onClick={() => onAddToNote(post)}
+                          className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-colors flex items-center gap-0.5"
+                          title="Добавить в Note +"
+                        >
+                          <FolderPlus className="w-2.5 h-2.5" />
+                          <span>+ В Note</span>
+                        </button>
+                      )}
+
                       {onDiscussInChat && (
                         <button
                           type="button"

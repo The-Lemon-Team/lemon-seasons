@@ -17,6 +17,8 @@ interface ChatMessageListProps {
   onTriggerSingleSynthesis: (msg: ChatMessageRecord) => void;
   onNavigateToCurator?: (curatorId: string, contextPrompt?: string) => void;
   onSaveNewsPostToCalendar?: (post: TelegramNewsPreview) => void;
+  onAddToNote?: (item: any) => void;
+  onGenerateMediaPrompt?: (msg: ChatMessageRecord) => void;
 }
 
 export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
@@ -31,6 +33,8 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
     onTriggerSingleSynthesis,
     onNavigateToCurator,
     onSaveNewsPostToCalendar,
+    onAddToNote,
+    onGenerateMediaPrompt,
   }) => {
     const { containerRef, showScrollBottom, scrollToBottom, handleScroll } = useChatScroll({
       threadId: selectedThreadId,
@@ -70,6 +74,8 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
                 onTriggerSingleSynthesis={onTriggerSingleSynthesis}
                 onNavigateToCurator={onNavigateToCurator}
                 onSaveNewsPostToCalendar={onSaveNewsPostToCalendar}
+                onAddToNote={onAddToNote}
+                onGenerateMediaPrompt={onGenerateMediaPrompt}
               />
             ))
           )}

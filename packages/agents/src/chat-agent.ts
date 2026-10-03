@@ -29,6 +29,54 @@ export interface ProcessChatOptions {
   geminiApiKey?: string;
 }
 
+export function isTelegramPostRequested(prompt: string): boolean {
+  const lower = (prompt || '').toLowerCase();
+  return (
+    lower.startsWith('/post') ||
+    lower.startsWith('/tg') ||
+    lower.startsWith('/telegram') ||
+    lower.includes('telegram post') ||
+    lower.includes('тг пост') ||
+    lower.includes('telegram-пост') ||
+    lower.includes('формате telegram') ||
+    lower.includes('виде telegram') ||
+    lower.includes('режиме telegram') ||
+    lower.includes('формат telegram') ||
+    lower.includes('в телеграм') ||
+    lower.includes('для телеграм')
+  );
+}
+
+export function formatTelegramPostContent(opts: {
+  contourTitle: string;
+  curatorEmoji: string;
+  curatorName: string;
+  date: string;
+  period: 'today' | 'week' | 'month';
+  bullets: string[];
+  takeaway: string;
+  hashtags: string[];
+}): string {
+  const periodLabel =
+    opts.period === 'week'
+      ? 'НЕДЕЛЬНЫЙ ДАЙДЖЕСТ'
+      : opts.period === 'month'
+      ? 'МЕСЯЧНАЯ ПАНОРАМА'
+      : 'СВОДКА ДНЯ';
+  const cleanBullets = opts.bullets.map((b) =>
+    b.replace(/\*\*/g, '').replace(/\[⚡[^\]]+\]/g, '').trim(),
+  );
+  return `⚡ **${periodLabel}: ${opts.contourTitle} (${opts.date})**
+*Куратор: ${opts.curatorEmoji} ${opts.curatorName}*
+
+📌 **Главные сигналы и события:**
+${cleanBullets.map((b) => `• ${b}`).join('\n')}
+
+💡 *Резюме обозревателя:* ${opts.takeaway}
+
+${opts.hashtags.map((h) => `#${h.replace(/^#/, '')}`).join(' ')}`;
+}
+
 export class AgentChatEngine {
   /**
    * Main entrypoint to process a chat message and generate agent replies
@@ -48,6 +96,27 @@ export class AgentChatEngine {
       if (snippet) {
         resolvedTarget = snippet.targetAgent;
         cleanPrompt = parts.slice(1).join(' ').trim() || snippet.prompt;
+      } else if (
+        command === '/post' ||
+        command === '/post-today' ||
+        command === '/post-week' ||
+        command === '/tg' ||
+        command === '/tg-today' ||
+        command === '/tg-week' ||
+        command === '/telegram'
+      ) {
+        const subArg = parts.slice(1).join(' ').trim().toLowerCase();
+        let tf = 'today';
+        if (
+          command === '/post-week' ||
+          command === '/tg-week' ||
+          subArg.startsWith('week') ||
+          subArg.includes('недел')
+        ) {
+          tf = 'week';
+        }
+        const extraPrompt = parts.slice(1).filter((p) => p.toLowerCase() !== 'today' && p.toLowerCase() !== 'week').join(' ').trim();
+        cleanPrompt = `/post ${tf}${extraPrompt ? ' ' + extraPrompt : ''}`;
       } else if (
         command === '/politics' ||
         command === '/politics-today' ||
@@ -172,6 +241,26 @@ export class AgentChatEngine {
       ) {
         resolvedTarget = 'sidework-producer';
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Создай публикацию и подготовь медиа-обогащение на основе курированных данных';
+      } else if (
+        command === '/german' ||
+        command === '/habr' ||
+        command === '/xakep'
+      ) {
+        resolvedTarget = 'german-kernel';
+        cleanPrompt =
+          parts.slice(1).join(' ').trim() ||
+          (command === '/xakep'
+            ? 'Разбор материалов журнала «Хакер» (xakep.ru) и подготовка тематической Super Note'
+            : command === '/habr'
+            ? 'Аналитический разбор публикаций с Habr и IT-статей с группировкой тем в Note'
+            : 'Обзор IT-статей, публикаций на Habr и материалов «Хакера» от Германа');
+      } else if (
+        command === '/notebook' ||
+        command === '/notebook-create' ||
+        command === '/notebook-eta'
+      ) {
+        resolvedTarget = 'notebook-producer';
+        cleanPrompt = parts.slice(1).join(' ').trim() || 'Фоновая генерация дневника и подкаста NotebookLM с расчетом времени готовности';
       } else if (command === '/harvest' || command === '/sources') {
         resolvedTarget = 'harvester-agent';
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Собери свежие данные и проверь входящие источники';
@@ -215,6 +304,21 @@ export class AgentChatEngine {
         lower.includes('кибербезопасн')
       ) {
         resolvedTarget = 'okatsiya';
+      } else if (
+        lower.includes('герман') ||
+        lower.includes('german') ||
+        lower.includes('хабр') ||
+        lower.includes('habr') ||
+        lower.includes('xakep') ||
+        lower.includes('хакер')
+      ) {
+        resolvedTarget = 'german-kernel';
+      } else if (
+        lower.includes('notebooklm') ||
+        lower.includes('создай дневник') ||
+        lower.includes('сделай дневник')
+      ) {
+        resolvedTarget = 'notebook-producer';
       } else if (lower.includes('чэнь') || lower.includes('китай') || lower.includes('атр') || lower.includes('брикс') || lower.includes('юань')) {
         resolvedTarget = 'chen-wei';
       } else if (lower.includes('алекс') || lower.includes('alex') || lower.includes('breaking') || lower.includes('горячие новости') || lower.includes('пульс') || lower.includes('молния')) {
@@ -489,6 +593,40 @@ export class AgentChatEngine {
       );
     }
 
+    if (resolvedTarget === 'german-kernel' || resolvedTarget === 'all') {
+      const germanStories = contextCards.filter(
+        (c) =>
+          c.suggestedCurator === 'german-kernel' ||
+          c.source?.toLowerCase().includes('habr') ||
+          c.source?.toLowerCase().includes('хабр') ||
+          c.source?.toLowerCase().includes('xakep') ||
+          c.source?.toLowerCase().includes('хакер') ||
+          c.category.includes('IT') ||
+          c.category.includes('Схемотехника') ||
+          c.category.includes('Hardware'),
+      );
+      replies.push(
+        this.generateGermanResponse({
+          prompt: cleanPrompt,
+          date,
+          stories: germanStories.length > 0 ? germanStories : contextCards.slice(0, 3),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'notebook-producer') {
+      replies.push(
+        this.generateNotebookProducerResponse({
+          prompt: cleanPrompt,
+          date,
+          stories: contextCards.slice(0, 3),
+          timestamp,
+        }),
+      );
+    }
+
     return replies;
   }
 
@@ -643,7 +781,26 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
     const aiStory = ctx.stories.find((s) => s.category.includes('Интеллект') || s.suggestedTags.includes('AI'));
     const techStory = ctx.stories.find((s) => !s.category.includes('Интеллект') && s.suggestedCurator === 'okatsiya');
 
-    const text = `### ⚡ Окация: Сводка IT & AI на сегодня (${ctx.date})
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'IT, AI & Архитектура',
+          curatorEmoji: '⚡',
+          curatorName: 'Окация',
+          date: ctx.date,
+          period,
+          bullets: [
+            aiStory ? `${aiStory.title} (${aiStory.source}): ${aiStory.summary}` : 'LLM & Агенты: внедрение мультиагентных систем в production-пайплайны.',
+            'DevOps & Cloud: масштабирование кластеров Kubernetes и устойчивость CI/CD.',
+            'Backend & HighLoad: оптимизация параллелизма в распределенных базах данных и gRPC-микросервисы.',
+          ],
+          takeaway: 'Главный вектор — интеграция AI-компонентов в инженерную инфраструктуру без потери наблюдаемости и надежности.',
+          hashtags: ['IT', 'AI', 'DevOps', 'HighLoad', 'Архитектура'],
+        })
+      : `### ⚡ Окация: Сводка IT & AI на сегодня (${ctx.date})
 
 Ниже представлен структурированный срез по ключевым направлениям технологий:
 
@@ -695,8 +852,185 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       avatar: '⚡',
       text,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'okatsiya',
+        dateScope: ctx.date,
+      },
       resonanceScore: 88,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      suggestedCard,
+    };
+  }
+
+  /**
+   * German «Kernel»: Habr & IT articles overview, oldschool hardware writeups, and Note synthesis
+   */
+  private static generateGermanResponse(ctx: {
+    prompt: string;
+    date: string;
+    stories: DailyNewsCard[];
+    events: any[];
+    timestamp: string;
+  }): ChatMessage {
+    const mainStory = ctx.stories[0];
+    const secondaryStory = ctx.stories[1];
+
+    const bullets = [
+      mainStory
+        ? `**${mainStory.title}** (Источник: ${mainStory.source}): практический разбор статьи с выделением ключевых инженерных тезисов.`
+        : 'Свежие публикации на Habr: прикладной опыт разработчиков, разборы архитектур и инженерные находки.',
+      secondaryStory
+        ? `**${secondaryStory.title}**: интересная смежная тема, отлично дополняющая общую картину.`
+        : 'Олдскул и схемотехника: разборы старых плат и анализ ретро-архитектур от инженеров сообщества.',
+      'Материалы журнала «Хакер» (xakep.ru): статьи подготовлены для группировки в тематическую Super Note под NotebookLM.',
+    ];
+
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'Habr & IT-сообщество / Хакер',
+          curatorEmoji: '📟',
+          curatorName: 'Герман «Кернел»',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Меньше корпоративного пафоса — смотрим на то, что инженеры реально пишут в статьях и собирают руками.',
+          hashtags: ['Habr', 'Хакер', 'ITСтатьи', 'СвояКухня', 'NoteСинтез'],
+        })
+      : `### 📟 Обзор IT-статей и Habr от Германа
+
+Меньше корпоративного пафоса и громких пресс-релизов — смотрим на то, что реально пишет сообщество и практики.
+
+По материалам на **${ctx.date}**:
+
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+> **Ремарка Германа:**  
+> «Окация пусть рассказывает про презентации в долине и котировки бигтеха, а на нашей кухне важны живые статьи: что люди собирают руками, как решают проблемы в проде и какие олдскульные подходы неожиданно снова становятся актуальными.  
+> Все проверенные материалы разложены по полочкам и упакованы в структурированную Note.»`;
+
+    const suggestedCard = {
+      title: mainStory
+        ? `[Habr / Хакер] ${mainStory.title}`
+        : `[Habr Дайджест] Разбор статей IT-сообщества (${ctx.date})`,
+      description: `## 📟 Разбор публикаций Habr и IT-статей: ${ctx.date}
+
+### Ключевые материалы сообщества:
+1. ${mainStory ? mainStory.title : 'Инженерный лонгрид на Habr'} — подробный разбор и практические выводы.
+2. ${secondaryStory ? secondaryStory.title : 'Ретро-схемотехника и платы'} — нестандартный взгляд из архивов.
+
+### Выводы для базы знаний:
+- Статьи проверены и структурированы для включения в тематический кластер.
+- Подготовлены ссылки и теги для последующей передачи в NotebookLM.
+
+---
+*Сформировано куратором IT-публикаций Германом в Project Lenta.*`,
+      type: NoteType.SINGLE,
+      folder: 'Tech/Habr',
+      taxonomyPath: 'tech.community.habr',
+      hashtags: ['Habr', 'ITСтатьи', 'Хакер', 'СвояКухня', 'NoteСинтез'],
+      curator: 'Герман «Кернел»',
+      resonanceScore: 82,
+      sourceLink: mainStory?.url || 'https://habr.com',
+    };
+
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `german-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'german-kernel',
+      curatorName: 'Герман «Кернел»',
+      curatorEmoji: '📟',
+      curatorRole: 'Обозреватель Habr, IT-публикаций и редактор дайджестов',
+      sourceName: s.source || 'Habr / Хакер',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['Habr', 'Хакер', 'Инженерия'],
+      resonanceScore: s.resonanceScore || 82,
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Практический опыт разработчиков.', 'Архитектурные паттерны и олдскул.'],
+      contourBadge: '📟 Habr & Хакер / Своя кухня',
+      publishedAt: s.publishedAt || '14:20',
+    }));
+
+    return {
+      id: `msg-german-${Date.now()}`,
+      sender: 'german-kernel',
+      senderName: 'Герман «Кернел»',
+      senderRole: 'Обозреватель Habr, IT-публикаций и редактор дайджестов',
+      avatar: '📟',
+      text,
+      timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'german-kernel',
+        dateScope: ctx.date,
+      },
+      resonanceScore: 82,
+      sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
+      suggestedCard,
+    };
+  }
+
+  /**
+   * NotebookLM Producer: Background Notebook & Audio Overview dispatch
+   */
+  private static generateNotebookProducerResponse(ctx: {
+    prompt: string;
+    date: string;
+    stories: DailyNewsCard[];
+    timestamp: string;
+  }): ChatMessage {
+    const text = `### 📓 Режиссер NotebookLM: Фоновая генерация дневника
+
+Задача на создание дневника принята в конвейер фоновой обработки!
+
+**Пайплайн создания NotebookLM:**
+1. **Сборка источников**: Упаковка выбранных статей и ссылок Super Note в единый Markdown Source Bundle (~15–20 сек).
+2. **Индексация в ядре NotebookLM**: Анализ связей и подготовка тезисов (~30 сек).
+3. **Генерация 2-Host аудио-диалога**: Deep Dive Audio Overview (~160 сек).
+4. **Асинхронный коллбэк**: Автоматическое обновление целевой Note с прикрепленным плеером и стенограммой.
+
+⏱️ **Расчетное время готовности (Smart ETA):** ~**3 мин 30 сек** (210 сек).
+
+> *Вы перенаправлены на созданную целевую Note. Она создается в фоне — вы можете свободно отвлечься, страница обновится автоматически по готовности.*`;
+
+    const suggestedCard = {
+      title: `🎙️ NotebookLM Дневник: IT & Своя кухня (${ctx.date})`,
+      description: `# 🎙️ NotebookLM Дневник: IT & Своя кухня (${ctx.date})
+
+> ⏳ **Статус:** Генерация дневника в процессе...  
+> ⏱️ **Расчетное время (ETA):** ~3 мин 30 сек  
+> 🔗 **Родительская задача:** Super Note по материалам Habr & Хакер
+
+---
+*Дневник создается в фоне агентом notebook-producer. После завершения сюда будет прикреплен аудиоплеер и стенограмма.*`,
+      type: NoteType.DONE,
+      folder: 'Podcasts',
+      taxonomyPath: 'media.podcast.notebooklm',
+      hashtags: ['NotebookLM', 'Дневник', 'АудиоДайджест', 'Habr', 'Хакер'],
+      curator: 'Герман «Кернел»',
+      resonanceScore: 89,
+    };
+
+    return {
+      id: `msg-notebook-${Date.now()}`,
+      sender: 'notebook-producer',
+      senderName: 'Режиссер NotebookLM',
+      senderRole: 'Агент создания дневников и подкастов NotebookLM',
+      avatar: '📓',
+      text,
+      timestamp: ctx.timestamp,
+      resonanceScore: 89,
+      sources: ['NotebookLM Engine', 'Google Gemini'],
       suggestedCard,
     };
   }
@@ -724,7 +1058,22 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       'Оценка внутреннего контура: риски потребительской инфляции купируются мерами ЦБ РФ и контролем торговых наценок.',
     ];
 
-    const text = `### 🇷🇺 Оценка внутреннего контура РФ
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'Внутренний контур РФ',
+          curatorEmoji: '🇷🇺',
+          curatorName: 'Иван Белый',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Регуляторное поле стабильно. Ключевая нагрузка — согласование бюджета и баланс оптового звена энергоносителей.',
+          hashtags: ['ПолитикаРФ', 'Госдума', 'ФАС', 'Регуляторика'],
+        })
+      : `### 🇷🇺 Оценка внутреннего контура РФ
 
 По повестке на **${ctx.date}** в фокусе внимания внутреннего контура:
 
@@ -782,6 +1131,13 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       avatar: '🇷🇺',
       text,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'ivan-bely',
+        dateScope: ctx.date,
+      },
       resonanceScore: 82,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
@@ -812,7 +1168,22 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       'Глобальный контекст: осторожная выжидательная позиция трейдеров перед публикацией новых данных по запасам и инфляции.',
     ];
 
-    const text = `### 🌐 Оценка международного контура и рынков
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'Международные рынки & Санкции',
+          curatorEmoji: '🌐',
+          curatorName: 'Kirk Kitten',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Давление регуляторов смещается в плоскость вторичного финансово-логистического комплаенса и страховки.',
+          hashtags: ['OFAC', 'Санкции', 'Логистика', 'Танкеры', 'МировыеРынки'],
+        })
+      : `### 🌐 Оценка международного контура и рынков
 
 Сигналы внешнего контура на **${ctx.date}**:
 
@@ -870,6 +1241,13 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       avatar: '🌐',
       text,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'kirk-kitten',
+        dateScope: ctx.date,
+      },
       resonanceScore: 87,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
@@ -1047,7 +1425,22 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       'Технологический контур: устойчивость поставок промышленной электроники и компонентов в условиях западных экспортных барьеров.',
     ];
 
-    const text = `### 🇨🇳 Оценка восточного контура: АТР и БРИКС
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'АТР, Китай & БРИКС',
+          curatorEmoji: '🇨🇳',
+          curatorName: 'Чэнь Вэй',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Торгово-логистический разворот на Восток перешел в стадию институционализации: фокус на независимой межбанковской инфраструктуре.',
+          hashtags: ['Китай', 'АТР', 'БРИКС', 'Логистика', 'Клиринг'],
+        })
+      : `### 🇨🇳 Оценка восточного контура: АТР и БРИКС
 
 Повестка Азиатско-Тихоокеанского региона на **${ctx.date}**:
 
@@ -1105,6 +1498,13 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       avatar: '🇨🇳',
       text,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'chen-wei',
+        dateScope: ctx.date,
+      },
       resonanceScore: 80,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
@@ -1298,6 +1698,25 @@ ${resonanceNodes
       resonanceScore: 86,
     };
 
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const postBullets = [
+      ...ivanBullets.slice(0, 1),
+      ...kirkBullets.slice(0, 1),
+      ...chenBullets.slice(0, 1),
+    ];
+    const textOutput = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'Политическая коллегия',
+          curatorEmoji: '🏛️',
+          curatorName: 'Сводный аналитический деск',
+          date: ctx.date,
+          period: timeframe === 'week' ? 'week' : 'today',
+          bullets: postBullets,
+          takeaway: 'Синхронизация регуляторного поля РФ, санкционного давления и восточных финансовых маршрутов.',
+          hashtags: ['Политика', 'Коллегия', 'СводкаДня', 'Аналитика', 'Резонанс'],
+        }) + `\n\n### ⚡ Обнаруженные узлы пересечения:\n` + resonanceNodes.map((n, idx) => `${idx + 1}. **${n.title}** [${n.resonanceScore}%]: \`${n.suggestedPrompt}\``).join('\n')
+      : markdownText;
+
     return {
       id: `msg-group-${Date.now()}`,
       sender: 'political-group',
@@ -1309,8 +1728,15 @@ ${resonanceNodes
           ? 'Месячный стратегический деск'
           : 'Сводный деск политических кураторов',
       avatar: timeframe === 'week' ? '📅' : timeframe === 'month' ? '🗓️' : '🏛️',
-      text: markdownText,
+      text: textOutput,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'summary',
+        period: timeframe,
+        curatorId: 'political-group',
+        dateScope: ctx.date,
+      },
       resonanceScore: 86,
       sources: ['Правительство РФ', 'СПбМТСБ', 'OFAC', 'Lloyd\'s List', 'Xinhua', 'PBOC'],
       resonanceNodes,
@@ -1576,15 +2002,32 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
     const role = persona?.role || 'Предметный куратор';
     const emoji = persona?.emoji || '👤';
     const mainStory = ctx.stories[0];
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
 
-    const text =
-      `### ${emoji} ${name}: Аналитический срез (${ctx.date})\n\n` +
-      `**Оптика:** ${persona?.description || persona?.scope}\n\n` +
-      (mainStory
-        ? `**Ключевой сюжет:** «${mainStory.title}»\n` +
-          `> ${mainStory.summary}\n\n` +
-          `**Оценка контура:** Зафиксирован высокий аналитический приоритет. Потенциал ветвления сюжета в смежные сферы: \`${mainStory.branchingPotentialScore || 85}%\`.\n`
-        : `*Прямых триггеров в оперативной ленте за текущие сутки не зафиксировано. Продолжается непрерывный мониторинг входящих сигналов по домену.*`);
+    const bullets = ctx.stories.length > 0
+      ? ctx.stories.map((s) => `**${s.title}**: ${s.summary.substring(0, 140)}...`)
+      : ['Мониторинг первичных источников по предметному домену. Оценка сигналов в норме.'];
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: persona?.scope?.split(',')[0] || name,
+          curatorEmoji: emoji,
+          curatorName: name,
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: `Зафиксирован аналитический приоритет по направлению ${name}. Сюжеты классифицированы и готовы к включению в базу знаний.`,
+          hashtags: [name.replace(/\s+/g, ''), 'Аналитика', 'Мониторинг'],
+        })
+      : `### ${emoji} ${name}: Аналитический срез (${ctx.date})\n\n` +
+        `**Оптика:** ${persona?.description || persona?.scope}\n\n` +
+        (mainStory
+          ? `**Ключевой сюжет:** «${mainStory.title}»\n` +
+            `> ${mainStory.summary}\n\n` +
+            `**Оценка контура:** Зафиксирован высокий аналитический приоритет. Потенциал ветвления сюжета в смежные сферы: \`${mainStory.branchingPotentialScore || 85}%\`.\n`
+          : `*Прямых триггеров в оперативной ленте за текущие сутки не зафиксировано. Продолжается непрерывный мониторинг входящих сигналов по домену.*`);
 
     const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
       id: `${curatorId}-post-${idx}-${ctx.date}`,
@@ -1612,6 +2055,13 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       avatar: emoji,
       text,
       timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId,
+        dateScope: ctx.date,
+      },
       resonanceScore: mainStory?.resonanceScore || 85,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,

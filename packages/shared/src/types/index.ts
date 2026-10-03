@@ -663,6 +663,8 @@ export interface ChatMessageRecord {
   senderRole: string;
   avatar?: string | null;
   text: string;
+  messageType?: string;
+  metadata?: any;
   resonanceScore?: number | null;
   sources?: string[];
   resonanceNodes?: any;
@@ -892,6 +894,7 @@ export type CuratorId =
   | 'ivan-bely'
   | 'kirk-kitten'
   | 'okatsiya'
+  | 'german-kernel'
   | 'chen-wei'
   | 'alex-vector'
   | 'marcus-vane'
@@ -903,6 +906,7 @@ export type WorkerAgentId =
   | 'survey-coordinator'
   | 'sidework-producer'
   | 'podcast-agent'
+  | 'notebook-producer'
   | 'independent-analyst'
   | 'dispatcher';
 

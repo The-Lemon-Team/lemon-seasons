@@ -145,6 +145,8 @@ export interface ChatMessage {
   avatar?: string;
   text: string;
   timestamp: string;
+  messageType?: 'DEFAULT' | 'TELEGRAM_POST' | 'SUMMARY_DAY' | 'SUMMARY_WEEK' | 'SURVEY_RESULT';
+  metadata?: Record<string, any>;
   resonanceScore?: number;
   sources?: string[];
   resonanceNodes?: ResonanceNodeCandidate[];
@@ -175,6 +177,23 @@ export interface ChatSnippet {
 }
 
 export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
+  // --- 0. Telegram Post Snippets ---
+  {
+    id: 'snip-tg-today',
+    command: '/post today',
+    label: '📱 TG Пост: Сводка дня',
+    prompt: '/post today Сформируй сводку за сегодня в формате Telegram Post с ключевыми тезисами, эмодзи и тегами.',
+    description: 'Оформить сводку текущей даты в виде ёмкого Telegram-поста для публикации',
+    targetAgent: 'all',
+  },
+  {
+    id: 'snip-tg-week',
+    command: '/post week',
+    label: '📱 TG Пост: Панорама недели',
+    prompt: '/post week Сформируй недельный дайджест в формате Telegram Post с главными выводами и тегами.',
+    description: 'Сформировать недельный дайджест в виде структурированного Telegram-поста',
+    targetAgent: 'all',
+  },
   // --- 1. Опрос Кураторов (Survey Coordinator Agent) ---
   {
     id: 'snip-survey-today',
@@ -333,6 +352,30 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     prompt: 'Харвестер, выполни проверку входящих фидов и источников, собери свежие сигналы для передачи кураторам.',
     description: 'Агент сбора новостей сканирует первоисточники и формирует карточки на триаж',
     targetAgent: 'harvester-agent',
+  },
+  {
+    id: 'snip-german-habr',
+    command: '/habr',
+    label: '📟 Герман: Разбор Habr & IT-статей',
+    prompt: 'Герман, сделай подборку и аналитический разбор публикаций с Habr и IT-статей, выдели олдскульные темы и сформируй Note.',
+    description: 'Мониторинг Habr, IT-сообществ, разбор интересных тем и создание тематических заметок',
+    targetAgent: 'german-kernel',
+  },
+  {
+    id: 'snip-german-xakep',
+    command: '/xakep',
+    label: '📟 Герман: Журнал «Хакер»',
+    prompt: 'Герман, покажи разбор материалов журнала «Хакер» (xakep.ru), выдели статьи выпуска и сгруппируй в тематическую Super Note.',
+    description: 'Помесячный разбор журнала Хакер, группировка статей по темам выпуска для передачи в NotebookLM',
+    targetAgent: 'german-kernel',
+  },
+  {
+    id: 'snip-notebook-producer',
+    command: '/notebook',
+    label: '📓 NotebookLM: Создать дневник',
+    prompt: 'NotebookLM Агент, возьми Super Note темы и начни создание дневника и подкаста в фоне с расчетом времени готовности.',
+    description: 'Фоновая сборка блокнота NotebookLM, генерация аудио-дневника и обновление заметки по коллбэку',
+    targetAgent: 'notebook-producer',
   },
 ];
 

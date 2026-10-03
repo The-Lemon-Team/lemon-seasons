@@ -28,6 +28,7 @@ import { CHAT_COMMANDS_REGISTRY } from './components/commandRegistry';
 import { CreateThreadModal } from './components/CreateThreadModal';
 import { CreateFolderModal } from './components/CreateFolderModal';
 import { SaveCardDrawer } from './components/SaveCardDrawer';
+import { AddToNoteModal, NoteAttachmentItem } from './components/AddToNoteModal';
 
 export const AgentChatPage: React.FC = () => {
   // Navigation & Date State
@@ -44,6 +45,7 @@ export const AgentChatPage: React.FC = () => {
   const [isNewThreadModalOpen, setIsNewThreadModalOpen] = useState(false);
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
   const [cardDrawerMsg, setCardDrawerMsg] = useState<ChatMessageRecord | null>(null);
+  const [addToNoteItem, setAddToNoteItem] = useState<NoteAttachmentItem | null>(null);
 
   // Queries
   const { data: folders = [] } = useChatFolders();
@@ -355,6 +357,54 @@ export const AgentChatPage: React.FC = () => {
     setCardDrawerMsg(null);
   }, []);
 
+  const handleOpenAddToNote = useCallback((item: NoteAttachmentItem) => {
+    setAddToNoteItem(item);
+  }, []);
+
+  const handleCloseAddToNote = useCallback(() => {
+    setAddToNoteItem(null);
+  }, []);
+
+  const handleGenerateMediaPrompt = useCallback(
+    async (msg: ChatMessageRecord) => {
+      if (!selectedThreadId) return;
+      const prompt = `/media Сгенерируй профессиональные DALL-E / Midjourney промпты и блок-схему Mermaid для визуализации этого материала: "${msg.text.substring(0, 140)}..."`;
+      try {
+        await sendThreadMessageMutation.mutateAsync({
+          threadId: selectedThreadId,
+          data: {
+            message: prompt,
+            forcedTarget: 'sidework-producer',
+            date: selectedDate,
+          },
+        });
+        message.info('Запрос на генерацию медиа-промптов отправлен сайд-воркеру');
+      } catch (err: any) {
+        message.error(err?.message || 'Ошибка генерации медиа');
+      }
+    },
+    [selectedThreadId, selectedDate, sendThreadMessageMutation]
+  );
+
+  const handleDispatchChatMessage = useCallback(
+    async (prompt: string, forcedTarget?: string) => {
+      if (!selectedThreadId) return;
+      try {
+        await sendThreadMessageMutation.mutateAsync({
+          threadId: selectedThreadId,
+          data: {
+            message: prompt,
+            forcedTarget: forcedTarget as any,
+            date: selectedDate,
+          },
+        });
+      } catch (err: any) {
+        message.error(err?.message || 'Ошибка отправки сообщения');
+      }
+    },
+    [selectedThreadId, selectedDate, sendThreadMessageMutation]
+  );
+
   const handleSaveCardToCalendar = useCallback(
     async (payload: any) => {
       try {
@@ -550,6 +600,8 @@ export const AgentChatPage: React.FC = () => {
           onTriggerSingleSynthesis={handleTriggerSingleSynthesis}
           onNavigateToCurator={handleNavigateToCurator}
           onSaveNewsPostToCalendar={handleSaveNewsPostToCalendar}
+          onAddToNote={handleOpenAddToNote}
+          onGenerateMediaPrompt={handleGenerateMediaPrompt}
         />
 
         <ChatInputBar
@@ -602,6 +654,15 @@ export const AgentChatPage: React.FC = () => {
         isPending={createNoteMutation.isPending}
         onClose={handleCloseCardDrawer}
         onSave={handleSaveCardToCalendar}
+      />
+
+      {/* 7. Modal: Add to Note + (Cluster & Super Note builder for NotebookLM) */}
+      <AddToNoteModal
+        isOpen={Boolean(addToNoteItem)}
+        onClose={handleCloseAddToNote}
+        item={addToNoteItem}
+        activeThread={activeThread}
+        onDispatchChatMessage={handleDispatchChatMessage}
       />
     </div>
   );

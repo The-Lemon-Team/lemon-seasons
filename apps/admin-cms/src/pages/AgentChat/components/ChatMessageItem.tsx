@@ -3,7 +3,7 @@ import { Button, Badge, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Sparkles, Clock, Check, MessageSquare } from 'lucide-react';
+import { Sparkles, Clock, Check, MessageSquare, FolderPlus, Palette, Send, Share2, Copy } from 'lucide-react';
 import { ResonanceNodeCandidate } from '@lemon/agents';
 import { ChatMessageRecord, TelegramNewsPreview } from '../../../types';
 import { CuratorNewsGallery } from './CuratorNewsGallery';
@@ -68,6 +68,8 @@ interface ChatMessageItemProps {
   onTriggerSingleSynthesis?: (msg: ChatMessageRecord) => void;
   onNavigateToCurator?: (curatorId: string, contextPrompt?: string) => void;
   onSaveNewsPostToCalendar?: (post: TelegramNewsPreview) => void;
+  onAddToNote?: (item: any) => void;
+  onGenerateMediaPrompt?: (msg: ChatMessageRecord) => void;
 }
 
 export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
@@ -79,6 +81,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
     onTriggerSingleSynthesis,
     onNavigateToCurator,
     onSaveNewsPostToCalendar,
+    onAddToNote,
+    onGenerateMediaPrompt,
   }) => {
     // Memoize markdown components to keep onNavigateToCurator in scope
     const markdownComponents = useMemo(
@@ -119,6 +123,9 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
           } else if (text.includes('Чэнь Вэй') || text.includes('Восточный контур')) {
             matchedCuratorId = 'chen-wei';
             matchedCuratorName = 'Чэнь Вэй';
+          } else if (text.includes('Герман') || text.includes('Habr') || text.includes('Хакер')) {
+            matchedCuratorId = 'german-kernel';
+            matchedCuratorName = 'Герману';
           } else if (text.includes('Окация') || text.includes('IT')) {
             matchedCuratorId = 'okatsiya';
             matchedCuratorName = 'Окации';
@@ -201,6 +208,11 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
 
     const isUser = msg.sender === 'user';
     const isOptimistic = Boolean(msg.isOptimistic);
+    const isTelegramPost =
+      msg.messageType === 'TELEGRAM_POST' ||
+      (msg as any).groupSummary?.messageType === 'TELEGRAM_POST' ||
+      msg.metadata?.format === 'telegram_post' ||
+      (msg as any).groupSummary?.metadata?.format === 'telegram_post';
 
     const newsPostsList: TelegramNewsPreview[] =
       msg.groupSummary?.newsPosts || (msg as any).newsPosts || [];
@@ -225,6 +237,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
               ? isOptimistic
                 ? 'bg-primary/20 border-primary/50 text-white rounded-tr-none opacity-90'
                 : 'bg-primary/15 border-primary/40 text-white rounded-tr-none'
+              : isTelegramPost
+              ? 'bg-[#131b26] border-sky-500/30 text-gray-200 rounded-tl-none shadow-xl ring-1 ring-sky-500/10'
               : 'bg-[#161b22] border-white/10 text-gray-200 rounded-tl-none shadow-lg'
           }`}
         >
@@ -233,6 +247,15 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
             <div className="flex items-center gap-2">
               <span className="font-bold text-white tracking-wide">{msg.senderName}</span>
               <span className="text-gray-400 opacity-80">· {msg.senderRole}</span>
+              {isTelegramPost && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  <span>✈️</span>
+                  <span>TG POST</span>
+                  {(msg.metadata?.period === 'week' || (msg as any).groupSummary?.metadata?.period === 'week') && (
+                    <span className="text-sky-200">· НЕДЕЛЯ</span>
+                  )}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -301,6 +324,22 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
               onDiscussInChat={(post) =>
                 onNavigateToCurator?.(post.curatorId, `Расскажи подробнее про: ${post.title}`)
               }
+              onAddToNote={
+                onAddToNote
+                  ? (post) =>
+                      onAddToNote({
+                        title: post.title,
+                        summary: post.summary,
+                        rawText: post.rawText,
+                        sourceUrl: post.sourceUrl,
+                        curator: post.curatorName,
+                        curatorId: post.curatorId,
+                        date: (post as any).date || msg.createdAt,
+                        tags: post.tags,
+                        resonanceScore: post.resonanceScore,
+                      })
+                  : undefined
+              }
             />
           )}
 
@@ -330,25 +369,130 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
 
           {/* Action Buttons Bar */}
           {!isUser && (
-            <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-2 text-[11px]">
-              <Button
-                type="text"
-                size="small"
-                onClick={() => onOpenCardDrawer(msg)}
-                className="text-primary hover:text-primary/80 hover:bg-primary/10 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold"
-              >
-                <span className="material-symbols-outlined text-[14px]">bookmark_add</span>
-                <span>В календарь заметок</span>
-              </Button>
+            <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between gap-2 text-[11px] flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {isTelegramPost ? (
+                  <>
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => onCopyText(msg.text)}
+                      className="text-sky-300 hover:text-sky-100 hover:bg-sky-500/15 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold border border-sky-500/30"
+                      title="Копировать в буфер обмена для Telegram"
+                    >
+                      <Share2 className="w-2.5 h-2.5 text-sky-400" />
+                      <span>Копировать для TG</span>
+                    </Button>
 
-              <Button
-                type="text"
-                size="small"
-                onClick={() => onCopyText(msg.text)}
-                className="text-gray-400 hover:text-white text-[11px] h-6 px-1.5"
-              >
-                Копировать
-              </Button>
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => onOpenCardDrawer(msg)}
+                      className="text-primary hover:text-primary/80 hover:bg-primary/10 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold"
+                      title="Сохранить в календарь хроники"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">bookmark_add</span>
+                      <span>В календарь</span>
+                    </Button>
+
+                    {onGenerateMediaPrompt && (
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() => onGenerateMediaPrompt(msg)}
+                        className="text-purple-300 hover:text-purple-100 hover:bg-purple-500/15 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold border border-purple-500/30"
+                        title="Сгенерировать медиа-промпт (DALL-E / Midjourney / Mermaid)"
+                      >
+                        <Palette className="w-2.5 h-2.5 text-purple-400" />
+                        <span>Медиа-промпт</span>
+                      </Button>
+                    )}
+
+                    {onAddToNote && (
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() =>
+                          onAddToNote({
+                            title: msg.suggestedCard?.title || `${msg.senderName}: TG Сводка`,
+                            summary: msg.text.substring(0, 240),
+                            rawText: msg.text,
+                            curator: msg.senderName,
+                            curatorId: msg.sender,
+                            date: msg.metadata?.dateScope || msg.createdAt,
+                            tags: msg.suggestedCard?.hashtags || ['TGPost', 'Сводка'],
+                            resonanceScore: msg.resonanceScore || 85,
+                          })
+                        }
+                        className="text-amber-300 hover:text-amber-100 hover:bg-amber-500/15 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold border border-amber-500/30"
+                        title="Добавить в Super Note (для дайджеста / NotebookLM)"
+                      >
+                        <FolderPlus className="w-2.5 h-2.5 text-amber-400" />
+                        <span>+ В Note</span>
+                      </Button>
+                    )}
+
+                    {onNavigateToCurator && (
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() =>
+                          onNavigateToCurator(msg.sender, `Обсудим эту сводку: ${msg.text.substring(0, 80)}...`)
+                        }
+                        className="text-gray-400 hover:text-white hover:bg-white/5 text-[11px] h-6 px-1.5 flex items-center gap-1"
+                      >
+                        <MessageSquare className="w-2.5 h-2.5 text-sky-400" />
+                        <span>Обсудить</span>
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => onOpenCardDrawer(msg)}
+                      className="text-primary hover:text-primary/80 hover:bg-primary/10 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">bookmark_add</span>
+                      <span>В календарь заметок</span>
+                    </Button>
+
+                    {onAddToNote && (
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() =>
+                          onAddToNote({
+                            title: msg.suggestedCard?.title || `${msg.senderName}: Анализ`,
+                            summary: msg.text.substring(0, 240),
+                            rawText: msg.text,
+                            curator: msg.senderName,
+                            curatorId: msg.sender,
+                            date: msg.createdAt,
+                            tags: msg.suggestedCard?.hashtags,
+                            resonanceScore: msg.resonanceScore,
+                          })
+                        }
+                        className="text-amber-300 hover:text-amber-100 hover:bg-amber-500/15 text-[11px] h-6 px-2 flex items-center gap-1 border border-amber-500/30"
+                        title="Добавить в Note +"
+                      >
+                        <FolderPlus className="w-2.5 h-2.5 text-amber-400" />
+                        <span>+ В Note</span>
+                      </Button>
+                    )}
+
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => onCopyText(msg.text)}
+                      className="text-gray-400 hover:text-white text-[11px] h-6 px-1.5"
+                    >
+                      Копировать
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

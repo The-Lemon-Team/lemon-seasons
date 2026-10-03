@@ -199,6 +199,7 @@ export class CuratorSurveyAgent {
           'kirk-kitten',
           'chen-wei',
           'okatsiya',
+          'german-kernel',
           'alex-vector',
           'marcus-vane',
           'tariq-said',
@@ -247,6 +248,9 @@ export class CuratorSurveyAgent {
       }
       if (curatorId === 'okatsiya') {
         return text.includes('ai') || text.includes('ии') || text.includes('нейросеть') || text.includes('it') || text.includes('devops') || text.includes('bigtech');
+      }
+      if (curatorId === 'german-kernel') {
+        return text.includes('хабр') || text.includes('habr') || text.includes('xakep') || text.includes('хакер') || text.includes('плата') || text.includes('платы') || text.includes('олдскул') || text.includes('схемотехник') || text.includes('стать');
       }
       if (curatorId === 'alex-vector') {
         return (
@@ -352,6 +356,13 @@ export class CuratorSurveyAgent {
       }
       resonancePoints.push('Дефицит вычислительных мощностей и дата-центрового охлаждения', 'Ужесточение регуляций экспортного контроля на чипы и ИИ');
       if (sourceCitations.length === 0) sourceCitations.push('Hugging Face Daily', 'The Register', 'GitHub Trending', 'Semiconductor Digest');
+    } else if (curatorId === 'german-kernel') {
+      if (keyTheses.length === 0) {
+        keyTheses.push('Мониторинг прикладных публикаций на Habr: опыт внедрения, разборы архитектурных компромиссов и нестандартные инженерные решения.');
+        keyTheses.push('Олдскул и схемотехника: восстановление винтажного железа, анализ плат и рост интереса к ретро-платформам на фоне внешних инфоповодов.');
+      }
+      resonancePoints.push('Рост интереса к олдскульным и оффлайн-решениям на фоне сбоев глобальных облаков', 'Подготовка материалов журнала «Хакер» под тематические Super Note и NotebookLM');
+      if (sourceCitations.length === 0) sourceCitations.push('Habr Engineering', 'Журнал «Хакер» (xakep.ru)', 'Retro-Computing Hub');
     } else if (curatorId === 'alex-vector') {
       if (keyTheses.length === 0) {
         keyTheses.push('Оперативный мониторинг мировых агентств и X/Telegram: фильтрация экстренных молний и валидация первоисточников.');

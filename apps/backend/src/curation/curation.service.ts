@@ -99,6 +99,8 @@ export class CurationService {
     ? '🇨🇳 Восточный контур: АТР & БРИКС (Чэнь Вэй)'
     : curator === 'okatsiya' || curator === 'Окация'
     ? '⚡ Контур IT & AI (Окация)'
+    : curator === 'german-kernel' || curator === 'Герман' || curator === 'Герман «Кернел»'
+    ? '📟 Контур Habr & IT-статей (Герман «Кернел»)'
     : 'Общий мониторинг'
 }  
 > **Индекс резонанса:** \`${targetCard.resonanceScore}%\`

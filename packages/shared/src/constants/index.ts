@@ -389,6 +389,20 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     iconName: 'Anchor',
     description: 'Оптика физических артерий глобальной экономики. Измеряет материальные последствия геополитики: уязвимость проливов, стоимость фрахта танкеров и дефициты сырья.',
   },
+  'german-kernel': {
+    id: 'german-kernel',
+    name: 'Герман «Кернел»',
+    shortName: 'Герман',
+    role: 'Обозреватель Habr, IT-публикаций и редактор дайджестов',
+    scope: 'Habr, журнал «Хакер» (xakep.ru), статьи IT-сообщества, олдскул-разборы плат и схемотехники, создание тематических Note',
+    accentColor: '#10b981', // Emerald CRT / Terminal Green
+    borderAccent: '#059669',
+    bgLight: 'rgba(16, 185, 129, 0.12)',
+    badgeBg: 'rgba(16, 185, 129, 0.22)',
+    emoji: '📟',
+    iconName: 'Terminal',
+    description: 'Инженерная и комьюнити-оптика. Главный навык — мониторинг публикаций на Habr и IT-статей из сети, разбор олдскульных тем и создание структурированных тематических Note по материалам.',
+  },
 };
 
 export const CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
@@ -401,6 +415,9 @@ export function getCuratorPersona(idOrName?: string | null): CuratorPersona | nu
   // Specific alias mappings
   if (clean === 'окация' || clean === 'акация' || clean === 'okatsiya' || clean === 'it' || clean === 'ai') {
     return CURATOR_PERSONAS['okatsiya'];
+  }
+  if (clean === 'герман' || clean === 'герман кернел' || clean === 'german' || clean === 'german-kernel' || clean === 'хабр' || clean === 'habr' || clean === 'хакер' || clean === 'xakep') {
+    return CURATOR_PERSONAS['german-kernel'];
   }
   if (clean === 'иван' || clean === 'иван белый' || clean === 'ivan') {
     return CURATOR_PERSONAS['ivan-bely'];
@@ -468,12 +485,12 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     name: 'IT & AI Совет',
     shortName: 'Технологии',
     emoji: '⚡',
-    description: 'Технологический совет по искусственному интеллекту, BigTech, инфраструктуре и информационной безопасности',
-    curatorIds: ['okatsiya'],
+    description: 'Технологический совет по искусственному интеллекту, BigTech, инфраструктуре, Habr-сообществу и журналу «Хакер»',
+    curatorIds: ['okatsiya', 'german-kernel'],
     coordinatorId: 'survey-coordinator',
     accentColor: '#a855f7',
     badgeBg: 'rgba(168, 85, 247, 0.16)',
-    defaultScope: 'AI/LLM, системная разработка, облака, микроэлектроника и безопасность',
+    defaultScope: 'AI/LLM, системная разработка, BigTech, мониторинг Habr, журнал «Хакер», олдскул-железо и безопасность',
   },
   'macro-group': {
     id: 'macro-group',
@@ -528,12 +545,13 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     name: 'Полная коллегия кураторов',
     shortName: 'Все кураторы',
     emoji: '🌐',
-    description: 'Объединенный совет всех 8 предметных кураторов Project Lenta (РФ, Мир, АТР, IT & AI, Breaking, Nexus, MENA, Сырье)',
+    description: 'Объединенный совет всех 9 предметных кураторов Project Lenta (РФ, Мир, АТР, IT BigTech, Habr/Хакер, Breaking, Nexus, MENA, Сырье)',
     curatorIds: [
       'ivan-bely',
       'kirk-kitten',
       'chen-wei',
       'okatsiya',
+      'german-kernel',
       'alex-vector',
       'marcus-vane',
       'tariq-said',
@@ -542,7 +560,7 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     coordinatorId: 'survey-coordinator',
     accentColor: '#3b82f6',
     badgeBg: 'rgba(59, 130, 246, 0.16)',
-    defaultScope: 'Сквозная 360-панорама всех ключевых мировых, внутренних, энергетических и технологических событий',
+    defaultScope: 'Сквозная 360-панорама всех ключевых мировых, внутренних, энергетических, прикладных и технологических событий',
   },
 };
 
@@ -653,6 +671,19 @@ export const WORKER_AGENTS: Record<string, WorkerAgentDefinition> = {
     capabilities: ['podcast_scripting', 'audio_overview', 'dialogue_balancing'],
     suggestedSnippets: ['/podcast'],
   },
+  'notebook-producer': {
+    id: 'notebook-producer',
+    name: 'Режиссер NotebookLM',
+    shortName: 'NotebookLM Агент',
+    role: 'Агент создания дневников, подкастов и подготовки источников NotebookLM',
+    avatar: '📓',
+    category: 'sidework',
+    accentColor: '#8b5cf6',
+    badgeBg: 'rgba(139, 92, 246, 0.16)',
+    description: 'Берет тематические Super Note, упаковывает источники в markdown-бандл, запускает создание NotebookLM-дневника в фоне и по коллбэку обновляет целевую заметку.',
+    capabilities: ['source_bundling', 'notebooklm_dispatch', 'eta_estimation', 'async_note_callback', 'audio_overview_pipeline'],
+    suggestedSnippets: ['/notebook', '/notebook-create', '/notebook-eta'],
+  },
   'independent-analyst': {
     id: 'independent-analyst',
     name: 'Независимый Арбитр',
@@ -678,6 +709,7 @@ export function getWorkerAgent(idOrName?: string | null): WorkerAgentDefinition 
   if (clean === 'опрос' || clean === 'опросчик' || clean === 'survey' || clean === 'survey-coordinator') return WORKER_AGENTS['survey-coordinator'];
   if (clean === 'сайд' || clean === 'сайд-работа' || clean === 'sidework' || clean === 'контент') return WORKER_AGENTS['sidework-producer'];
   if (clean === 'подкаст' || clean === 'podcast') return WORKER_AGENTS['podcast-producer'];
+  if (clean === 'notebook' || clean === 'notebooklm' || clean === 'дневник' || clean === 'блокнот' || clean === 'notebook-producer') return WORKER_AGENTS['notebook-producer'];
   if (clean === 'арбитр' || clean === 'синтез' || clean === 'synthesis') return WORKER_AGENTS['independent-analyst'];
   return WORKER_AGENTS_LIST.find((a) => a.id.toLowerCase() === clean || a.name.toLowerCase() === clean) || null;
 }

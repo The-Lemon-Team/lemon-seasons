@@ -30,6 +30,8 @@ export const QuickCommandsBar: React.FC<QuickCommandsBarProps> = React.memo(
           !c.command.startsWith('/politics') &&
           !c.command.startsWith('/it') &&
           !c.command.startsWith('/breaking') &&
+          !c.command.startsWith('/post') &&
+          !c.command.startsWith('/tg') &&
           c.command !== '/alex'
       );
     }, []);
@@ -43,7 +45,14 @@ export const QuickCommandsBar: React.FC<QuickCommandsBarProps> = React.memo(
             <span className="hidden sm:inline">Команды:</span>
           </div>
 
-          {/* 1. Grouped Hover Controllers: /politics, /it, /breaking */}
+          {/* 1. Grouped Hover Controllers: /post, /politics, /it, /breaking */}
+          <PeriodCommandDropdown
+            group={GROUPED_COMMANDS_REGISTRY.post}
+            onExecuteCommand={onExecuteCommand}
+            onInsertCommand={onInsertCommand}
+            placement="topLeft"
+          />
+
           <PeriodCommandDropdown
             group={GROUPED_COMMANDS_REGISTRY.politics}
             onExecuteCommand={onExecuteCommand}

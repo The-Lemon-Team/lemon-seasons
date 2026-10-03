@@ -630,9 +630,19 @@ export class ChatsService implements OnModuleInit {
       throw new NotFoundException(`Чат с ID ${threadId} не найден.`);
     }
 
-    return this.prisma.chatMessageRecord.findMany({
+    const messages = await this.prisma.chatMessageRecord.findMany({
       where: { threadId },
       orderBy: { createdAt: 'asc' },
+    });
+
+    return messages.map((m) => {
+      const gs = m.groupSummary as any;
+      return {
+        ...m,
+        messageType: gs?.messageType || 'DEFAULT',
+        metadata: gs?.metadata || null,
+        newsPosts: gs?.newsPosts || null,
+      };
     });
   }
 
@@ -707,6 +717,10 @@ export class ChatsService implements OnModuleInit {
         resolvedTarget = 'ivan-bely';
       } else if (lower.startsWith('@okatsiya') || lower.startsWith('/it') || lower.startsWith('/ai') || lower.startsWith('/okatsiya')) {
         resolvedTarget = 'okatsiya';
+      } else if (lower.startsWith('@german') || lower.startsWith('/german') || lower.startsWith('/habr') || lower.startsWith('/xakep') || lower.includes('герман')) {
+        resolvedTarget = 'german-kernel';
+      } else if (lower.startsWith('/notebook') || lower.startsWith('@notebook') || lower.includes('notebooklm')) {
+        resolvedTarget = 'notebook-producer';
       } else if (lower.startsWith('@kirk') || lower.startsWith('/kirk')) {
         resolvedTarget = 'kirk-kitten';
       } else if (lower.startsWith('@chen') || lower.startsWith('/chen')) {
@@ -727,20 +741,26 @@ export class ChatsService implements OnModuleInit {
       orderBy: { createdAt: 'desc' },
     });
 
-    const formattedHistory: ChatMessage[] = recentDbMessages.reverse().map((m) => ({
-      id: m.id,
-      sender: m.sender as any,
-      senderName: m.senderName,
-      senderRole: m.senderRole,
-      avatar: m.avatar || undefined,
-      text: m.text,
-      timestamp: m.createdAt.toISOString(),
-      resonanceScore: m.resonanceScore || undefined,
-      sources: m.sources,
-      resonanceNodes: m.resonanceNodes as any,
-      groupSummary: m.groupSummary as any,
-      suggestedCard: m.suggestedCard as any,
-    }));
+    const formattedHistory: ChatMessage[] = recentDbMessages.reverse().map((m) => {
+      const gs = m.groupSummary as any;
+      return {
+        id: m.id,
+        sender: m.sender as any,
+        senderName: m.senderName,
+        senderRole: m.senderRole,
+        avatar: m.avatar || undefined,
+        text: m.text,
+        timestamp: m.createdAt.toISOString(),
+        resonanceScore: m.resonanceScore || undefined,
+        sources: m.sources,
+        resonanceNodes: m.resonanceNodes as any,
+        groupSummary: m.groupSummary as any,
+        suggestedCard: m.suggestedCard as any,
+        messageType: gs?.messageType || 'DEFAULT',
+        metadata: gs?.metadata || undefined,
+        newsPosts: gs?.newsPosts || undefined,
+      };
+    });
 
     // 5. Invoke Agent Engine
     const generatedReplies = await AgentChatEngine.process({
@@ -756,6 +776,13 @@ export class ChatsService implements OnModuleInit {
     // 6. Persist generated replies
     const savedReplies = [];
     for (const reply of generatedReplies) {
+      const groupSummaryPayload = {
+        ...(typeof reply.groupSummary === 'object' && reply.groupSummary !== null ? reply.groupSummary : {}),
+        messageType: reply.messageType || 'DEFAULT',
+        metadata: reply.metadata || null,
+        newsPosts: reply.newsPosts || null,
+      };
+
       const saved = await this.prisma.chatMessageRecord.create({
         data: {
           threadId,
@@ -767,11 +794,16 @@ export class ChatsService implements OnModuleInit {
           resonanceScore: reply.resonanceScore || null,
           sources: reply.sources || [],
           resonanceNodes: (reply.resonanceNodes as any) || null,
-          groupSummary: (reply.groupSummary as any) || null,
+          groupSummary: (groupSummaryPayload as any) || null,
           suggestedCard: (reply.suggestedCard as any) || null,
         },
       });
-      savedReplies.push(saved);
+      savedReplies.push({
+        ...saved,
+        messageType: reply.messageType || (saved.groupSummary as any)?.messageType || 'DEFAULT',
+        metadata: reply.metadata || (saved.groupSummary as any)?.metadata || null,
+        newsPosts: reply.newsPosts || (saved.groupSummary as any)?.newsPosts || null,
+      });
     }
 
     // 7. Update thread timestamp
