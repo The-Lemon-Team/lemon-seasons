@@ -43,7 +43,6 @@ const CalendarAppInner: React.FC = () => {
     setView,
     setSearch,
     setCurator,
-    setMinResonance,
     selectFeed,
     toggleFeed,
     selectOnlyFeed,
@@ -166,7 +165,6 @@ const CalendarAppInner: React.FC = () => {
       filters.hashtags.length +
       filters.types.length +
       (filters.curator ? 1 : 0) +
-      (typeof filters.minResonance === 'number' ? 1 : 0) +
       (filters.search ? 1 : 0)
     : 0;
 
@@ -226,7 +224,6 @@ const CalendarAppInner: React.FC = () => {
                 onSelectNote={setSelectedNote}
                 filterState={filters}
                 onSelectCurator={setCurator}
-                onSetMinResonance={setMinResonance}
                 onToggleFeed={toggleFeed}
                 onSelectOnlyFeed={selectOnlyFeed}
                 onClearFeeds={clearFeeds}
@@ -255,7 +252,6 @@ const CalendarAppInner: React.FC = () => {
                 filterState={filters}
                 onSelectNote={setSelectedNote}
                 onSelectCurator={setCurator}
-                onSetMinResonance={setMinResonance}
                 onSelectDay={(dateKey) => {
                   setStartDate(dateKey);
                   handleSetView('timeline');
@@ -345,7 +341,6 @@ const CalendarAppInner: React.FC = () => {
           onClose={() => setIsFilterOpen(false)}
           filterState={filters}
           onSelectCurator={setCurator}
-          onSetMinResonance={setMinResonance}
           onSelectFeed={selectFeed}
           onToggleFeed={toggleFeed}
           onSelectOnlyFeed={selectOnlyFeed}

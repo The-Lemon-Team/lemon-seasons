@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { NoteType, CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { NoteType, ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -57,7 +57,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [curator, setCurator] = useState('');
-  const [resonanceScore, setResonanceScore] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,7 +99,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         feedId: feedId || undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
         curator: curator.trim() || undefined,
-        resonanceScore: resonanceScore.trim() ? Number(resonanceScore) : undefined,
       });
 
       // Invalidate queries so that the newly created note is immediately displayed on the calendar
@@ -114,7 +112,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         setHashtagsInput('');
         setFolderPath('');
         setCurator('');
-        setResonanceScore('');
         setIsCustomFolder(false);
         onSuccess?.();
         onClose();
@@ -348,40 +345,24 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 </div>
               </div>
 
-              {/* Curator & Resonance Score */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-xl bg-[#141717] border border-[#242828]">
-                <div>
-                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                    Куратор / Аналитический актор
-                  </label>
-                  <select
-                    value={curator}
-                    onChange={(e) => setCurator(e.target.value)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                  >
-                    <option value="">Без куратора</option>
-                    {CURATOR_PERSONAS_LIST.map((p) => (
-                      <option key={p.id} value={p.name}>
-                        {p.emoji} {p.name} ({p.shortName})
-                      </option>
-                    ))}
-                    <option value="Пользователь">👤 Пользователь (Суверенный синтез)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                    Резонанс пересечения (0 - 100%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="Например: 85"
-                    value={resonanceScore}
-                    onChange={(e) => setResonanceScore(e.target.value)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
-                  />
-                </div>
+              {/* Curator */}
+              <div className="p-3 rounded-xl bg-[#141717] border border-[#242828]">
+                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
+                  Куратор / Аналитический актор
+                </label>
+                <select
+                  value={curator}
+                  onChange={(e) => setCurator(e.target.value)}
+                  className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                >
+                  <option value="">Без куратора</option>
+                  {ACTIVE_CURATOR_PERSONAS_LIST.map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.emoji} {p.name} ({p.shortName})
+                    </option>
+                  ))}
+                  <option value="Пользователь">👤 Пользователь (Суверенный синтез)</option>
+                </select>
               </div>
 
               {/* Grid 3: Start & End Date */}

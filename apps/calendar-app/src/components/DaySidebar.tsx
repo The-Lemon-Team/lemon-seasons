@@ -317,11 +317,6 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                 <Sparkles className="w-3 h-3 text-[#c9cd58]" />
                 Резюме дня (Clean Data)
               </span>
-              {summaryData.averageResonance > 0 && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  ⚡ Резонанс: {summaryData.averageResonance}%
-                </span>
-              )}
             </div>
 
             <p className="text-xs text-[#c9c7b2] leading-relaxed">
@@ -529,8 +524,6 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                   className={`group p-3.5 rounded-xl bg-[#181a1a] border transition-all cursor-pointer flex flex-col gap-2.5 shadow-sm relative overflow-hidden ${
                     note.type === NoteType.DONE
                       ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/20 to-[#181a1a] hover:border-emerald-400'
-                      : typeof note.resonanceScore === 'number' && note.resonanceScore >= 70
-                      ? 'border-amber-500/35 bg-gradient-to-r from-amber-950/15 to-[#181a1a] hover:border-amber-400'
                       : 'border-[#242828] hover:border-[#c9cd58]/60 hover:bg-[#1e2121]'
                   }`}
                 >
@@ -558,7 +551,6 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                       {note.curator && (
                         <CuratorBadge
                           curator={note.curator}
-                          resonanceScore={note.resonanceScore}
                           size="xs"
                         />
                       )}

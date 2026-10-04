@@ -19,7 +19,6 @@ import {
   ArrowUpRight,
   RotateCcw,
   X,
-  Zap,
 } from 'lucide-react';
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
@@ -36,7 +35,6 @@ interface TimelineViewProps {
   onSelectNote: (note: Note) => void;
   filterState?: CalendarFilterState;
   onSelectCurator?: (curator?: string) => void;
-  onSetMinResonance?: (min?: number) => void;
   onToggleFeed?: (feedSlug: string) => void;
   onSelectOnlyFeed?: (feedSlug: string) => void;
   onSetAllFeeds?: (feeds: string[]) => void;
@@ -73,7 +71,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onSelectNote,
   filterState,
   onSelectCurator,
-  onSetMinResonance,
   onToggleFeed,
   onSelectOnlyFeed,
   onSetAllFeeds,
@@ -223,22 +220,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 )}
               </div>
             )}
-
-            {/* Active Min Resonance Filter Pill */}
-            {typeof filterState.minResonance === 'number' && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-[11px] font-mono text-amber-300">
-                <Zap className="w-3 h-3 text-amber-400" />
-                <span>Резонанс ≥{filterState.minResonance}%</span>
-                {onSetMinResonance && (
-                  <button
-                    onClick={() => onSetMinResonance(undefined)}
-                    className="hover:text-white transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
           {onResetFilters &&
@@ -246,8 +227,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               (filterState.containers && filterState.containers.length > 0) ||
               filterState.tags.length > 0 ||
               filterState.types.length > 0 ||
-              filterState.curator ||
-              typeof filterState.minResonance === 'number') && (
+              filterState.curator) && (
               <button
                 onClick={onResetFilters}
                 className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 transition-colors"
@@ -340,8 +320,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     className={`group relative card-panel hover:border-[#484837] active-item rounded p-4 transition-all duration-150 cursor-pointer shadow-sm ${
                       note.type === NoteType.DONE
                         ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/20 to-[#181a1a] shadow-[0_0_15px_rgba(16,185,129,0.08)]'
-                        : typeof note.resonanceScore === 'number' && note.resonanceScore >= 70
-                        ? 'border-amber-500/35 bg-gradient-to-r from-amber-950/15 to-[#181a1a] shadow-[0_0_15px_rgba(245,158,11,0.08)]'
                         : 'hover:shadow-glow-lemon/10'
                     }`}
                   >
@@ -382,7 +360,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         {note.curator && (
                           <CuratorBadge
                             curator={note.curator}
-                            resonanceScore={note.resonanceScore}
                             size="sm"
                             onClick={
                               onSelectCurator

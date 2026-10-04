@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors, CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors, ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { useFeeds, useTaxonomyTree, useHashtags } from '../api/queries';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { ObsidianLogo } from './ObsidianLogo';
@@ -16,7 +16,6 @@ import {
   Globe,
   Folder,
   Bot,
-  Zap,
 } from 'lucide-react';
 import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
@@ -38,7 +37,6 @@ interface FilterSidebarProps {
   onToggleType: (type: NoteType) => void;
   onResetFilters: () => void;
   onSelectCurator?: (curator?: string) => void;
-  onSetMinResonance?: (min?: number) => void;
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -58,7 +56,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onToggleType,
   onResetFilters,
   onSelectCurator,
-  onSetMinResonance,
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
   const { data: feeds = [] } = useFeeds();
@@ -323,14 +320,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* 3. Curators & Cross-Analysis (Помощники и Резонанс) */}
+        {/* 3. Curators (Полномочия сбора информации) */}
         <div>
           <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3">
             <div className="flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5 text-sky-400" />
-              <span>{lang === 'ru' ? 'Кураторы и Анализ' : 'Curators & Analysis'}</span>
+              <span>{lang === 'ru' ? 'Кураторы' : 'Curators'}</span>
             </div>
-            {(filterState.curator || typeof filterState.minResonance === 'number') && (
+            {filterState.curator && (
               <span className="text-[10px] font-mono text-sky-400 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded-full font-bold">
                 active
               </span>
@@ -354,8 +351,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               {!filterState.curator && <Check className="w-3.5 h-3.5 text-[#c9cd58]" />}
             </button>
 
-            {/* All Curators from CURATOR_PERSONAS_LIST */}
-            {CURATOR_PERSONAS_LIST.map((persona) => {
+            {/* Active Curators from ACTIVE_CURATOR_PERSONAS_LIST */}
+            {ACTIVE_CURATOR_PERSONAS_LIST.map((persona) => {
               const isSelected =
                 filterState.curator === persona.name ||
                 filterState.curator === persona.id ||
@@ -392,24 +389,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 </button>
               );
             })}
-          </div>
-
-          {/* High Resonance quick-toggle */}
-          <div className="mt-2.5 pt-2 border-t border-[#242828]">
-            <button
-              onClick={() => onSetMinResonance?.(typeof filterState.minResonance === 'number' ? undefined : 70)}
-              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                typeof filterState.minResonance === 'number'
-                  ? 'bg-amber-950/60 border-amber-500/80 text-amber-300 font-semibold shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                  : 'bg-[#121414]/90 border-[#242828] text-neutral-400 hover:text-amber-300 hover:bg-[#1a1c1c]'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>{lang === 'ru' ? 'Резонанс ≥70% (Пересечение)' : 'Resonance ≥70% (Cross-boundary)'}</span>
-              </div>
-              {typeof filterState.minResonance === 'number' && <Check className="w-3.5 h-3.5 text-amber-400" />}
-            </button>
           </div>
         </div>
 

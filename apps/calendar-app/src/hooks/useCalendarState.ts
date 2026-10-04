@@ -17,7 +17,6 @@ function getDefaultFilterState(): CalendarFilterState {
     types: [],
     search: '',
     curator: undefined,
-    minResonance: undefined,
   };
 }
 
@@ -100,7 +99,6 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
 
   const search = params.get('search') || '';
   const curator = params.get('curator') || undefined;
-  const minResonance = params.get('minResonance') ? Number(params.get('minResonance')) : undefined;
 
   return {
     start,
@@ -114,7 +112,6 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     types,
     search,
     curator,
-    minResonance,
   };
 }
 
@@ -131,7 +128,6 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
   if (state.search && state.search.trim()) params.set('search', state.search.trim());
   if (state.curator) params.set('curator', state.curator);
-  if (typeof state.minResonance === 'number' && !isNaN(state.minResonance)) params.set('minResonance', String(state.minResonance));
 
   const str = params.toString();
   return str ? `?${str}` : '';
@@ -361,10 +357,6 @@ export function useCalendarState() {
     updateFilter({ curator: curator || undefined });
   }, [updateFilter]);
 
-  const setMinResonance = useCallback((minResonance?: number) => {
-    updateFilter({ minResonance: typeof minResonance === 'number' ? minResonance : undefined });
-  }, [updateFilter]);
-
   const resetFilters = useCallback(() => {
     updateFilter({
       feed: undefined,
@@ -375,7 +367,6 @@ export function useCalendarState() {
       types: [],
       search: '',
       curator: undefined,
-      minResonance: undefined,
     });
   }, [updateFilter]);
 
@@ -414,7 +405,6 @@ export function useCalendarState() {
     clearTypes,
     setSearch,
     setCurator,
-    setMinResonance,
     prevMonth,
     nextMonth,
     setToday,

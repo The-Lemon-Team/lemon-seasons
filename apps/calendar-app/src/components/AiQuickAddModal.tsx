@@ -173,7 +173,6 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         icon: c.icon,
         description: c.description,
         curator: c.curator,
-        resonanceScore: c.resonanceScore,
       }));
 
       await calendarApi.createNotesBatch(payload);

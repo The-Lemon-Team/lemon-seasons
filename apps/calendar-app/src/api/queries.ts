@@ -74,10 +74,6 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         params.curator = filter.curator;
       }
 
-      if (typeof filter.minResonance === 'number') {
-        params.minResonance = filter.minResonance;
-      }
-
       const response = await calendarApi.getNotes(params);
       let items = response.items;
 
