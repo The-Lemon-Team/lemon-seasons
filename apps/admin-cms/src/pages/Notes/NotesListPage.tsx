@@ -446,11 +446,6 @@ export const NotesListPage: React.FC = () => {
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
                               <span>{getCuratorPersona(note.curator)?.emoji || '👤'}</span>
                               <span>{note.curator}</span>
-                              {typeof note.resonanceScore === 'number' && (
-                                <span className={`font-bold ${note.resonanceScore >= 70 ? 'text-amber-400' : 'text-neutral-400'}`}>
-                                  ⚡ {note.resonanceScore}%
-                                </span>
-                              )}
                             </span>
                           )}
                           {note.sourceLink && (

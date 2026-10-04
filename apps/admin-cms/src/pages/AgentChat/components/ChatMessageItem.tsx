@@ -4,7 +4,6 @@ import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Sparkles, Clock, Check, MessageSquare, FolderPlus, Palette, Send, Share2, Copy } from 'lucide-react';
-import { ResonanceNodeCandidate } from '@lemon/agents';
 import { ChatMessageRecord, TelegramNewsPreview } from '../../../types';
 import { CuratorNewsGallery } from './CuratorNewsGallery';
 
@@ -16,60 +15,134 @@ function getNodeText(node: any): string {
   return '';
 }
 
-/**
- * Parses text and converts resonance markers like [⚡ Резонанс: 86%] or [⚡ 86%] into neat badges
- */
-function renderWithResonanceChips(node: React.ReactNode): React.ReactNode {
-  if (typeof node === 'string') {
-    const regex = /\[⚡\s*(?:Резонанс:\s*)?(\d+)%\]/g;
-    if (!regex.test(node)) {
-      return node;
+function findMatchingNewsPost(
+  text: string,
+  posts: TelegramNewsPreview[]
+): TelegramNewsPreview | null {
+  if (!posts || posts.length === 0) return null;
+  const clean = text.toLowerCase().replace(/[*_#`«»"']/g, '').trim();
+
+  // 1. Direct inclusion
+  for (const p of posts) {
+    const cleanTitle = p.title.toLowerCase().replace(/[*_#`«»"']/g, '').trim();
+    if (clean.includes(cleanTitle) || cleanTitle.includes(clean)) {
+      return p;
     }
-    const parts = node.split(/(\[⚡\s*(?:Резонанс:\s*)?\d+%\])/g);
-    return parts.map((part, i) => {
-      const match = part.match(/\[⚡\s*(?:Резонанс:\s*)?(\d+)%\]/);
-      if (match) {
-        const score = parseInt(match[1], 10);
-        return (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1 px-1.5 py-0.2 mx-1 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 align-middle select-none shadow-xs"
-            title={`Индекс резонанса: ${score}%`}
-          >
-            <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-            <span>{score}%</span>
-          </span>
-        );
+  }
+
+  // 2. Substring matching (first 25 characters of title)
+  for (const p of posts) {
+    const cleanTitle = p.title.toLowerCase().replace(/[*_#`«»"']/g, '').trim();
+    const prefix = cleanTitle.slice(0, Math.min(25, cleanTitle.length));
+    if (prefix.length >= 10 && clean.includes(prefix)) {
+      return p;
+    }
+  }
+
+  // 3. Keyword / word overlap matching
+  for (const p of posts) {
+    const words = p.title
+      .toLowerCase()
+      .replace(/[^a-zа-я0-9\s]/gi, '')
+      .split(/\s+/)
+      .filter((w) => w.length >= 4);
+    if (words.length > 0) {
+      const matchCount = words.filter((w) => clean.includes(w)).length;
+      if (matchCount >= Math.min(3, words.length)) {
+        return p;
       }
-      return part;
-    });
+    }
   }
 
-  if (Array.isArray(node)) {
-    return node.map((child, idx) => (
-      <React.Fragment key={idx}>{renderWithResonanceChips(child)}</React.Fragment>
-    ));
+  return null;
+}
+
+function getPostForItem(
+  children: any,
+  posts: TelegramNewsPreview[],
+  msg: ChatMessageRecord
+): TelegramNewsPreview | null {
+  const text = getNodeText(children).trim();
+  if (!text || text.length < 15) return null;
+
+  // 1. Try matching with known newsPostsList
+  const matched = findMatchingNewsPost(text, posts);
+  if (matched) return matched;
+
+  // 2. If children starts with <strong> / <b> or bold text
+  let extractedTitle = '';
+  let extractedSummary = '';
+
+  const childArray = React.Children.toArray(children);
+  const firstChild: any = childArray[0];
+  if (
+    firstChild &&
+    (firstChild.type === 'strong' ||
+      firstChild.type === 'b' ||
+      firstChild.props?.node?.tagName === 'strong')
+  ) {
+    extractedTitle = getNodeText(firstChild).trim();
+    extractedSummary = childArray
+      .slice(1)
+      .map(getNodeText)
+      .join('')
+      .replace(/^[:—–\s]+/, '')
+      .trim();
+  } else {
+    // Check if text has "Title: Description" or "Title — Description"
+    const splitMatch = text.match(/^(.{15,120}?)[:—–]\s+(.+)$/s);
+    if (splitMatch) {
+      extractedTitle = splitMatch[1].trim();
+      extractedSummary = splitMatch[2].trim();
+    }
   }
 
-  if (React.isValidElement(node) && node.props?.children) {
-    return React.cloneElement(node as React.ReactElement<any>, {
-      children: renderWithResonanceChips(node.props.children),
-    });
+  // Filter out non-news items like "Резюме обозревателя", "Источники", "Выводы"
+  const ignorePrefixes = [
+    'резюме',
+    'выводы',
+    'источник',
+    'ремарка',
+    'формат',
+    'оптика',
+    'статьи проверены',
+    'подготовлены',
+  ];
+  const lowerTitle = extractedTitle.toLowerCase();
+  if (ignorePrefixes.some((p) => lowerTitle.startsWith(p))) {
+    return null;
   }
 
-  return node;
+  if (extractedTitle && extractedTitle.length >= 12 && extractedSummary) {
+    return {
+      id: `dyn-news-${Date.now()}`,
+      title: extractedTitle,
+      summary: extractedSummary,
+      rawText: extractedSummary,
+      curatorId: msg.sender,
+      curatorName: msg.senderName,
+      curatorRole: msg.senderRole,
+      curatorEmoji: msg.avatar || '📌',
+      sourceName: msg.senderName,
+      sourceUrl: (msg.sources && msg.sources[0]) || '',
+      tags: ['новости', msg.sender],
+      keyPoints: [extractedSummary.slice(0, 150)],
+      publishedAt: dayjs(msg.createdAt).format('HH:mm'),
+    };
+  }
+
+  return null;
 }
 
 interface ChatMessageItemProps {
   msg: ChatMessageRecord & { isOptimistic?: boolean };
   onOpenCardDrawer: (msg: ChatMessageRecord) => void;
   onCopyText: (text: string) => void;
-  onTriggerSynthesis: (node: ResonanceNodeCandidate) => void;
-  onTriggerSingleSynthesis?: (msg: ChatMessageRecord) => void;
   onNavigateToCurator?: (curatorId: string, contextPrompt?: string) => void;
   onSaveNewsPostToCalendar?: (post: TelegramNewsPreview) => void;
   onAddToNote?: (item: any) => void;
   onGenerateMediaPrompt?: (msg: ChatMessageRecord) => void;
+  onAskNewsDetails?: (post: TelegramNewsPreview) => void;
 }
 
 export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
@@ -77,28 +150,158 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
     msg,
     onOpenCardDrawer,
     onCopyText,
-    onTriggerSynthesis,
-    onTriggerSingleSynthesis,
     onNavigateToCurator,
     onSaveNewsPostToCalendar,
     onAddToNote,
     onGenerateMediaPrompt,
+    onAskNewsDetails,
   }) => {
-    // Memoize markdown components to keep onNavigateToCurator in scope
+    const isUser = msg.sender === 'user';
+    const isOptimistic = Boolean(msg.isOptimistic);
+    const isTelegramPost =
+      msg.messageType === 'TELEGRAM_POST' ||
+      (msg as any).groupSummary?.messageType === 'TELEGRAM_POST' ||
+      msg.metadata?.format === 'telegram_post' ||
+      (msg as any).groupSummary?.metadata?.format === 'telegram_post';
+
+    const newsPostsList: TelegramNewsPreview[] =
+      msg.groupSummary?.newsPosts || (msg as any).newsPosts || [];
+
+    // Convert lines starting with unicode bullet "• " into markdown list items "- " so ReactMarkdown parses them as <li>
+    const normalizedMarkdownText = useMemo(() => {
+      if (!msg.text) return '';
+      return msg.text.replace(/^[ \t]*•[ \t]+/gm, '- ');
+    }, [msg.text]);
+
+    // Memoize markdown components to keep onNavigateToCurator and news controls in scope
     const markdownComponents = useMemo(
       () => ({
-        p: ({ children }: any) => (
-          <p className="my-1.5 leading-relaxed text-gray-200">
-            {renderWithResonanceChips(children)}
-          </p>
-        ),
+        p: ({ children }: any) => {
+          const text = getNodeText(children).trim();
+          if (!isUser && text.includes('Ключевой сюжет:') && newsPostsList && newsPostsList.length > 0) {
+            const targetPost = newsPostsList[0];
+            return (
+              <div className="my-2.5 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 transition-all shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                  <div className="flex-1 min-w-0 text-gray-200 text-xs leading-relaxed">
+                    {children}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none self-end sm:self-start">
+                    {/* Chip 1: Add to Note / Create Record -> opens sidebar drawer */}
+                    <Tooltip title="Открыть сайдбар и создать запись в календаре" mouseEnterDelay={0.2}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSaveNewsPostToCalendar) {
+                            onSaveNewsPostToCalendar(targetPost);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 hover:border-amber-400 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        <FolderPlus className="w-3 h-3 text-amber-400" />
+                        <span>+ Note</span>
+                      </button>
+                    </Tooltip>
+
+                    {/* Chip 2: Ask agent details */}
+                    <Tooltip title="Спросить у агента подробности этой новости" mouseEnterDelay={0.2}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onAskNewsDetails) {
+                            onAskNewsDetails(targetPost);
+                          } else if (onNavigateToCurator) {
+                            onNavigateToCurator(
+                              targetPost.curatorId,
+                              `Расскажи подробнее про новость: «${targetPost.title}»`
+                            );
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-sky-500/10 hover:bg-sky-500/25 text-sky-300 border border-sky-500/35 hover:border-sky-400 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        <MessageSquare className="w-3 h-3 text-sky-400" />
+                        <span>Детальнее</span>
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <p className="my-1.5 leading-relaxed text-gray-200">
+              {children}
+            </p>
+          );
+        },
         ul: ({ children }: any) => <ul className="list-disc pl-5 my-2 space-y-1 text-gray-200">{children}</ul>,
         ol: ({ children }: any) => <ol className="list-decimal pl-5 my-2 space-y-1 text-gray-200">{children}</ol>,
-        li: ({ children }: any) => (
-          <li className="my-1 leading-relaxed">
-            {renderWithResonanceChips(children)}
-          </li>
-        ),
+        li: ({ children }: any) => {
+          if (isUser) {
+            return <li className="my-1 leading-relaxed">{children}</li>;
+          }
+
+          const targetPost = getPostForItem(children, newsPostsList, msg);
+
+          if (!targetPost) {
+            return <li className="my-1 leading-relaxed">{children}</li>;
+          }
+
+          return (
+            <li className="my-2.5 leading-relaxed list-none -ml-5 pl-0 group/news">
+              <div className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 transition-all shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                  <div className="flex-1 min-w-0 text-gray-200 text-xs">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70 mr-2 align-middle flex-shrink-0" />
+                    {children}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none self-end sm:self-start">
+                    {/* Chip 1: Add to Note / Create Record -> opens sidebar drawer */}
+                    <Tooltip title="Открыть сайдбар и создать запись в календаре" mouseEnterDelay={0.2}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSaveNewsPostToCalendar) {
+                            onSaveNewsPostToCalendar(targetPost);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 hover:border-amber-400 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        <FolderPlus className="w-3 h-3 text-amber-400" />
+                        <span>+ Note</span>
+                      </button>
+                    </Tooltip>
+
+                    {/* Chip 2: Ask agent details */}
+                    <Tooltip title="Спросить у агента подробности этой новости" mouseEnterDelay={0.2}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onAskNewsDetails) {
+                            onAskNewsDetails(targetPost);
+                          } else if (onNavigateToCurator) {
+                            onNavigateToCurator(
+                              targetPost.curatorId,
+                              `Расскажи подробнее про новость: «${targetPost.title}»`
+                            );
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-sky-500/10 hover:bg-sky-500/25 text-sky-300 border border-sky-500/35 hover:border-sky-400 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        <MessageSquare className="w-3 h-3 text-sky-400" />
+                        <span>Детальнее</span>
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+            </li>
+          );
+        },
         blockquote: ({ children }: any) => (
           <blockquote className="border-l-4 border-primary/70 bg-white/5 pl-3.5 py-1.5 my-2.5 rounded-r text-gray-300 italic">
             {children}
@@ -194,28 +397,24 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
             <code className="font-mono text-xs">{children}</code>
           ),
       }),
-      [onNavigateToCurator]
+      [
+        isUser,
+        msg,
+        newsPostsList,
+        onNavigateToCurator,
+        onSaveNewsPostToCalendar,
+        onAskNewsDetails,
+      ]
     );
 
-    // Memoize markdown rendering so it only runs when msg.text changes
+    // Memoize markdown rendering so it only runs when normalized text changes
     const renderedMarkdown = useMemo(() => {
       return (
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents as any}>
-          {msg.text}
+          {normalizedMarkdownText}
         </ReactMarkdown>
       );
-    }, [msg.text, markdownComponents]);
-
-    const isUser = msg.sender === 'user';
-    const isOptimistic = Boolean(msg.isOptimistic);
-    const isTelegramPost =
-      msg.messageType === 'TELEGRAM_POST' ||
-      (msg as any).groupSummary?.messageType === 'TELEGRAM_POST' ||
-      msg.metadata?.format === 'telegram_post' ||
-      (msg as any).groupSummary?.metadata?.format === 'telegram_post';
-
-    const newsPostsList: TelegramNewsPreview[] =
-      msg.groupSummary?.newsPosts || (msg as any).newsPosts || [];
+    }, [normalizedMarkdownText, markdownComponents]);
 
     return (
       <div
@@ -259,24 +458,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
             </div>
 
             <div className="flex items-center gap-2">
-              {msg.resonanceScore && (
-                <Badge
-                  count={`${msg.resonanceScore}%`}
-                  style={{
-                    backgroundColor:
-                      msg.resonanceScore > 80
-                        ? '#ef4444'
-                        : msg.resonanceScore > 60
-                        ? '#f59e0b'
-                        : '#10b981',
-                    color: '#fff',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                  }}
-                  title="Индекс резонанса"
-                />
-              )}
-
               {isOptimistic ? (
                 <span className="text-[10px] text-primary flex items-center gap-1 font-mono animate-pulse">
                   <Clock className="w-2.5 h-2.5" />
@@ -316,7 +497,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
             </div>
           )}
 
-          {/* Interactive News Cards Gallery (Only in direct curator threads) */}
+          {/* Interactive News Cards Gallery (temporarily commented out) */}
+          {/*
           {!isUser && msg.sender !== 'political-group' && newsPostsList && newsPostsList.length > 0 && (
             <CuratorNewsGallery
               posts={newsPostsList}
@@ -336,36 +518,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
                         curatorId: post.curatorId,
                         date: (post as any).date || msg.createdAt,
                         tags: post.tags,
-                        resonanceScore: post.resonanceScore,
                       })
                   : undefined
               }
             />
           )}
-
-          {/* Resonance Nodes Candidates */}
-          {msg.resonanceNodes && msg.resonanceNodes.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-white/5 space-y-1.5">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                <span>⚡ Точки кросс-контурного резонанса:</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {msg.resonanceNodes.map((node: ResonanceNodeCandidate) => (
-                  <Tooltip key={node.id} title={node.reasoning}>
-                    <button
-                      onClick={() => onTriggerSynthesis(node)}
-                      className="bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-[11px] px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer text-left"
-                    >
-                      <span className="font-semibold">{node.title}</span>
-                      <span className="bg-amber-500/20 px-1 rounded text-[9px] font-mono">
-                        {node.resonanceScore}%
-                      </span>
-                    </button>
-                  </Tooltip>
-                ))}
-              </div>
-            </div>
-          )}
+          */}
 
           {/* Action Buttons Bar */}
           {!isUser && (
@@ -421,7 +579,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
                             curatorId: msg.sender,
                             date: msg.metadata?.dateScope || msg.createdAt,
                             tags: msg.suggestedCard?.hashtags || ['TGPost', 'Сводка'],
-                            resonanceScore: msg.resonanceScore || 85,
                           })
                         }
                         className="text-amber-300 hover:text-amber-100 hover:bg-amber-500/15 text-[11px] h-6 px-2 flex items-center gap-1 font-semibold border border-amber-500/30"
@@ -471,7 +628,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
                             curatorId: msg.sender,
                             date: msg.createdAt,
                             tags: msg.suggestedCard?.hashtags,
-                            resonanceScore: msg.resonanceScore,
                           })
                         }
                         className="text-amber-300 hover:text-amber-100 hover:bg-amber-500/15 text-[11px] h-6 px-2 flex items-center gap-1 border border-amber-500/30"
@@ -509,11 +665,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
   (prev, next) =>
     prev.msg.id === next.msg.id &&
     prev.msg.text === next.msg.text &&
-    prev.msg.resonanceScore === next.msg.resonanceScore &&
     (prev.msg as any).isOptimistic === (next.msg as any).isOptimistic &&
     prev.msg.groupSummary === next.msg.groupSummary &&
     (prev.msg as any).newsPosts === (next.msg as any).newsPosts &&
-    prev.msg.resonanceNodes === next.msg.resonanceNodes
+    prev.onAskNewsDetails === next.onAskNewsDetails &&
+    prev.onSaveNewsPostToCalendar === next.onSaveNewsPostToCalendar &&
+    prev.onNavigateToCurator === next.onNavigateToCurator
 );
 
 ChatMessageItem.displayName = 'ChatMessageItem';

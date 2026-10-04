@@ -142,14 +142,6 @@ export const CuratorNewsGallery: React.FC<CuratorNewsGalleryProps> = React.memo(
                   </span>
                 )}
               </div>
-
-              {/* Resonance Chip */}
-              <div className="flex items-center gap-1">
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-                  <span>{activePost.resonanceScore}%</span>
-                </span>
-              </div>
             </div>
 
             {/* Title & Summary */}
@@ -243,10 +235,6 @@ export const CuratorNewsGallery: React.FC<CuratorNewsGalleryProps> = React.memo(
                       <span className="font-semibold text-gray-300">{post.curatorName}</span>
                       {post.sourceName && <span>· {post.sourceName}</span>}
                     </div>
-
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      ⚡ {post.resonanceScore}%
-                    </span>
                   </div>
 
                   <h5 className="font-bold text-[11px] text-white leading-snug mb-1">

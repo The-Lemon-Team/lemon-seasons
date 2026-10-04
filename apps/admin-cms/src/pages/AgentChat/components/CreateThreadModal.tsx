@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Radio, Input, Select, Checkbox, message } from 'antd';
-import { CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { ChatFolder } from '../../../types';
 
 interface CreateThreadModalProps {
@@ -35,7 +35,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     'ivan-bely',
     'kirk-kitten',
     'chen-wei',
-    'independent-analyst',
   ]);
 
   const handleSubmit = async () => {
@@ -78,7 +77,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
               const val = e.target.value;
               setThreadType(val);
               if (val === 'DIRECT') {
-                const p = CURATOR_PERSONAS_LIST.find((x) => x.id === threadCurator);
+                const p = ACTIVE_CURATOR_PERSONAS_LIST.find((x) => x.id === threadCurator);
                 setThreadTitle(`${p?.emoji || '👤'} ${p?.name || 'Куратор'} (Личный)`);
               } else {
                 setThreadTitle('🏛️ Политическая коллегия');
@@ -115,11 +114,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
               value={threadCurator}
               onChange={(val) => {
                 setThreadCurator(val);
-                const p = CURATOR_PERSONAS_LIST.find((x) => x.id === val);
+                const p = ACTIVE_CURATOR_PERSONAS_LIST.find((x) => x.id === val);
                 setThreadTitle(`${p?.emoji || '👤'} ${p?.name} (Личный)`);
               }}
               className="w-full"
-              options={CURATOR_PERSONAS_LIST.map((p) => ({
+              options={ACTIVE_CURATOR_PERSONAS_LIST.map((p) => ({
                 value: p.id,
                 label: `${p.emoji} ${p.name} — ${p.role}`,
               }))}
@@ -135,12 +134,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
               onChange={(vals: any) => setThreadParticipants(vals)}
               className="grid grid-cols-2 gap-2 pt-1"
             >
-              {CURATOR_PERSONAS_LIST.map((p) => (
+              {ACTIVE_CURATOR_PERSONAS_LIST.map((p) => (
                 <Checkbox key={p.id} value={p.id}>
                   {p.emoji} {p.name}
                 </Checkbox>
               ))}
-              <Checkbox value="independent-analyst">⚖️ Арбитр (Синтез)</Checkbox>
             </Checkbox.Group>
           </div>
         )}

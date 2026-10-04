@@ -1,7 +1,6 @@
 import React from 'react';
 import { Spin } from 'antd';
 import { ArrowDown } from 'lucide-react';
-import { ResonanceNodeCandidate } from '@lemon/agents';
 import { ChatMessageRecord, TelegramNewsPreview } from '../../../types';
 import { ChatMessageItem } from './ChatMessageItem';
 import { useChatScroll } from '../hooks/useChatScroll';
@@ -13,12 +12,11 @@ interface ChatMessageListProps {
   selectedThreadId: string | null;
   onOpenCardDrawer: (msg: ChatMessageRecord) => void;
   onCopyText: (text: string) => void;
-  onTriggerSynthesis: (node: ResonanceNodeCandidate) => void;
-  onTriggerSingleSynthesis: (msg: ChatMessageRecord) => void;
   onNavigateToCurator?: (curatorId: string, contextPrompt?: string) => void;
   onSaveNewsPostToCalendar?: (post: TelegramNewsPreview) => void;
   onAddToNote?: (item: any) => void;
   onGenerateMediaPrompt?: (msg: ChatMessageRecord) => void;
+  onAskNewsDetails?: (post: TelegramNewsPreview) => void;
 }
 
 export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
@@ -29,12 +27,11 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
     selectedThreadId,
     onOpenCardDrawer,
     onCopyText,
-    onTriggerSynthesis,
-    onTriggerSingleSynthesis,
     onNavigateToCurator,
     onSaveNewsPostToCalendar,
     onAddToNote,
     onGenerateMediaPrompt,
+    onAskNewsDetails,
   }) => {
     const { containerRef, showScrollBottom, scrollToBottom, handleScroll } = useChatScroll({
       threadId: selectedThreadId,
@@ -70,12 +67,11 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = React.memo(
                 msg={msg}
                 onOpenCardDrawer={onOpenCardDrawer}
                 onCopyText={onCopyText}
-                onTriggerSynthesis={onTriggerSynthesis}
-                onTriggerSingleSynthesis={onTriggerSingleSynthesis}
                 onNavigateToCurator={onNavigateToCurator}
                 onSaveNewsPostToCalendar={onSaveNewsPostToCalendar}
                 onAddToNote={onAddToNote}
                 onGenerateMediaPrompt={onGenerateMediaPrompt}
+                onAskNewsDetails={onAskNewsDetails}
               />
             ))
           )}

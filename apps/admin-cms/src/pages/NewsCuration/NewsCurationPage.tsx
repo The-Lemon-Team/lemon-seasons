@@ -73,10 +73,7 @@ export const NewsCurationPage: React.FC = () => {
   const totalCount = rawCards.length;
   const pendingCount = rawCards.filter((c) => c.status === 'PENDING').length;
   const acceptedCount = rawCards.filter((c) => c.status === 'ACCEPTED').length;
-  const avgResonance =
-    totalCount > 0
-      ? Math.round(rawCards.reduce((acc, c) => acc + c.resonanceScore, 0) / totalCount)
-      : 0;
+  const dismissedCount = rawCards.filter((c) => c.status === 'DISMISSED').length;
 
   // Open Transform Drawer
   const handleOpenTransform = (card: DailyNewsCard) => {
@@ -92,7 +89,6 @@ export const NewsCurationPage: React.FC = () => {
 
 > **Источник:** [${card.source}](${card.url || '#'})  
 > **Оценка контура:** ${persona ? `${persona.emoji} ${persona.name} (${persona.role})` : 'Общий мониторинг'}  
-> **Индекс резонанса:** \`${card.resonanceScore}%\`
 
 ### Ключевые тезисы:
 ${card.keyPoints.map((p) => `- ${p}`).join('\n')}
@@ -337,10 +333,10 @@ ${card.keyPoints.map((p) => `- ${p}`).join('\n')}
 
         <div className="bg-surface-container border border-white/5 rounded-xl p-4 flex items-center justify-between">
           <div>
-            <div className="text-xs text-on-surface-variant font-mono uppercase">Ср. Резонанс</div>
-            <div className="text-2xl font-bold text-primary mt-1">{avgResonance}%</div>
+            <div className="text-xs text-on-surface-variant font-mono uppercase">Отклонено</div>
+            <div className="text-2xl font-bold text-gray-400 mt-1">{dismissedCount}</div>
           </div>
-          <span className="material-symbols-outlined text-3xl text-primary/40">bolt</span>
+          <span className="material-symbols-outlined text-3xl text-gray-500/40">cancel</span>
         </div>
       </div>
 
@@ -399,18 +395,6 @@ ${card.keyPoints.map((p) => `- ${p}`).join('\n')}
                     </span>
 
                     <div className="flex items-center gap-2">
-                      {/* Resonance Gauge */}
-                      <span
-                        className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                          card.resonanceScore >= 70
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-white/5 text-on-surface-variant'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">bolt</span>
-                        {card.resonanceScore}%
-                      </span>
-
                       {/* Status Tag */}
                       {isAccepted ? (
                         <Tag color="success" className="m-0">

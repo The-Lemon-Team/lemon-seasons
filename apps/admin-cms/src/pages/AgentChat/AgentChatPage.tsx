@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { message } from 'antd';
 import dayjs from 'dayjs';
-import { AgentId, ResonanceNodeCandidate } from '@lemon/agents';
+import { AgentId } from '@lemon/agents';
 import {
   useChatFolders,
   useCreateChatFolder,
@@ -88,10 +88,15 @@ export const AgentChatPage: React.FC = () => {
 
   // Sync date when active thread changes
   useEffect(() => {
-    if (activeThread?.dateScope) {
+    if (!activeThread) return;
+    if (activeThread.type === 'DIRECT') {
+      // Direct 1-on-1 curator dialogues live in the present by default
+      setSelectedDate(dayjs().format('YYYY-MM-DD'));
+    } else if (activeThread.dateScope) {
+      // Historical or date-scoped group threads retain their configured dateScope
       setSelectedDate(activeThread.dateScope);
     }
-  }, [activeThread]);
+  }, [activeThread?.id]);
 
   // Execute or Redirect Command Handler
   const handleExecuteCommand = useCallback(
@@ -198,17 +203,17 @@ export const AgentChatPage: React.FC = () => {
             const newTitle = cmdMeta.label;
             const participants =
               rawCmd === '/politics'
-                ? ['ivan-bely', 'kirk-kitten', 'chen-wei', 'independent-analyst']
+                ? ['ivan-bely', 'kirk-kitten', 'chen-wei']
                 : rawCmd === '/it'
-                ? ['okatsiya', 'independent-analyst']
+                ? ['okatsiya']
                 : rawCmd === '/survey'
                 ? ['survey-coordinator', 'ivan-bely', 'kirk-kitten', 'chen-wei', 'okatsiya']
                 : rawCmd === '/sidework'
-                ? ['sidework-producer', 'independent-analyst']
+                ? ['sidework-producer']
                 : rawCmd === '/survey-breaking'
-                ? ['alex-vector', 'kirk-kitten', 'marcus-vane']
+                ? ['alex-vector', 'kirk-kitten']
                 : rawCmd === '/survey-nexus'
-                ? ['marcus-vane', 'tariq-said', 'helena-brandt', 'chen-wei']
+                ? ['tariq-said', 'helena-brandt', 'chen-wei']
                 : rawCmd === '/survey-mena'
                 ? ['tariq-said', 'ivan-bely', 'kirk-kitten', 'helena-brandt']
                 : [cmdMeta.targetAgent || 'general'];
@@ -305,43 +310,6 @@ export const AgentChatPage: React.FC = () => {
       }
     },
     [selectedThreadId, activeThread, selectedDate, sendThreadMessageMutation, handleExecuteCommand]
-  );
-
-  const handleTriggerSynthesis = useCallback(
-    async (node: ResonanceNodeCandidate) => {
-      if (!selectedThreadId) return;
-      const prompt = node.suggestedPrompt || `/synthesis ${node.title}`;
-      try {
-        await sendThreadMessageMutation.mutateAsync({
-          threadId: selectedThreadId,
-          data: {
-            message: prompt,
-            forcedTarget: 'independent-analyst',
-            date: selectedDate,
-          },
-        });
-      } catch (err: any) {
-        message.error(err?.message || 'Ошибка запуска синтеза');
-      }
-    },
-    [selectedThreadId, selectedDate, sendThreadMessageMutation]
-  );
-
-  const handleTriggerSingleSynthesis = useCallback(
-    (msg: ChatMessageRecord) => {
-      handleTriggerSynthesis({
-        id: `synth-${Date.now()}`,
-        title: msg.text.substring(0, 40),
-        curatorIds: [],
-        curatorNames: [],
-        resonanceScore: 90,
-        topic: 'Арбитраж',
-        reasoning: 'Точечный синтез сообщения',
-        sharedKeywords: [],
-        suggestedPrompt: `/synthesis Проанализируй тезис: "${msg.text.substring(0, 120)}..."`,
-      });
-    },
-    [handleTriggerSynthesis]
   );
 
   const handleCopyText = useCallback((txt: string) => {
@@ -477,6 +445,37 @@ export const AgentChatPage: React.FC = () => {
 
   const handleSaveNewsPostToCalendar = useCallback(
     (post: TelegramNewsPreview) => {
+      let folder = 'Politics/Russia';
+      let taxonomyPath = 'politics.russia';
+      if (post.curatorId === 'ivan-bely') {
+        folder = 'Politics/Russia';
+        taxonomyPath = 'politics.russia';
+      } else if (post.curatorId === 'kirk-kitten') {
+        folder = 'Politics/Sanctions';
+        taxonomyPath = 'politics.international.sanctions';
+      } else if (post.curatorId === 'chen-wei') {
+        folder = 'Politics/Asia';
+        taxonomyPath = 'politics.international.asia';
+      } else if (post.curatorId === 'okatsiya') {
+        folder = 'Tech/AI';
+        taxonomyPath = 'tech.ai.infrastructure';
+      } else if (post.curatorId === 'german-kernel') {
+        folder = 'Tech/Habr';
+        taxonomyPath = 'tech.community.habr';
+      } else if (post.curatorId === 'alex-vector') {
+        folder = 'Politics/Breaking';
+        taxonomyPath = 'politics.breaking';
+      } else if (post.curatorId === 'marcus-vane') {
+        folder = 'Markets/Macro';
+        taxonomyPath = 'markets.macro.commodities';
+      } else if (post.curatorId === 'tariq-said') {
+        folder = 'Politics/MENA';
+        taxonomyPath = 'politics.mena.energy';
+      } else if (post.curatorId === 'helena-brandt') {
+        folder = 'Diplomacy/EU';
+        taxonomyPath = 'diplomacy.eu.institutions';
+      }
+
       setCardDrawerMsg({
         id: `news-card-${Date.now()}`,
         threadId: selectedThreadId || '',
@@ -484,22 +483,34 @@ export const AgentChatPage: React.FC = () => {
         senderName: post.curatorName,
         senderRole: post.curatorRole,
         text: post.summary,
-        resonanceScore: post.resonanceScore,
         createdAt: new Date().toISOString(),
         suggestedCard: {
           title: post.title,
-          description: `## ${post.title}\n\n> **Куратор:** ${post.curatorEmoji} ${post.curatorName}  \n> **Источник:** [${post.sourceName}](${post.sourceUrl || '#'})  \n> **Индекс резонанса:** \`${post.resonanceScore}%\`\n\n${post.summary}\n\n### Фактологическая справка:\n${post.rawText || ''}\n\n### Ключевые аспекты:\n${(post.keyPoints || []).map((k) => `- ${k}`).join('\n')}\n\n---\n*Зафиксировано из Telegram-дайджеста хроники Project Lenta.*`,
+          description: `## ${post.title}\n\n> **Куратор:** ${post.curatorEmoji || '👤'} ${post.curatorName}  \n> **Источник:** [${post.sourceName || 'Первоисточник'}](${post.sourceUrl || '#'})  \n\n${post.summary}\n\n### Фактологическая справка:\n${post.rawText || ''}\n\n### Ключевые аспекты:\n${(post.keyPoints || []).map((k) => `- ${k}`).join('\n')}\n\n---\n*Зафиксировано из хроники Project Lenta.*`,
           type: 'EVENT' as any,
-          folder: post.curatorId === 'ivan-bely' ? 'Politics/Russia' : 'Politics/Sanctions',
-          taxonomyPath: post.curatorId === 'ivan-bely' ? 'politics.russia' : 'politics.international.sanctions',
-          hashtags: post.tags,
+          folder,
+          taxonomyPath,
+          hashtags: post.tags || ['новости', 'хроника'],
           curator: post.curatorName,
-          resonanceScore: post.resonanceScore,
           sourceLink: post.sourceUrl,
         },
       } as any);
     },
     [selectedThreadId]
+  );
+
+  const handleAskNewsDetails = useCallback(
+    async (post: TelegramNewsPreview) => {
+      const prompt = `Расскажи подробнее про новость: «${post.title}». Каковы ключевой контекст, предыстория и значение для контура?`;
+      if (selectedThreadId && activeThread?.targetAgent === post.curatorId) {
+        await handleDispatchChatMessage(prompt, post.curatorId);
+      } else if (post.curatorId && handleNavigateToCurator) {
+        await handleNavigateToCurator(post.curatorId, prompt);
+      } else if (selectedThreadId) {
+        await handleDispatchChatMessage(prompt, post.curatorId);
+      }
+    },
+    [selectedThreadId, activeThread, handleDispatchChatMessage, handleNavigateToCurator]
   );
 
   const handleCreateThread = useCallback(
@@ -596,12 +607,11 @@ export const AgentChatPage: React.FC = () => {
           selectedThreadId={selectedThreadId}
           onOpenCardDrawer={handleOpenCardDrawer}
           onCopyText={handleCopyText}
-          onTriggerSynthesis={handleTriggerSynthesis}
-          onTriggerSingleSynthesis={handleTriggerSingleSynthesis}
           onNavigateToCurator={handleNavigateToCurator}
           onSaveNewsPostToCalendar={handleSaveNewsPostToCalendar}
           onAddToNote={handleOpenAddToNote}
           onGenerateMediaPrompt={handleGenerateMediaPrompt}
+          onAskNewsDetails={handleAskNewsDetails}
         />
 
         <ChatInputBar

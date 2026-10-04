@@ -52,25 +52,6 @@ export const TelegramNewsPost: React.FC<TelegramNewsPostProps> = ({
           <span className="text-[10px] text-gray-400 font-mono">
             {post.publishedAt || 'Сегодня'}
           </span>
-          {post.resonanceScore && (
-            <Badge
-              count={`⚡ ${post.resonanceScore}%`}
-              style={{
-                backgroundColor:
-                  post.resonanceScore > 80
-                    ? '#ef4444'
-                    : post.resonanceScore > 60
-                    ? '#f59e0b'
-                    : '#10b981',
-                color: '#fff',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                borderRadius: '6px',
-                padding: '0 6px',
-              }}
-              title="Индекс резонанса события"
-            />
-          )}
         </div>
       </div>
 

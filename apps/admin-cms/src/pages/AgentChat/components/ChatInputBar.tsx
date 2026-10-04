@@ -161,7 +161,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = React.memo(
 
     return (
       <footer className="border-t border-white/10 bg-[#161b22] relative z-10 flex flex-col flex-shrink-0">
-        {/* Always visible Quick Commands Strip (/politics, /it, /synthesis, etc.) */}
+        {/* Always visible Quick Commands Strip (/politics, /it, etc.) */}
         <QuickCommandsBar
           onExecuteCommand={onExecuteCommand}
           onInsertCommand={(cmd) => {

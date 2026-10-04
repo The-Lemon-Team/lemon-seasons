@@ -40,7 +40,6 @@ export interface NoteAttachmentItem {
   curatorId?: string;
   date?: string;
   tags?: string[];
-  resonanceScore?: number;
 }
 
 interface AddToNoteModalProps {
@@ -149,13 +148,12 @@ export const AddToNoteModal: React.FC<AddToNoteModalProps> = ({
         // Create Child Note linked via parentNoteId
         const createdChild = await createNoteMutation.mutateAsync({
           title: item.title,
-          description: `## ${item.title}\n\n> **Куратор:** ${item.curator || 'Редакция'}  \n> **Источник:** ${item.sourceUrl ? `[Первоисточник](${item.sourceUrl})` : 'Внутренний мониторинг'}  \n> **Резонанс:** \`${item.resonanceScore || 85}%\`\n\n${item.summary || ''}\n\n${item.rawText || ''}`,
+          description: `## ${item.title}\n\n> **Куратор:** ${item.curator || 'Редакция'}  \n> **Источник:** ${item.sourceUrl ? `[Первоисточник](${item.sourceUrl})` : 'Внутренний мониторинг'}\n\n${item.summary || ''}\n\n${item.rawText || ''}`,
           type: NoteType.SINGLE,
           startDate: item.date || activeThread?.dateScope || new Date().toISOString().split('T')[0],
           parentNoteId: selectedParentNote.id,
           sourceLink: item.sourceUrl,
           curator: item.curator,
-          resonanceScore: item.resonanceScore,
           folder: selectedParentNote.folders?.[0]?.folder?.path || newFolder,
           hashtags: item.tags,
         });
@@ -243,7 +241,6 @@ export const AddToNoteModal: React.FC<AddToNoteModalProps> = ({
         startDate: parentDate,
         folder: newFolder,
         curator: item.curator || 'Редакция',
-        resonanceScore: item.resonanceScore || 85,
         sourceLink: item.sourceUrl,
         hashtags: [
           ...(item.tags || []),
@@ -255,7 +252,7 @@ export const AddToNoteModal: React.FC<AddToNoteModalProps> = ({
       // Also create the first child note if needed
       await createNoteMutation.mutateAsync({
         title: item.title,
-        description: `## ${item.title}\n\n> **Куратор:** ${item.curator || 'Редакция'}  \n> **Резонанс:** \`${item.resonanceScore || 85}%\`\n\n${item.summary || ''}`,
+        description: `## ${item.title}\n\n> **Куратор:** ${item.curator || 'Редакция'}\n\n${item.summary || ''}`,
         type: NoteType.SINGLE,
         startDate: parentDate,
         parentNoteId: superNote.id,
@@ -342,11 +339,6 @@ export const AddToNoteModal: React.FC<AddToNoteModalProps> = ({
             <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
               Входящий материал
             </span>
-            {item.resonanceScore && (
-              <span className="text-[10px] font-mono font-bold text-sky-300">
-                ⚡ Резонанс: {item.resonanceScore}%
-              </span>
-            )}
           </div>
           <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">{item.title}</h4>
           {item.summary && (

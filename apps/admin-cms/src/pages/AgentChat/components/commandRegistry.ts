@@ -186,7 +186,7 @@ export const GROUPED_COMMANDS_REGISTRY: Record<'politics' | 'it' | 'breaking' | 
         sublabel: 'Панорама за месяц',
         command: '/breaking month',
         emoji: '🗓️',
-        description: 'Ключевые резонансные мировые события и breaking-хроника за 30 дней',
+        description: 'Ключевые мировые события и breaking-хроника за 30 дней',
         defaultPrompt: '/breaking month',
       },
     ],
@@ -358,7 +358,7 @@ export const CHAT_COMMANDS_REGISTRY: ChatCommandMeta[] = [
     emoji: '🗓️',
     type: 'REDIRECT',
     category: 'REDIRECT',
-    description: 'Ключевые резонансные мировые события и breaking-хроника за 30 дней',
+    description: 'Ключевые мировые события и breaking-хроника за 30 дней',
     targetThreadKeyword: 'Breaking',
     targetAgent: 'alex-vector',
     defaultPrompt: '/breaking month',
@@ -551,19 +551,6 @@ export const CHAT_COMMANDS_REGISTRY: ChatCommandMeta[] = [
   // =========================================================================
   // 2. ВСПОМОГАТЕЛЬНЫЕ КОМАНДЫ (ДОСТУПНЫ В ЛЮБОМ ЧАТЕ С АГЕНТАМИ)
   // =========================================================================
-  {
-    id: 'cmd-synthesis',
-    command: '/synthesis',
-    label: 'Независимый синтез & Арбитраж',
-    emoji: '⚖️',
-    type: 'AUXILIARY',
-    category: 'AUXILIARY',
-    description: 'Вспомогательная команда в любом чате: независимый кросс-контурный арбитраж фактов без эмоций',
-    targetAgent: 'independent-analyst',
-    defaultPrompt: 'Проведи независимый кросс-контурный анализ: сопоставь внешние факторы и внутренние маркеры РФ без эмоций.',
-    isPopular: true,
-    tags: ['синтез', 'арбитраж', 'анализ', 'резонанс', 'независимый'],
-  },
   {
     id: 'cmd-survey-today',
     command: '/survey-today',
