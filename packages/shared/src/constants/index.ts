@@ -274,6 +274,7 @@ export interface CuratorPersona {
   emoji: string;
   iconName: string;
   description: string;
+  isStandby?: boolean;
 }
 
 export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
@@ -351,7 +352,7 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     id: 'marcus-vane',
     name: 'Маркус Вейн',
     shortName: 'Маркус',
-    role: 'Аналитик эффекта домино и ветвления событий',
+    role: 'Аналитик эффекта домино и ветвления событий [Standby]',
     scope: 'Каскадные риски, вакуум силы, геостратегические узлы, триггеры бифуркации, ветвление сюжетов',
     accentColor: '#10b981', // Emerald
     borderAccent: '#059669',
@@ -359,7 +360,8 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     badgeBg: 'rgba(16, 185, 129, 0.22)',
     emoji: '♟️',
     iconName: 'GitBranch',
-    description: 'Оптика системных каскадов и теории игр. Выявляет события-катализаторы, строит деревья ветвления последствий и прогнозирует реакции смежных контуров.',
+    description: 'Оптика системных каскадов и теории игр (в режиме ожидания до активации автоматической аналитики).',
+    isStandby: true,
   },
   'tariq-said': {
     id: 'tariq-said',
@@ -406,6 +408,7 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
 };
 
 export const CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
+export const ACTIVE_CURATOR_PERSONAS_LIST = CURATOR_PERSONAS_LIST.filter((p) => !p.isStandby);
 
 export function getCuratorPersona(idOrName?: string | null): CuratorPersona | null {
   if (!idOrName) return null;
@@ -465,6 +468,7 @@ export interface CuratorGroup {
   accentColor: string;
   badgeBg: string;
   defaultScope: string;
+  isStandby?: boolean;
 }
 
 export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
@@ -510,23 +514,24 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     shortName: 'Горячий пульс',
     emoji: '🔥',
     description: 'Оперативный консилиум по экстренным мировым событиям, breaking news и виральным трендам',
-    curatorIds: ['alex-vector', 'kirk-kitten', 'marcus-vane'],
+    curatorIds: ['alex-vector', 'kirk-kitten'],
     coordinatorId: 'survey-coordinator',
     accentColor: '#f97316',
     badgeBg: 'rgba(249, 115, 22, 0.16)',
-    defaultScope: 'Свежие мировые молнии, первичная проверка фактов и детекция потенциала резонанса',
+    defaultScope: 'Свежие мировые молнии и первичная проверка фактов',
   },
   'domino-nexus-group': {
     id: 'domino-nexus-group',
-    name: 'Коллегия каскадных рисков и ветвления',
+    name: 'Коллегия каскадных рисков и ветвления [Standby]',
     shortName: 'Эффект домино',
     emoji: '♟️',
-    description: 'Аналитическая группа прогнозирования эффекта домино, вакуума силы и смежных веток событий',
-    curatorIds: ['marcus-vane', 'tariq-said', 'helena-brandt', 'chen-wei'],
+    description: 'Группа каскадных рисков (в режиме Standby до активации автоматической аналитики)',
+    curatorIds: ['tariq-said', 'helena-brandt', 'chen-wei'],
     coordinatorId: 'survey-coordinator',
     accentColor: '#10b981',
     badgeBg: 'rgba(168, 85, 247, 0.16)',
     defaultScope: 'Оценка точек бифуркации, ветвление региональных конфликтов, цепочки сырьевых и логистических шоков',
+    isStandby: true,
   },
   'mena-security-group': {
     id: 'mena-security-group',
@@ -545,7 +550,7 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     name: 'Полная коллегия кураторов',
     shortName: 'Все кураторы',
     emoji: '🌐',
-    description: 'Объединенный совет всех 9 предметных кураторов Project Lenta (РФ, Мир, АТР, IT BigTech, Habr/Хакер, Breaking, Nexus, MENA, Сырье)',
+    description: 'Объединенный совет всех активных предметных кураторов Project Lenta',
     curatorIds: [
       'ivan-bely',
       'kirk-kitten',
@@ -553,7 +558,6 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
       'okatsiya',
       'german-kernel',
       'alex-vector',
-      'marcus-vane',
       'tariq-said',
       'helena-brandt',
     ],
@@ -641,8 +645,8 @@ export const WORKER_AGENTS: Record<string, WorkerAgentDefinition> = {
     category: 'survey',
     accentColor: '#6366f1',
     badgeBg: 'rgba(99, 102, 241, 0.16)',
-    description: 'Опрашивает выбранную группу кураторов (или всех) за заданный интервал (сегодня, вчера, неделя), сводит их доменные позиции и выявляет точки резонанса.',
-    capabilities: ['group_polling', 'temporal_slicing', 'cross_curator_comparison', 'resonance_detection'],
+    description: 'Опрашивает выбранную группу кураторов (или всех) за заданный интервал (сегодня, вчера, неделя) и сводит их доменные позиции.',
+    capabilities: ['group_polling', 'temporal_slicing', 'cross_curator_comparison'],
     suggestedSnippets: ['/survey', '/survey-today', '/survey-yesterday', '/survey-week'],
   },
   'sidework-producer': {
@@ -684,19 +688,6 @@ export const WORKER_AGENTS: Record<string, WorkerAgentDefinition> = {
     capabilities: ['source_bundling', 'notebooklm_dispatch', 'eta_estimation', 'async_note_callback', 'audio_overview_pipeline'],
     suggestedSnippets: ['/notebook', '/notebook-create', '/notebook-eta'],
   },
-  'independent-analyst': {
-    id: 'independent-analyst',
-    name: 'Независимый Арбитр',
-    shortName: 'Арбитр',
-    role: 'Агент беспристрастного синтеза и фактчекинга',
-    avatar: '⚖️',
-    category: 'synthesis',
-    accentColor: '#14b8a6',
-    badgeBg: 'rgba(20, 184, 166, 0.16)',
-    description: 'Проводит объективный кросс-контурный анализ при столкновении оценок разных кураторов, оценивает достоверность и рассчитывает процент резонанса.',
-    capabilities: ['neutral_arbitration', 'resonance_scoring', 'conflict_resolution'],
-    suggestedSnippets: ['/synthesis'],
-  },
 };
 
 export const WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
@@ -710,7 +701,6 @@ export function getWorkerAgent(idOrName?: string | null): WorkerAgentDefinition 
   if (clean === 'сайд' || clean === 'сайд-работа' || clean === 'sidework' || clean === 'контент') return WORKER_AGENTS['sidework-producer'];
   if (clean === 'подкаст' || clean === 'podcast') return WORKER_AGENTS['podcast-producer'];
   if (clean === 'notebook' || clean === 'notebooklm' || clean === 'дневник' || clean === 'блокнот' || clean === 'notebook-producer') return WORKER_AGENTS['notebook-producer'];
-  if (clean === 'арбитр' || clean === 'синтез' || clean === 'synthesis') return WORKER_AGENTS['independent-analyst'];
   return WORKER_AGENTS_LIST.find((a) => a.id.toLowerCase() === clean || a.name.toLowerCase() === clean) || null;
 }
 

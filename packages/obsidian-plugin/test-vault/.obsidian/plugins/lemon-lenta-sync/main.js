@@ -4136,7 +4136,7 @@ var init_zod = __esm({
 });
 
 // ../shared/dist/index.mjs
-var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, WORKER_AGENTS, WORKER_AGENTS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, ACTIVE_CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, WORKER_AGENTS, WORKER_AGENTS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -4334,7 +4334,7 @@ var init_dist = __esm({
         id: "marcus-vane",
         name: "\u041C\u0430\u0440\u043A\u0443\u0441 \u0412\u0435\u0439\u043D",
         shortName: "\u041C\u0430\u0440\u043A\u0443\u0441",
-        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u044D\u0444\u0444\u0435\u043A\u0442\u0430 \u0434\u043E\u043C\u0438\u043D\u043E \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u043E\u0431\u044B\u0442\u0438\u0439",
+        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u044D\u0444\u0444\u0435\u043A\u0442\u0430 \u0434\u043E\u043C\u0438\u043D\u043E \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u043E\u0431\u044B\u0442\u0438\u0439 [Standby]",
         scope: "\u041A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0435 \u0440\u0438\u0441\u043A\u0438, \u0432\u0430\u043A\u0443\u0443\u043C \u0441\u0438\u043B\u044B, \u0433\u0435\u043E\u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0443\u0437\u043B\u044B, \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u044B \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0441\u044E\u0436\u0435\u0442\u043E\u0432",
         accentColor: "#10b981",
         // Emerald
@@ -4343,7 +4343,8 @@ var init_dist = __esm({
         badgeBg: "rgba(16, 185, 129, 0.22)",
         emoji: "\u265F\uFE0F",
         iconName: "GitBranch",
-        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0445 \u043A\u0430\u0441\u043A\u0430\u0434\u043E\u0432 \u0438 \u0442\u0435\u043E\u0440\u0438\u0438 \u0438\u0433\u0440. \u0412\u044B\u044F\u0432\u043B\u044F\u0435\u0442 \u0441\u043E\u0431\u044B\u0442\u0438\u044F-\u043A\u0430\u0442\u0430\u043B\u0438\u0437\u0430\u0442\u043E\u0440\u044B, \u0441\u0442\u0440\u043E\u0438\u0442 \u0434\u0435\u0440\u0435\u0432\u044C\u044F \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u043B\u0435\u0434\u0441\u0442\u0432\u0438\u0439 \u0438 \u043F\u0440\u043E\u0433\u043D\u043E\u0437\u0438\u0440\u0443\u0435\u0442 \u0440\u0435\u0430\u043A\u0446\u0438\u0438 \u0441\u043C\u0435\u0436\u043D\u044B\u0445 \u043A\u043E\u043D\u0442\u0443\u0440\u043E\u0432."
+        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0445 \u043A\u0430\u0441\u043A\u0430\u0434\u043E\u0432 \u0438 \u0442\u0435\u043E\u0440\u0438\u0438 \u0438\u0433\u0440 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 \u043E\u0436\u0438\u0434\u0430\u043D\u0438\u044F \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438).",
+        isStandby: true
       },
       "tariq-said": {
         id: "tariq-said",
@@ -4392,6 +4393,7 @@ var init_dist = __esm({
       }
     };
     CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
+    ACTIVE_CURATOR_PERSONAS_LIST = CURATOR_PERSONAS_LIST.filter((p) => !p.isStandby);
     CURATOR_GROUPS = {
       "political-group": {
         id: "political-group",
@@ -4435,23 +4437,24 @@ var init_dist = __esm({
         shortName: "\u0413\u043E\u0440\u044F\u0447\u0438\u0439 \u043F\u0443\u043B\u044C\u0441",
         emoji: "\u{1F525}",
         description: "\u041E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u044D\u043A\u0441\u0442\u0440\u0435\u043D\u043D\u044B\u043C \u043C\u0438\u0440\u043E\u0432\u044B\u043C \u0441\u043E\u0431\u044B\u0442\u0438\u044F\u043C, breaking news \u0438 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u043C \u0442\u0440\u0435\u043D\u0434\u0430\u043C",
-        curatorIds: ["alex-vector", "kirk-kitten", "marcus-vane"],
+        curatorIds: ["alex-vector", "kirk-kitten"],
         coordinatorId: "survey-coordinator",
         accentColor: "#f97316",
         badgeBg: "rgba(249, 115, 22, 0.16)",
-        defaultScope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438, \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u0430\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0444\u0430\u043A\u0442\u043E\u0432 \u0438 \u0434\u0435\u0442\u0435\u043A\u0446\u0438\u044F \u043F\u043E\u0442\u0435\u043D\u0446\u0438\u0430\u043B\u0430 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430"
+        defaultScope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438 \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u0430\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0444\u0430\u043A\u0442\u043E\u0432"
       },
       "domino-nexus-group": {
         id: "domino-nexus-group",
-        name: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F",
+        name: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F [Standby]",
         shortName: "\u042D\u0444\u0444\u0435\u043A\u0442 \u0434\u043E\u043C\u0438\u043D\u043E",
         emoji: "\u265F\uFE0F",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0433\u0440\u0443\u043F\u043F\u0430 \u043F\u0440\u043E\u0433\u043D\u043E\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F \u044D\u0444\u0444\u0435\u043A\u0442\u0430 \u0434\u043E\u043C\u0438\u043D\u043E, \u0432\u0430\u043A\u0443\u0443\u043C\u0430 \u0441\u0438\u043B\u044B \u0438 \u0441\u043C\u0435\u0436\u043D\u044B\u0445 \u0432\u0435\u0442\u043E\u043A \u0441\u043E\u0431\u044B\u0442\u0438\u0439",
-        curatorIds: ["marcus-vane", "tariq-said", "helena-brandt", "chen-wei"],
+        description: "\u0413\u0440\u0443\u043F\u043F\u0430 \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 Standby \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438)",
+        curatorIds: ["tariq-said", "helena-brandt", "chen-wei"],
         coordinatorId: "survey-coordinator",
         accentColor: "#10b981",
         badgeBg: "rgba(168, 85, 247, 0.16)",
-        defaultScope: "\u041E\u0446\u0435\u043D\u043A\u0430 \u0442\u043E\u0447\u0435\u043A \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u0445 \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442\u043E\u0432, \u0446\u0435\u043F\u043E\u0447\u043A\u0438 \u0441\u044B\u0440\u044C\u0435\u0432\u044B\u0445 \u0438 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0448\u043E\u043A\u043E\u0432"
+        defaultScope: "\u041E\u0446\u0435\u043D\u043A\u0430 \u0442\u043E\u0447\u0435\u043A \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u0445 \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442\u043E\u0432, \u0446\u0435\u043F\u043E\u0447\u043A\u0438 \u0441\u044B\u0440\u044C\u0435\u0432\u044B\u0445 \u0438 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0448\u043E\u043A\u043E\u0432",
+        isStandby: true
       },
       "mena-security-group": {
         id: "mena-security-group",
@@ -4470,7 +4473,7 @@ var init_dist = __esm({
         name: "\u041F\u043E\u043B\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
         shortName: "\u0412\u0441\u0435 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u044B",
         emoji: "\u{1F310}",
-        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442 \u0432\u0441\u0435\u0445 9 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 Project Lenta (\u0420\u0424, \u041C\u0438\u0440, \u0410\u0422\u0420, IT BigTech, Habr/\u0425\u0430\u043A\u0435\u0440, Breaking, Nexus, MENA, \u0421\u044B\u0440\u044C\u0435)",
+        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442 \u0432\u0441\u0435\u0445 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 Project Lenta",
         curatorIds: [
           "ivan-bely",
           "kirk-kitten",
@@ -4478,7 +4481,6 @@ var init_dist = __esm({
           "okatsiya",
           "german-kernel",
           "alex-vector",
-          "marcus-vane",
           "tariq-said",
           "helena-brandt"
         ],
@@ -4512,8 +4514,8 @@ var init_dist = __esm({
         category: "survey",
         accentColor: "#6366f1",
         badgeBg: "rgba(99, 102, 241, 0.16)",
-        description: "\u041E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0433\u0440\u0443\u043F\u043F\u0443 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 (\u0438\u043B\u0438 \u0432\u0441\u0435\u0445) \u0437\u0430 \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B (\u0441\u0435\u0433\u043E\u0434\u043D\u044F, \u0432\u0447\u0435\u0440\u0430, \u043D\u0435\u0434\u0435\u043B\u044F), \u0441\u0432\u043E\u0434\u0438\u0442 \u0438\u0445 \u0434\u043E\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0437\u0438\u0446\u0438\u0438 \u0438 \u0432\u044B\u044F\u0432\u043B\u044F\u0435\u0442 \u0442\u043E\u0447\u043A\u0438 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430.",
-        capabilities: ["group_polling", "temporal_slicing", "cross_curator_comparison", "resonance_detection"],
+        description: "\u041E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0433\u0440\u0443\u043F\u043F\u0443 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 (\u0438\u043B\u0438 \u0432\u0441\u0435\u0445) \u0437\u0430 \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B (\u0441\u0435\u0433\u043E\u0434\u043D\u044F, \u0432\u0447\u0435\u0440\u0430, \u043D\u0435\u0434\u0435\u043B\u044F) \u0438 \u0441\u0432\u043E\u0434\u0438\u0442 \u0438\u0445 \u0434\u043E\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0437\u0438\u0446\u0438\u0438.",
+        capabilities: ["group_polling", "temporal_slicing", "cross_curator_comparison"],
         suggestedSnippets: ["/survey", "/survey-today", "/survey-yesterday", "/survey-week"]
       },
       "sidework-producer": {
@@ -4554,19 +4556,6 @@ var init_dist = __esm({
         description: "\u0411\u0435\u0440\u0435\u0442 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 Super Note, \u0443\u043F\u0430\u043A\u043E\u0432\u044B\u0432\u0430\u0435\u0442 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438 \u0432 markdown-\u0431\u0430\u043D\u0434\u043B, \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 NotebookLM-\u0434\u043D\u0435\u0432\u043D\u0438\u043A\u0430 \u0432 \u0444\u043E\u043D\u0435 \u0438 \u043F\u043E \u043A\u043E\u043B\u043B\u0431\u044D\u043A\u0443 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u0446\u0435\u043B\u0435\u0432\u0443\u044E \u0437\u0430\u043C\u0435\u0442\u043A\u0443.",
         capabilities: ["source_bundling", "notebooklm_dispatch", "eta_estimation", "async_note_callback", "audio_overview_pipeline"],
         suggestedSnippets: ["/notebook", "/notebook-create", "/notebook-eta"]
-      },
-      "independent-analyst": {
-        id: "independent-analyst",
-        name: "\u041D\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043C\u044B\u0439 \u0410\u0440\u0431\u0438\u0442\u0440",
-        shortName: "\u0410\u0440\u0431\u0438\u0442\u0440",
-        role: "\u0410\u0433\u0435\u043D\u0442 \u0431\u0435\u0441\u043F\u0440\u0438\u0441\u0442\u0440\u0430\u0441\u0442\u043D\u043E\u0433\u043E \u0441\u0438\u043D\u0442\u0435\u0437\u0430 \u0438 \u0444\u0430\u043A\u0442\u0447\u0435\u043A\u0438\u043D\u0433\u0430",
-        avatar: "\u2696\uFE0F",
-        category: "synthesis",
-        accentColor: "#14b8a6",
-        badgeBg: "rgba(20, 184, 166, 0.16)",
-        description: "\u041F\u0440\u043E\u0432\u043E\u0434\u0438\u0442 \u043E\u0431\u044A\u0435\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u043A\u0440\u043E\u0441\u0441-\u043A\u043E\u043D\u0442\u0443\u0440\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0437 \u043F\u0440\u0438 \u0441\u0442\u043E\u043B\u043A\u043D\u043E\u0432\u0435\u043D\u0438\u0438 \u043E\u0446\u0435\u043D\u043E\u043A \u0440\u0430\u0437\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432, \u043E\u0446\u0435\u043D\u0438\u0432\u0430\u0435\u0442 \u0434\u043E\u0441\u0442\u043E\u0432\u0435\u0440\u043D\u043E\u0441\u0442\u044C \u0438 \u0440\u0430\u0441\u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u0442 \u043F\u0440\u043E\u0446\u0435\u043D\u0442 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430.",
-        capabilities: ["neutral_arbitration", "resonance_scoring", "conflict_resolution"],
-        suggestedSnippets: ["/synthesis"]
       }
     };
     WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
@@ -4741,7 +4730,6 @@ var init_dist = __esm({
       sourceLink: external_exports.string().url().optional().nullable(),
       icon: external_exports.string().optional().nullable(),
       curator: external_exports.string().optional().nullable(),
-      resonanceScore: external_exports.number().int().min(0).max(100).optional().nullable(),
       parentNoteId: external_exports.string().optional().nullable(),
       tagIds: external_exports.array(external_exports.string()).optional(),
       hashtags: external_exports.array(external_exports.string()).optional(),
@@ -4759,7 +4747,6 @@ var init_dist = __esm({
       feedSlug: external_exports.string().optional(),
       type: noteTypeSchema.optional(),
       curator: external_exports.string().optional(),
-      minResonance: external_exports.number().int().min(0).max(100).optional(),
       startDateFrom: external_exports.string().optional(),
       startDateTo: external_exports.string().optional(),
       endDateFrom: external_exports.string().optional(),
@@ -4814,7 +4801,6 @@ var init_dist = __esm({
       curator: external_exports.string().optional().nullable(),
       persona: external_exports.string().optional().nullable(),
       assistants: external_exports.array(external_exports.string()).optional(),
-      resonance_score: external_exports.number().optional().nullable(),
       parent_note_id: external_exports.string().optional().nullable(),
       updated_at: external_exports.string().optional(),
       updatedAt: external_exports.string().optional(),
@@ -4879,9 +4865,6 @@ var init_dist = __esm({
         }
         if (note.curator) {
           lines.push(`curator: "${note.curator}"`);
-        }
-        if (typeof note.resonanceScore === "number" && !isNaN(note.resonanceScore)) {
-          lines.push(`resonance_score: ${note.resonanceScore}`);
         }
         if (note.parentNoteId) {
           lines.push(`parent_note_id: "${note.parentNoteId}"`);
@@ -6309,7 +6292,6 @@ var LentaSyncEngine = class {
     const startDate = parsed.frontmatter.start_date || parsed.frontmatter.startDate || (/* @__PURE__ */ new Date()).toISOString();
     const noteId = parsed.lentaId || parsed.frontmatter.id;
     const curatorVal = parsed.frontmatter.curator || void 0;
-    const resonanceVal = typeof parsed.frontmatter.resonance_score === "number" ? parsed.frontmatter.resonance_score : typeof parsed.frontmatter.resonanceScore === "number" ? parsed.frontmatter.resonanceScore : void 0;
     if (noteId) {
       const updated = await this.apiClient.updateNote(noteId, {
         title: parsed.title,
@@ -6319,8 +6301,7 @@ var LentaSyncEngine = class {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || null,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || null,
         icon: parsed.frontmatter.icon || null,
-        curator: curatorVal || null,
-        resonanceScore: resonanceVal ?? null
+        curator: curatorVal || null
       });
       if (processedBody !== parsed.body) {
         const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(updated);
@@ -6367,8 +6348,7 @@ var LentaSyncEngine = class {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || void 0,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || void 0,
         icon: parsed.frontmatter.icon || void 0,
-        curator: curatorVal,
-        resonanceScore: resonanceVal
+        curator: curatorVal
       });
       const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(created);
       await vault.modify(file, newMarkdown);
@@ -6441,7 +6421,6 @@ var LentaSyncEngine = class {
         hashtags: (parsed.hashtags || []).map((h) => ({ id: h, name: h, createdAt: "", updatedAt: "", deletedAt: null })),
         folders: relativeFolder ? [{ id: "", noteId: lentaId, folderId: "", isPrimary: true, order: 0, folder: { id: "", name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: "", updatedAt: "", deletedAt: null } }] : [],
         curator: parsed.frontmatter.curator || null,
-        resonanceScore: typeof parsed.frontmatter.resonance_score === "number" ? parsed.frontmatter.resonance_score : null,
         createdAt: "",
         updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
         deletedAt: null

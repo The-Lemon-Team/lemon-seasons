@@ -161,7 +161,6 @@ export interface Note {
   images?: NoteImage[];
   links?: NoteLink[];
   curator?: string | null;
-  resonanceScore?: number | null;
   parentNoteId?: string | null;
   parentNote?: Note | null;
   childNotes?: Note[];
@@ -196,7 +195,6 @@ export interface QueryNotesParams {
   containers?: string[] | string;
   userId?: string;
   curator?: string;
-  minResonance?: number;
   limit?: number;
   offset?: number;
 }
@@ -219,7 +217,6 @@ export interface CreateNoteInput {
   sourceLink?: string;
   icon?: string;
   curator?: string;
-  resonanceScore?: number;
   parentNoteId?: string;
   tagIds?: string[];
   hashtags?: string[];
@@ -241,7 +238,6 @@ export interface UpdateNoteInput {
   feedId?: string;
   containerId?: string | null;
   curator?: string | null;
-  resonanceScore?: number | null;
   parentNoteId?: string | null;
   tagIds?: string[];
   hashtags?: string[];
@@ -334,7 +330,6 @@ export interface LentaFrontmatter {
   curator?: string;
   persona?: string;
   assistants?: string[];
-  resonance_score?: number | null;
   parent_note_id?: string | null;
   updated_at?: string;
   updatedAt?: string;
@@ -399,7 +394,6 @@ export interface CalendarFilterState {
   types: NoteType[];
   search: string;
   curator?: string;
-  minResonance?: number;
 }
 
 // User & Privacy Access Types
@@ -529,7 +523,6 @@ export interface ParsedNoteCard {
   sourceLink?: string;
   description?: string;
   curator?: string;
-  resonanceScore?: number;
   selected?: boolean;
 }
 
@@ -649,7 +642,6 @@ export interface TelegramNewsPreview {
   sourceName: string;
   sourceUrl?: string;
   tags: string[];
-  resonanceScore: number;
   keyPoints?: string[];
   publishedAt?: string;
   contourBadge?: string;
@@ -665,9 +657,7 @@ export interface ChatMessageRecord {
   text: string;
   messageType?: string;
   metadata?: any;
-  resonanceScore?: number | null;
   sources?: string[];
-  resonanceNodes?: any;
   groupSummary?: any;
   suggestedCard?: any;
   newsPosts?: TelegramNewsPreview[];
@@ -810,7 +800,6 @@ export interface CommitPackage {
       avatar?: string | null;
       text: string;
       createdAt: string;
-      resonanceScore?: number | null;
       sources?: string[];
     }>;
     links?: Array<{
@@ -907,7 +896,6 @@ export type WorkerAgentId =
   | 'sidework-producer'
   | 'podcast-agent'
   | 'notebook-producer'
-  | 'independent-analyst'
   | 'dispatcher';
 
 export type AgentRoleType = 'curator' | 'operational_agent' | 'user';
@@ -946,7 +934,7 @@ export interface CuratorTake {
   domain: string;
   itemsCount: number;
   keyTheses: string[];
-  resonancePoints: string[];
+  focusPoints?: string[];
   sourceCitations: string[];
 }
 
@@ -966,7 +954,7 @@ export interface CuratorSurveyResult {
   headline: string;
   executiveSummary: string;
   curatorTakes: CuratorTake[];
-  crossDomainResonances: CrossDomainResonance[];
+  crossDomainResonances?: CrossDomainResonance[];
   branchingAnalyses?: BranchingAnalysis[];
   generatedAt: string;
 }

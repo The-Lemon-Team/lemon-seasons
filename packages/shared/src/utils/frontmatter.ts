@@ -78,10 +78,6 @@ export class LentaFrontmatterUtil {
       lines.push(`curator: "${note.curator}"`);
     }
 
-    if (typeof note.resonanceScore === 'number' && !isNaN(note.resonanceScore)) {
-      lines.push(`resonance_score: ${note.resonanceScore}`);
-    }
-
     if (note.parentNoteId) {
       lines.push(`parent_note_id: "${note.parentNoteId}"`);
     }
