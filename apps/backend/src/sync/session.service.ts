@@ -251,7 +251,6 @@ export class SessionService {
           avatar: msg.avatar,
           text: msg.text,
           createdAt: msg.createdAt.toISOString(),
-          resonanceScore: msg.resonanceScore,
           sources: msg.sources,
         })),
         links: links.map((link) => ({

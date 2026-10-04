@@ -15,7 +15,7 @@ export class CurationController {
   constructor(private readonly curationService: CurationService) {}
 
   @Post('agent-chat')
-  @ApiOperation({ summary: 'Send query or snippet to agent desk (Ivan Bely, Kirk Kitten, or Independent Analyst)' })
+  @ApiOperation({ summary: 'Send query or snippet to curator agent desk' })
   async agentChat(@Body() dto: AgentChatDto) {
     return this.curationService.processAgentChat(dto);
   }

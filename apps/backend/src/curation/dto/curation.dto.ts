@@ -109,7 +109,7 @@ export class AgentChatDto {
   @ApiPropertyOptional({ description: 'Target agent id or all', example: 'all' })
   @IsOptional()
   @IsString()
-  targetAgent?: 'all' | 'political-group' | 'tech-group' | 'ivan-bely' | 'kirk-kitten' | 'chen-wei' | 'okatsiya' | 'german-kernel' | 'notebook-producer' | 'independent-analyst' | 'dispatcher';
+  targetAgent?: 'all' | 'political-group' | 'tech-group' | 'ivan-bely' | 'kirk-kitten' | 'chen-wei' | 'okatsiya' | 'german-kernel' | 'notebook-producer' | 'dispatcher';
 
   @ApiPropertyOptional({ description: 'Previous conversation history for context' })
   @IsOptional()

@@ -77,13 +77,6 @@ export class CreateNoteDto {
   @IsOptional()
   curator?: string;
 
-  @ApiPropertyOptional({ description: 'Resonance or cross-context overlap score (0-100)', example: 86 })
-  @IsInt()
-  @Min(0)
-  @Max(100)
-  @IsOptional()
-  resonanceScore?: number;
-
   @ApiPropertyOptional({ description: 'Parent note ID if this note is a synthesis or child', example: 'uuid-parent' })
   @IsString()
   @IsOptional()

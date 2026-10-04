@@ -177,7 +177,6 @@ export class NotesService {
         sourceLink: initialSourceLink,
         icon: createNoteDto.icon,
         curator: createNoteDto.curator,
-        resonanceScore: createNoteDto.resonanceScore,
         parentNote: createNoteDto.parentNoteId ? { connect: { id: createNoteDto.parentNoteId } } : undefined,
         feed: createNoteDto.feedId ? { connect: { id: createNoteDto.feedId } } : undefined,
         container: targetContainerId ? { connect: { id: targetContainerId } } : undefined,
@@ -313,9 +312,6 @@ export class NotesService {
               { curator: { contains: query.curator, mode: 'insensitive' } },
             ],
           }
-        : {}),
-      ...(query.minResonance !== undefined && query.minResonance !== null
-        ? { resonanceScore: { gte: Number(query.minResonance) } }
         : {}),
       ...(tagId ? { tags: { some: { id: tagId, deletedAt: null } } } : {}),
       ...(tagPath
@@ -631,7 +627,6 @@ export class NotesService {
         ...(updateNoteDto.sourceLink !== undefined ? { sourceLink: updateNoteDto.sourceLink } : {}),
         ...(updateNoteDto.icon !== undefined ? { icon: updateNoteDto.icon } : {}),
         ...(updateNoteDto.curator !== undefined ? { curator: updateNoteDto.curator } : {}),
-        ...(updateNoteDto.resonanceScore !== undefined ? { resonanceScore: updateNoteDto.resonanceScore } : {}),
         ...(updateNoteDto.parentNoteId !== undefined
           ? updateNoteDto.parentNoteId
             ? { parentNote: { connect: { id: updateNoteDto.parentNoteId } } }

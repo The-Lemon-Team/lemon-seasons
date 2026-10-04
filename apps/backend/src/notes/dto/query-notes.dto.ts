@@ -39,12 +39,6 @@ export class QueryNotesDto {
   @IsOptional()
   curator?: string;
 
-  @ApiPropertyOptional({ description: 'Filter notes with resonanceScore >= this threshold (0-100)' })
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  minResonance?: number;
-
   @ApiPropertyOptional({ description: 'Filter notes with startDate on or after this ISO date' })
   @IsDateString()
   @IsOptional()

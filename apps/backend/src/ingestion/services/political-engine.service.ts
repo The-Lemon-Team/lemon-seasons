@@ -9,7 +9,6 @@ export interface PoliticalEventItem {
   description: string;
   icon?: string;
   curator?: string;
-  resonanceScore?: number;
   parentNoteId?: string;
   sourceLink?: string;
   imageUrl?: string;
@@ -54,7 +53,6 @@ export class PoliticalEngineService {
         type: NoteType.EVENT,
         icon: 'shield-alert',
         curator: 'Kirk Kitten',
-        resonanceScore: 82,
         description: `### Истечение срока Договора между РФ и США о сокращении стратегических наступательных вооружений
 
 Критическая дата в архитектуре глобальной ядерной безопасности и контроля над вооружениями. Договор СНВ-III, продленный в 2021 году на пятилетний срок, завершает свое действие 5 февраля 2026 года.
@@ -110,7 +108,6 @@ export class PoliticalEngineService {
         type: NoteType.EVENT,
         icon: 'vote',
         curator: 'Иван Белый',
-        resonanceScore: 65,
         imageUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800',
         imageCaption: 'Государственная Дума Федерального Собрания Российской Федерации',
         description: `### Выборы депутатов Государственной Думы Федерального Собрания Российской Федерации IX созыва
@@ -131,7 +128,6 @@ export class PoliticalEngineService {
         type: NoteType.EVENT,
         icon: 'trending-up',
         curator: 'Иван Белый',
-        resonanceScore: 86,
         description: `### Мониторинг оптовых цен на топливо (СПбМТСБ)
 
 ФАС и Минэнерго зафиксировали рост оптовых биржевых цен на бензин АИ-95 на СПбМТСБ (+4.2% за неделю).
@@ -150,7 +146,6 @@ export class PoliticalEngineService {
         type: NoteType.EVENT,
         icon: 'anchor',
         curator: 'Kirk Kitten',
-        resonanceScore: 86,
         description: `### Пакет санкций OFAC (Минфин США) против морских перевозчиков
 
 Управление по контролю за иностранными активами Минфина США (OFAC) объявило о включении в блокирующий список SDN четырех логистических операторов и восьми танкеров.
@@ -170,11 +165,9 @@ export class PoliticalEngineService {
         type: NoteType.DONE,
         icon: 'check-circle',
         curator: 'Пользователь',
-        resonanceScore: 86,
         description: `### Аналитический синтез сессии: Топливный баланс и внешние шоки
 
 **Кураторы:** 🇷🇺 Иван Белый (Внутренний контур) × 🌐 Kirk Kitten (Международный контур)  
-**Резонанс контекста:** 86%  
 **Статус:** Анализ верифицирован, прецедент сохранен в базу практики.
 
 ---
@@ -189,7 +182,7 @@ OFAC действительно ввел пакет санкций от 19 се�
 Шок носит временный логистический характер. Реального дефицита светлых нефтепродуктов на внутреннем рынке нет. Рынок адаптируется в течение 2–3 недель по мере смены операторов судов под нейтральные флаги.`,
         taxonomyPath: 'politics.cross_analysis',
         folders: ['Synthesis/2026', 'Politics/CrossAnalysis'],
-        hashtags: ['Синтез', 'Done', 'Резонанс86', 'Бензин', 'OFAC', 'Практика'],
+        hashtags: ['Синтез', 'Done', 'Бензин', 'OFAC', 'Практика'],
       },
       {
         title: 'Промежуточные выборы в Конгресс США (US Midterm Elections 2026)',
@@ -197,7 +190,6 @@ OFAC действительно ввел пакет санкций от 19 се�
         type: NoteType.EVENT,
         icon: 'flag',
         curator: 'Kirk Kitten',
-        resonanceScore: 78,
         imageUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800',
         imageCaption: 'Капитолий США в Вашингтоне',
         description: `### Промежуточные выборы в США (US Midterm Elections)

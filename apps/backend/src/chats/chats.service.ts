@@ -130,7 +130,7 @@ export class ChatsService implements OnModuleInit {
           type: ChatType.GROUP,
           folderId: agentsFolder.id,
           targetAgent: 'sidework-producer',
-          participantAgents: ['sidework-producer', 'independent-analyst'],
+          participantAgents: ['sidework-producer'],
           dateScope: today,
           isPinned: true,
         },
@@ -161,7 +161,7 @@ export class ChatsService implements OnModuleInit {
           type: ChatType.GROUP,
           folderId: politicsFolder.id,
           targetAgent: 'political-group',
-          participantAgents: ['ivan-bely', 'kirk-kitten', 'chen-wei', 'independent-analyst'],
+          participantAgents: ['ivan-bely', 'kirk-kitten', 'chen-wei'],
           dateScope: today,
           isPinned: true,
         },
@@ -180,7 +180,6 @@ export class ChatsService implements OnModuleInit {
 - **🇷🇺 Иван Белый** — внутренний контур РФ, регуляторика и налоги.
 - **🌐 Kirk Kitten** — внешние рынки, санкции OFAC/ЕС и сырьевой фрахт.
 - **🇨🇳 Чэнь Вэй** — АТР, Китай, БРИКС и торговые коридоры.
-- **⚖️ Независимый аналитик** — выявление узлов резонанса и беспристрастный арбитраж.
 
 *Задайте любой вопрос или вызовите команду \`/politics\` для модульной сводки дня!*`,
         },
@@ -193,7 +192,7 @@ export class ChatsService implements OnModuleInit {
           type: ChatType.GROUP,
           folderId: techFolder.id,
           targetAgent: 'okatsiya',
-          participantAgents: ['okatsiya', 'independent-analyst'],
+          participantAgents: ['okatsiya'],
           dateScope: today,
           isPinned: true,
         },
@@ -210,6 +209,54 @@ export class ChatsService implements OnModuleInit {
 Здесь мы отслеживаем архитектуру высоконагруженных систем, Kubernetes, релизы LLM моделей, BigTech и кибербезопасность.
 
 *Используйте команды \`/it\`, \`/ai\`, \`/devops\`, \`/backend\` или задавайте прямые вопросы по стеку!*`,
+        },
+      });
+
+      // Thread: Выход моделей нового поколения (Radar & Updates)
+      const modelsThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🧠 Выход моделей нового поколения (Radar & Updates)',
+          type: ChatType.GROUP,
+          folderId: techFolder.id,
+          targetAgent: 'okatsiya',
+          participantAgents: ['okatsiya', 'german-kernel', 'sidework-producer'],
+          dateScope: today,
+          isPinned: true,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: modelsThread.id,
+          sender: 'okatsiya',
+          senderName: 'Окация',
+          senderRole: 'Архитектор и куратор контура IT & AI',
+          avatar: '⚡',
+          text: `### 🧠 Радар релизов: Выход моделей нового поколения\n\nЗдесь мы непрерывно отслеживаем выход моделей нового поколения (Gemini 4 Argon, GPT-6 Astra/Sol/Luna, Claude 5.5 Opus/Sonnet) и пополняем ленту новыми анонсами по мере их появления на рынке.\n\n*Используйте команду \`/ai\` или задавайте вопросы куратору Окации!*`,
+        },
+      });
+
+      // Thread: Эра автономных ИИ-агентов
+      const agentsThread = await this.prisma.chatThread.create({
+        data: {
+          title: '🤖 Эра автономных ИИ-агентов (и смежные новости)',
+          type: ChatType.GROUP,
+          folderId: techFolder.id,
+          targetAgent: 'okatsiya',
+          participantAgents: ['okatsiya', 'german-kernel', 'marcus-vane', 'kirk-kitten', 'sidework-producer'],
+          dateScope: today,
+          isPinned: true,
+        },
+      });
+
+      await this.prisma.chatMessageRecord.create({
+        data: {
+          threadId: agentsThread.id,
+          sender: 'okatsiya',
+          senderName: 'Окация',
+          senderRole: 'Архитектор и куратор контура IT & AI',
+          avatar: '⚡',
+          text: `### 🤖 Эра автономных ИИ-агентов\n\nМониторинг перехода от классических чат-ботов к постоянным автономным агентам (OpenAI Dots, Meta Muse Spark 1.3, xAI Grok 4.7), а также смежные контуры: локальные вычисления (NVIDIA RTX Spark, Apple Siri AI в iOS 27.2), расследования FTC, милитаризация (AUTOWARCOM Пентагона) и $88 млрд долга на Уолл-стрит.`,
         },
       });
 
@@ -335,10 +382,10 @@ export class ChatsService implements OnModuleInit {
         },
       });
 
-      // Thread: Маркус Вейн (Direct 1-on-1)
+      // Thread: Маркус Вейн (Direct 1-on-1 - Standby)
       const marcusThread = await this.prisma.chatThread.create({
         data: {
-          title: '♟️ Маркус Вейн: Эффект домино & Каскадные риски',
+          title: '♟️ Маркус Вейн [Standby]: Эффект домино & Каскадные риски',
           type: ChatType.DIRECT,
           folderId: directFolder.id,
           targetAgent: 'marcus-vane',
@@ -352,10 +399,10 @@ export class ChatsService implements OnModuleInit {
         data: {
           threadId: marcusThread.id,
           sender: 'marcus-vane',
-          senderName: 'Маркус Вейн',
-          senderRole: 'Аналитик эффекта домино и ветвления событий',
+          senderName: 'Маркус Вейн [Standby]',
+          senderRole: 'Аналитик эффекта домино и ветвления событий (Режим ожидания)',
           avatar: '♟️',
-          text: `Приветствую. Моя оптика — слом статус-кво, вакуум силы и расчет эффекта домино по смежным контурам (BPI). Вызывайте команду \`/marcus\` для анализа ветвления.`,
+          text: `Приветствую. Моя аналитическая оптика временно находится в режиме ожидания (Standby). Автоматическая аналитика будет расширена в будущем обновлении.`,
         },
       });
 
@@ -685,7 +732,10 @@ export class ChatsService implements OnModuleInit {
 
     // 2. Resolve target date and news context
 
-    const targetDate = dto.date || thread.dateScope || new Date().toISOString().split('T')[0];
+    const targetDate =
+      dto.date ||
+      (thread.type === ChatType.DIRECT ? new Date().toISOString().split('T')[0] : thread.dateScope) ||
+      new Date().toISOString().split('T')[0];
     const candidateCards = await this.curationService.getDailyNews(targetDate);
     const politicalEvents = this.politicalEngineService.getPoliticalEvents2026();
 
@@ -751,9 +801,7 @@ export class ChatsService implements OnModuleInit {
         avatar: m.avatar || undefined,
         text: m.text,
         timestamp: m.createdAt.toISOString(),
-        resonanceScore: m.resonanceScore || undefined,
         sources: m.sources,
-        resonanceNodes: m.resonanceNodes as any,
         groupSummary: m.groupSummary as any,
         suggestedCard: m.suggestedCard as any,
         messageType: gs?.messageType || 'DEFAULT',
@@ -791,9 +839,9 @@ export class ChatsService implements OnModuleInit {
           senderRole: reply.senderRole,
           avatar: reply.avatar || null,
           text: reply.text,
-          resonanceScore: reply.resonanceScore || null,
+          resonanceScore: null,
           sources: reply.sources || [],
-          resonanceNodes: (reply.resonanceNodes as any) || null,
+          resonanceNodes: null,
           groupSummary: (groupSummaryPayload as any) || null,
           suggestedCard: (reply.suggestedCard as any) || null,
         },

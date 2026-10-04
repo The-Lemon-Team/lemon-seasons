@@ -416,7 +416,6 @@ async function main() {
     imageCaption?: string;
     trailerUrl?: string;
     curator?: string;
-    resonanceScore?: number;
     parentNoteId?: string;
   }) {
     const tagId = await getOrCreateTaxonomy(item.taxonomyPath);
@@ -434,7 +433,6 @@ async function main() {
         endDate: eDate,
         icon: item.icon,
         curator: item.curator,
-        resonanceScore: item.resonanceScore,
         parentNoteId: item.parentNoteId,
         sourceLink: item.sourceLink,
         tags: {
@@ -743,7 +741,6 @@ async function main() {
       imageUrl: p.imageUrl,
       imageCaption: p.imageCaption,
       curator: p.curator,
-      resonanceScore: p.resonanceScore,
     });
   }
   console.log(`✅ Seeded ${politicalEvents.length} Political Events 2026`);

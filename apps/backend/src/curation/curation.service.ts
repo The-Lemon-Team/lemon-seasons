@@ -103,7 +103,6 @@ export class CurationService {
     ? '📟 Контур Habr & IT-статей (Герман «Кернел»)'
     : 'Общий мониторинг'
 }  
-> **Индекс резонанса:** \`${targetCard.resonanceScore}%\`
 
 ### Ключевые тезисы:
 ${targetCard.keyPoints.map((p) => `- ${p}`).join('\n')}
@@ -128,7 +127,6 @@ ${targetCard.keyPoints.map((p) => `- ${p}`).join('\n')}
       sourceLink: targetCard.url,
       hashtags,
       curator,
-      resonanceScore: targetCard.resonanceScore,
     } as any);
 
     // Update status in store
@@ -239,7 +237,6 @@ ${dialogueMarkdown}
       folder: 'Podcasts',
       hashtags: ['подкаст', 'аудио-дайджест', 'notebooklm', 'новости-дня'],
       curator: 'ivan-bely',
-      resonanceScore: 88,
     } as any);
 
     return {
@@ -251,7 +248,7 @@ ${dialogueMarkdown}
   }
 
   /**
-   * Processes a message directed to agents, handling snippets, contour questions, and independent analysis.
+   * Processes a message directed to agents, handling snippets and contour queries.
    */
   async processAgentChat(dto: AgentChatDto) {
     const targetDate = dto.date || new Date().toISOString().split('T')[0];
@@ -310,19 +307,11 @@ ${dialogueMarkdown}
 
     const cachedPodcast = this.podcastStore.get(targetDate) || null;
 
-    let avgResonance = 45;
-    if (newsCards.length > 0) {
-      avgResonance = Math.round(
-        newsCards.reduce((acc, c) => acc + c.resonanceScore, 0) / newsCards.length,
-      );
-    }
-
     return {
       date: targetDate,
       totalNewsCount: newsCards.length,
       acceptedNotesCount: Math.max(acceptedCount, dayNotes.length),
       pendingReviewCount: pendingCount,
-      averageResonance: avgResonance,
       topThemes: Array.from(themeSet).slice(0, 6),
       headlineSynthesis:
         dayNotes.length > 0
@@ -369,22 +358,40 @@ ${dialogueMarkdown}
         rawText: 'Экспертный совет при Министерстве цифрового развития одобрил включение более 40 решений в сфере машинного обучения, графовых баз данных и систем хронологического анализа в единый реестр ПО.',
       },
       {
-        title: 'Anthropic и OpenAI представили обновленные бенчмарки автономных reasoning-агентов для сложного программирования',
-        source: 'TechCrunch / Artificial Intelligence',
-        url: 'https://techcrunch.com/ai/reasoning-agents-coding-benchmark',
-        rawText: 'Новые агентные архитектуры продемонстрировали устойчивое решение 82% задач SWE-bench Verified без вмешательства человека, снизив время отладки распределенных бэкендов вдвое.',
+        title: 'Google анонсировала флагман Gemini 4 Argon с окном вывода в 1M токенов, Gemini 3.8 Flash и WeatherNext 3',
+        source: 'Google DeepMind / AI Research',
+        url: 'https://deepmind.google/news/gemini-4-argon-announcement',
+        rawText: 'Google анонсировала флагманскую модель Gemini 4 Argon с беспрецедентным окном вывода в 1 миллион токенов для сложнейшего кодинга и кибербезопасности. Доступ ограничен закрытой исследовательской программой Fairwind для экспертов по защите сетей. Также вышли обновленная Gemini 3.8 Flash и климатическая система WeatherNext 3.',
       },
       {
-        title: 'CNCF и Kubernetes Community выпустили LTS-релиз с нативной поддержкой динамического планирования GPU для AI-кластеров',
-        source: 'The Register / DevOps & Cloud',
-        url: 'https://theregister.com/devops/kubernetes-lts-dynamic-gpu-scheduling',
-        rawText: 'Очередной релиз Kubernetes вводит стандарт Dynamic Resource Allocation (DRA) для гетерогенных ускорителей вычислений, оптимизируя загрузку нод в распределенных средах инференса.',
+        title: 'OpenAI представила шестое поколение GPT-6 (Astra, Sol, Luna) и отменила релиз GPT-6.1 Astra',
+        source: 'OpenAI Blog / Safety Red Team',
+        url: 'https://openai.com/index/gpt-6-generation-announcement',
+        rawText: 'OpenAI представила шестое поколение моделей GPT-6 (Astra, Sol и Luna). Версия Sol предлагает возможности флагмана всего за пятую часть стоимости. При этом намеченный на октябрь релиз GPT-6.1 Astra был отменен из-за непрохождения внутренних тестов на безопасность.',
       },
       {
-        title: 'Опубликован критический эксплойт нулевого дня в стеке сетевых драйверов: выпущен экстренный патч ядра',
-        source: 'BleepingComputer / InfoSec',
-        url: 'https://bleepingcomputer.com/security/kernel-zeroday-patch',
-        rawText: 'Специалисты по кибербезопасности зафиксировали уязвимость переполнения буфера в подсистеме обработки пакетов. Команда мейнтейнеров выпустила срочные обновления безопасности для всех LTS-веток.',
+        title: 'Anthropic выпустила линейку Claude 5.5 (Opus 5.5 и Sonnet 5.5) с кибербезопасным роутингом запросов',
+        source: 'Anthropic Newsroom',
+        url: 'https://anthropic.com/news/claude-5-5-family',
+        rawText: 'Anthropic выпустила линейку Claude 5.5 (Opus 5.5 и Sonnet 5.5). Обновленный Sonnet 5.5 получил специализированный алгоритм, который автоматически перенаправляет потенциально опасные запросы на профильную проверку кибербезопасности.',
+      },
+      {
+        title: 'Эра автономных ИИ-агентов: OpenAI запустила Dots, Meta внедрила Muse, а xAI представила Grok 4.7',
+        source: 'TechCrunch / Enterprise AI',
+        url: 'https://techcrunch.com/2026/10/04/autonomous-ai-agents-era',
+        rawText: 'Индустрия переходит от чат-ботов к постоянным агентам, выполняющим многошаговые процессы в фоне. OpenAI запустила постоянных агентов Dots с выделенными ресурсами, Meta внедрила персонального агента Muse на базе Muse Spark 1.3, а xAI Grok 4.7 превратилась в магазин ИИ-сотрудников.',
+      },
+      {
+        title: 'Локальные вычисления: В октябре ожидаются ПК NVIDIA RTX Spark, а Apple готовит Siri AI в iOS 27.2',
+        source: 'The Verge / Hardware & Systems',
+        url: 'https://theverge.com/2026/10/04/nvidia-rtx-spark-apple-siri-ai-ios-27-2',
+        rawText: 'В октябре ожидается массовый выход ПК линейки RTX Spark от NVIDIA, которые переносят тяжелые вычисления ИИ-агентов из облака на локальное «железо» для приватности и скорости. Apple готовит расширение возможностей Siri AI на новые языки в грядущем обновлении iOS 27.2.',
+      },
+      {
+        title: 'Регулирование и скепсис инвесторов: Расследование FTC США, AUTOWARCOM Пентагона и $88 млрд ИИ-долга',
+        source: 'Wall Street Journal / Markets & Tech',
+        url: 'https://wsj.com/tech/ai/ftc-probe-autowarcom-pentagon-ai-debt',
+        rawText: 'FTC открыла расследование в отношении OpenAI и Anthropic из-за опасений по поводу «вышедших из-под контроля» ИИ-агентов. Пентагон учредил AUTOWARCOM для интеграции боевого ИИ, дронов и робототехники. На Уолл-стрит нарастает скепсис: инвесторов тревожит $88 млрд накопленного корпорациями ИИ-долга.',
       },
     ];
 
