@@ -6,8 +6,6 @@ import {
   CuratorSurveyRequest,
   CuratorSurveyResult,
   CuratorTake,
-  CrossDomainResonance,
-  BranchingAnalysis,
   SurveyTimeframe,
 } from '@lenta/shared';
 import { DailyNewsCard } from './types';
@@ -47,25 +45,15 @@ export class CuratorSurveyAgent {
       curatorTakes.push(take);
     }
 
-    // 5. Detect Cross-Domain Resonances between surveyed curators
-    const crossDomainResonances = this.detectCrossResonances(curatorTakes, timeFilteredCards);
-
-    // 6. Detect Branching & Domino Potentials (BPI and adjacent contour maps)
-    const branchingAnalyses = this.detectBranchingPotentials(curatorTakes, timeFilteredCards);
-
-    // 7. Build Headline & Executive Summary
+    // 5. Build Headline & Executive Summary
     const timeframeLabel = this.getTimeframeLabel(request.timeframe, dateRange);
     const curatorNames = curatorTakes.map((t) => t.curatorName).join(', ');
     const headline = `Комплексный опрос кураторов [${curatorNames}] • ${timeframeLabel}`;
     
     const totalNews = timeFilteredCards.length;
-    const highResonanceCount = crossDomainResonances.filter((r) => r.score >= 70).length;
-    const branchingCount = branchingAnalyses.length;
     const executiveSummary =
       `Проведен скоординированный опрос ${curatorTakes.length} предметных кураторов за период **${timeframeLabel}** (с ${dateRange.from} по ${dateRange.to}). ` +
-      `Проанализировано ${totalNews} событийных маркеров. Зафиксировано ${highResonanceCount} критических точек междисциплинарного резонанса` +
-      (branchingCount > 0 ? ` и ${branchingCount} узлов каскадного ветвления сюжетов (Domino & Ripple). ` : '. ') +
-      `Кураторы зафиксировали согласованность в оценке регуляторного давления и расхождение в горизонтах рыночной адаптации.`;
+      `Собрано ${totalNews} событийных маркеров. Кураторы зафиксировали ключевые факты и первичные сигналы в своих предметных областях.`;
 
     const result: CuratorSurveyResult = {
       id: `survey-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -75,8 +63,6 @@ export class CuratorSurveyAgent {
       headline,
       executiveSummary,
       curatorTakes,
-      crossDomainResonances,
-      branchingAnalyses,
       generatedAt: new Date().toISOString(),
     };
 
@@ -87,11 +73,11 @@ export class CuratorSurveyAgent {
    * Helper to format the survey result into a readable rich Markdown text
    */
   static formatToMarkdown(survey: CuratorSurveyResult): string {
-    const { headline, executiveSummary, curatorTakes, crossDomainResonances, dateRange } = survey;
+    const { headline, executiveSummary, curatorTakes, dateRange } = survey;
 
     let md = `## 🧭 ${headline}\n\n`;
     md += `> **Интервал опроса:** \`${dateRange.from}\` ⟷ \`${dateRange.to}\`  \n`;
-    md += `> **Статус:** Синтез мнений кураторов завершен. Готово к сайд-работе и медиа-оформлению.\n\n`;
+    md += `> **Статус:** Сводка позиций кураторов собрана. Готово к пользовательской аналитике и сайд-работе.\n\n`;
     md += `### 📋 Итоговый сводный бриф:\n${executiveSummary}\n\n`;
     md += `---\n\n`;
     md += `### 🎙️ Позиции предметных кураторов:\n\n`;
@@ -103,8 +89,8 @@ export class CuratorSurveyAgent {
       for (const thesis of take.keyTheses) {
         md += `  - ${thesis}\n`;
       }
-      if (take.resonancePoints.length > 0) {
-        md += `- **Точки напряжения:** ${take.resonancePoints.join('; ')}\n`;
+      if (take.focusPoints && take.focusPoints.length > 0) {
+        md += `- **Фокусные маркеры:** ${take.focusPoints.join('; ')}\n`;
       }
       if (take.sourceCitations.length > 0) {
         md += `- *Источники:* ${take.sourceCitations.slice(0, 4).join(', ')}\n`;
@@ -112,36 +98,8 @@ export class CuratorSurveyAgent {
       md += `\n`;
     }
 
-    if (crossDomainResonances.length > 0) {
-      md += `---\n\n`;
-      md += `### ⚡ Узлы междисциплинарного резонанса и коллизий:\n\n`;
-      for (const res of crossDomainResonances) {
-        md += `1. **${res.title}** (Индекс резонанса: \`${res.score}%\`)\n`;
-        md += `   - **Участники:** ${res.involvedCurators.join(' ⟷ ')}\n`;
-        md += `   - **Аналитическая стыковка:** ${res.analysis}\n`;
-        if (res.suggestedFollowupPrompt) {
-          md += `   - 💡 *Рекомендация для сайд-работы:* \`${res.suggestedFollowupPrompt}\`\n`;
-        }
-      }
-      md += `\n`;
-    }
-
-    if (survey.branchingAnalyses && survey.branchingAnalyses.length > 0) {
-      md += `---\n\n`;
-      md += `### 🌿 Потенциал ветвления и каскадные эффекты (Branching & Domino Effect):\n\n`;
-      for (const branch of survey.branchingAnalyses) {
-        md += `#### ♟️ «${branch.sourceCardTitle}» [Индекс ветвления BPI: \`${branch.branchingPotentialScore}/100\`]\n`;
-        md += `> **Слом статус-кво:** ${branch.statusQuoBreak}\n\n`;
-        md += `**Ожидаемые смежные ветки сюжета:**\n`;
-        for (const cont of branch.likelyBranches) {
-          md += `- **${cont.emoji} ${cont.contourName}** (${cont.curatorName}, воздействие: \`${cont.impactScore}%\`): ${cont.potentialStory}\n`;
-        }
-        md += `\n`;
-      }
-    }
-
     md += `---\n`;
-    md += `*Сайд-воркер готов превратить эти данные в пост (\`/sidework-post\`), инфографику/промпты (\`/media\`) или аудио-подкаст (\`/podcast\`).*`;
+    md += `*Сайд-воркер готов упаковать фактуру в черновик (\`/sidework-post\`), инфографику/промпты (\`/media\`) или аудио-подкаст (\`/podcast\`).*`;
 
     return md;
   }
@@ -320,7 +278,7 @@ export class CuratorSurveyAgent {
 
     // Generate specific theses based on curator domain
     const keyTheses: string[] = [];
-    const resonancePoints: string[] = [];
+    const focusPoints: string[] = [];
 
     if (relevantCards.length > 0) {
       for (const card of relevantCards.slice(0, 3)) {
@@ -333,63 +291,62 @@ export class CuratorSurveyAgent {
         keyTheses.push('Фиксация параметров внутреннего рынка: мониторинг биржевых торгов СПбМТСБ и демпферных субсидий НПЗ.');
         keyTheses.push('Законодательный трек: подготовка нормативной базы к осеннему электоральному циклу 2026.');
       }
-      resonancePoints.push('Ценовые дисбалансы при поставках топлива на Дальний Восток', 'Контроль маржинальности розничных сетей ФАС РФ');
+      focusPoints.push('Ценовые дисбалансы при поставках топлива на Дальний Восток', 'Контроль маржинальности розничных сетей ФАС РФ');
       if (sourceCitations.length === 0) sourceCitations.push('ФАС России', 'Банк России', 'СПбМТСБ');
     } else if (curatorId === 'kirk-kitten') {
       if (keyTheses.length === 0) {
         keyTheses.push('Мониторинг директив OFAC и 16-го пакета санкций ЕС: усиление вторичного комплаенса для морских перевозчиков.');
         keyTheses.push('Динамика фрахтовых ставок в Средиземноморском и Балтийском бассейнах (Baltic Dirty Tanker Index).');
       }
-      resonancePoints.push('Ограничение страхового покрытия судов P&I клубами', 'Риторика ФРС США по процентной ставке и сырьевой спрос');
+      focusPoints.push('Ограничение страхового покрытия судов P&I клубами', 'Риторика ФРС США по процентной ставке и сырьевой спрос');
       if (sourceCitations.length === 0) sourceCitations.push('OFAC Sanctions Tracker', 'Lloyds List Intelligence', 'Reuters Markets');
     } else if (curatorId === 'chen-wei') {
       if (keyTheses.length === 0) {
         keyTheses.push('Рост объемов клиринга в юанях и альтернативных валютах стран БРИКС+ на трансграничных хабах.');
         keyTheses.push('Загрузка восточного полигона РЖД и расширение пропускной способности морских портов Приморья.');
       }
-      resonancePoints.push('Задержки вторичных платежей через региональные китайские банки', 'Таможенные пошлины и сырьевой баланс Китая');
+      focusPoints.push('Задержки вторичных платежей через региональные китайские банки', 'Таможенные пошлины и сырьевой баланс Китая');
       if (sourceCitations.length === 0) sourceCitations.push('Xinhua Economic News', 'Caixin Global', 'BRICS Info Desk');
     } else if (curatorId === 'okatsiya') {
       if (keyTheses.length === 0) {
         keyTheses.push('Релизы open-weights моделей LLM нового поколения и инфраструктурные требования к кластерам H100/B200.');
         keyTheses.push('Переход корпоративного сектора на суверенные Kubernetes-платформы и мониторинг критических CVE уязвимостей.');
       }
-      resonancePoints.push('Дефицит вычислительных мощностей и дата-центрового охлаждения', 'Ужесточение регуляций экспортного контроля на чипы и ИИ');
+      focusPoints.push('Дефицит вычислительных мощностей и дата-центрового охлаждения', 'Ужесточение регуляций экспортного контроля на чипы и ИИ');
       if (sourceCitations.length === 0) sourceCitations.push('Hugging Face Daily', 'The Register', 'GitHub Trending', 'Semiconductor Digest');
     } else if (curatorId === 'german-kernel') {
       if (keyTheses.length === 0) {
         keyTheses.push('Мониторинг прикладных публикаций на Habr: опыт внедрения, разборы архитектурных компромиссов и нестандартные инженерные решения.');
         keyTheses.push('Олдскул и схемотехника: восстановление винтажного железа, анализ плат и рост интереса к ретро-платформам на фоне внешних инфоповодов.');
       }
-      resonancePoints.push('Рост интереса к олдскульным и оффлайн-решениям на фоне сбоев глобальных облаков', 'Подготовка материалов журнала «Хакер» под тематические Super Note и NotebookLM');
+      focusPoints.push('Рост интереса к олдскульным и оффлайн-решениям на фоне сбоев глобальных облаков', 'Подготовка материалов журнала «Хакер» под тематические Super Note и NotebookLM');
       if (sourceCitations.length === 0) sourceCitations.push('Habr Engineering', 'Журнал «Хакер» (xakep.ru)', 'Retro-Computing Hub');
     } else if (curatorId === 'alex-vector') {
       if (keyTheses.length === 0) {
         keyTheses.push('Оперативный мониторинг мировых агентств и X/Telegram: фильтрация экстренных молний и валидация первоисточников.');
         keyTheses.push('Детекция виральных всплесков: выявление инфоповодов с взрывным ростом цитируемости в первый час.');
       }
-      resonancePoints.push('Высокая скорость устаревания непроверенных вбросов', 'Конфликт интерпретаций мировых медиа в первые минуты инцидента');
+      focusPoints.push('Высокая скорость устаревания непроверенных вбросов', 'Конфликт интерпретаций мировых медиа в первые минуты инцидента');
       if (sourceCitations.length === 0) sourceCitations.push('Reuters Flash', 'AP World Desk', 'Bloomberg Terminal Alerts', 'X / Real-Time Pulse');
     } else if (curatorId === 'marcus-vane') {
       if (keyTheses.length === 0) {
-        keyTheses.push('Идентификация точек бифуркации: разрушение многолетнего регионального статус-кво и образование вакуума силы.');
-        keyTheses.push('Матрица ветвления последствий: моделирование цепочек реакции 2-го и 3-го порядков в смежных геополитических контурах.');
+        keyTheses.push('[Standby] Куратор в режиме ожидания до активации модуля автоматической аналитики.');
       }
-      resonancePoints.push('Недооценка системных рисков и эффекта домино союзниками', 'Втягивание третьих держав в региональный вакуум безопасности');
-      if (sourceCitations.length === 0) sourceCitations.push('Foreign Affairs', 'IISS Strategic Comments', 'Carnegie Endowment', 'RAND Policy Briefs');
+      focusPoints.push('События-триггеры слома статус-кво');
+      if (sourceCitations.length === 0) sourceCitations.push('Foreign Affairs', 'RAND Policy Briefs');
     } else if (curatorId === 'tariq-said') {
       if (keyTheses.length === 0) {
         keyTheses.push('Оценка баланса сил в треугольнике Тегеран — Эр-Рияд — Анкара при трансформации внешнего военного присутствия.');
         keyTheses.push('Мониторинг безопасности шиитского пояса, курдского фактора в Эрбиле и экспортных нефтяных провинций Басры.');
       }
-      resonancePoints.push('Риск активизации спящих ячеек и трансграничных ударов прокси-формирований', 'Уязвимость инфраструктуры монархий Залива');
+      focusPoints.push('Риск активизации спящих ячеек и трансграничных ударов прокси-формирований', 'Уязвимость инфраструктуры монархий Залива');
       if (sourceCitations.length === 0) sourceCitations.push('Al Jazeera Desk', 'Al-Monitor', 'Asharq Al-Awsat', 'Middle East Eye', 'Iraqi News Agency');
     } else if (curatorId === 'helena-brandt') {
       if (keyTheses.length === 0) {
         keyTheses.push('Котировки Brent и спреды тяжелых сортов нефти при угрозе изменения маршрутов морской транспортировки.');
         keyTheses.push('Анализ ставок военного фрахта (Lloyd\'s War Risk Premiums) и проходимости узких мест (Ормуз, Суэц, Баб-эль-Мандеб).');
       }
-      resonancePoints.push('Удорожание страхования танкеров в Персидском заливе и Красном море', 'Каскадный рост себестоимости поставок сырья на азиатские и европейские НПЗ');
+      focusPoints.push('Удорожание страхования танкеров в Персидском заливе и Красном море', 'Каскадный рост себестоимости поставок сырья на азиатские и европейские НПЗ');
       if (sourceCitations.length === 0) sourceCitations.push('S&P Global Commodity Insights (Platts)', 'Argus Media', 'Lloyd\'s List Intelligence', 'Vortexa Tanker Tracking');
     }
 
@@ -400,208 +357,9 @@ export class CuratorSurveyAgent {
       domain,
       itemsCount,
       keyTheses,
-      resonancePoints,
+      focusPoints,
       sourceCitations,
     };
-  }
-
-  private static detectCrossResonances(
-    takes: CuratorTake[],
-    cards: DailyNewsCard[]
-  ): CrossDomainResonance[] {
-    const resonances: CrossDomainResonance[] = [];
-    const hasIvan = takes.some((t) => t.curatorId === 'ivan-bely');
-    const hasKirk = takes.some((t) => t.curatorId === 'kirk-kitten');
-    const hasChen = takes.some((t) => t.curatorId === 'chen-wei');
-    const hasOkatsiya = takes.some((t) => t.curatorId === 'okatsiya');
-    const hasAlex = takes.some((t) => t.curatorId === 'alex-vector');
-    const hasMarcus = takes.some((t) => t.curatorId === 'marcus-vane');
-    const hasTariq = takes.some((t) => t.curatorId === 'tariq-said');
-    const hasHelena = takes.some((t) => t.curatorId === 'helena-brandt');
-
-    if (hasIvan && hasKirk) {
-      resonances.push({
-        title: 'Узел: Вторичные морские санкции OFAC ⟷ Внутренний демпфер и розничные цены РФ',
-        score: 88,
-        involvedCurators: ['Иван Белый', 'Kirk Kitten'],
-        analysis:
-          'Ужесточение проверок морских страховок судов западными регуляторами удлиняет логистическое плечо экспорта, что временно запирает объемы нефтепродуктов внутри страны и требует вмешательства ФАС для недопущения провала оптовых цен.',
-        suggestedFollowupPrompt: '/sidework-post Оформить заметку типа DONE по балансу топлива РФ и директивам OFAC',
-      });
-    }
-
-    if (hasIvan && hasChen) {
-      resonances.push({
-        title: 'Узел: Расчетная инфраструктура БРИКС ⟷ Экспортные пошлины и валютная ликвидность',
-        score: 82,
-        involvedCurators: ['Иван Белый', 'Чэнь Вэй'],
-        analysis:
-          'Переход на клиринг в нацвалютах снижает зависимость экспортеров от западной банковской системы, но формирует локальный навес юаневой ликвидности, влияющий на курс рубля и параметры бюджета РФ.',
-        suggestedFollowupPrompt: '/media Сгенерировать схему клиринга БРИКС и промпт для иллюстрации финансового коридора',
-      });
-    }
-
-    if (hasKirk && hasOkatsiya) {
-      resonances.push({
-        title: 'Узел: Экспортный контроль США на микрочипы ⟷ Архитектура локальных AI-кластеров',
-        score: 85,
-        involvedCurators: ['Kirk Kitten', 'Окация'],
-        analysis:
-          'Ограничения Минторга США на поставку передовых ускорителей вынуждают инженерные команды оптимизировать открытые модели (vLLM, quant 4-bit) под доступные серверные мощности.',
-        suggestedFollowupPrompt: '/sidework-post Подготовить пост для Telegram: Оптимизация инференса моделей в условиях санкций',
-      });
-    }
-
-    if (hasMarcus && hasTariq) {
-      resonances.push({
-        title: 'Узел: Вакуум безопасности в Ираке/Леванте ⟷ Перебалансировка коалиций MENA',
-        score: 95,
-        involvedCurators: ['Маркус Вейн', 'Тарик Саид'],
-        analysis:
-          'Вывод или передислокация контингентов США запускает эффект домино: проиранские фракции стремятся занять базы, Турция активизирует буферные зоны на севере, а страны Залива ускоряют диверсификацию оборонных гарантий.',
-        suggestedFollowupPrompt: '/sidework-post Подготовить разбор ветвления: Каскадные риски вакуума безопасности на Ближнем Востоке',
-      });
-    }
-
-    if (hasTariq && hasHelena) {
-      resonances.push({
-        title: 'Узел: Напряженность в Персидском заливе ⟷ Морские артерии и котировки Brent',
-        score: 92,
-        involvedCurators: ['Тарик Саид', 'Хелена Брандт'],
-        analysis:
-          'Любая дестабилизация вокруг Ирака и проливов (Ормуз, Баб-эль-Мандеб) немедленно закладывается в надбавки к страховкам танкеров и толкает вверх премии на спотовую нефть для мировых импортеров.',
-        suggestedFollowupPrompt: '/media Построить Mermaid-карту рисков морских коридоров Залива и проливов',
-      });
-    }
-
-    if (hasAlex && hasMarcus) {
-      resonances.push({
-        title: 'Узел: Мировой Breaking-всплеск ⟷ Мгновенная детекция точек ветвления сюжета',
-        score: 90,
-        involvedCurators: ['Алекс Вектор', 'Маркус Вейн'],
-        analysis:
-          'Оперативная фиксация экстренной мировой новости позволяет оценить силу толчка в первые 30 минут и спрогнозировать разрастание сюжета по смежным отраслям до того, как они среагируют постфактум.',
-        suggestedFollowupPrompt: '/sidework-post Создать экспресс-дайджест горячей повестки с картой рисков',
-      });
-    }
-
-    if (hasHelena && hasIvan) {
-      resonances.push({
-        title: 'Узел: Нефтяная волатильность Brent ⟷ Дисконт Urals и расчет демпфера РФ',
-        score: 87,
-        involvedCurators: ['Хелена Брандт', 'Иван Белый'],
-        analysis:
-          'Колебания мировых котировок сырья и ставок фрахта танкеров напрямую отражаются на формуле демпфера и налоговых поступлениях от экспорта углеводородов в бюджетную систему РФ.',
-        suggestedFollowupPrompt: '/sidework-post Оформить заметку: Влияние сырьевых колебаний на внутренний топливный рынок РФ',
-      });
-    }
-
-    return resonances;
-  }
-
-  private static detectBranchingPotentials(
-    takes: CuratorTake[],
-    cards: DailyNewsCard[]
-  ): BranchingAnalysis[] {
-    const analyses: BranchingAnalysis[] = [];
-
-    // Identify candidate cards with high ripple potential or trigger keywords
-    const candidateCards = cards.filter((c) => {
-      if (c.branchingPotentialScore && c.branchingPotentialScore >= 65) return true;
-      const text = `${c.title} ${c.summary}`.toLowerCase();
-      return (
-        text.includes('вывод войск') ||
-        text.includes('ирак') ||
-        text.includes('вакуум') ||
-        text.includes('баз') ||
-        text.includes('смена власти') ||
-        text.includes('пакт') ||
-        text.includes('ормуз') ||
-        text.includes('бифуркац')
-      );
-    });
-
-    if (candidateCards.length > 0) {
-      for (const card of candidateCards.slice(0, 2)) {
-        analyses.push({
-          sourceCardTitle: card.title,
-          branchingPotentialScore: card.branchingPotentialScore || 93,
-          statusQuoBreak:
-            'Слом многолетнего регионального военно-политического статус-кво и формирование вакуума гарантий безопасности.',
-          likelyBranches: [
-            {
-              contourName: 'Региональная безопасность MENA',
-              curatorId: 'tariq-said',
-              curatorName: 'Тарик Саид',
-              emoji: '🕌',
-              impactScore: 95,
-              potentialStory:
-                'Борьба за влияние между Тегераном и Анкарой, давление на курдскую автономию и поиск альтернативных оборонных пактов монархиями Залива.',
-            },
-            {
-              contourName: 'Сырьевые артерии и фрахт',
-              curatorId: 'helena-brandt',
-              curatorName: 'Хелена Брандт',
-              emoji: '⚓',
-              impactScore: 89,
-              potentialStory:
-                'Рост страховых премий Lloyd\'s на танкеры в Ормузском проливе, угроза стабильности отгрузок из Басры и волатильность Brent.',
-            },
-            {
-              contourName: 'Трансграничный баланс и БРИКС',
-              curatorId: 'chen-wei',
-              curatorName: 'Чэнь Вэй',
-              emoji: '🇨🇳',
-              impactScore: 84,
-              potentialStory:
-                'Перехват китайскими корпорациями энергетических концессий и расширение расчетов за ближневосточную нефть в юанях.',
-            },
-            {
-              contourName: 'Внутренний рынок и демпфер РФ',
-              curatorId: 'ivan-bely',
-              curatorName: 'Иван Белый',
-              emoji: '🇷🇺',
-              impactScore: 80,
-              potentialStory:
-                'Изменение дисконта Urals к Brent на фоне ближневосточной премии и перекалибровка бюджетного правила.',
-            },
-          ],
-        });
-      }
-    } else {
-      // Default strategic branch if marcus or tariq is surveyed
-      const hasMarcus = takes.some((t) => t.curatorId === 'marcus-vane');
-      const hasTariq = takes.some((t) => t.curatorId === 'tariq-said');
-      if (hasMarcus || hasTariq) {
-        analyses.push({
-          sourceCardTitle: 'Трансформация военного присутствия и региональной безопасности на Ближнем Востоке',
-          branchingPotentialScore: 91,
-          statusQuoBreak: 'Смещение центров тяжести при ослаблении традиционных внешних арбитров безопасности.',
-          likelyBranches: [
-            {
-              contourName: 'Контур безопасности MENA',
-              curatorId: 'tariq-said',
-              curatorName: 'Тарик Саид',
-              emoji: '🕌',
-              impactScore: 93,
-              potentialStory:
-                'Переформатирование коалиций в зоне Залива и смещение центров принятия решений в Эр-Рияд, Тегеран и Анкару.',
-            },
-            {
-              contourName: 'Морская логистика и котировки нефти',
-              curatorId: 'helena-brandt',
-              curatorName: 'Хелена Брандт',
-              emoji: '⚓',
-              impactScore: 88,
-              potentialStory:
-                'Удорожание страховок танкеров в Ормузском проливе и переориентация сырьевых потоков на восточный вектор.',
-            },
-          ],
-        });
-      }
-    }
-
-    return analyses;
   }
 
   private static getTimeframeLabel(timeframe: SurveyTimeframe, range: { from: string; to: string }): string {

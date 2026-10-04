@@ -11,7 +11,6 @@ import {
   ChatMessage,
   DailyNewsCard,
   DEFAULT_CHAT_SNIPPETS,
-  ResonanceNodeCandidate,
   CuratorSummarySection,
   GroupSummaryPayload,
 } from './types';
@@ -182,6 +181,8 @@ export class AgentChatEngine {
         command === '/it-week' ||
         command === '/it-month' ||
         command === '/ai' ||
+        command === '/models' ||
+        command === '/agents' ||
         command === '/devops' ||
         command === '/backend' ||
         command === '/bigtech' ||
@@ -361,8 +362,6 @@ export class AgentChatEngine {
         lower.includes('проверь источники')
       ) {
         resolvedTarget = 'harvester-agent';
-      } else if (lower.includes('синтез') || lower.includes('независим') || lower.includes('арбитраж') || lower.includes('сопостав')) {
-        resolvedTarget = 'independent-analyst';
       }
     }
 
@@ -450,7 +449,7 @@ export class AgentChatEngine {
       return replies;
     }
 
-    // A. Political Group: Consolidated Modular Summary + Resonance Node Detection
+    // A. Political Group: Consolidated Modular Summary
     if (resolvedTarget === 'political-group') {
       replies.push(
         this.generatePoliticalGroupSummary({
@@ -579,20 +578,6 @@ export class AgentChatEngine {
       );
     }
 
-    if (resolvedTarget === 'independent-analyst' || resolvedTarget === 'all') {
-      replies.push(
-        this.generateIndependentAnalysis({
-          prompt: cleanPrompt,
-          date,
-          ivanStories,
-          kirkStories,
-          chenStories,
-          events: todayEvents,
-          timestamp,
-        }),
-      );
-    }
-
     if (resolvedTarget === 'german-kernel' || resolvedTarget === 'all') {
       const germanStories = contextCards.filter(
         (c) =>
@@ -652,6 +637,123 @@ export class AgentChatEngine {
       !lower.includes('backend') &&
       !lower.includes('bigtech');
 
+    const isModelsRequested =
+      lower.includes('/models') ||
+      lower.includes('моделей нового поколения') ||
+      lower.includes('новые модели') ||
+      lower.includes('gemini 4') ||
+      lower.includes('gpt-6') ||
+      lower.includes('claude 5.5');
+
+    const isAgentsRequested =
+      lower.includes('/agents') ||
+      lower.includes('эра автономных') ||
+      lower.includes('автономных ии-агентов') ||
+      lower.includes('автономных агентов') ||
+      lower.includes('openai dots') ||
+      lower.includes('meta muse') ||
+      lower.includes('rtx spark') ||
+      lower.includes('autowarcom');
+
+    // 0. Next-Gen Models Radar Response
+    if (isModelsRequested) {
+      const bullets = [
+        '**Google Gemini 4 Argon:** флагман с окном вывода в 1M токенов для сложнейшего кодинга и кибербезопасности. Доступ открыт только в рамках закрытой программы Fairwind. Также вышли Gemini 3.8 Flash и WeatherNext 3.',
+        '**OpenAI GPT-6 (Astra, Sol, Luna):** шестое поколение моделей. GPT-6 Sol предлагает возможности флагмана всего за 20% цены. При этом релиз GPT-6.1 Astra отменен из-за непрохождения тестов безопасности.',
+        '**Anthropic Claude 5.5 (Opus 5.5 и Sonnet 5.5):** обновленный Sonnet 5.5 получил алгоритм автоматического перенаправления рискованных запросов на профильную проверку кибербезопасности.',
+      ];
+
+      const text = `### 🧠 Окация: Радар релизов — Выход моделей нового поколения
+
+Сводный мониторинг фронтирных моделей на **${ctx.date}**:
+
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+> **Резюме Окации:** Мы наблюдаем качественный скачок: гонка перешла от чистого наращивания параметров к сверхдлинному окну вывода (1M токенов у Gemini 4 Argon), радикальному удешевлению инференса (GPT-6 Sol за 1/5 цены) и жестким защитным фильтрам (кибер-роутер Claude 5.5 и отмена Astra 6.1). Мы будем непрерывно следить за новыми версиями и пополнять эту ленту.`;
+
+      const suggestedCard = {
+        title: `🧠 [Модели нового поколения] Gemini 4 Argon, GPT-6 и Claude 5.5 (${ctx.date})`,
+        description: `## 🧠 Модели нового поколения: Сводка релизов ${ctx.date}
+
+> **Куратор:** ⚡ Окация  
+> **Контур:** Модели & Архитектуры LLM  
+> **Резонанс:** \`96%\`
+
+### Ключевые релизы:
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+---
+*Сформировано в радарном тренде Project Lenta.*`,
+        type: NoteType.EVENT,
+        folder: '03_Research/AI',
+        taxonomyPath: 'tech.ai.models.nextgen',
+        hashtags: ['IT', 'AI', 'LLM', 'Gemini4', 'GPT6', 'Claude55', 'Модели'],
+        curator: 'Окация',
+      };
+
+      return {
+        id: `msg-okatsiya-${Date.now()}`,
+        sender: 'okatsiya',
+        senderName: 'Окация',
+        senderRole: 'Архитектор и куратор контура IT & AI',
+        avatar: '⚡',
+        text,
+        timestamp: ctx.timestamp,
+        sources: ['Google DeepMind', 'OpenAI Research', 'Anthropic'],
+        suggestedCard,
+      };
+    }
+
+    // 0.1. Autonomous Agents Era Response
+    if (isAgentsRequested) {
+      const bullets = [
+        '**OpenAI Dots:** постоянные автономные агенты с выделенными облачными ресурсами, продолжающие решать задачи между сессиями диалогов.',
+        '**Meta Muse & xAI Grok 4.7:** Meta внедрила Muse на базе Muse Spark 1.3, а xAI запустила маркетплейс виртуальных сотрудников (разработчики, маркетологи, сейлзы).',
+        '**Локальные вычисления (ПК NVIDIA RTX Spark & Apple):** в октябре стартуют продажи ПК RTX Spark для переноса тяжелого инференса из облака на локальное «железо»; Apple готовит расширение Siri AI в iOS 27.2.',
+        '**Регуляторика и риски (FTC, Пентагон AUTOWARCOM, $88 млрд долга):** FTC открыла расследование против OpenAI и Anthropic; Пентагон создал командование AUTOWARCOM; на Уолл-стрит нарастает скепсис по поводу окупаемости накопленного $88 млрд ИИ-долга.',
+      ];
+
+      const text = `### 🤖 Окация: Эра автономных ИИ-агентов и смежные тренды
+
+Комплексный срез агентной парадигмы на **${ctx.date}**:
+
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+> **Резюме Окации:** Индустрия бесповоротно переходит от чат-ботов к постоянным агентам, способным работать в фоне. Это вызвало тектонические волны: развитие локальных ПК RTX Spark ради приватности, военную интеграцию через AUTOWARCOM Пентагона, расследования FTC и растущее давление Уолл-стрит по окупаемости $88 млрд инфраструктурного долга.`;
+
+      const suggestedCard = {
+        title: `🤖 [Автономные агенты] Платформы, локальные вычисления и регуляторные риски (${ctx.date})`,
+        description: `## 🤖 Эра автономных ИИ-агентов: Панорама ${ctx.date}
+
+> **Куратор:** ⚡ Окация  
+> **Контур:** Агенты, Инфраструктура & Рынки  
+> **Резонанс:** \`95%\`
+
+### Ключевые тренды:
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+---
+*Сформировано куратором технологий Окацией в Project Lenta.*`,
+        type: NoteType.EVENT,
+        folder: '03_Research/AI',
+        taxonomyPath: 'tech.ai.agents.landscape',
+        hashtags: ['IT', 'AI', 'ИИАгенты', 'Dots', 'NVIDIA', 'AUTOWARCOM', 'Регуляторика'],
+        curator: 'Окация',
+      };
+
+      return {
+        id: `msg-okatsiya-${Date.now()}`,
+        sender: 'okatsiya',
+        senderName: 'Окация',
+        senderRole: 'Архитектор и куратор контура IT & AI',
+        avatar: '⚡',
+        text,
+        timestamp: ctx.timestamp,
+        sources: ['OpenAI', 'Meta AI', 'xAI', 'NVIDIA', 'FTC', 'DoD', 'WSJ'],
+        suggestedCard,
+      };
+    }
+
     // 1. Sector-specific Response (e.g. /devops, /backend, /bigtech, /infosec...)
     if (explicitSector && explicitSector.id !== 'ai') {
       const sector = explicitSector;
@@ -697,7 +799,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         taxonomyPath: sector.taxonomyPath,
         hashtags: ['IT', ...sector.hashtags.map((h) => h.replace(/^#/, ''))],
         curator: 'Окация',
-        resonanceScore: 86,
         sourceLink: relevantStory?.url,
       };
 
@@ -709,7 +810,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         avatar: '⚡',
         text,
         timestamp: ctx.timestamp,
-        resonanceScore: 86,
         sources: ctx.stories.map((s) => s.source).filter(Boolean),
         suggestedCard,
       };
@@ -747,7 +847,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
 > **Куратор:** ⚡ Окация  
 > **Контур:** Искусственный Интеллект & LLM  
-> **Резонанс:** \`91%\`
 
 ### Ключевые аспекты:
 ${bullets.map((b) => `- ${b}`).join('\n')}
@@ -759,7 +858,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         taxonomyPath: 'tech.ai.llm',
         hashtags: ['IT', 'AI', 'LLM', 'Нейросети', 'MachineLearning'],
         curator: 'Окация',
-        resonanceScore: 91,
         sourceLink: aiStory?.url,
       };
 
@@ -771,7 +869,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         avatar: '⚡',
         text,
         timestamp: ctx.timestamp,
-        resonanceScore: 91,
         sources: ctx.stories.map((s) => s.source).filter(Boolean),
         suggestedCard,
       };
@@ -826,7 +923,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
 > **Куратор:** ⚡ Окация  
 > **Контур:** IT, AI, DevOps, BigTech, Backend  
-> **Резонанс:** \`88%\`
 
 ### Ключевые направления:
 - **AI & Нейросети:** Мультимодальные модели, Reasoning-агенты, оптимизация инференса.
@@ -840,7 +936,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'tech.overview',
       hashtags: ['IT', 'AI', 'DevOps', 'Backend', 'BigTech', 'Архитектура'],
       curator: 'Окация',
-      resonanceScore: 88,
       sourceLink: techStory?.url || aiStory?.url,
     };
 
@@ -859,7 +954,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'okatsiya',
         dateScope: ctx.date,
       },
-      resonanceScore: 88,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       suggestedCard,
     };
@@ -936,7 +1030,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'tech.community.habr',
       hashtags: ['Habr', 'ITСтатьи', 'Хакер', 'СвояКухня', 'NoteСинтез'],
       curator: 'Герман «Кернел»',
-      resonanceScore: 82,
       sourceLink: mainStory?.url || 'https://habr.com',
     };
 
@@ -952,7 +1045,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceName: s.source || 'Habr / Хакер',
       sourceUrl: s.url,
       tags: s.suggestedTags?.length ? s.suggestedTags : ['Habr', 'Хакер', 'Инженерия'],
-      resonanceScore: s.resonanceScore || 82,
       keyPoints: s.keyPoints?.length ? s.keyPoints : ['Практический опыт разработчиков.', 'Архитектурные паттерны и олдскул.'],
       contourBadge: '📟 Habr & Хакер / Своя кухня',
       publishedAt: s.publishedAt || '14:20',
@@ -973,7 +1065,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'german-kernel',
         dateScope: ctx.date,
       },
-      resonanceScore: 82,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
       suggestedCard,
@@ -1018,7 +1109,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'media.podcast.notebooklm',
       hashtags: ['NotebookLM', 'Дневник', 'АудиоДайджест', 'Habr', 'Хакер'],
       curator: 'Герман «Кернел»',
-      resonanceScore: 89,
     };
 
     return {
@@ -1029,7 +1119,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       avatar: '📓',
       text,
       timestamp: ctx.timestamp,
-      resonanceScore: 89,
       sources: ['NotebookLM Engine', 'Google Gemini'],
       suggestedCard,
     };
@@ -1089,7 +1178,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
 > **Куратор:** 🇷🇺 Иван Белый  
 > **Контур:** Внутренняя политика и экономика РФ  
-> **Резонанс:** \`82%\`
 
 ### Ключевые аспекты:
 ${bullets.map((b) => `- ${b}`).join('\n')}
@@ -1101,7 +1189,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'politics.russia.regulations',
       hashtags: ['ПолитикаРФ', 'Госдума', 'ФАС', 'Бюджет', 'Регуляторика'],
       curator: 'ivan-bely',
-      resonanceScore: 82,
       sourceLink: mainStory?.url,
     };
 
@@ -1117,7 +1204,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceName: s.source || 'СПбМТСБ / ФАС',
       sourceUrl: s.url,
       tags: s.suggestedTags?.length ? s.suggestedTags : ['ПолитикаРФ', 'Регуляторика'],
-      resonanceScore: s.resonanceScore || 84,
       keyPoints: s.keyPoints?.length ? s.keyPoints : ['Контроль биржевых нормативов моторного топлива.', 'Сохранение оптового ценового баланса.'],
       contourBadge: '🇷🇺 Внутренний контур РФ',
       publishedAt: s.publishedAt || '11:30',
@@ -1138,7 +1224,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'ivan-bely',
         dateScope: ctx.date,
       },
-      resonanceScore: 82,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
       suggestedCard,
@@ -1199,7 +1284,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
 > **Куратор:** 🌐 Kirk Kitten  
 > **Контур:** Международные рынки, OFAC, санкции  
-> **Резонанс:** \`87%\`
 
 ### Ключевые маркеры:
 ${bullets.map((b) => `- ${b}`).join('\n')}
@@ -1211,7 +1295,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'politics.international.sanctions',
       hashtags: ['OFAC', 'Санкции', 'Логистика', 'Танкеры', 'МировыеРынки'],
       curator: 'kirk-kitten',
-      resonanceScore: 87,
       sourceLink: mainStory?.url,
     };
 
@@ -1227,7 +1310,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceName: s.source || 'Bloomberg / Markets',
       sourceUrl: s.url,
       tags: s.suggestedTags?.length ? s.suggestedTags : ['OFAC', 'Санкции', 'Фрахт'],
-      resonanceScore: s.resonanceScore || 88,
       keyPoints: s.keyPoints?.length ? s.keyPoints : ['Комплаенс-требования к морским фрахтовым контрактам.', 'Мониторинг соблюдения ценового потолка.'],
       contourBadge: '🌐 Международный контур / Санкции',
       publishedAt: s.publishedAt || '12:45',
@@ -1248,156 +1330,8 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'kirk-kitten',
         dateScope: ctx.date,
       },
-      resonanceScore: 87,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
-      suggestedCard,
-    };
-  }
-
-  /**
-   * Independent Analyst: Neutral cross-boundary synthesis and arbitration
-   */
-  private static generateIndependentAnalysis(ctx: {
-    prompt: string;
-    date: string;
-    ivanStories: DailyNewsCard[];
-    kirkStories: DailyNewsCard[];
-    chenStories?: DailyNewsCard[];
-    events: any[];
-    timestamp: string;
-  }): ChatMessage {
-    const promptLower = ctx.prompt.toLowerCase();
-    const isChenOrAsia =
-      promptLower.includes('чэнь') ||
-      promptLower.includes('китай') ||
-      promptLower.includes('клиринг') ||
-      promptLower.includes('брикс') ||
-      promptLower.includes('нацвалют');
-
-    if (isChenOrAsia) {
-      // Targeted Synthesis: Ivan Bely ⟷ Chen Wei (Cross-border payments & trade logistics)
-      const text = `### ⚖️ Точечный кросс-контурный синтез: Платежная инфраструктура и товарооборот БРИКС
-
-**Предмет синтеза:** Взаимное влияние регуляторных решений РФ и расширения валютного клиринга в АТР на **${ctx.date}**.  
-**Участники узла:** 🇷🇺 Иван Белый ⟷ 🇨🇳 Чэнь Вэй  
-**Индекс резонанса:** \`79%\`
-
----
-
-#### 1. Фактологическая проверка контуров:
-- **Контур РФ (Иван Белый):** Фиксирует необходимость обеспечения предсказуемости валютных поступлений в бюджет 2027–2029 и защиту экспортеров от вторичного комплаенса западных банков.
-- **Восточный контур (Чэнь Вэй):** Фиксирует рост межбанковских клиринговых линий Народного Банка Китая и партнеров по БРИКС в национальных валютах без SWIFT на 18%.
-
-#### 2. Объективная причинно-следственная связь:
-Переход на прямые расчеты в юанях и рублях и синхронизация логистических каналов Дальнего Востока — это **не просто ситуативная замена валюты, а создание структурной автономии внешней торговли РФ**. Логистические задержки на западном направлении компенсируются ускорением прохождения грузов через восточный полигон.
-
-#### 3. Беспристрастный вердикт:
-- **Степень риска:** Низкая (\`30%\`).
-- **Прогноз:** Доля расчетов в нацвалютах во взаимной торговле превысит 85% к концу года. Ключевая точка контроля — ликвидность на межбанковском валютном рынке.`;
-
-      const suggestedCard = {
-        title: `[Синтез] Кросс-контурный анализ: Независимый клиринг БРИКС и торговый баланс (${ctx.date})`,
-        description: `## Аналитический синтез: Внешнеторговый клиринг РФ ↔ АТР / БРИКС
-
-> **Дата:** ${ctx.date}  
-> **Арбитр:** ⚖️ Независимый аналитический синтез (Project Lenta)  
-> **Участники:** 🇷🇺 Иван Белый & 🇨🇳 Чэнь Вэй  
-> **Кросс-резонанс:** \`79%\`  
-> **Статус:** Анализ верифицирован, прецедент сохранен.
-
-### 1. Тезис внутреннего контура (Иван Белый):
-Защита валютных поступлений бюджета и снижение транзакционных издержек экспортеров.
-
-### 2. Тезис восточного контура (Чэнь Вэй):
-Расширение прямых межбанковских клиринговых линий без использования западных финансовых шлюзов.
-
-### 3. Итоговое заключение арбитра:
-Торговая переориентация стабильна. Риски вторичных санкций нивелируются альтернативными финансовыми сетями.
-
----
-*Официальный синтетический материал хроники Lemon Calendarium.*`,
-        type: NoteType.DONE,
-        folder: 'Synthesis/2026',
-        taxonomyPath: 'politics.cross_analysis',
-        hashtags: ['Синтез', 'Резонанс79', 'БРИКС', 'Клиринг', 'Торговля', 'Арбитраж'],
-        curator: 'Независимый аналитик',
-        resonanceScore: 79,
-      };
-
-      return {
-        id: `msg-indep-${Date.now()}`,
-        sender: 'independent-analyst',
-        senderName: 'Независимый аналитик',
-        senderRole: 'Кросс-контурный арбитраж и фактологический синтез',
-        avatar: '⚖️',
-        text,
-        timestamp: ctx.timestamp,
-        resonanceScore: 79,
-        sources: ['СПбМТСБ', 'Народный Банк Китая', 'Минфин РФ', 'Xinhua'],
-        suggestedCard,
-      };
-    }
-
-    // Default: Targeted Synthesis Ivan Bely ⟷ Kirk Kitten (Oil, freight, OFAC, domestic fuel)
-    const text = `### ⚖️ Точечный кросс-контурный синтез: Танкерный фрахт и оптовый рынок РФ
-
-**Предмет синтеза:** Сопоставление встречных сигналов внутреннего контура РФ и зарубежных регуляторов на **${ctx.date}**.  
-**Участники узла:** 🇷🇺 Иван Белый ⟷ 🌐 Kirk Kitten  
-**Индекс резонанса:** \`89%\`
-
----
-
-#### 1. Фактологическая проверка позиций:
-- **Контур РФ (Иван Белый):** Указывает на внутреннюю стабильность запасов и работу биржевого демпфера. Однако зафиксирован рост локальных оптовых цен на СПбМТСБ.
-- **Внешний контур (Kirk Kitten):** Фиксирует рост фрахтовых премий на 15–18% из-за перестрахования танкеров в портах Балтики.
-
-#### 2. Объективная причинно-следственная связь:
-Всплеск биржевых цен в РФ не вызван дефицитом сырья на заводах: это **прямое следствие временного затора отгрузок на экспортных терминалах**. Нефтяные компании вынуждены перераспределять логистику по железной дороге, что создает локальное логистическое "бутылочное горлышко".
-
-#### 3. Беспристрастный вердикт:
-- **Степень риска:** Умеренная (\`65%\`).
-- **Прогноз:** В течение 14–20 дней ситуация нормализуется по мере аккредитации альтернативных страховых компаний и корректировки биржевых нормативов ФАС.`;
-
-    const suggestedCard = {
-      title: `[Синтез] Кросс-контурный анализ: Логистические шоки и оптовый рынок РФ (${ctx.date})`,
-      description: `## Аналитический синтез: Влияние внешних ограничений на оптовый сектор РФ
-
-> **Дата:** ${ctx.date}  
-> **Арбитр:** ⚖️ Независимый аналитический синтез (Project Lenta)  
-> **Участники:** 🇷🇺 Иван Белый & 🌐 Kirk Kitten  
-> **Кросс-резонанс:** \`89%\`  
-> **Статус:** Анализ верифицирован, прецедент сохранен.
-
-### 1. Тезис внутреннего контура (Иван Белый):
-Запасы на НПЗ в пределах нормы, но оптовые биржевые котировки реагируют на график отгрузок.
-
-### 2. Тезис внешнего контура (Kirk Kitten):
-Новые требования к страховым сертификатам замедляют выход танкеров из портов Черного и Балтийского морей.
-
-### 3. Итоговое беспристрастное заключение:
-Дефицита продукции нет. Логистический лаг устраняется в течение двух недель.
-
----
-*Официальный синтетический материал хроники Lemon Calendarium.*`,
-      type: NoteType.DONE,
-      folder: 'Synthesis/2026',
-      taxonomyPath: 'politics.cross_analysis',
-      hashtags: ['Синтез', 'Резонанс89', 'ФАС', 'OFAC', 'Логистика', 'Арбитраж'],
-      curator: 'Независимый аналитик',
-      resonanceScore: 89,
-    };
-
-    return {
-      id: `msg-indep-${Date.now()}`,
-      sender: 'independent-analyst',
-      senderName: 'Независимый аналитик',
-      senderRole: 'Кросс-контурный арбитраж и фактологический синтез',
-      avatar: '⚖️',
-      text,
-      timestamp: ctx.timestamp,
-      resonanceScore: 89,
-      sources: ['СПбМТСБ', 'OFAC Treasury', 'ФАС РФ', 'UN News'],
       suggestedCard,
     };
   }
@@ -1456,7 +1390,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
 > **Куратор:** 🇨🇳 Чэнь Вэй  
 > **Контур:** Китай, АТР, БРИКС, логистика  
-> **Резонанс:** \`80%\`
 
 ### Ключевые аспекты:
 ${bullets.map((b) => `- ${b}`).join('\n')}
@@ -1468,7 +1401,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       taxonomyPath: 'politics.international.asia',
       hashtags: ['Китай', 'АТР', 'БРИКС', 'Логистика', 'Клиринг'],
       curator: 'chen-wei',
-      resonanceScore: 80,
       sourceLink: mainStory?.url,
     };
 
@@ -1484,7 +1416,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       sourceName: s.source || 'Xinhua / PBOC',
       sourceUrl: s.url,
       tags: s.suggestedTags?.length ? s.suggestedTags : ['Китай', 'БРИКС', 'Логистика'],
-      resonanceScore: s.resonanceScore || 82,
       keyPoints: s.keyPoints?.length ? s.keyPoints : ['Прямые валютные расчеты в юанях и рублях.', 'Развитие контейнерного транзита через восточные порты.'],
       contourBadge: '🇨🇳 Восточный контур / АТР и БРИКС',
       publishedAt: s.publishedAt || '13:15',
@@ -1505,7 +1436,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'chen-wei',
         dateScope: ctx.date,
       },
-      resonanceScore: 80,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
       suggestedCard,
@@ -1513,8 +1443,7 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
   }
 
   /**
-   * Generates a consolidated modular executive summary from the political curators group,
-   * scans for thematic overlap, and identifies candidate resonance nodes for targeted synthesis.
+   * Generates a consolidated modular executive summary from the political curators group.
    */
   private static generatePoliticalGroupSummary(ctx: {
     prompt: string;
@@ -1544,21 +1473,21 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       timeframeLabel = 'неделю';
 
       ivanBullets = [
-        `**Недельный баланс топливного рынка** [⚡ Резонанс: 88%]: Минэнерго и ФАС зафиксировали стабилизацию биржевых цен бензина после корректировки нормативов на СПбМТСБ.`,
-        `**Налоговые и регуляторные пакеты** [⚡ Резонанс: 83%]: Госдума завершила слушания поправок в Бюджетный кодекс и пакета инвестиционных преференций.`,
-        `**Потребительский сектор** [⚡ Резонанс: 80%]: сдерживание инфляционных ожиданий через жесткую денежно-кредитную политику Банка России.`,
+        `**Недельный баланс топливного рынка**: Минэнерго и ФАС зафиксировали стабилизацию биржевых цен бензина после корректировки нормативов на СПбМТСБ.`,
+        `**Налоговые и регуляторные пакеты**: Госдума завершила слушания поправок в Бюджетный кодекс и пакета инвестиционных преференций.`,
+        `**Потребительский сектор**: сдерживание инфляционных ожиданий через жесткую денежно-кредитную политику Банка России.`,
       ];
 
       kirkBullets = [
-        `**Недельная динамика санкций** [⚡ Резонанс: 90%]: смещение фокуса директив OFAC и ЕС с прямых эмбарго на сквозной аудит морского фрахта и страховых полисов P&I клубов.`,
-        `**Мировые нефтяные рынки и фрахт** [⚡ Резонанс: 87%]: закрепление независимых танкерных пулов на азиатских маршрутах, ставки фрахта стабилизировались.`,
-        `**Многосторонние площадки** [⚡ Резонанс: 82%]: итоги консультаций в органах ООН по трансграничной логистике и минеральным удобрениям.`,
+        `**Недельная динамика санкций**: смещение фокуса директив OFAC и ЕС с прямых эмбарго на сквозной аудит морского фрахта и страховых полисов P&I клубов.`,
+        `**Мировые нефтяные рынки и фрахт**: закрепление независимых танкерных пулов на азиатских маршрутах, ставки фрахта стабилизировались.`,
+        `**Многосторонние площадки**: итоги консультаций в органах ООН по трансграничной логистике и минеральным удобрениям.`,
       ];
 
       chenBullets = [
-        `**Недельный трек БРИКС и АТР** [⚡ Резонанс: 85%]: оформление межбанковских договоренностей по прямым валютным парам юань/рубль/рупия без участия SWIFT.`,
-        `**Логистические узлы Китая** [⚡ Резонанс: 84%]: порты Шанхай и Нинбо вышли на рекордный недельный грузооборот контейнерных перевозок в восточном направлении.`,
-        `**Промышленные коридоры** [⚡ Резонанс: 78%]: координация прямых поставок высокотехнологичного оборудования и автокомпонентов.`,
+        `**Недельный трек БРИКС и АТР**: оформление межбанковских договоренностей по прямым валютным парам юань/рубль/рупия без участия SWIFT.`,
+        `**Логистические узлы Китая**: порты Шанхай и Нинбо вышли на рекордный недельный грузооборот контейнерных перевозок в восточном направлении.`,
+        `**Промышленные коридоры**: координация прямых поставок высокотехнологичного оборудования и автокомпонентов.`,
       ];
     } else if (timeframe === 'month') {
       headerTitle = `### 🗓️ Политическая коллегия: Стратегическая панорама за месяц (${ctx.date})`;
@@ -1566,75 +1495,49 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       timeframeLabel = 'месяц';
 
       ivanBullets = [
-        `**Стратегический срез законов и бюджета** [⚡ Резонанс: 89%]: утверждение базовых параметров трехлетнего бюджета, инвестиционных стимулов и сохранение демпферного щита.`,
-        `**Антимонопольный контроль** [⚡ Резонанс: 84%]: системный мониторинг оптовых цепочек поставок и сдерживание роста тарифов естественных монополий.`,
-        `**Внутренний рынок труда и производство** [⚡ Резонанс: 81%]: адаптация промышленных мощностей и переориентация сырьевых потоков на дружественные рынки.`,
+        `**Стратегический срез законов и бюджета**: утверждение базовых параметров трехлетнего бюджета, инвестиционных стимулов и сохранение демпферного щита.`,
+        `**Антимонопольный контроль**: системный мониторинг оптовых цепочек поставок и сдерживание роста тарифов естественных монополий.`,
+        `**Внутренний рынок труда и производство**: адаптация промышленных мощностей и переориентация сырьевых потоков на дружественные рынки.`,
       ];
 
       kirkBullets = [
-        `**Месячный санкционный пакет** [⚡ Резонанс: 91%]: переход регуляторов Запада к постоянному комплаенсу вторичных институтов и танкерного флота.`,
-        `**Трансформация торговых путей** [⚡ Резонанс: 88%]: закрепление независимых страховых пулов и рост фрахтовых мощностей нейтральных юрисдикций.`,
-        `**Сырьевой баланс** [⚡ Резонанс: 85%]: стабильность экспортных котировок при растущем спросе со стороны азиатских НПЗ.`,
+        `**Месячный санкционный пакет**: переход регуляторов Запада к постоянному комплаенсу вторичных институтов и танкерного флота.`,
+        `**Трансформация торговых путей**: закрепление независимых страховых пулов и рост фрахтовых мощностей нейтральных юрисдикций.`,
+        `**Сырьевой баланс**: стабильность экспортных котировок при растущем спросе со стороны азиатских НПЗ.`,
       ];
 
       chenBullets = [
-        `**Месячные итоги расчетов в нацвалютах** [⚡ Резонанс: 87%]: доля юаня и рубля во взаимной торговле РФ и Китая превысила 92% в совокупном обороте.`,
-        `**Развитие МТК «Север-Юг» и Севморпути** [⚡ Резонанс: 86%]: кратный рост перевалки генеральных и контейнерных грузов по восточному вектору.`,
-        `**Технологический трансфер** [⚡ Резонанс: 82%]: расширение совместных инженерных кластеров в сфере микроэлектроники и оборудования.`,
+        `**Месячные итоги расчетов в нацвалютах**: доля юаня и рубля во взаимной торговле РФ и Китая превысила 92% в совокупном обороте.`,
+        `**Развитие МТК «Север-Юг» и Севморпути**: кратный рост перевалки генеральных и контейнерных грузов по восточному вектору.`,
+        `**Технологический трансфер**: расширение совместных инженерных кластеров в сфере микроэлектроники и оборудования.`,
       ];
     } else {
       // today
       ivanBullets = [
         ctx.ivanStories[0]
-          ? `**${ctx.ivanStories[0].title}** [⚡ Резонанс: 86%]: регуляторный контроль биржевых нормативов моторного топлива на СПбМТСБ и проверка наценок.`
-          : 'Завершение нулевых чтений проекта трехлетнего федерального бюджета на 2027–2029 гг. [⚡ Резонанс: 84%].',
+          ? `**${ctx.ivanStories[0].title}**: регуляторный контроль биржевых нормативов моторного топлива на СПбМТСБ и проверка наценок.`
+          : 'Завершение нулевых чтений проекта трехлетнего федерального бюджета на 2027–2029 гг.',
         ctx.ivanStories[1]
-          ? `**${ctx.ivanStories[1].title}** [⚡ Резонанс: 82%]: действие демпферного механизма и мониторинг оптового звена энергоносителей.`
-          : 'ФАС и Минэнерго РФ проводят еженедельный мониторинг баланса поставок моторного топлива в регионы [⚡ Резонанс: 81%].',
+          ? `**${ctx.ivanStories[1].title}**: действие демпферного механизма и мониторинг оптового звена энергоносителей.`
+          : 'ФАС и Минэнерго РФ проводят еженедельный мониторинг баланса поставок моторного топлива в регионы.',
       ];
 
       kirkBullets = [
         ctx.kirkStories[0]
-          ? `**${ctx.kirkStories[0].title}** [⚡ Резонанс: 89%]: Минфин США (OFAC) усилил комплаенс-требования к проверке страховых полисов P&I клубов для танкеров.`
-          : 'Публикация нового директивного пакета OFAC по контролю условий страхования морских партий нефти [⚡ Резонанс: 88%].',
+          ? `**${ctx.kirkStories[0].title}**: Минфин США (OFAC) усилил комплаенс-требования к проверке страховых полисов P&I клубов для танкеров.`
+          : 'Публикация нового директивного пакета OFAC по контролю условий страхования морских партий нефти.',
         ctx.kirkStories[1]
-          ? `**${ctx.kirkStories[1].title}** [⚡ Резонанс: 84%]: ставки фрахта и перестрахование судов в портах Балтийского и Черного морей.`
-          : 'Повышение ставок морского фрахта и страховых премий Lloyd\'s для танкеров под нейтральными флагами [⚡ Резонанс: 83%].',
+          ? `**${ctx.kirkStories[1].title}**: ставки фрахта и перестрахование судов в портах Балтийского и Черного морей.`
+          : 'Повышение ставок морского фрахта и страховых премий Lloyd\'s для танкеров под нейтральными флагами.',
       ];
 
       chenBullets = [
         ctx.chenStories[0]
-          ? `**${ctx.chenStories[0].title}** [⚡ Резонанс: 81%]: Народный Банк Китая расширяет каналы прямых межбанковских расчетов со странами БРИКС в обход SWIFT.`
-          : 'Народный Банк Китая и партнеры по БРИКС наращивают объемы клиринга в нацвалютах без использования SWIFT [⚡ Резонанс: 82%].',
-        'Рост грузооборота по восточным логистическим коридорам (порты Дальнего Востока, Севморпуть) на 12% с начала квартала [⚡ Резонанс: 79%].',
+          ? `**${ctx.chenStories[0].title}**: Народный Банк Китая расширяет каналы прямых межбанковских расчетов со странами БРИКС в обход SWIFT.`
+          : 'Народный Банк Китая и партнеры по БРИКС наращивают объемы клиринга в нацвалютах без использования SWIFT.',
+        'Рост грузооборота по восточным логистическим коридорам (порты Дальнего Востока, Севморпуть) на 12% с начала квартала.',
       ];
     }
-
-    // Candidate resonance nodes across curators
-    const resonanceNodes: ResonanceNodeCandidate[] = [
-      {
-        id: `node-oil-logistics-${ctx.date}`,
-        title: 'Морской фрахт и оптовый топливный баланс РФ',
-        curatorIds: ['ivan-bely', 'kirk-kitten'],
-        curatorNames: ['Иван Белый', 'Kirk Kitten'],
-        resonanceScore: 86,
-        topic: 'oil-freight-dampener',
-        reasoning: 'Ужесточение проверок танкерного фрахта со стороны OFAC создает задержки отгрузок в портах, перенаправляя цистерны на внутренний рынок и влияя на биржевые котировки СПбМТСБ.',
-        sharedKeywords: ['танкеры', 'нефть', 'топливо', 'демпфер', 'ofac', 'фас'],
-        suggestedPrompt: `/synthesis Иван Белый и Kirk Kitten: Влияние морских санкций OFAC на оптовый рынок нефтепродуктов РФ (${ctx.date})`,
-      },
-      {
-        id: `node-payments-trade-${ctx.date}`,
-        title: 'Трансграничный клиринг в нацвалютах и торговый баланс',
-        curatorIds: ['ivan-bely', 'chen-wei'],
-        curatorNames: ['Иван Белый', 'Чэнь Вэй'],
-        resonanceScore: 78,
-        topic: 'cross-border-settlements',
-        reasoning: 'Переход на прямые расчеты в юанях и рублях смягчает давление вторичных финансовых санкций Запада и поддерживает стабильность бюджетных доходов от экспорта.',
-        sharedKeywords: ['расчеты', 'клиринг', 'нацвалюты', 'брикс', 'бюджет', 'экспорт'],
-        suggestedPrompt: `/synthesis Иван Белый и Чэнь Вэй: Развитие независимой платежной инфраструктуры БРИКС и торговый баланс (${ctx.date})`,
-      },
-    ];
 
     const markdownText = `${headerTitle}
 
@@ -1659,21 +1562,7 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
 👉 [В тред к Чэнь Вэю (обсудить ${timeframeLabel}) ↗](action:curator:chen-wei?timeframe=${timeframe})
 
 ---
-
-### ⚡ Обнаруженные узлы пересечения (Кандидаты на точечный синтез):
-
-${resonanceNodes
-  .map(
-    (n, idx) =>
-      `${idx + 1}. **${n.title}** [⚡ Резонанс: ${n.resonanceScore}%]  
-   • **Контуры:** ${n.curatorNames.join(' ⟷ ')}  
-   • **Точка соприкосновения:** ${n.reasoning}  
-   • **Команда для синтеза:** \`${n.suggestedPrompt}\``,
-  )
-  .join('\n\n')}
-
----
-💡 *Сводка собрана в компактном формате без фото и медиа-шума. Вы можете обсудить детали за ${timeframeLabel} в личных тредах кураторов или запустить точечный синтез.*`;
+💡 *Сводка собрана в компактном формате без фото и медиа-шума. Вы можете обсудить детали за ${timeframeLabel} в личных тредах кураторов.*`;
 
     const suggestedCard = {
       title: `[Резюме] Политическая панорама (${timeframe === 'week' ? 'неделя' : timeframe === 'month' ? 'месяц' : 'день'}, ${ctx.date})`,
@@ -1681,7 +1570,6 @@ ${resonanceNodes
 
 > **Куратор:** 🏛️ Политическая коллегия (Иван Белый, Kirk Kitten, Чэнь Вэй)  
 > **Период:** ${timeframe === 'week' ? '7 дней' : timeframe === 'month' ? '30 дней' : 'Сегодня'}  
-> **Узлы резонанса:** ${resonanceNodes.length} обнаружено
 
 ### Ключевые аспекты:
 - **Контур РФ:** Регуляторика, бюджет и баланс оптовых цен на энергоносители.
@@ -1693,9 +1581,8 @@ ${resonanceNodes
       type: NoteType.EVENT,
       folder: 'Politics/Daily',
       taxonomyPath: 'politics.daily_summary',
-      hashtags: ['Политика', 'Резюме', 'Коллегия', 'Контуры', 'Резонанс'],
+      hashtags: ['Политика', 'Резюме', 'Коллегия', 'Контуры'],
       curator: 'Политическая коллегия',
-      resonanceScore: 86,
     };
 
     const isTg = isTelegramPostRequested(ctx.prompt);
@@ -1713,8 +1600,8 @@ ${resonanceNodes
           period: timeframe === 'week' ? 'week' : 'today',
           bullets: postBullets,
           takeaway: 'Синхронизация регуляторного поля РФ, санкционного давления и восточных финансовых маршрутов.',
-          hashtags: ['Политика', 'Коллегия', 'СводкаДня', 'Аналитика', 'Резонанс'],
-        }) + `\n\n### ⚡ Обнаруженные узлы пересечения:\n` + resonanceNodes.map((n, idx) => `${idx + 1}. **${n.title}** [${n.resonanceScore}%]: \`${n.suggestedPrompt}\``).join('\n')
+          hashtags: ['Политика', 'Коллегия', 'СводкаДня', 'Аналитика'],
+        })
       : markdownText;
 
     return {
@@ -1737,9 +1624,7 @@ ${resonanceNodes
         curatorId: 'political-group',
         dateScope: ctx.date,
       },
-      resonanceScore: 86,
       sources: ['Правительство РФ', 'СПбМТСБ', 'OFAC', 'Lloyd\'s List', 'Xinhua', 'PBOC'],
-      resonanceNodes,
       suggestedCard,
     };
   }
@@ -1758,11 +1643,10 @@ ${resonanceNodes
     const systemPrompt = `Ты — координирующий аналитический движок мультиагентной системы Project Lenta.
 Текущая дата: ${ctx.date}.
 В системе работают ключевые кураторы:
-1. 🏛️ Политическая коллегия (political-group): Единая группа кураторов. Если запрос направлен к ней (новости на сегодня, резюме дня), сформируй МОДУЛЬНОЕ РЕЗЮМЕ по контурам (РФ, Международный, АТР/БРИКС) и отдельно в конце выдели 1-2 потенциальных УЗЛА ПЕРЕСЕЧЕНИЯ (кандидатов на точечный синтез) с расчетом индекса резонанса. Не смешивай всё в одну кашу — дай структурированный срез по каждому куратору!
+1. 🏛️ Политическая коллегия (political-group): Единая группа кураторов. Если запрос направлен к ней (новости на сегодня, резюме дня), сформируй МОДУЛЬНОЕ РЕЗЮМЕ по контурам (РФ, Международный, АТР/БРИКС). Не смешивай всё в одну кашу — дай структурированный срез по каждому куратору!
 2. 🇷🇺 Иван Белый (ivan-bely): Внутренний контур РФ (законы, Госдума, бюджет, ФАС, ЦБ РФ, топливный демпфер, внутренние цены).
 3. 🌐 Kirk Kitten (kirk-kitten): Международный контур (OFAC, санкции США/ЕС, морской фрахт, ООН, сырьевые рынки).
 4. 🇨🇳 Чэнь Вэй (chen-wei): Восточный контур (Китай, АТР, БРИКС, валютный клиринг, логистика, погранпереходы).
-5. ⚖️ Независимый аналитик (independent-analyst): Проводит точечный кросс-контурный синтез и арбитраж по конкретным выявленным узлам.
 
 Контекст новостей на дату:
 ${JSON.stringify(ctx.contextCards.map((c) => ({ title: c.title, source: c.source, summary: c.summary, curator: c.suggestedCurator })))}
@@ -1776,21 +1660,19 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
 Верни строго JSON массив ответов (без markdown блоков \`\`\`json):
 [
   {
-    "sender": "political-group" | "ivan-bely" | "kirk-kitten" | "chen-wei" | "independent-analyst",
+    "sender": "political-group" | "ivan-bely" | "kirk-kitten" | "chen-wei",
     "senderName": "Имя агента или группы",
     "senderRole": "Роль",
     "avatar": "эмодзи",
     "text": "Ответ в Markdown",
-    "resonanceScore": 85,
     "suggestedCard": {
       "title": "Заголовок для календаря",
       "description": "Markdown текст карточки",
       "type": "SINGLE" | "EVENT" | "PERIOD" | "DONE",
-      "folder": "Politics/Daily" | "Politics/Russia" | "Synthesis/2026",
-      "taxonomyPath": "politics.daily_summary" | "politics.russia" | "politics.cross_analysis",
+      "folder": "Politics/Daily" | "Politics/Russia",
+      "taxonomyPath": "politics.daily_summary" | "politics.russia",
       "hashtags": ["тег1", "тег2"],
-      "curator": "Политическая коллегия" | "ivan-bely" | "kirk-kitten" | "Независимый аналитик",
-      "resonanceScore": 85
+      "curator": "Политическая коллегия" | "ivan-bely" | "kirk-kitten"
     }
   }
 ]`;
@@ -1825,7 +1707,6 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       avatar: item.avatar || '🏛️',
       text: item.text || '',
       timestamp: new Date().toISOString(),
-      resonanceScore: item.resonanceScore || 80,
       suggestedCard: item.suggestedCard,
     }));
   }
@@ -1894,7 +1775,6 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       avatar: '🧭',
       text: markdown,
       timestamp: ctx.timestamp,
-      resonanceScore: surveyResult.crossDomainResonances[0]?.score || 80,
       curatorSurvey: surveyResult,
     };
   }
@@ -2041,7 +1921,6 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       sourceName: s.source || 'Primary Wire',
       sourceUrl: s.url,
       tags: s.suggestedTags?.length ? s.suggestedTags : [name, 'Аналитика'],
-      resonanceScore: s.resonanceScore || 85,
       keyPoints: s.keyPoints?.length ? s.keyPoints : [s.summary.substring(0, 100)],
       contourBadge: `${emoji} ${name} / ${persona?.scope?.split(',')[0]}`,
       publishedAt: s.publishedAt || '12:00',
@@ -2062,7 +1941,6 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
         curatorId,
         dateScope: ctx.date,
       },
-      resonanceScore: mainStory?.resonanceScore || 85,
       sources: ctx.stories.map((s) => s.source).filter(Boolean),
       newsPosts,
     };

@@ -45,7 +45,6 @@ export interface DailyNewsCard {
   keyPoints: string[];
   suggestedCurator: CuratorId | 'general';
   suggestedType: NoteType;
-  resonanceScore: number; // 0 - 100
   branchingPotentialScore?: number; // 0 - 100 (BPI: Ripple & Contagion potential)
   isBreaking?: boolean; // Hot World Pulse indicator
   likelyBranches?: string[]; // Anticipated ripple paths across sectors/regions
@@ -79,7 +78,6 @@ export interface DailySummaryData {
   totalNewsCount: number;
   acceptedNotesCount: number;
   pendingReviewCount: number;
-  averageResonance: number;
   topThemes: string[];
   headlineSynthesis: string;
   hasPodcast: boolean;
@@ -133,7 +131,6 @@ export interface GroupSummaryPayload {
   date: string;
   headline: string;
   sections: CuratorSummarySection[];
-  resonanceNodes: ResonanceNodeCandidate[];
   newsPosts?: TelegramNewsPreview[];
 }
 
@@ -147,9 +144,7 @@ export interface ChatMessage {
   timestamp: string;
   messageType?: 'DEFAULT' | 'TELEGRAM_POST' | 'SUMMARY_DAY' | 'SUMMARY_WEEK' | 'SURVEY_RESULT';
   metadata?: Record<string, any>;
-  resonanceScore?: number;
   sources?: string[];
-  resonanceNodes?: ResonanceNodeCandidate[];
   groupSummary?: GroupSummaryPayload;
   curatorSurvey?: CuratorSurveyResult;
   sideWorkResult?: SideWorkResult;
@@ -162,7 +157,6 @@ export interface ChatMessage {
     taxonomyPath: string;
     hashtags: string[];
     curator: string;
-    resonanceScore: number;
     sourceLink?: string;
   };
 }
@@ -256,6 +250,22 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     targetAgent: 'okatsiya',
   },
   {
+    id: 'snip-okatsiya-models',
+    command: '/models',
+    label: '🧠 Модели нового поколения',
+    prompt: 'Окация, дай подробную сводку по выходу моделей нового поколения: Gemini 4 Argon, GPT-6 (Astra, Sol, Luna) и Claude 5.5, включая отмену Astra 6.1 и политику безопасности.',
+    description: 'Радар новых моделей: Gemini 4 Argon, OpenAI GPT-6, Claude 5.5 и кибербезопасность',
+    targetAgent: 'okatsiya',
+  },
+  {
+    id: 'snip-okatsiya-agents-era',
+    command: '/agents',
+    label: '🤖 Эра автономных ИИ-агентов',
+    prompt: 'Окация, разложи текущую волну автономных агентов: OpenAI Dots, Meta Muse, маркетплейс сотрудников Grok 4.7 и смежные новости (NVIDIA RTX Spark, Apple Siri AI, расследование FTC, AUTOWARCOM и ИИ-долг $88 млрд).',
+    description: 'Автономные агенты, локальные ПК RTX Spark, военные заказы AUTOWARCOM и $88 млрд долга',
+    targetAgent: 'okatsiya',
+  },
+  {
     id: 'snip-okatsiya-ai-only',
     command: '/ai',
     label: '🧠 Окация: Только AI & LLM',
@@ -328,22 +338,14 @@ export const DEFAULT_CHAT_SNIPPETS: ChatSnippet[] = [
     targetAgent: 'alex-vector',
   },
 
-  // --- 4. Коллегии и Арбитраж ---
+  // --- 4. Коллегии ---
   {
     id: 'snip-group-politics',
     command: '/politics',
     label: '🏛️ Политическая коллегия: Резюме',
-    prompt: 'Коллегия, сформируйте модульное резюме политической повестки на сегодня по всем контурам с выявлением ключевых точек пересечения для синтеза.',
-    description: 'Сводный срез от кураторов РФ, международного контура и АТР с точками резонанса',
+    prompt: 'Коллегия, сформируйте модульное резюме политической повестки на сегодня по всем контурам.',
+    description: 'Сводный срез от кураторов РФ, международного контура и АТР',
     targetAgent: 'political-group',
-  },
-  {
-    id: 'snip-synthesis',
-    command: '/synthesis',
-    label: '⚖️ Независимый синтез',
-    prompt: 'Проведи независимый кросс-контурный анализ: сопоставь внешние факторы и внутренние маркеры РФ без эмоций.',
-    description: 'Беспристрастный арбитраж фактов и расчет реальной причинно-следственной связи',
-    targetAgent: 'independent-analyst',
   },
   {
     id: 'snip-harvest',

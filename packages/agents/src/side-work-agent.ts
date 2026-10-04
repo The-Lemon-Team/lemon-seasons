@@ -123,9 +123,8 @@ export class SideWorkAgent {
       type: 'DONE',
       date,
       curator: 'Продюсер Сайд-Работы',
-      tags: ['аналитика', 'дайджест', 'сайд-работа', 'резонанс'],
+      tags: ['аналитика', 'дайджест', 'сайд-работа'],
       status: 'PUBLISHED',
-      resonanceScore: 84,
     };
 
     if (format === 'telegram_post') {

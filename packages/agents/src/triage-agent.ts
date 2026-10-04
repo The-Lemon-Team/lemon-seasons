@@ -59,18 +59,7 @@ export class NewsTriageAgent {
       suggestedCurator = 'ivan-bely'; // cross-boundary defaults to domestic lens
     }
 
-    // 2. Compute Resonance Score (Cross-boundary overlap or high disruption)
-    let resonanceScore = 20;
-    if (suggestedCurator === 'okatsiya') {
-      resonanceScore = Math.min(95, 50 + itHits * 8);
-    } else if (ivanHits > 0 && kirkHits > 0) {
-      // High cross-boundary friction
-      resonanceScore = Math.min(95, 55 + (ivanHits + kirkHits) * 7);
-    } else if (ivanHits >= 3 || kirkHits >= 3) {
-      resonanceScore = Math.min(75, 40 + Math.max(ivanHits, kirkHits) * 6);
-    }
-
-    // 3. Determine NoteType
+    // 2. Determine NoteType
     let suggestedType: NoteType = NoteType.SINGLE;
     if (text.includes('договорились') || text.includes('приняли') || text.includes('итоги') || text.includes('подписан') || text.includes('выпустил') || text.includes('зарелизил')) {
       suggestedType = NoteType.DONE;
@@ -80,7 +69,7 @@ export class NewsTriageAgent {
       suggestedType = NoteType.PERIOD;
     }
 
-    // 4. Extract Suggested Tags
+    // 3. Extract Suggested Tags
     const suggestedTags: string[] = ['новости'];
     if (suggestedCurator === 'okatsiya') {
       suggestedTags.push('IT');
@@ -99,7 +88,7 @@ export class NewsTriageAgent {
     if (text.includes('нефт') || text.includes('топлив') || text.includes('газ')) suggestedTags.push('энергетика');
     if (text.includes('цб') || text.includes('ставк') || text.includes('инфляц')) suggestedTags.push('финансы');
 
-    // 5. Generate Key Takeaway Bullets
+    // 4. Generate Key Takeaway Bullets
     const keyPoints: string[] = [
       `Источник сообщения: ${raw.source}`,
       suggestedCurator === 'okatsiya'
@@ -109,7 +98,6 @@ export class NewsTriageAgent {
         : suggestedCurator === 'kirk-kitten'
         ? 'Оценка внешнего контура: международные ограничения, логистика и макроэкономические последствия.'
         : 'Общественно-политический контекст дня.',
-      `Индикатор резонанса: ${resonanceScore}% (${resonanceScore >= 70 ? 'Высокая чувствительность' : 'Стандартный мониторинг'}).`
     ];
 
     let category = 'Общий мониторинг';
@@ -133,7 +121,6 @@ export class NewsTriageAgent {
       keyPoints,
       suggestedCurator,
       suggestedType,
-      resonanceScore,
       suggestedTags,
       status: 'PENDING',
     };

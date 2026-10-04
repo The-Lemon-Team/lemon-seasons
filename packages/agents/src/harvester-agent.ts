@@ -61,7 +61,7 @@ export class NewsHarvesterAgent {
     }
     md += `\n### Первично размеченные материалы на триаж:\n`;
     for (const card of result.triagedCards.slice(0, 5)) {
-      md += `- **[${card.suggestedCurator}]** ${card.title} *(Резонанс: ${card.resonanceScore}%)*\n`;
+      md += `- **[${card.suggestedCurator}]** ${card.title}\n`;
     }
     if (result.triagedCards.length > 5) {
       md += `*... и еще ${result.triagedCards.length - 5} материалов готовы к распределению.*\n`;

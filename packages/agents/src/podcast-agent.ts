@@ -151,7 +151,7 @@ ${newsContext}
     turns.push({
       speaker: host1Name,
       role: 'host1',
-      text: `Смотри, источник здесь — ${firstNews.source}. Ключевой момент в том, что ${firstNews.keyPoints[1] || firstNews.summary}. Резонанс события оценивается в ${firstNews.resonanceScore}%. Это прямой сигнал для рынка.`,
+      text: `Смотри, источник здесь — ${firstNews.source}. Ключевой момент в том, что ${firstNews.keyPoints[1] || firstNews.summary}. Это прямой сигнал для рынка.`,
     });
 
     turns.push({
