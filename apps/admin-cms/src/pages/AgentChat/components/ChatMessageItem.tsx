@@ -431,14 +431,14 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
 
         {/* Message Bubble */}
         <div
-          className={`max-w-[85%] rounded-2xl p-4 border transition-all ${
+          className={`max-w-[85%] rounded-2xl p-3.5 transition-all ${
             isUser
               ? isOptimistic
-                ? 'bg-primary/20 border-primary/50 text-white rounded-tr-none opacity-90'
-                : 'bg-primary/15 border-primary/40 text-white rounded-tr-none'
+                ? 'bg-primary/20 text-white rounded-tr-sm opacity-90'
+                : 'bg-primary/15 text-white rounded-tr-sm'
               : isTelegramPost
-              ? 'bg-[#131b26] border-sky-500/30 text-gray-200 rounded-tl-none shadow-xl ring-1 ring-sky-500/10'
-              : 'bg-[#161b22] border-white/10 text-gray-200 rounded-tl-none shadow-lg'
+              ? 'bg-[#131b26] text-gray-200 rounded-tl-sm shadow-md'
+              : 'bg-[#161b22] text-gray-200 rounded-tl-sm shadow-sm'
           }`}
         >
           {/* Sender Metadata Bar */}
@@ -471,6 +471,70 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
               )}
             </div>
           </div>
+
+          {/* Generated Media (Images from Gemini Imagen) */}
+          {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+            <div className="my-3 space-y-2">
+              {msg.mediaUrls.map((url, i) => (
+                <div key={i} className="rounded-xl overflow-hidden border border-white/10 bg-black/40 relative">
+                  <img
+                    src={url.startsWith('/') ? url : `/${url}`}
+                    alt="Сгенерированное изображение"
+                    className="w-full max-h-96 object-contain rounded-xl"
+                  />
+                  <div className="p-2 bg-black/60 backdrop-blur-sm border-t border-white/10 flex items-center justify-between text-[11px]">
+                    <span className="text-gray-300 font-mono text-[10px]">🎨 Gemini Imagen Asset</span>
+                    <a
+                      href={url.startsWith('/') ? url : `/${url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      download
+                      className="text-primary hover:underline font-semibold flex items-center gap-1"
+                    >
+                      <span>Открыть оригинал</span>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Interactive NotebookLM Podcast Player */}
+          {msg.payload?.podcastScript && (
+            <div className="my-3 p-3 bg-purple-950/20 border border-purple-500/30 rounded-xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎙️</span>
+                  <div>
+                    <div className="font-bold text-white text-xs">{msg.payload.podcastScript.title}</div>
+                    <div className="text-[10px] text-purple-300/80">{msg.payload.podcastScript.tagline}</div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                  NotebookLM
+                </span>
+              </div>
+
+              {/* Podcast Turns */}
+              <div className="space-y-1.5 pt-1">
+                {msg.payload.podcastScript.turns?.map((turn: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`p-2 rounded-lg text-xs flex gap-2 ${
+                      turn.role === 'host1'
+                        ? 'bg-white/5 border border-white/5'
+                        : 'bg-purple-500/10 border border-purple-500/20'
+                    }`}
+                  >
+                    <span className="font-bold text-[11px] whitespace-nowrap text-purple-300 min-w-[65px]">
+                      {turn.speaker}:
+                    </span>
+                    <span className="text-gray-200 leading-relaxed">{turn.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Markdown Content */}
           <div className="prose prose-invert max-w-none text-xs leading-relaxed">
@@ -655,7 +719,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = React.memo(
 
         {/* User Avatar */}
         {isUser && (
-          <div className="w-8 h-8 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-base flex-shrink-0 mt-0.5 select-none">
+          <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-sm flex-shrink-0 mt-0.5 select-none">
             👤
           </div>
         )}

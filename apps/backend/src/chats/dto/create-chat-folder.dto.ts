@@ -12,6 +12,11 @@ export class CreateChatFolderDto {
   @IsOptional()
   path?: string;
 
+  @ApiPropertyOptional({ description: 'Description or domain focus of the folder' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
   @ApiPropertyOptional({ description: 'Lucide icon name' })
   @IsString()
   @IsOptional()
@@ -31,4 +36,14 @@ export class CreateChatFolderDto {
   @IsString()
   @IsOptional()
   parentId?: string;
+
+  @ApiPropertyOptional({ description: 'Visual style prompt for Gemini image generation in this folder' })
+  @IsString()
+  @IsOptional()
+  imageStylePrompt?: string;
+
+  @ApiPropertyOptional({ description: 'System context rules for curators and agents in this folder' })
+  @IsString()
+  @IsOptional()
+  contextRules?: string;
 }

@@ -512,8 +512,13 @@ export const curationApi = {
 };
 
 export const chatsApi = {
+  // Folders
   getFolders: async (): Promise<any[]> => {
     const res = await apiClient.get<any[]>('/chats/folders');
+    return res.data;
+  },
+  getFolder: async (id: string): Promise<any> => {
+    const res = await apiClient.get<any>(`/chats/folders/${id}`);
     return res.data;
   },
   createFolder: async (data: any): Promise<any> => {
@@ -528,6 +533,56 @@ export const chatsApi = {
     const res = await apiClient.delete<any>(`/chats/folders/${id}`);
     return res.data;
   },
+
+  // Curators
+  getCurators: async (folderId?: string): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/chats/curators', {
+      params: folderId ? { folderId } : undefined,
+    });
+    return res.data;
+  },
+  getCurator: async (id: string): Promise<any> => {
+    const res = await apiClient.get<any>(`/chats/curators/${id}`);
+    return res.data;
+  },
+  createCurator: async (data: any): Promise<any> => {
+    const res = await apiClient.post<any>('/chats/curators', data);
+    return res.data;
+  },
+  updateCurator: async (id: string, data: any): Promise<any> => {
+    const res = await apiClient.patch<any>(`/chats/curators/${id}`, data);
+    return res.data;
+  },
+  deleteCurator: async (id: string): Promise<any> => {
+    const res = await apiClient.delete<any>(`/chats/curators/${id}`);
+    return res.data;
+  },
+
+  // Assistants
+  getAssistants: async (folderId?: string, skillType?: string): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/chats/assistants', {
+      params: { folderId, skillType },
+    });
+    return res.data;
+  },
+  getAssistant: async (id: string): Promise<any> => {
+    const res = await apiClient.get<any>(`/chats/assistants/${id}`);
+    return res.data;
+  },
+  createAssistant: async (data: any): Promise<any> => {
+    const res = await apiClient.post<any>('/chats/assistants', data);
+    return res.data;
+  },
+  updateAssistant: async (id: string, data: any): Promise<any> => {
+    const res = await apiClient.patch<any>(`/chats/assistants/${id}`, data);
+    return res.data;
+  },
+  deleteAssistant: async (id: string): Promise<any> => {
+    const res = await apiClient.delete<any>(`/chats/assistants/${id}`);
+    return res.data;
+  },
+
+  // Threads / Chats
   getThreads: async (params?: any): Promise<any[]> => {
     const res = await apiClient.get<any[]>('/chats/threads', { params });
     return res.data;
@@ -548,12 +603,22 @@ export const chatsApi = {
     const res = await apiClient.delete<any>(`/chats/threads/${id}`);
     return res.data;
   },
+
+  // Messages & Skills
   getMessages: async (threadId: string): Promise<any[]> => {
     const res = await apiClient.get<any[]>(`/chats/threads/${threadId}/messages`);
     return res.data;
   },
   sendMessage: async (threadId: string, data: any): Promise<any> => {
     const res = await apiClient.post<any>(`/chats/threads/${threadId}/messages`, data);
+    return res.data;
+  },
+  generatePhoto: async (threadId: string, data: any): Promise<any> => {
+    const res = await apiClient.post<any>(`/chats/threads/${threadId}/generate-photo`, data);
+    return res.data;
+  },
+  generatePodcast: async (threadId: string, data: any): Promise<any> => {
+    const res = await apiClient.post<any>(`/chats/threads/${threadId}/generate-podcast`, data);
     return res.data;
   },
   seedDefaults: async (): Promise<void> => {

@@ -2,7 +2,9 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import sharp from 'sharp';
+import * as sharpPkg from 'sharp';
+
+const sharp: any = (sharpPkg as any).default || sharpPkg;
 
 export interface ProcessedImageResult {
   url: string;
@@ -120,6 +122,72 @@ export class StorageService implements OnModuleInit {
         sizeBytes: file.size,
         width: null,
         height: null,
+      };
+    }
+  }
+
+  /**
+   * Save a generated image buffer directly (e.g. from Gemini Imagen or SVG fallback)
+   */
+  async saveGeneratedBuffer(
+    buffer: Buffer,
+    originalName = 'generated-image.webp',
+    isSvg = false,
+  ): Promise<ProcessedImageResult> {
+    await this.ensureDirectories();
+    const fileId = `${Date.now()}-${randomUUID()}`;
+
+    if (isSvg || originalName.endsWith('.svg')) {
+      const filename = `${fileId}.svg`;
+      const filePath = path.join(this.mediaDir, filename);
+      await fs.writeFile(filePath, buffer);
+
+      return {
+        url: `/uploads/media/${filename}`,
+        thumbnailUrl: `/uploads/media/${filename}`,
+        filename: originalName,
+        mimeType: 'image/svg+xml',
+        sizeBytes: buffer.length,
+        width: 1280,
+        height: 720,
+      };
+    }
+
+    try {
+      const filename = `${fileId}.webp`;
+      const sharpInstance = sharp(buffer).rotate();
+      const metadata = await sharpInstance.metadata();
+
+      const optimizedBuffer = await sharpInstance
+        .webp({ quality: 90 })
+        .toBuffer();
+
+      const filePath = path.join(this.mediaDir, filename);
+      await fs.writeFile(filePath, optimizedBuffer);
+
+      return {
+        url: `/uploads/media/${filename}`,
+        thumbnailUrl: `/uploads/media/${filename}`,
+        filename: originalName,
+        mimeType: 'image/webp',
+        sizeBytes: optimizedBuffer.length,
+        width: metadata.width || null,
+        height: metadata.height || null,
+      };
+    } catch {
+      const ext = path.extname(originalName) || '.webp';
+      const filename = `${fileId}${ext}`;
+      const filePath = path.join(this.mediaDir, filename);
+      await fs.writeFile(filePath, buffer);
+
+      return {
+        url: `/uploads/media/${filename}`,
+        thumbnailUrl: `/uploads/media/${filename}`,
+        filename: originalName,
+        mimeType: 'image/webp',
+        sizeBytes: buffer.length,
+        width: 1280,
+        height: 720,
       };
     }
   }

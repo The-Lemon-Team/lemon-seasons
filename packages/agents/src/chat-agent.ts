@@ -165,6 +165,23 @@ export class AgentChatEngine {
             : tf === 'month'
             ? 'Месячная панорама ключевых мировых происшествий и резонансных тем'
             : 'Горячие мировые новости и оперативные молнии на сегодня');
+      } else if (
+        command === '/tech' ||
+        command === '/tech-group' ||
+        command === '/it-group' ||
+        command === '/it-board'
+      ) {
+        resolvedTarget = 'tech-group';
+        const subArg = parts.slice(1).join(' ').trim().toLowerCase();
+        let tf = '';
+        if (subArg === 'today' || subArg.includes('сегодня') || subArg.includes('день')) {
+          tf = 'today';
+        } else if (subArg === 'week' || subArg.includes('недел') || subArg.includes('7 дней')) {
+          tf = 'week';
+        } else if (subArg === 'month' || subArg.includes('месяц') || subArg.includes('30 дней')) {
+          tf = 'month';
+        }
+        cleanPrompt = parts.slice(1).join(' ').trim() || (tf ? `/tech ${tf}` : 'today');
       } else if (command === '/marcus' || command === '/nexus' || command === '/domino' || command === '/branch') {
         resolvedTarget = 'marcus-vane';
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Анализ эффекта домино, вакуума силы и смежных веток событий';
@@ -176,6 +193,9 @@ export class AgentChatEngine {
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Анализ сырьевых рынков, нефти Brent и проходимости морских проливов';
       } else if (
         command === '/okatsiya' ||
+        command === '/akatsiya' ||
+        command === '/hitech' ||
+        command === '/devices' ||
         command === '/it' ||
         command === '/it-today' ||
         command === '/it-week' ||
@@ -208,12 +228,37 @@ export class AgentChatEngine {
         cleanPrompt =
           parts.slice(1).join(' ').trim() ||
           (tf === 'week'
-            ? 'Недельный дайджест IT & AI: модели, инфраструктура, BigTech'
+            ? 'Недельный дайджест Hi-Tech & IT: новые девайсы, анонсы, BigTech'
             : tf === 'month'
-            ? 'Месячная панорама IT & AI: ключевые сдвиги, релизы и регулирование'
-            : subSector !== 'it' && subSector !== 'okatsiya'
-            ? `Новости по отрасли ${subSector}`
-            : 'Ключевые новости IT и AI на сегодня');
+            ? 'Месячная панорама Hi-Tech & IT: ключевые релизы, девайсы и BigTech'
+            : subSector !== 'it' && subSector !== 'okatsiya' && subSector !== 'akatsiya'
+            ? `Новости по направлению ${subSector}`
+            : 'Ключевые новости Hi-Tech, IT & AI индустрии, новые девайсы и анонсы на сегодня');
+      } else if (
+        command === '/simon' ||
+        command === '/саймон' ||
+        command === '/habr' ||
+        command === '/german' ||
+        command === '/xakep'
+      ) {
+        resolvedTarget = 'simon-habr';
+        cleanPrompt =
+          parts.slice(1).join(' ').trim() ||
+          (command === '/xakep'
+            ? 'Разбор материалов журнала «Хакер» (xakep.ru) и подготовка тематической Super Note'
+            : command === '/habr'
+            ? 'Аналитический разбор публикаций с Habr и инженерных статей от Саймона'
+            : 'Разбор публикаций с Хабра (Habr) и инженерных статей от Саймона');
+      } else if (
+        command === '/presijo' ||
+        command === '/пресижо' ||
+        command === '/tools' ||
+        command === '/libs' ||
+        command === '/libraries' ||
+        command === '/tg-content'
+      ) {
+        resolvedTarget = 'presijo-ai';
+        cleanPrompt = parts.slice(1).join(' ').trim() || 'Обзор свежих AI-инструментов, релизов библиотек и трендов в Telegram-каналах от Presijo';
       } else if (
         command === '/survey' ||
         command === '/survey-today' ||
@@ -243,19 +288,6 @@ export class AgentChatEngine {
         resolvedTarget = 'sidework-producer';
         cleanPrompt = parts.slice(1).join(' ').trim() || 'Создай публикацию и подготовь медиа-обогащение на основе курированных данных';
       } else if (
-        command === '/german' ||
-        command === '/habr' ||
-        command === '/xakep'
-      ) {
-        resolvedTarget = 'german-kernel';
-        cleanPrompt =
-          parts.slice(1).join(' ').trim() ||
-          (command === '/xakep'
-            ? 'Разбор материалов журнала «Хакер» (xakep.ru) и подготовка тематической Super Note'
-            : command === '/habr'
-            ? 'Аналитический разбор публикаций с Habr и IT-статей с группировкой тем в Note'
-            : 'Обзор IT-статей, публикаций на Habr и материалов «Хакера» от Германа');
-      } else if (
         command === '/notebook' ||
         command === '/notebook-create' ||
         command === '/notebook-eta'
@@ -284,9 +316,42 @@ export class AgentChatEngine {
       ) {
         resolvedTarget = 'political-group';
       } else if (
+        lower.includes('it группа') ||
+        lower.includes('it коллегия') ||
+        lower.includes('it совет') ||
+        lower.includes('технологическая группа') ||
+        lower.includes('технологический совет') ||
+        lower.includes('группа it') ||
+        lower.includes('совет it')
+      ) {
+        resolvedTarget = 'tech-group';
+      } else if (
+        lower.includes('саймон') ||
+        lower.includes('simon')
+      ) {
+        resolvedTarget = 'simon-habr';
+      } else if (
+        lower.includes('presijo') ||
+        lower.includes('пресижо') ||
+        lower.includes('ai инструмент') ||
+        lower.includes('новые тулз') ||
+        lower.includes('релизы библиотек') ||
+        lower.includes('библиотеки ai') ||
+        lower.includes('контент мейкер') ||
+        lower.includes('контент-мейкер')
+      ) {
+        resolvedTarget = 'presijo-ai';
+      } else if (
         lower.includes('окация') ||
         lower.includes('акация') ||
         lower.includes('okatsiya') ||
+        lower.includes('девайс') ||
+        lower.includes('девайсы') ||
+        lower.includes('гаджет') ||
+        lower.includes('новые девайсы') ||
+        lower.includes('громкие анонсы') ||
+        lower.includes('hi-tech') ||
+        lower.includes('hitech') ||
         lower.includes('новости it') ||
         lower.includes('новости ai') ||
         lower.includes('новости ит') ||
@@ -313,7 +378,7 @@ export class AgentChatEngine {
         lower.includes('xakep') ||
         lower.includes('хакер')
       ) {
-        resolvedTarget = 'german-kernel';
+        resolvedTarget = 'simon-habr';
       } else if (
         lower.includes('notebooklm') ||
         lower.includes('создай дневник') ||
@@ -322,17 +387,53 @@ export class AgentChatEngine {
         resolvedTarget = 'notebook-producer';
       } else if (lower.includes('чэнь') || lower.includes('китай') || lower.includes('атр') || lower.includes('брикс') || lower.includes('юань')) {
         resolvedTarget = 'chen-wei';
-      } else if (lower.includes('алекс') || lower.includes('alex') || lower.includes('breaking') || lower.includes('горячие новости') || lower.includes('пульс') || lower.includes('молния')) {
+      } else if (
+        lower.includes('алекс') ||
+        lower.includes('alex') ||
+        lower.includes('breaking') ||
+        lower.includes('горячие новости') ||
+        lower.includes('пульс') ||
+        lower.includes('молния') ||
+        lower.includes('политическая повестка') ||
+        lower.includes('свежие новости') ||
+        lower.includes('свежие политические новости')
+      ) {
         resolvedTarget = 'alex-vector';
       } else if (lower.includes('маркус') || lower.includes('marcus') || lower.includes('домино') || lower.includes('ветвление') || lower.includes('nexus') || lower.includes('каскад')) {
         resolvedTarget = 'marcus-vane';
-      } else if (lower.includes('тарик') || lower.includes('tariq') || lower.includes('ближний восток') || lower.includes('mena') || lower.includes('залив') || lower.includes('ирак') || lower.includes('левант')) {
+      } else if (
+        lower.includes('тарик') ||
+        lower.includes('tariq') ||
+        lower.includes('ближний восток') ||
+        lower.includes('контур ближнего востока') ||
+        lower.includes('контуру ближнему востоку') ||
+        lower.includes('mena') ||
+        lower.includes('залив') ||
+        lower.includes('ирак') ||
+        lower.includes('левант')
+      ) {
         resolvedTarget = 'tariq-said';
       } else if (lower.includes('хелена') || lower.includes('helena') || lower.includes('нефть') || lower.includes('сырье') || lower.includes('пролив') || lower.includes('ормуз') || lower.includes('суэц') || lower.includes('фрахт')) {
         resolvedTarget = 'helena-brandt';
-      } else if (lower.includes('иван') || lower.includes('рф') || lower.includes('госдум') || lower.includes('бюджет')) {
+      } else if (
+        lower.includes('иван') ||
+        lower.includes('контур рф') ||
+        lower.includes('контуру рф') ||
+        lower.includes('рф') ||
+        lower.includes('госдум') ||
+        lower.includes('бюджет')
+      ) {
         resolvedTarget = 'ivan-bely';
-      } else if (lower.includes('kirk') || lower.includes('кирк') || lower.includes('оон') || lower.includes('ofac') || lower.includes('санкци')) {
+      } else if (
+        lower.includes('kirk') ||
+        lower.includes('кирк') ||
+        lower.includes('контур сша') ||
+        lower.includes('контуру сша') ||
+        lower.includes('сша') ||
+        lower.includes('оон') ||
+        lower.includes('ofac') ||
+        lower.includes('санкци')
+      ) {
         resolvedTarget = 'kirk-kitten';
       } else if (
         lower.includes('опроси') ||
@@ -370,16 +471,56 @@ export class AgentChatEngine {
 
     // Filter relevant stories from context for today
     const ivanStories = contextCards.filter(
-      (c) => c.suggestedCurator === 'ivan-bely' || c.category.includes('Внутренняя'),
+      (c) => c.suggestedCurator === 'ivan-bely' || c.category.includes('Внутренняя') || c.category.includes('РФ'),
     );
     const kirkStories = contextCards.filter(
-      (c) => c.suggestedCurator === 'kirk-kitten' || c.category.includes('Международный'),
+      (c) => c.suggestedCurator === 'kirk-kitten' || c.category.includes('Международный') || c.summary.toLowerCase().includes('сша'),
+    );
+    const tariqStories = contextCards.filter(
+      (c) =>
+        c.suggestedCurator === 'tariq-said' ||
+        c.summary.toLowerCase().includes('ирак') ||
+        c.summary.toLowerCase().includes('залив') ||
+        c.summary.toLowerCase().includes('иран') ||
+        c.summary.toLowerCase().includes('mena') ||
+        c.summary.toLowerCase().includes('восток'),
+    );
+    const alexStories = contextCards.filter(
+      (c) =>
+        c.suggestedCurator === 'alex-vector' ||
+        c.isBreaking ||
+        c.category.includes('Breaking') ||
+        c.category.includes('Пульс') ||
+        c.category.includes('Политика'),
     );
     const chenStories = contextCards.filter(
       (c) => c.suggestedCurator === 'chen-wei' || c.category.includes('Азия') || c.category.includes('Китай') || c.category.includes('БРИКС'),
     );
     const okatsiyaStories = contextCards.filter(
-      (c) => c.suggestedCurator === 'okatsiya' || c.category.includes('IT') || c.category.includes('Интеллект'),
+      (c) =>
+        c.suggestedCurator === 'okatsiya' ||
+        c.category.includes('IT') ||
+        c.category.includes('Девайс') ||
+        c.summary.toLowerCase().includes('девайс') ||
+        c.summary.toLowerCase().includes('анонс'),
+    );
+    const simonStories = contextCards.filter(
+      (c) =>
+        c.suggestedCurator === 'simon-habr' ||
+        c.suggestedCurator === 'german-kernel' ||
+        c.source?.toLowerCase().includes('habr') ||
+        c.source?.toLowerCase().includes('хабр') ||
+        c.source?.toLowerCase().includes('xakep') ||
+        c.category.includes('Инженерия'),
+    );
+    const presijoStories = contextCards.filter(
+      (c) =>
+        c.suggestedCurator === 'presijo-ai' ||
+        c.summary.toLowerCase().includes('инструмент') ||
+        c.summary.toLowerCase().includes('библиотек') ||
+        c.summary.toLowerCase().includes('telegram') ||
+        c.summary.toLowerCase().includes('фич') ||
+        c.category.includes('Инструменты'),
     );
 
     // Relevant political events
@@ -449,7 +590,7 @@ export class AgentChatEngine {
       return replies;
     }
 
-    // A. Political Group: Consolidated Modular Summary
+    // A. Political Group: Consolidated Modular Summary (РФ, США, Ближний Восток, Свежие новости)
     if (resolvedTarget === 'political-group') {
       replies.push(
         this.generatePoliticalGroupSummary({
@@ -457,7 +598,24 @@ export class AgentChatEngine {
           date,
           ivanStories: ivanStories.length > 0 ? ivanStories : contextCards.slice(0, 2),
           kirkStories: kirkStories.length > 0 ? kirkStories : contextCards.slice(1, 3),
-          chenStories: chenStories.length > 0 ? chenStories : contextCards.slice(2, 4),
+          tariqStories: tariqStories.length > 0 ? tariqStories : contextCards.slice(2, 4),
+          alexStories: alexStories.length > 0 ? alexStories : contextCards.slice(0, 2),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+      return replies;
+    }
+
+    // B. Tech Group: Consolidated Modular Summary (Акация IT, Саймон, Presijo AI & IT)
+    if (resolvedTarget === 'tech-group') {
+      replies.push(
+        this.generateTechGroupSummary({
+          prompt: cleanPrompt,
+          date,
+          okatsiyaStories: okatsiyaStories.length > 0 ? okatsiyaStories : contextCards.slice(0, 2),
+          simonStories: simonStories.length > 0 ? simonStories : contextCards.slice(1, 3),
+          presijoStories: presijoStories.length > 0 ? presijoStories : contextCards.slice(2, 4),
           events: todayEvents,
           timestamp,
         }),
@@ -578,23 +736,28 @@ export class AgentChatEngine {
       );
     }
 
-    if (resolvedTarget === 'german-kernel' || resolvedTarget === 'all') {
-      const germanStories = contextCards.filter(
-        (c) =>
-          c.suggestedCurator === 'german-kernel' ||
-          c.source?.toLowerCase().includes('habr') ||
-          c.source?.toLowerCase().includes('хабр') ||
-          c.source?.toLowerCase().includes('xakep') ||
-          c.source?.toLowerCase().includes('хакер') ||
-          c.category.includes('IT') ||
-          c.category.includes('Схемотехника') ||
-          c.category.includes('Hardware'),
-      );
+    if (
+      resolvedTarget === 'simon-habr' ||
+      resolvedTarget === 'german-kernel' ||
+      (resolvedTarget === 'all' && simonStories.length > 0)
+    ) {
       replies.push(
-        this.generateGermanResponse({
+        this.generateSimonResponse({
           prompt: cleanPrompt,
           date,
-          stories: germanStories.length > 0 ? germanStories : contextCards.slice(0, 3),
+          stories: simonStories.length > 0 ? simonStories : contextCards.slice(0, 3),
+          events: todayEvents,
+          timestamp,
+        }),
+      );
+    }
+
+    if (resolvedTarget === 'presijo-ai' || (resolvedTarget === 'all' && presijoStories.length > 0)) {
+      replies.push(
+        this.generatePresijoResponse({
+          prompt: cleanPrompt,
+          date,
+          stories: presijoStories.length > 0 ? presijoStories : contextCards.slice(0, 3),
           events: todayEvents,
           timestamp,
         }),
@@ -1450,7 +1613,8 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
     date: string;
     ivanStories: DailyNewsCard[];
     kirkStories: DailyNewsCard[];
-    chenStories: DailyNewsCard[];
+    tariqStories: DailyNewsCard[];
+    alexStories: DailyNewsCard[];
     events: any[];
     timestamp: string;
   }): ChatMessage {
@@ -1465,7 +1629,8 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
     let ivanBullets: string[] = [];
     let kirkBullets: string[] = [];
-    let chenBullets: string[] = [];
+    let tariqBullets: string[] = [];
+    let alexBullets: string[] = [];
 
     if (timeframe === 'week') {
       headerTitle = `### 📅 Политическая коллегия: Панорама за неделю (${ctx.date})`;
@@ -1480,14 +1645,20 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 
       kirkBullets = [
         `**Недельная динамика санкций**: смещение фокуса директив OFAC и ЕС с прямых эмбарго на сквозной аудит морского фрахта и страховых полисов P&I клубов.`,
-        `**Мировые нефтяные рынки и фрахт**: закрепление независимых танкерных пулов на азиатских маршрутах, ставки фрахта стабилизировались.`,
-        `**Многосторонние площадки**: итоги консультаций в органах ООН по трансграничной логистике и минеральным удобрениям.`,
+        `**Мировые рынки и логистика**: закрепление независимых танкерных пулов на глобальных маршрутах, ставки фрахта стабилизировались.`,
+        `**Вашингтонский контур**: консультации в Конгрессе и Белом доме по экспортному контролю и вторичным мерам.`,
       ];
 
-      chenBullets = [
-        `**Недельный трек БРИКС и АТР**: оформление межбанковских договоренностей по прямым валютным парам юань/рубль/рупия без участия SWIFT.`,
-        `**Логистические узлы Китая**: порты Шанхай и Нинбо вышли на рекордный недельный грузооборот контейнерных перевозок в восточном направлении.`,
-        `**Промышленные коридоры**: координация прямых поставок высокотехнологичного оборудования и автокомпонентов.`,
+      tariqBullets = [
+        `**Динамика зоны Залива (MENA)**: координация квот добычи в рамках альянса OPEC+ и сохранение баланса спотовых цен.`,
+        `**Безопасность региональных артерий**: мониторинг навигации в Ормузском проливе и Красном море при усилении мер эскорта судов.`,
+        `**Дипломатические треки**: негласные консультации монархий Залива по трансграничным инвестиционным коридорам.`,
+      ];
+
+      alexBullets = [
+        `**Мировой пульс и саммиты**: итоги многосторонних консультаций на министерском уровне и серия экстренных коммюнике.`,
+        `**Виральные сюжеты недели**: проверка фактов по резонансным инфоповодам глобальных медиа и разделение шума и системных сдвигов.`,
+        `**Свежая повестка дня**: ключевые геополитические развилки, определяющие новостной фон ближайших дней.`,
       ];
     } else if (timeframe === 'month') {
       headerTitle = `### 🗓️ Политическая коллегия: Стратегическая панорама за месяц (${ctx.date})`;
@@ -1503,13 +1674,19 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
       kirkBullets = [
         `**Месячный санкционный пакет**: переход регуляторов Запада к постоянному комплаенсу вторичных институтов и танкерного флота.`,
         `**Трансформация торговых путей**: закрепление независимых страховых пулов и рост фрахтовых мощностей нейтральных юрисдикций.`,
-        `**Сырьевой баланс**: стабильность экспортных котировок при растущем спросе со стороны азиатских НПЗ.`,
+        `**Сырьевой баланс**: стабильность экспортных котировок при растущем спросе на альтернативных направлениях.`,
       ];
 
-      chenBullets = [
-        `**Месячные итоги расчетов в нацвалютах**: доля юаня и рубля во взаимной торговле РФ и Китая превысила 92% в совокупном обороте.`,
-        `**Развитие МТК «Север-Юг» и Севморпути**: кратный рост перевалки генеральных и контейнерных грузов по восточному вектору.`,
-        `**Технологический трансфер**: расширение совместных инженерных кластеров в сфере микроэлектроники и оборудования.`,
+      tariqBullets = [
+        `**Месячный трек Большого Ближнего Востока**: фиксация договоренностей монархий Залива по диверсификации торговых маршрутов в обход зон риска.`,
+        `**Инфраструктурный периметр**: устойчивость работы портовых мощностей Персидского залива и сухопутных коридоров Леванта.`,
+        `**Энергетический баланс**: консолидированная позиция ключевых экспортеров нефти в преддверии министерских встреч OPEC+.`,
+      ];
+
+      alexBullets = [
+        `**Месячные сдвиги в глобальной повестке**: тектонические изменения в балансе международных союзов и коалиций.`,
+        `**Информационные волны**: ретроспективный разбор ключевых информационных вбросов и подтвердившихся инсайдов за 30 дней.`,
+        `**Стратегические тренды**: кристаллизация новой многополярной конфигурации на ключевых международных площадках.`,
       ];
     } else {
       // today
@@ -1527,22 +1704,33 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
           ? `**${ctx.kirkStories[0].title}**: Минфин США (OFAC) усилил комплаенс-требования к проверке страховых полисов P&I клубов для танкеров.`
           : 'Публикация нового директивного пакета OFAC по контролю условий страхования морских партий нефти.',
         ctx.kirkStories[1]
-          ? `**${ctx.kirkStories[1].title}**: ставки фрахта и перестрахование судов в портах Балтийского и Черного морей.`
+          ? `**${ctx.kirkStories[1].title}**: ставки фрахта и комплаенс на глобальных маршрутах.`
           : 'Повышение ставок морского фрахта и страховых премий Lloyd\'s для танкеров под нейтральными флагами.',
       ];
 
-      chenBullets = [
-        ctx.chenStories[0]
-          ? `**${ctx.chenStories[0].title}**: Народный Банк Китая расширяет каналы прямых межбанковских расчетов со странами БРИКС в обход SWIFT.`
-          : 'Народный Банк Китая и партнеры по БРИКС наращивают объемы клиринга в нацвалютах без использования SWIFT.',
-        'Рост грузооборота по восточным логистическим коридорам (порты Дальнего Востока, Севморпуть) на 12% с начала квартала.',
+      tariqBullets = [
+        ctx.tariqStories[0]
+          ? `**${ctx.tariqStories[0].title}**: координация региональной безопасности и мониторинг логистических узлов Залива.`
+          : 'Мониторинг позиций стран Персидского залива и консультации по обеспечению безопасности танкерного трафика.',
+        ctx.tariqStories[1]
+          ? `**${ctx.tariqStories[1].title}**: баланс энергетического сектора и решения в рамках OPEC+.`
+          : 'Оценка влияния геополитической напряженности на страховые премии в портах Ближнего Востока.',
+      ];
+
+      alexBullets = [
+        ctx.alexStories[0]
+          ? `**${ctx.alexStories[0].title}**: оперативная мировая молния и ключевой информационный триггер дня.`
+          : 'Свежая мировая повестка: согласование итогового коммюнике международных консультаций.',
+        ctx.alexStories[1]
+          ? `**${ctx.alexStories[1].title}**: развитие сюжета в фокусе внимания международных обозревателей.`
+          : 'Мониторинг экстренных сводок мировых информационных агентств и проверка первоисточников.',
       ];
     }
 
     const markdownText = `${headerTitle}
 
 > **Формат:** ${formatDesc}  
-> **Оптики в эфире:** 🇷🇺 Иван Белый • 🌐 Kirk Kitten • 🇨🇳 Чэнь Вэй  
+> **Оптики в эфире:** 🇷🇺 Иван Белый • 🌐 Kirk Kitten • 🕌 Тарик Саид • 🔥 Алекс Вектор  
 
 ---
 
@@ -1551,15 +1739,20 @@ ${ivanBullets.map((b) => `- ${b}`).join('\n')}
 
 👉 [В тред к Ивану Белому (обсудить ${timeframeLabel}) ↗](action:curator:ivan-bely?timeframe=${timeframe})
 
-#### 🌐 Международный контур / Санкции (Kirk Kitten)
+#### 🌐 Контур США и международные рынки (Kirk Kitten)
 ${kirkBullets.map((b) => `- ${b}`).join('\n')}
 
 👉 [В тред к Kirk Kitten (обсудить ${timeframeLabel}) ↗](action:curator:kirk-kitten?timeframe=${timeframe})
 
-#### 🇨🇳 Восточный контур / АТР и БРИКС (Чэнь Вэй)
-${chenBullets.map((b) => `- ${b}`).join('\n')}
+#### 🕌 Контур Ближнего Востока и зоны Залива (Тарик Саид)
+${tariqBullets.map((b) => `- ${b}`).join('\n')}
 
-👉 [В тред к Чэнь Вэю (обсудить ${timeframeLabel}) ↗](action:curator:chen-wei?timeframe=${timeframe})
+👉 [В тред к Тарику Саиду (обсудить ${timeframeLabel}) ↗](action:curator:tariq-said?timeframe=${timeframe})
+
+#### 🔥 Свежая мировая повестка и Breaking News (Алекс Вектор)
+${alexBullets.map((b) => `- ${b}`).join('\n')}
+
+👉 [В тред к Алексу Вектору (обсудить ${timeframeLabel}) ↗](action:curator:alex-vector?timeframe=${timeframe})
 
 ---
 💡 *Сводка собрана в компактном формате без фото и медиа-шума. Вы можете обсудить детали за ${timeframeLabel} в личных тредах кураторов.*`;
@@ -1568,13 +1761,14 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
       title: `[Резюме] Политическая панорама (${timeframe === 'week' ? 'неделя' : timeframe === 'month' ? 'месяц' : 'день'}, ${ctx.date})`,
       description: `## Политическая коллегия: Панорама за ${timeframeLabel} (${ctx.date})
 
-> **Куратор:** 🏛️ Политическая коллегия (Иван Белый, Kirk Kitten, Чэнь Вэй)  
+> **Куратор:** 🏛️ Политическая коллегия (Иван Белый, Kirk Kitten, Тарик Саид, Алекс Вектор)  
 > **Период:** ${timeframe === 'week' ? '7 дней' : timeframe === 'month' ? '30 дней' : 'Сегодня'}  
 
 ### Ключевые аспекты:
-- **Контур РФ:** Регуляторика, бюджет и баланс оптовых цен на энергоносители.
-- **Внешний контур:** Санкционные директивы OFAC, страховой комплаенс и фрахт.
-- **Восточный контур:** Расчеты в нацвалютах БРИКС и грузооборот контейнерных коридоров.
+- **Контур РФ (Иван Белый):** Регуляторика, бюджет и баланс оптовых цен на энергоносители.
+- **Контур США (Kirk Kitten):** Санкционные директивы OFAC, страховой комплаенс и глобальные рынки.
+- **Ближний Восток (Тарик Саид):** Безопасность зоны Залива, квоты OPEC+ и баланс MENA.
+- **Свежая повестка (Алекс Вектор):** Breaking news, экстренные коммюнике и мировой пульс.
 
 ---
 *Сформировано аналитическим деском Project Lenta.*`,
@@ -1589,7 +1783,8 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
     const postBullets = [
       ...ivanBullets.slice(0, 1),
       ...kirkBullets.slice(0, 1),
-      ...chenBullets.slice(0, 1),
+      ...tariqBullets.slice(0, 1),
+      ...alexBullets.slice(0, 1),
     ];
     const textOutput = isTg
       ? formatTelegramPostContent({
@@ -1599,7 +1794,7 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
           date: ctx.date,
           period: timeframe === 'week' ? 'week' : 'today',
           bullets: postBullets,
-          takeaway: 'Синхронизация регуляторного поля РФ, санкционного давления и восточных финансовых маршрутов.',
+          takeaway: 'Синхронизация регуляторного поля РФ, санкционного давления, ближневосточного баланса и мировой повестки.',
           hashtags: ['Политика', 'Коллегия', 'СводкаДня', 'Аналитика'],
         })
       : markdownText;
@@ -1624,7 +1819,429 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
         curatorId: 'political-group',
         dateScope: ctx.date,
       },
-      sources: ['Правительство РФ', 'СПбМТСБ', 'OFAC', 'Lloyd\'s List', 'Xinhua', 'PBOC'],
+      sources: ['Правительство РФ', 'СПбМТСБ', 'OFAC', 'Lloyd\'s List', 'Al Jazeera', 'Reuters', 'Associated Press'],
+      suggestedCard,
+    };
+  }
+
+  /**
+   * Generates a consolidated modular executive summary from the tech curators group.
+   */
+  private static generateTechGroupSummary(ctx: {
+    prompt: string;
+    date: string;
+    okatsiyaStories: DailyNewsCard[];
+    simonStories: DailyNewsCard[];
+    presijoStories: DailyNewsCard[];
+    events: any[];
+    timestamp: string;
+  }): ChatMessage {
+    const lower = (ctx.prompt || '').toLowerCase();
+    const isWeek = lower.includes('week') || lower.includes('недел') || lower.includes('7 дней');
+    const isMonth = lower.includes('month') || lower.includes('месяц') || lower.includes('30 дней');
+    const timeframe: 'today' | 'week' | 'month' = isWeek ? 'week' : isMonth ? 'month' : 'today';
+
+    let headerTitle = `### ⚡ IT & AI Группа: Технологическая панорама дня (${ctx.date})`;
+    let formatDesc = `Оперативный модульный срез по IT, AI, разработке и Habr`;
+    let timeframeLabel = 'сегодня';
+
+    let okatsiyaBullets: string[] = [];
+    let simonBullets: string[] = [];
+    let presijoBullets: string[] = [];
+
+    if (timeframe === 'week') {
+      headerTitle = `### 📅 IT & AI Группа: Технологическая панорама за неделю (${ctx.date})`;
+      formatDesc = `Краткое недельное резюме по технологиям и сообществу (без шума)`;
+      timeframeLabel = 'неделю';
+
+      okatsiyaBullets = [
+        `**Громкие анонсы и BigTech**: серия релизов новых флагманских девайсов и архитектурных обновлений ключевых облачных провайдеров.`,
+        `**Hi-Tech индустрия и чипы**: новое поколение полупроводниковых ускорителей и масштабирование дата-центров.`,
+        `**Потребительские девайсы**: тренд на интеграцию локальных NPU в смартфоны и портативные компьютеры.`,
+      ];
+
+      simonBullets = [
+        `**Топ статей недели на Habr**: углубленный разбор архитектур высоконагруженных систем и авторские кейсы миграции с легаси.`,
+        `**Инженерные практики и сообщество**: обсуждение ретро-схемотехники, микроконтроллеров и нестандартных аппаратных решений.`,
+        `**Культура разработки**: реальный опыт решения инцидентов в проде от практикующих инженеров.`,
+      ];
+
+      presijoBullets = [
+        `**Недельный радар AI-инструментов**: появление автономных агентов для кодинга и новых CLI-утилит для локального инференса.`,
+        `**Релизы библиотек**: мажорные обновления в экосистеме Hugging Face, PyTorch и vLLM с приростом пропускной способности.`,
+        `**Telegram-каналы и контент**: виральные разборы промпт-инжиниринга и прикладные пайплайны автоматизации контента.`,
+      ];
+    } else if (timeframe === 'month') {
+      headerTitle = `### 🗓️ IT & AI Группа: Стратегическая панорама за месяц (${ctx.date})`;
+      formatDesc = `Стратегический срез за 30 дней по трендам IT, AI-инструментам и сообществу`;
+      timeframeLabel = 'месяц';
+
+      okatsiyaBullets = [
+        `**Месячный ландшафт Hi-Tech**: волна анонсов следующего поколения аппаратных платформ и квантование моделей под мобильные чипы.`,
+        `**Архитектурные тренды BigTech**: переход к гетерогенным вычислительным кластерам и оптимизация TCO инфраструктуры.`,
+        `**Девайсы и интерфейсы**: закрепление тренда на агентные интерфейсы взаимодействия в потребительских операционных системах.`,
+      ];
+
+      simonBullets = [
+        `**Месячный дайджест публикаций Habr**: фундаментальные лонгриды по проектированию распределенных баз данных и сетевых протоколов.`,
+        `**Олдскул и железо**: возрождение интереса к аппаратной схемотехнике, ПЛИС (FPGA) и микроконтроллерным проектам.`,
+        `**Сообщество и карьера**: тренды найма в IT, баланс между remote-командами и инженерной дисциплиной.`,
+      ];
+
+      presijoBullets = [
+        `**Месячный срез рынка AI-инструментов**: переход от простых оберток к сложным мультимодальным рабочим пространствам.`,
+        `**Эволюция open-source библиотек**: стабилизация фреймворков агентной оркестрации и квантования весов.`,
+        `**Контент и медиа в Telegram**: масштабирование авторских каналов по AI и формирование устойчивого пула экспертных сообществ.`,
+      ];
+    } else {
+      // today
+      okatsiyaBullets = [
+        ctx.okatsiyaStories[0]
+          ? `**${ctx.okatsiyaStories[0].title}**: ключевой Hi-Tech анонс и влияние на индустрию.`
+          : 'Анонсы новых девайсов и архитектурные решения в линейках ведущих производителей потребительской электроники.',
+        ctx.okatsiyaStories[1]
+          ? `**${ctx.okatsiyaStories[1].title}**: развитие технологий и аппаратных платформ.`
+          : 'BigTech: инвестиции в инфраструктуру дата-центров и энергоэффективные серверные чипы.',
+      ];
+
+      simonBullets = [
+        ctx.simonStories[0]
+          ? `**${ctx.simonStories[0].title}**: практический разбор статьи с Habr и инженерные выводы.`
+          : 'Свежие публикации на Habr: прикладной опыт разработчиков, разборы архитектур и инженерные находки.',
+        ctx.simonStories[1]
+          ? `**${ctx.simonStories[1].title}**: авторский кейс сообщества и прикладная схемотехника.`
+          : 'Инженерный лонгрид сообщества: разбор архитектурных граблей и решение проблем производительности в проде.',
+      ];
+
+      presijoBullets = [
+        ctx.presijoStories[0]
+          ? `**${ctx.presijoStories[0].title}**: релиз нового AI-инструмента/библиотеки и сценарии внедрения.`
+          : 'Радар AI-инструментов: появление новых автономных агентов и локальных CLI-утилит на рынке.',
+        ctx.presijoStories[1]
+          ? `**${ctx.presijoStories[1].title}**: свежая фича и тренды из профильных Telegram-каналов.`
+          : 'Релизы библиотек: обновления в экосистеме Hugging Face, vLLM и LangChain для высоконагруженных пайплайнов.',
+      ];
+    }
+
+    const markdownText = `${headerTitle}
+
+> **Формат:** ${formatDesc}  
+> **Оптики в эфире:** ⚡ Акация IT • 📟 Саймон • 🚀 Presijo AI & IT  
+
+---
+
+#### ⚡ Hi-Tech, Девайсы & Анонсы (Акация IT)
+${okatsiyaBullets.map((b) => `- ${b}`).join('\n')}
+
+👉 [В тред к Акации IT (обсудить ${timeframeLabel}) ↗](action:curator:okatsiya?timeframe=${timeframe})
+
+#### 📟 Разбор публикаций и статей Habr (Саймон)
+${simonBullets.map((b) => `- ${b}`).join('\n')}
+
+👉 [В тред к Саймону (обсудить ${timeframeLabel}) ↗](action:curator:simon-habr?timeframe=${timeframe})
+
+#### 🚀 AI Инструменты, Библиотеки & Telegram (Presijo AI & IT)
+${presijoBullets.map((b) => `- ${b}`).join('\n')}
+
+👉 [В тред к Presijo (обсудить ${timeframeLabel}) ↗](action:curator:presijo-ai?timeframe=${timeframe})
+
+---
+💡 *Сводка собрана в компактном формате. Вы можете перейти в личный тред каждого куратора для детального разбора.*`;
+
+    const suggestedCard = {
+      title: `[Резюме] IT & AI Панорама (${timeframe === 'week' ? 'неделя' : timeframe === 'month' ? 'месяц' : 'день'}, ${ctx.date})`,
+      description: `## IT & AI Группа: Панорама за ${timeframeLabel} (${ctx.date})
+
+> **Кураторы:** ⚡ IT & AI Группа (Акация IT, Саймон, Presijo AI & IT)  
+> **Период:** ${timeframe === 'week' ? '7 дней' : timeframe === 'month' ? '30 дней' : 'Сегодня'}  
+
+### Ключевые аспекты:
+- **Hi-Tech & Анонсы (Акация IT):** Девайсы, чипы, анонсы BigTech и потребительская электроника.
+- **Статьи и Habr (Саймон):** Разборы инженерных публикаций, архитектура и опыт сообщества.
+- **AI Инструменты & Тренды (Presijo AI & IT):** Новые тулзы, библиотеки, фичи и Telegram-каналы.
+
+---
+*Сформировано технологическим деском Project Lenta.*`,
+      type: NoteType.EVENT,
+      folder: 'Tech/Daily',
+      taxonomyPath: 'tech.daily_summary',
+      hashtags: ['IT', 'AI', 'Habr', 'HiTech', 'Инструменты', 'Коллегия'],
+      curator: 'IT & AI Группа',
+    };
+
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const postBullets = [
+      ...okatsiyaBullets.slice(0, 1),
+      ...simonBullets.slice(0, 1),
+      ...presijoBullets.slice(0, 1),
+    ];
+    const textOutput = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'IT & AI Группа',
+          curatorEmoji: '⚡',
+          curatorName: 'Технологический сводный деск',
+          date: ctx.date,
+          period: timeframe === 'week' ? 'week' : 'today',
+          bullets: postBullets,
+          takeaway: 'Синхронизация аппаратных анонсов, инженерного опыта разработчиков и взрывного роста прикладных AI-инструментов.',
+          hashtags: ['IT', 'AI', 'Habr', 'HiTech', 'DevTools', 'Технологии'],
+        })
+      : markdownText;
+
+    return {
+      id: `msg-tech-group-${Date.now()}`,
+      sender: 'tech-group',
+      senderName: 'IT & AI Группа',
+      senderRole:
+        timeframe === 'week'
+          ? 'Недельный технологический деск'
+          : timeframe === 'month'
+          ? 'Месячный технологический деск'
+          : 'Сводный деск IT & AI кураторов',
+      avatar: '⚡',
+      text: textOutput,
+      timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'summary',
+        period: timeframe,
+        curatorId: 'tech-group',
+        dateScope: ctx.date,
+      },
+      sources: ['TechCrunch', 'The Verge', 'Habr', 'GitHub Trending', 'Hugging Face', 'Telegram AI Channels'],
+      suggestedCard,
+    };
+  }
+
+  /**
+   * Simon: Habr articles analysis, engineering breakdowns, hardware/schematics and community writeups
+   */
+  private static generateSimonResponse(ctx: {
+    prompt: string;
+    date: string;
+    stories: DailyNewsCard[];
+    events: any[];
+    timestamp: string;
+  }): ChatMessage {
+    const mainStory = ctx.stories[0];
+    const secondaryStory = ctx.stories[1];
+
+    const bullets = [
+      mainStory
+        ? `**${mainStory.title}** (Источник: ${mainStory.source}): практический разбор статьи с выделением ключевых инженерных тезисов и выводов.`
+        : 'Свежие публикации на Habr: прикладной опыт разработчиков, разборы архитектур и инженерные находки.',
+      secondaryStory
+        ? `**${secondaryStory.title}**: авторский кейс сообщества, дополняющий общую картину практики.`
+        : 'Олдскул и схемотехника: разборы старых плат, микроконтроллеров и анализ ретро-архитектур от инженеров сообщества.',
+      'Материалы сообщества проверены и структурированы для включения в базу знаний и тематические Super Notes.',
+    ];
+
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'Habr & Инженерное сообщество',
+          curatorEmoji: '📟',
+          curatorName: 'Саймон',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Меньше корпоративного пафоса — смотрим на то, что инженеры реально пишут в статьях и собирают руками.',
+          hashtags: ['Habr', 'Хабр', 'ITСтатьи', 'Инженерия', 'РазборСтатей'],
+        })
+      : `### 📟 Разбор публикаций Habr от Саймона
+
+Меньше корпоративного пафоса и громких пресс-релизов — смотрим на то, что реально пишет сообщество и практики.
+
+По материалам на **${ctx.date}**:
+
+${bullets.map((b) => `- ${b}`).join('\n')}
+
+> **Ремарка Саймона:**  
+> «Акация пусть рассказывает про презентации в долине и котировки бигтеха, а на нашей кухне важны живые статьи: что люди собирают руками, как решают проблемы в проде и какие инженерные подходы дают реальный результат.  
+> Все проверенные материалы с Хабра разложены по полочкам и готовы для упаковки в базу знаний.»`;
+
+    const suggestedCard = {
+      title: mainStory
+        ? `[Habr] ${mainStory.title}`
+        : `[Habr Дайджест] Разбор статей IT-сообщества (${ctx.date})`,
+      description: `## 📟 Разбор публикаций Habr и IT-статей: ${ctx.date}
+
+### Ключевые материалы сообщества:
+1. ${mainStory ? mainStory.title : 'Инженерный лонгрид на Habr'} — подробный разбор и практические выводы.
+2. ${secondaryStory ? secondaryStory.title : 'Ретро-схемотехника и платы'} — нестандартный взгляд из архивов.
+
+### Выводы для базы знаний:
+- Статьи проверены и структурированы для включения в тематический кластер.
+- Подготовлены ссылки и теги для последующей передачи в NotebookLM.
+
+---
+*Сформировано куратором публикаций Habr Саймоном в Project Lenta.*`,
+      type: NoteType.SINGLE,
+      folder: 'Tech/Habr',
+      taxonomyPath: 'tech.community.habr',
+      hashtags: ['Habr', 'ITСтатьи', 'Хабр', 'Инженерия', 'Сообщество'],
+      curator: 'Саймон',
+      sourceLink: mainStory?.url || 'https://habr.com',
+    };
+
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `simon-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'simon-habr',
+      curatorName: 'Саймон',
+      curatorEmoji: '📟',
+      curatorRole: 'Специалист по разбору новостей с Habr',
+      sourceName: s.source || 'Habr',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['Habr', 'Инженерия', 'Разбор'],
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Практический опыт разработчиков.', 'Архитектурные паттерны и олдскул.'],
+      contourBadge: '📟 Habr / Инженерный разбор сообщества',
+      publishedAt: s.publishedAt || '14:20',
+    }));
+
+    return {
+      id: `msg-simon-${Date.now()}`,
+      sender: 'simon-habr',
+      senderName: 'Саймон',
+      senderRole: 'Специалист по разбору новостей с Habr',
+      avatar: '📟',
+      text,
+      timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'simon-habr',
+        dateScope: ctx.date,
+      },
+      sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
+      suggestedCard,
+    };
+  }
+
+  /**
+   * Presijo: AI & IT trends, new tools on the market, features, library releases, Telegram channels, content making
+   */
+  private static generatePresijoResponse(ctx: {
+    prompt: string;
+    date: string;
+    stories: DailyNewsCard[];
+    events: any[];
+    timestamp: string;
+  }): ChatMessage {
+    const mainStory = ctx.stories[0];
+    const secondaryStory = ctx.stories[1];
+
+    const bullets = [
+      mainStory
+        ? `**${mainStory.title}** (${mainStory.source}): новый AI-инструмент / фича. Ключевые возможности, сценарии интеграции и юзкейсы.`
+        : 'Свежие релизы AI-инструментов: появление новых автономных агентов, devtools и локальных CLI-утилит на рынке.',
+      secondaryStory
+        ? `**${secondaryStory.title}**: мажорное обновление библиотек и расширение API.`
+        : 'Релизы библиотек: обновления в экосистеме Hugging Face, vLLM, PyTorch и LangChain для высоконагруженных пайплайнов.',
+      'Пульс Telegram-каналов и контент-мейкинг: виральные промпты, кейсы генерации контента и свежие бенчмарки моделей от практиков.',
+    ];
+
+    const isTg = isTelegramPostRequested(ctx.prompt);
+    const isWeek = ctx.prompt.toLowerCase().includes('week') || ctx.prompt.toLowerCase().includes('недел');
+    const period = isWeek ? 'week' : 'today';
+
+    const text = isTg
+      ? formatTelegramPostContent({
+          contourTitle: 'AI Инструменты, Библиотеки & Тренды',
+          curatorEmoji: '🚀',
+          curatorName: 'Presijo AI & IT',
+          date: ctx.date,
+          period,
+          bullets,
+          takeaway: 'Рынок AI-инструментов стремительно коммодитизируется — выигрывают тулзы с мгновенным временем до первого результата и чистым API.',
+          hashtags: ['AI', 'Tools', 'Библиотеки', 'Telegram', 'КонтентМейкинг', 'TechTrends'],
+        })
+      : `### 🚀 Presijo: Радар AI-инструментов, библиотек и трендов (${ctx.date})
+
+Оперативный мониторинг прикладного ландшафта AI, новых тулзов на рынке и пульса профильных Telegram-каналов:
+
+---
+
+#### 🛠️ 1. Новые инструменты & свежие фичи:
+- ${mainStory ? `**${mainStory.title}** (${mainStory.source}): ${mainStory.summary}` : '**Автономные агенты и Copilot-утилиты:** появление инструментов с поддержкой MCP-протокола и локального исполнения кода.'}
+- **Инструменты генерации контента:** новые мультимодальные генераторы графики, аудио и видео для контент-мейкеров.
+
+#### 📦 2. Релизы библиотек & Open-Source:
+- ${secondaryStory ? `**${secondaryStory.title}**: ${secondaryStory.summary}` : '**Экосистема LLM-инференса:** новые релизы библиотек vLLM, Ollama и Hugging Face Transformers с оптимизацией потребления памяти.'}
+- **Оркестрация агентов:** обновления фреймворков для управления цепочками рассуждений (reasoning chains) и инструментами.
+
+#### 📱 3. Пульс Telegram-каналов & Контент-мейкинг:
+- Анализ трендов из ведущих AI-каналов: кейсы автоматизации рутины, практические связки промптов и упаковка сложных инсайтов в виральные посты.
+
+---
+
+> **Инсайт от Presijo:** Главный тренд — переход от вау-эффекта к практической пользе. Выигрывают инструменты, которые можно за 5 минут встроить в существующий рабочий процесс или Telegram-канал без разворачивания тяжелой инфраструктуры.`;
+
+    const suggestedCard = {
+      title: mainStory
+        ? `[AI Tools & Libs] ${mainStory.title}`
+        : `🚀 [AI Радар] Новые инструменты, библиотеки и тренды (${ctx.date})`,
+      description: `## 🚀 Presijo AI & IT: Радар инструментов и трендов (${ctx.date})
+
+> **Куратор:** 🚀 Presijo AI & IT  
+> **Фокус:** AI инструменты, фичи, библиотеки, Telegram, контент  
+
+### Ключевые направления:
+- **Инструменты на рынке:** Свежие тулзы, генераторы, плагины и расширения.
+- **Библиотеки & Dev:** Обновления open-source фреймворков и библиотек.
+- **Telegram & Контент:** Тренды каналов, форматы упаковки и виральные кейсы.
+
+---
+*Сформировано AI-трендхантером Presijo в Project Lenta.*`,
+      type: NoteType.EVENT,
+      folder: 'Tech/AI-Tools',
+      taxonomyPath: 'tech.ai.tools',
+      hashtags: ['AI', 'Tools', 'Библиотеки', 'Telegram', 'КонтентМейкинг', 'Релизы'],
+      curator: 'Presijo AI & IT',
+      sourceLink: mainStory?.url,
+    };
+
+    const newsPosts: TelegramNewsPreview[] = ctx.stories.map((s, idx) => ({
+      id: `presijo-post-${idx}-${ctx.date}`,
+      title: s.title,
+      summary: s.summary,
+      rawText: s.summary,
+      curatorId: 'presijo-ai',
+      curatorName: 'Presijo AI & IT',
+      curatorEmoji: '🚀',
+      curatorRole: 'AI & IT тренд-хантер, контент-мейкер и обозреватель инструментов',
+      sourceName: s.source || 'AI Radar / Telegram',
+      sourceUrl: s.url,
+      tags: s.suggestedTags?.length ? s.suggestedTags : ['AI', 'Tools', 'Библиотеки', 'Telegram'],
+      keyPoints: s.keyPoints?.length ? s.keyPoints : ['Новые AI инструменты и фичи.', 'Релизы библиотек и Telegram-тренды.'],
+      contourBadge: '🚀 Presijo / AI Инструменты, Библиотеки & Telegram',
+      publishedAt: s.publishedAt || '15:45',
+    }));
+
+    return {
+      id: `msg-presijo-${Date.now()}`,
+      sender: 'presijo-ai',
+      senderName: 'Presijo AI & IT',
+      senderRole: 'AI & IT тренд-хантер, контент-мейкер и обозреватель инструментов',
+      avatar: '🚀',
+      text,
+      timestamp: ctx.timestamp,
+      messageType: isTg ? 'TELEGRAM_POST' : 'DEFAULT',
+      metadata: {
+        format: isTg ? 'telegram_post' : 'analysis',
+        period,
+        curatorId: 'presijo-ai',
+        dateScope: ctx.date,
+      },
+      sources: ctx.stories.map((s) => s.source).filter(Boolean),
+      newsPosts,
       suggestedCard,
     };
   }
@@ -1642,11 +2259,18 @@ ${chenBullets.map((b) => `- ${b}`).join('\n')}
   }): Promise<ChatMessage[] | null> {
     const systemPrompt = `Ты — координирующий аналитический движок мультиагентной системы Project Lenta.
 Текущая дата: ${ctx.date}.
-В системе работают ключевые кураторы:
-1. 🏛️ Политическая коллегия (political-group): Единая группа кураторов. Если запрос направлен к ней (новости на сегодня, резюме дня), сформируй МОДУЛЬНОЕ РЕЗЮМЕ по контурам (РФ, Международный, АТР/БРИКС). Не смешивай всё в одну кашу — дай структурированный срез по каждому куратору!
-2. 🇷🇺 Иван Белый (ivan-bely): Внутренний контур РФ (законы, Госдума, бюджет, ФАС, ЦБ РФ, топливный демпфер, внутренние цены).
-3. 🌐 Kirk Kitten (kirk-kitten): Международный контур (OFAC, санкции США/ЕС, морской фрахт, ООН, сырьевые рынки).
-4. 🇨🇳 Чэнь Вэй (chen-wei): Восточный контур (Китай, АТР, БРИКС, валютный клиринг, логистика, погранпереходы).
+В системе работают ключевые кураторы и группы:
+1. 🏛️ Политическая коллегия (political-group): Единая группа кураторов (РФ, США, Ближний Восток, Свежие новости). Если запрос направлен к ней, сформируй МОДУЛЬНОЕ РЕЗЮМЕ по контурам (Иван Белый, Kirk Kitten, Тарик Саид, Алекс Вектор).
+2. ⚡ IT & AI Группа (tech-group): Единая технологическая группа. Модульное резюме по специализациям: Акация IT (Hi-Tech, девайсы, анонсы), Саймон (разбор статей с Habr), Presijo AI & IT (AI инструменты, библиотеки, Telegram).
+3. 🇷🇺 Иван Белый (ivan-bely): Внутренний контур РФ (законы, Госдума, бюджет, ФАС, ЦБ РФ, топливный демпфер, внутренние цены).
+4. 🌐 Kirk Kitten (kirk-kitten): Международный контур и США (OFAC, санкции, Конгресс, фрахт, глобальные рынки).
+5. 🕌 Тарик Саид (tariq-said): Ближний Восток (MENA, страны Залива, OPEC+, региональная безопасность).
+6. 🔥 Алекс Вектор (alex-vector): Свежие политические новости, общая мировая повестка, breaking news, саммиты.
+7. ⚡ Акация IT (okatsiya): Hi-Tech, IT & AI индустрия, новые девайсы, громкие анонсы BigTech.
+8. 📟 Саймон (simon-habr): Разбор публикаций и инженерных статей с Habr, опыт сообщества, схемотехника.
+9. 🚀 Presijo AI & IT (presijo-ai): AI инструменты, библиотеки, фичи, мониторинг Telegram-каналов, контент.
+10. 🇨🇳 Чэнь Вэй (chen-wei): Восточный контур (Китай, АТР, БРИКС, нацвалюты, торговые коридоры).
+11. ⚓ Хелена Брандт (helena-brandt): Критические артерии, нефть, сырье, морские проливы.
 
 Контекст новостей на дату:
 ${JSON.stringify(ctx.contextCards.map((c) => ({ title: c.title, source: c.source, summary: c.summary, curator: c.suggestedCurator })))}
@@ -1660,7 +2284,7 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
 Верни строго JSON массив ответов (без markdown блоков \`\`\`json):
 [
   {
-    "sender": "political-group" | "ivan-bely" | "kirk-kitten" | "chen-wei",
+    "sender": "political-group" | "tech-group" | "ivan-bely" | "kirk-kitten" | "tariq-said" | "alex-vector" | "okatsiya" | "simon-habr" | "presijo-ai",
     "senderName": "Имя агента или группы",
     "senderRole": "Роль",
     "avatar": "эмодзи",

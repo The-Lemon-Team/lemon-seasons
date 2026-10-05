@@ -225,30 +225,78 @@ model UserKey {
 }
 
 model ChatFolder {
-  id        String       @id @default(uuid())
-  name      String
-  path      String       @unique
-  icon      String?
-  color     String?
-  order     Int          @default(0)
-  parentId  String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  deletedAt DateTime?
-  parent    ChatFolder?  @relation("ChatFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  ChatFolder[] @relation("ChatFolderHierarchy")
-  threads   ChatThread[]
+  id               String          @id @default(uuid())
+  name             String
+  path             String          @unique
+  description      String?
+  icon             String?
+  color            String?
+  order            Int             @default(0)
+  parentId         String?
+  imageStylePrompt String?
+  contextRules     String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
+  parent           ChatFolder?     @relation("ChatFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children         ChatFolder[]    @relation("ChatFolderHierarchy")
+  threads          ChatThread[]
+  curators         Curator[]
+  assistants       Assistant[]
 
   @@index([path])
   @@index([parentId])
   @@index([deletedAt])
 }
 
+model Curator {
+  id           String       @id @default(uuid())
+  folderId     String?
+  name         String
+  shortName    String?
+  roleTitle    String
+  personality  String?
+  systemPrompt String
+  emoji        String       @default("👤")
+  accentColor  String       @default("#10b981")
+  isSystem     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  folder       ChatFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  threads      ChatThread[]
+
+  @@index([folderId])
+  @@index([deletedAt])
+}
+
+model Assistant {
+  id           String         @id @default(uuid())
+  folderId     String?
+  name         String
+  skillType    AssistantSkill @default(IMAGE_GEN)
+  description  String?
+  customPrompt String?
+  config       Json?
+  avatar       String         @default("🛠️")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+  folder       ChatFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  threads      ChatThread[]
+
+  @@index([folderId])
+  @@index([skillType])
+  @@index([deletedAt])
+}
+
 model ChatThread {
   id                String              @id @default(uuid())
   title             String
-  type              ChatType            @default(DIRECT)
+  type              ChatType            @default(TOPIC)
   folderId          String?
+  curatorId         String?
+  assistantId       String?
   targetAgent       String?
   participantAgents String[]            @default([])
   dateScope         String?
@@ -259,11 +307,14 @@ model ChatThread {
   updatedAt         DateTime            @updatedAt
   deletedAt         DateTime?
   messages          ChatMessageRecord[]
-  folder            ChatFolder?         @relation(fields: [folderId], references: [id])
+  folder            ChatFolder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  curator           Curator?            @relation(fields: [curatorId], references: [id], onDelete: SetNull)
+  assistant         Assistant?          @relation(fields: [assistantId], references: [id], onDelete: SetNull)
 
   @@index([folderId])
   @@index([type])
-  @@index([targetAgent])
+  @@index([curatorId])
+  @@index([assistantId])
   @@index([isPinned, lastMessageAt])
   @@index([deletedAt])
 }
@@ -272,15 +323,18 @@ model ChatMessageRecord {
   id             String     @id @default(uuid())
   threadId       String
   sender         String
+  senderType     String     @default("USER")
   senderName     String
   senderRole     String
   avatar         String?
   text           String
+  mediaUrls      String[]   @default([])
   resonanceScore Int?
   sources        String[]   @default([])
   resonanceNodes Json?
   groupSummary   Json?
   suggestedCard  Json?
+  payload        Json?
   createdAt      DateTime   @default(now())
   thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
@@ -297,8 +351,18 @@ enum NoteType {
 }
 
 enum ChatType {
-  DIRECT
+  TOPIC
+  CURATOR
+  ASSISTANT
   GROUP
+  DIRECT
+}
+
+enum AssistantSkill {
+  IMAGE_GEN
+  NOTEBOOKLM_PODCAST
+  NOTE_FORMATTER
+  FEED_MAKER
 }
 
 model SyncSession {

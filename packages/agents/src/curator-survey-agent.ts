@@ -155,12 +155,13 @@ export class CuratorSurveyAgent {
         CURATOR_GROUPS['all-curators']?.curatorIds || [
           'ivan-bely',
           'kirk-kitten',
-          'chen-wei',
-          'okatsiya',
-          'german-kernel',
-          'alex-vector',
-          'marcus-vane',
           'tariq-said',
+          'alex-vector',
+          'okatsiya',
+          'simon-habr',
+          'presijo-ai',
+          'chen-wei',
+          'marcus-vane',
           'helena-brandt',
         ]
       );
@@ -205,10 +206,49 @@ export class CuratorSurveyAgent {
         return text.includes('китай') || text.includes('атр') || text.includes('юань') || text.includes('брикс') || text.includes('логистик');
       }
       if (curatorId === 'okatsiya') {
-        return text.includes('ai') || text.includes('ии') || text.includes('нейросеть') || text.includes('it') || text.includes('devops') || text.includes('bigtech');
+        return (
+          text.includes('девайс') ||
+          text.includes('гаджет') ||
+          text.includes('чип') ||
+          text.includes('анонс') ||
+          text.includes('hi-tech') ||
+          text.includes('hitech') ||
+          text.includes('it') ||
+          text.includes('ai') ||
+          text.includes('apple') ||
+          text.includes('nvidia') ||
+          text.includes('смартфон') ||
+          text.includes('желез')
+        );
       }
-      if (curatorId === 'german-kernel') {
-        return text.includes('хабр') || text.includes('habr') || text.includes('xakep') || text.includes('хакер') || text.includes('плата') || text.includes('платы') || text.includes('олдскул') || text.includes('схемотехник') || text.includes('стать');
+      if (curatorId === 'simon-habr' || curatorId === 'german-kernel') {
+        return (
+          text.includes('хабр') ||
+          text.includes('habr') ||
+          text.includes('xakep') ||
+          text.includes('хакер') ||
+          text.includes('плата') ||
+          text.includes('платы') ||
+          text.includes('олдскул') ||
+          text.includes('схемотехник') ||
+          text.includes('стать') ||
+          text.includes('geektimes')
+        );
+      }
+      if (curatorId === 'presijo-ai') {
+        return (
+          text.includes('инструмент') ||
+          text.includes('библиотек') ||
+          text.includes('фич') ||
+          text.includes('релиз') ||
+          text.includes('контент') ||
+          text.includes('telegram') ||
+          text.includes('тг-канал') ||
+          text.includes('тг') ||
+          text.includes('тулз') ||
+          text.includes('github') ||
+          text.includes('hugging face')
+        );
       }
       if (curatorId === 'alex-vector') {
         return (
@@ -216,6 +256,8 @@ export class CuratorSurveyAgent {
           text.includes('срочно') ||
           text.includes('breaking') ||
           text.includes('молния') ||
+          text.includes('политик') ||
+          text.includes('повестк') ||
           text.includes('саммит') ||
           text.includes('экстрен') ||
           text.includes('удар') ||
@@ -309,24 +351,31 @@ export class CuratorSurveyAgent {
       if (sourceCitations.length === 0) sourceCitations.push('Xinhua Economic News', 'Caixin Global', 'BRICS Info Desk');
     } else if (curatorId === 'okatsiya') {
       if (keyTheses.length === 0) {
-        keyTheses.push('Релизы open-weights моделей LLM нового поколения и инфраструктурные требования к кластерам H100/B200.');
-        keyTheses.push('Переход корпоративного сектора на суверенные Kubernetes-платформы и мониторинг критических CVE уязвимостей.');
+        keyTheses.push('Мониторинг Hi-Tech и анонсов: презентации новых потребительских девайсов, мобильных платформ, процессоров и VR/AR.');
+        keyTheses.push('Громкие анонсы BigTech: стратегические релизы продуктов, архитектурные сдвиги и инфраструктурные платформы.');
       }
-      focusPoints.push('Дефицит вычислительных мощностей и дата-центрового охлаждения', 'Ужесточение регуляций экспортного контроля на чипы и ИИ');
-      if (sourceCitations.length === 0) sourceCitations.push('Hugging Face Daily', 'The Register', 'GitHub Trending', 'Semiconductor Digest');
-    } else if (curatorId === 'german-kernel') {
+      focusPoints.push('Новые девайсы, чипы и флагманские анонсы (Apple, Nvidia, Google, Qualcomm)', 'Стратегические релизы гигантов IT-индустрии');
+      if (sourceCitations.length === 0) sourceCitations.push('The Verge', 'TechCrunch', 'Ars Technica', 'Semiconductor Digest');
+    } else if (curatorId === 'simon-habr' || curatorId === 'german-kernel') {
       if (keyTheses.length === 0) {
-        keyTheses.push('Мониторинг прикладных публикаций на Habr: опыт внедрения, разборы архитектурных компромиссов и нестандартные инженерные решения.');
-        keyTheses.push('Олдскул и схемотехника: восстановление винтажного железа, анализ плат и рост интереса к ретро-платформам на фоне внешних инфоповодов.');
+        keyTheses.push('Разбор инженерных статей с Хабра: архитектурные нюансы, опыт рефакторинга и практические уроки разработчиков.');
+        keyTheses.push('Олдскул и схемотехника: ретро-компьютинг, аппаратный реверс-инжиниринг и обсуждения в сообществе авторов Habr.');
       }
-      focusPoints.push('Рост интереса к олдскульным и оффлайн-решениям на фоне сбоев глобальных облаков', 'Подготовка материалов журнала «Хакер» под тематические Super Note и NotebookLM');
-      if (sourceCitations.length === 0) sourceCitations.push('Habr Engineering', 'Журнал «Хакер» (xakep.ru)', 'Retro-Computing Hub');
+      focusPoints.push('Прикладной опыт разработки и подводные камни технологий в публикациях Habr', 'Схемотехника, разбор плат и ретро-системы');
+      if (sourceCitations.length === 0) sourceCitations.push('Habr Engineering', 'Habr Статьи', 'Retro-Computing Hub');
+    } else if (curatorId === 'presijo-ai') {
+      if (keyTheses.length === 0) {
+        keyTheses.push('Анализ свежих AI-инструментов, утилит и релизов open-source библиотек недели.');
+        keyTheses.push('Мониторинг Telegram-каналов: упаковка трендов, новые фичи ИИ-продуктов и готовые промпт-структуры.');
+      }
+      focusPoints.push('Новые инструменты и сервисы на рынке нейросетей', 'Упаковка инфоповодов и трендов для Telegram и соцсетей');
+      if (sourceCitations.length === 0) sourceCitations.push('AI Tools Radar', 'GitHub Trending', 'Hugging Face Hub', 'TG AI Channels', 'ProductHunt AI');
     } else if (curatorId === 'alex-vector') {
       if (keyTheses.length === 0) {
-        keyTheses.push('Оперативный мониторинг мировых агентств и X/Telegram: фильтрация экстренных молний и валидация первоисточников.');
-        keyTheses.push('Детекция виральных всплесков: выявление инфоповодов с взрывным ростом цитируемости в первый час.');
+        keyTheses.push('Свежие политические новости и экстренная мировая повестка: фильтрация молний Reuters, Bloomberg, AP и X.');
+        keyTheses.push('Детекция виральных всплесков: выявление политических инфоповодов с взрывным ростом цитируемости.');
       }
-      focusPoints.push('Высокая скорость устаревания непроверенных вбросов', 'Конфликт интерпретаций мировых медиа в первые минуты инцидента');
+      focusPoints.push('Оперативная политическая повестка дня и срочные инфоповоды', 'Конфликт интерпретаций мировых медиа в первые минуты инцидента');
       if (sourceCitations.length === 0) sourceCitations.push('Reuters Flash', 'AP World Desk', 'Bloomberg Terminal Alerts', 'X / Real-Time Pulse');
     } else if (curatorId === 'marcus-vane') {
       if (keyTheses.length === 0) {

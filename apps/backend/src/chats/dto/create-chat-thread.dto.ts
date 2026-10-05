@@ -8,7 +8,7 @@ export class CreateChatThreadDto {
   @IsNotEmpty()
   title!: string;
 
-  @ApiPropertyOptional({ enum: ChatType, default: ChatType.DIRECT })
+  @ApiPropertyOptional({ enum: ChatType, default: ChatType.TOPIC })
   @IsEnum(ChatType)
   @IsOptional()
   type?: ChatType;
@@ -18,7 +18,17 @@ export class CreateChatThreadDto {
   @IsOptional()
   folderId?: string;
 
-  @ApiPropertyOptional({ description: 'Target agent ID for DIRECT chats (e.g. ivan-bely, okatsiya)' })
+  @ApiPropertyOptional({ description: 'Curator ID if this chat is lead by or direct with a Curator' })
+  @IsString()
+  @IsOptional()
+  curatorId?: string;
+
+  @ApiPropertyOptional({ description: 'Assistant ID if this chat is an Assistant service chat' })
+  @IsString()
+  @IsOptional()
+  assistantId?: string;
+
+  @ApiPropertyOptional({ description: 'Target agent ID for legacy routing (e.g. ivan-bely, okatsiya)' })
   @IsString()
   @IsOptional()
   targetAgent?: string;

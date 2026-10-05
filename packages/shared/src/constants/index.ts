@@ -282,8 +282,8 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     id: 'ivan-bely',
     name: 'Иван Белый',
     shortName: 'Иван',
-    role: 'Обозреватель обстановки и внутреннего контура РФ',
-    scope: 'Политика, экономика, регуляторика ФАС/ЦБ, выборы (ЕДГ-2026), внутренний рынок РФ',
+    role: 'Специалист по Контуру РФ, законодательству и регуляторике',
+    scope: 'Внутренний контур РФ, Госдума, Правительство РФ, налоги, бюджет, ЦБ РФ, ФАС, топливный демпфер, внутренний рынок',
     accentColor: '#38bdf8', // Sky/Cyan
     borderAccent: '#0284c7',
     bgLight: 'rgba(56, 189, 248, 0.12)',
@@ -296,29 +296,57 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     id: 'kirk-kitten',
     name: 'Kirk Kitten',
     shortName: 'Kirk',
-    role: 'Специальный международный корреспондент и обозреватель рынков',
-    scope: 'США, ЕС, санкции OFAC, глобальная логистика, решения ФРС, саммиты Davos/G20, выборы в Конгресс',
+    role: 'Специалист по контуру США, международным рынкам и санкциям',
+    scope: 'США, Вашингтон, Конгресс, Белый дом, решения ФРС, санкции OFAC, ЕС, глобальная логистика и мировые рынки',
     accentColor: '#fbbf24', // Amber/Gold
     borderAccent: '#d97706',
     bgLight: 'rgba(251, 191, 36, 0.12)',
     badgeBg: 'rgba(251, 191, 36, 0.22)',
     emoji: '🌐',
     iconName: 'Radar',
-    description: 'Аналитическая оптика внешнего международного контура. Проверяет первичные факты по англоязычным реестрам, биржевым данным и решениям зарубежных регуляторов.',
+    description: 'Аналитическая оптика внешнего международного контура и США. Проверяет первичные факты по англоязычным реестрам, биржевым данным и решениям американских и европейских регуляторов.',
   },
   'okatsiya': {
     id: 'okatsiya',
-    name: 'Окация',
-    shortName: 'Окация',
-    role: 'Архитектор и куратор контура IT & AI',
-    scope: 'AI/LLM, BigTech, DevOps, Backend, Frontend, Cloud, InfoSec, Data & Chips',
+    name: 'Акация IT',
+    shortName: 'Акация',
+    role: 'Куратор Hi-Tech, IT & AI индустрии, новых девайсов и громких анонсов',
+    scope: 'Новости hi-tech, IT, AI индустрии, новые девайсы (гаджеты, чипы, VR/AR, смартфоны), громкие анонсы BigTech, архитектура',
     accentColor: '#a855f7', // Neon Violet/Purple
     borderAccent: '#9333ea',
     bgLight: 'rgba(168, 85, 247, 0.12)',
     badgeBg: 'rgba(168, 85, 247, 0.22)',
     emoji: '⚡',
     iconName: 'Cpu',
-    description: 'Технологическая и архитектурная оптика. Мониторит релизы ИИ-моделей, BigTech, инфраструктурные платформы, уязвимости и ключевые инженерные отрасли IT.',
+    description: 'Технологическая оптика Hi-Tech и анонсов. Мониторит релизы новых девайсов, громкие анонсы технологических гигантов, потребительскую электронику, чипы и ключевые тренды IT & AI.',
+  },
+  'simon-habr': {
+    id: 'simon-habr',
+    name: 'Саймон',
+    shortName: 'Саймон',
+    role: 'Специалист по разбору новостей с Habr',
+    scope: 'Разбор публикаций и новостей с Хабра (Habr), инженерные статьи, олдскул-технологии, схемотехника, авторские кейсы сообщества',
+    accentColor: '#10b981', // Terminal Green
+    borderAccent: '#059669',
+    bgLight: 'rgba(16, 185, 129, 0.12)',
+    badgeBg: 'rgba(16, 185, 129, 0.22)',
+    emoji: '📟',
+    iconName: 'Terminal',
+    description: 'Обозреватель и инженерный аналитик Хабра. Мониторит свежие публикации на Habr, глубокие инженерные лонгриды, разборы схемотехники, ретро-железа и практические кейсы разработчиков.',
+  },
+  'presijo-ai': {
+    id: 'presijo-ai',
+    name: 'Presijo AI & IT',
+    shortName: 'Presijo',
+    role: 'AI & IT тренд-хантер, контент-мейкер и обозреватель инструментов',
+    scope: 'Новости индустрии AI, новые инструменты на рынке, свежие фичи, релизы библиотек, работа с Telegram-каналами, контент-мейкинг',
+    accentColor: '#ec4899', // Pink / Fuchsia
+    borderAccent: '#db2777',
+    bgLight: 'rgba(236, 72, 153, 0.12)',
+    badgeBg: 'rgba(236, 72, 153, 0.22)',
+    emoji: '🚀',
+    iconName: 'Sparkles',
+    description: 'Куратор прикладного AI-ландшафта и контент-мейкер. Отслеживает новые ИИ-тулзы, фичи, релизы open-source библиотек, ведет мониторинг Telegram-каналов и упаковывает тренды в виральный контент.',
   },
   'chen-wei': {
     id: 'chen-wei',
@@ -336,17 +364,17 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
   },
   'alex-vector': {
     id: 'alex-vector',
-    name: 'Breaking News',
-    shortName: 'Breaking News',
-    role: 'Шеф мирового пульса и Breaking News',
-    scope: 'Мировые молнии, экстренные коммюнике, виральные сюжеты, X/Twitter, саммиты, чрезвычайные события',
+    name: 'Алекс Вектор',
+    shortName: 'Алекс Вектор',
+    role: 'Специалист по общей политической повестке и свежим мировым новостям',
+    scope: 'Свежие политические новости, общая мировая повестка, мировые молнии, экстренные коммюнике, виральные сюжеты, X/Twitter, саммиты',
     accentColor: '#f97316', // Orange / Flame
     borderAccent: '#ea580c',
     bgLight: 'rgba(249, 115, 22, 0.12)',
     badgeBg: 'rgba(249, 115, 22, 0.22)',
     emoji: '🔥',
     iconName: 'Flame',
-    description: 'Оптика глобального оперативного пульса. Отслеживает взрывные инфоповоды, breaking-ньюс мировых агентств и отделяет виральный шум от тектонических сдвигов.',
+    description: 'Оптика свежей политической повестки и мирового оперативного пульса. Отслеживает взрывные инфоповоды, breaking-ньюс мировых агентств и отделяет виральный шум от тектонических сдвигов.',
   },
   'marcus-vane': {
     id: 'marcus-vane',
@@ -367,7 +395,7 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     id: 'tariq-said',
     name: 'Тарик Саид',
     shortName: 'Тарик',
-    role: 'Обозреватель Ближнего Востока и зоны Залива (MENA)',
+    role: 'Специалист по контуру Ближнего Востока и зоны Залива (MENA)',
     scope: 'Ближний Восток, Ирак, Иран, монархии Залива, Левант, безопасность баз, OPEC+, суннитско-шиитский баланс',
     accentColor: '#eab308', // Desert Gold
     borderAccent: '#ca8a04',
@@ -375,7 +403,7 @@ export const CURATOR_PERSONAS: Record<string, CuratorPersona> = {
     badgeBg: 'rgba(234, 179, 8, 0.22)',
     emoji: '🕌',
     iconName: 'Compass',
-    description: 'Оптика региона MENA и исламского мира. Анализирует закрытые договоренности монархий Залива, влияние проиранских осей, турецкий фактор и безопасность инфраструктуры.',
+    description: 'Аналитическая оптика Большого Ближнего Востока и региона MENA. Анализирует закрытые договоренности монархий Залива, влияние проиранских осей, турецкий фактор и безопасность инфраструктуры.',
   },
   'helena-brandt': {
     id: 'helena-brandt',
@@ -416,28 +444,82 @@ export function getCuratorPersona(idOrName?: string | null): CuratorPersona | nu
   if (CURATOR_PERSONAS[clean]) return CURATOR_PERSONAS[clean];
 
   // Specific alias mappings
-  if (clean === 'окация' || clean === 'акация' || clean === 'okatsiya' || clean === 'it' || clean === 'ai') {
+  if (
+    clean === 'окация' ||
+    clean === 'акация' ||
+    clean === 'акация it' ||
+    clean === 'окация it' ||
+    clean === 'akatsiya' ||
+    clean === 'akatsiya-it' ||
+    clean === 'okatsiya' ||
+    clean === 'it' ||
+    clean === 'ai' ||
+    clean === 'hi-tech' ||
+    clean === 'hitech'
+  ) {
     return CURATOR_PERSONAS['okatsiya'];
   }
-  if (clean === 'герман' || clean === 'герман кернел' || clean === 'german' || clean === 'german-kernel' || clean === 'хабр' || clean === 'habr' || clean === 'хакер' || clean === 'xakep') {
-    return CURATOR_PERSONAS['german-kernel'];
+  if (
+    clean === 'саймон' ||
+    clean === 'simon' ||
+    clean === 'simon-habr' ||
+    clean === 'саймон хабр' ||
+    clean === 'simon habr'
+  ) {
+    return CURATOR_PERSONAS['simon-habr'];
   }
-  if (clean === 'иван' || clean === 'иван белый' || clean === 'ivan') {
+  if (
+    clean === 'presijo' ||
+    clean === 'пресижо' ||
+    clean === 'presijo-ai' ||
+    clean === 'presijo ai' ||
+    clean === 'пресижо ai' ||
+    clean === 'presijo ai & it' ||
+    clean === 'presijo ai and it'
+  ) {
+    return CURATOR_PERSONAS['presijo-ai'];
+  }
+  if (clean === 'герман' || clean === 'герман кернел' || clean === 'german' || clean === 'german-kernel' || clean === 'хабр' || clean === 'habr' || clean === 'хакер' || clean === 'xakep') {
+    return CURATOR_PERSONAS['simon-habr'] || CURATOR_PERSONAS['german-kernel'];
+  }
+  if (clean === 'иван' || clean === 'иван белый' || clean === 'ivan' || clean === 'ivan-bely' || clean === 'рф' || clean === 'контур рф' || clean === 'россия') {
     return CURATOR_PERSONAS['ivan-bely'];
   }
-  if (clean === 'kirk' || clean === 'kirk kitten' || clean === 'кирк') {
+  if (clean === 'kirk' || clean === 'kirk kitten' || clean === 'кирк' || clean === 'сша' || clean === 'контур сша' || clean === 'usa') {
     return CURATOR_PERSONAS['kirk-kitten'];
   }
   if (clean === 'чэнь' || clean === 'чэнь вэй' || clean === 'chen' || clean === 'chen-wei') {
     return CURATOR_PERSONAS['chen-wei'];
   }
-  if (clean === 'алекс' || clean === 'алекс вектор' || clean === 'alex' || clean === 'alex-vector' || clean === 'breaking' || clean === 'breaking news' || clean === 'пульс') {
+  if (
+    clean === 'алекс' ||
+    clean === 'алекс вектор' ||
+    clean === 'alex' ||
+    clean === 'alex-vector' ||
+    clean === 'breaking' ||
+    clean === 'breaking news' ||
+    clean === 'пульс' ||
+    clean === 'политическая повестка' ||
+    clean === 'свежие новости' ||
+    clean === 'свежие политические новости'
+  ) {
     return CURATOR_PERSONAS['alex-vector'];
   }
   if (clean === 'маркус' || clean === 'маркус вейн' || clean === 'marcus' || clean === 'marcus-vane' || clean === 'nexus' || clean === 'домино' || clean === 'ветвление') {
     return CURATOR_PERSONAS['marcus-vane'];
   }
-  if (clean === 'тарик' || clean === 'тарик саид' || clean === 'tariq' || clean === 'tariq-said' || clean === 'мена' || clean === 'mena' || clean === 'восток') {
+  if (
+    clean === 'тарик' ||
+    clean === 'тарик саид' ||
+    clean === 'tariq' ||
+    clean === 'tariq-said' ||
+    clean === 'мена' ||
+    clean === 'mena' ||
+    clean === 'восток' ||
+    clean === 'ближний восток' ||
+    clean === 'контур ближнего востока' ||
+    clean === 'залив'
+  ) {
     return CURATOR_PERSONAS['tariq-said'];
   }
   if (clean === 'хелена' || clean === 'хелена брандт' || clean === 'helena' || clean === 'helena-brandt' || clean === 'логистика' || clean === 'сырье' || clean === 'нефть') {
@@ -474,27 +556,27 @@ export interface CuratorGroup {
 export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
   'political-group': {
     id: 'political-group',
-    name: 'Политическая коллегия',
+    name: 'Политическая коллегия (РФ, США, Ближний Восток & Повестка)',
     shortName: 'Политика',
     emoji: '🏛️',
-    description: 'Объединенная группа кураторов внутренней политики РФ, международных рынков и восточного контура',
-    curatorIds: ['ivan-bely', 'kirk-kitten', 'chen-wei'],
+    description: 'Объединенная коллегия политических кураторов: Контур РФ (Иван Белый), Контур США (Kirk Kitten), Контур Ближнего Востока (Тарик Саид) и Свежие политические новости (Алекс Вектор)',
+    curatorIds: ['ivan-bely', 'kirk-kitten', 'tariq-said', 'alex-vector'],
     coordinatorId: 'survey-coordinator',
     accentColor: '#38bdf8',
     badgeBg: 'rgba(56, 189, 248, 0.16)',
-    defaultScope: 'Внутренний контур РФ, международная дипломатия, санкции, рынки АТР и сырьевой баланс',
+    defaultScope: 'Внутренний контур РФ, внешнеполитический контур США, Ближний Восток (MENA) и оперативная мировая политическая повестка',
   },
   'tech-group': {
     id: 'tech-group',
-    name: 'IT & AI Совет',
-    shortName: 'Технологии',
+    name: 'IT & AI Группа (Акация IT, Саймон & Presijo)',
+    shortName: 'IT & AI',
     emoji: '⚡',
-    description: 'Технологический совет по искусственному интеллекту, BigTech, инфраструктуре, Habr-сообществу и журналу «Хакер»',
-    curatorIds: ['okatsiya', 'german-kernel'],
+    description: 'Технологическая группа: Акация IT (Hi-Tech, девайсы, анонсы), Саймон (разбор новостей с Хабра) и Presijo AI & IT (инструменты, фичи, релизы библиотек, Telegram, контент-мейкинг)',
+    curatorIds: ['okatsiya', 'simon-habr', 'presijo-ai'],
     coordinatorId: 'survey-coordinator',
     accentColor: '#a855f7',
     badgeBg: 'rgba(168, 85, 247, 0.16)',
-    defaultScope: 'AI/LLM, системная разработка, BigTech, мониторинг Habr, журнал «Хакер», олдскул-железо и безопасность',
+    defaultScope: 'Hi-Tech, девайсы, анонсы BigTech, публикации на Хабре, AI инструменты, библиотеки и Telegram-каналы',
   },
   'macro-group': {
     id: 'macro-group',
@@ -554,12 +636,14 @@ export const CURATOR_GROUPS: Record<string, CuratorGroup> = {
     curatorIds: [
       'ivan-bely',
       'kirk-kitten',
-      'chen-wei',
-      'okatsiya',
-      'german-kernel',
-      'alex-vector',
       'tariq-said',
+      'alex-vector',
+      'okatsiya',
+      'simon-habr',
+      'presijo-ai',
+      'chen-wei',
       'helena-brandt',
+      'german-kernel',
     ],
     coordinatorId: 'survey-coordinator',
     accentColor: '#3b82f6',

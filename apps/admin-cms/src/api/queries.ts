@@ -742,6 +742,150 @@ export function useSeedChatDefaults() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
       queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['curators'] });
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Curators Hooks
+// ---------------------------------------------------------------------------
+
+export function useCurators(folderId?: string) {
+  return useQuery({
+    queryKey: ['curators', { folderId }],
+    queryFn: () => chatsApi.getCurators(folderId),
+    staleTime: 30_000,
+  });
+}
+
+export function useCurator(id?: string) {
+  return useQuery({
+    queryKey: ['curator', id],
+    queryFn: () => chatsApi.getCurator(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateCurator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => chatsApi.createCurator(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curators'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useUpdateCurator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => chatsApi.updateCurator(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['curators'] });
+      queryClient.invalidateQueries({ queryKey: ['curator', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useDeleteCurator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => chatsApi.deleteCurator(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curators'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Assistants Hooks
+// ---------------------------------------------------------------------------
+
+export function useAssistants(folderId?: string, skillType?: string) {
+  return useQuery({
+    queryKey: ['assistants', { folderId, skillType }],
+    queryFn: () => chatsApi.getAssistants(folderId, skillType),
+    staleTime: 30_000,
+  });
+}
+
+export function useAssistant(id?: string) {
+  return useQuery({
+    queryKey: ['assistant', id],
+    queryFn: () => chatsApi.getAssistant(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateAssistant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => chatsApi.createAssistant(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useUpdateAssistant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => chatsApi.updateAssistant(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      queryClient.invalidateQueries({ queryKey: ['assistant', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+export function useDeleteAssistant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => chatsApi.deleteAssistant(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Action Skills Hooks (Photo & Podcast)
+// ---------------------------------------------------------------------------
+
+export function useGeneratePhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ threadId, data }: { threadId: string; data: any }) =>
+      chatsApi.generatePhoto(threadId, data),
+    onSuccess: (newMsg, variables) => {
+      queryClient.setQueryData<any[]>(['thread-messages', variables.threadId], (old = []) => [
+        ...old,
+        newMsg,
+      ]);
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
+    },
+  });
+}
+
+export function useGenerateThreadPodcast() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ threadId, data }: { threadId: string; data: any }) =>
+      chatsApi.generatePodcast(threadId, data),
+    onSuccess: (newMsg, variables) => {
+      queryClient.setQueryData<any[]>(['thread-messages', variables.threadId], (old = []) => [
+        ...old,
+        newMsg,
+      ]);
+      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
     },
   });
 }

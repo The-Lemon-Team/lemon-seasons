@@ -587,21 +587,62 @@ export interface SystemStats {
 // Chat Architecture Types (Folders, Threads & Persisted Messages)
 // ---------------------------------------------------------------------------
 
-export type ChatType = 'DIRECT' | 'GROUP';
+export type ChatType = 'TOPIC' | 'CURATOR' | 'ASSISTANT' | 'GROUP' | 'DIRECT';
+
+export type AssistantSkill = 'IMAGE_GEN' | 'NOTEBOOKLM_PODCAST' | 'NOTE_FORMATTER' | 'FEED_MAKER';
+
+export interface Curator {
+  id: string;
+  folderId?: string | null;
+  name: string;
+  shortName?: string | null;
+  roleTitle: string;
+  personality?: string | null;
+  systemPrompt: string;
+  emoji: string;
+  accentColor: string;
+  isSystem: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  folder?: ChatFolder | null;
+}
+
+export interface Assistant {
+  id: string;
+  folderId?: string | null;
+  name: string;
+  skillType: AssistantSkill;
+  description?: string | null;
+  customPrompt?: string | null;
+  config?: any;
+  avatar: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  folder?: ChatFolder | null;
+}
 
 export interface ChatFolder {
   id: string;
   name: string;
   path: string;
+  description?: string | null;
   icon?: string | null;
   color?: string | null;
   order: number;
   parentId?: string | null;
+  imageStylePrompt?: string | null;
+  contextRules?: string | null;
   parent?: ChatFolder | null;
   children?: ChatFolder[];
   threads?: ChatThread[];
+  curators?: Curator[];
+  assistants?: Assistant[];
   _count?: {
-    threads: number;
+    threads?: number;
+    curators?: number;
+    assistants?: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -614,6 +655,10 @@ export interface ChatThread {
   type: ChatType;
   folderId?: string | null;
   folder?: ChatFolder | null;
+  curatorId?: string | null;
+  curator?: Curator | null;
+  assistantId?: string | null;
+  assistant?: Assistant | null;
   targetAgent?: string | null;
   participantAgents: string[];
   dateScope?: string | null;
@@ -651,15 +696,18 @@ export interface ChatMessageRecord {
   id: string;
   threadId: string;
   sender: string;
+  senderType?: string;
   senderName: string;
   senderRole: string;
   avatar?: string | null;
   text: string;
+  mediaUrls?: string[];
   messageType?: string;
   metadata?: any;
   sources?: string[];
   groupSummary?: any;
   suggestedCard?: any;
+  payload?: any;
   newsPosts?: TelegramNewsPreview[];
   createdAt: string;
 }
@@ -667,25 +715,75 @@ export interface ChatMessageRecord {
 export interface CreateChatFolderInput {
   name: string;
   path?: string;
+  description?: string;
   icon?: string;
   color?: string;
   order?: number;
   parentId?: string;
+  imageStylePrompt?: string;
+  contextRules?: string;
 }
 
 export interface UpdateChatFolderInput {
   name?: string;
   path?: string;
+  description?: string;
   icon?: string;
   color?: string;
   order?: number;
   parentId?: string | null;
+  imageStylePrompt?: string;
+  contextRules?: string;
+}
+
+export interface CreateCuratorInput {
+  name: string;
+  shortName?: string;
+  roleTitle: string;
+  personality?: string;
+  systemPrompt: string;
+  emoji?: string;
+  accentColor?: string;
+  folderId?: string | null;
+}
+
+export interface UpdateCuratorInput {
+  name?: string;
+  shortName?: string;
+  roleTitle?: string;
+  personality?: string;
+  systemPrompt?: string;
+  emoji?: string;
+  accentColor?: string;
+  folderId?: string | null;
+}
+
+export interface CreateAssistantInput {
+  name: string;
+  skillType: AssistantSkill;
+  description?: string;
+  customPrompt?: string;
+  config?: any;
+  avatar?: string;
+  folderId?: string | null;
+}
+
+export interface UpdateAssistantInput {
+  name?: string;
+  skillType?: AssistantSkill;
+  description?: string;
+  customPrompt?: string;
+  config?: any;
+  avatar?: string;
+  folderId?: string | null;
 }
 
 export interface CreateChatThreadInput {
   title: string;
   type?: ChatType;
-  folderId?: string;
+  folderId?: string | null;
+  curatorId?: string | null;
+  assistantId?: string | null;
   targetAgent?: string;
   participantAgents?: string[];
   dateScope?: string;
@@ -695,6 +793,8 @@ export interface CreateChatThreadInput {
 export interface UpdateChatThreadInput {
   title?: string;
   folderId?: string | null;
+  curatorId?: string | null;
+  assistantId?: string | null;
   targetAgent?: string;
   participantAgents?: string[];
   dateScope?: string | null;
@@ -706,6 +806,8 @@ export interface SendThreadMessageInput {
   message: string;
   forcedTarget?: string;
   date?: string;
+  mediaUrls?: string[];
+  payload?: any;
 }
 
 // ==========================================
@@ -884,6 +986,8 @@ export type CuratorId =
   | 'kirk-kitten'
   | 'okatsiya'
   | 'german-kernel'
+  | 'simon-habr'
+  | 'presijo-ai'
   | 'chen-wei'
   | 'alex-vector'
   | 'marcus-vane'

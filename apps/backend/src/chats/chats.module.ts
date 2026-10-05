@@ -4,11 +4,12 @@ import { CurationModule } from '../curation/curation.module';
 import { IngestionModule } from '../ingestion/ingestion.module';
 import { NotesModule } from '../notes/notes.module';
 import { SyncModule } from '../sync/sync.module';
+import { StorageModule } from '../storage/storage.module';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
 
 @Module({
-  imports: [PrismaModule, CurationModule, IngestionModule, NotesModule, SyncModule],
+  imports: [PrismaModule, CurationModule, IngestionModule, NotesModule, SyncModule, StorageModule],
   controllers: [ChatsController],
   providers: [ChatsService],
   exports: [ChatsService],
