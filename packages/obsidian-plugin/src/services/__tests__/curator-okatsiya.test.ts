@@ -14,7 +14,7 @@ describe('Curator Okatsiya & IT Sectors Registry', () => {
     const byId = getCuratorPersona('okatsiya');
     expect(byId).toBeDefined();
     expect(byId?.id).toBe('okatsiya');
-    expect(byId?.name).toBe('Окация');
+    expect(byId?.name).toBe('Акация IT');
     expect(byId?.emoji).toBe('⚡');
     expect(byId?.iconName).toBe('Cpu');
 
