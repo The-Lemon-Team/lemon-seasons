@@ -329,9 +329,7 @@ model ChatMessageRecord {
   avatar         String?
   text           String
   mediaUrls      String[]   @default([])
-  resonanceScore Int?
   sources        String[]   @default([])
-  resonanceNodes Json?
   groupSummary   Json?
   suggestedCard  Json?
   payload        Json?

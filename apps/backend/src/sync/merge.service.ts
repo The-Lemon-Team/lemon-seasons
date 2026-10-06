@@ -105,7 +105,6 @@ export class MergeService {
                 senderRole: m.senderRole,
                 avatar: m.avatar,
                 text: m.text,
-                resonanceScore: null,
                 sources: m.sources || [],
                 createdAt: new Date(m.createdAt),
               },
