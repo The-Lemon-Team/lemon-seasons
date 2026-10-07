@@ -48,74 +48,7 @@ export class MergeService {
       }
     }
 
-    // 2. Chat Threads & Messages (Append-only)
-    if (pkg.changes.chatThreads && pkg.changes.chatThreads.length > 0) {
-      for (const t of pkg.changes.chatThreads) {
-        if (t.action === 'DELETE') {
-          await this.prisma.chatThread.updateMany({
-            where: { id: t.id },
-            data: { deletedAt: new Date() },
-          });
-        } else if (t.data) {
-          await this.prisma.chatThread.upsert({
-            where: { id: t.id },
-            create: {
-              id: t.id,
-              title: t.data.title || 'Беседа',
-              type: (t.data.type as any) || 'DIRECT',
-              targetAgent: t.data.targetAgent,
-              participantAgents: t.data.participantAgents || [],
-              dateScope: t.data.dateScope,
-              isPinned: t.data.isPinned || false,
-              isArchived: t.data.isArchived || false,
-            },
-            update: {
-              title: t.data.title,
-              targetAgent: t.data.targetAgent,
-              participantAgents: t.data.participantAgents || [],
-              dateScope: t.data.dateScope,
-              isPinned: t.data.isPinned,
-              isArchived: t.data.isArchived,
-            },
-          });
-        }
-        appliedEntities++;
-      }
-    }
-
-    if (pkg.changes.chatMessages && pkg.changes.chatMessages.length > 0) {
-      for (const m of pkg.changes.chatMessages) {
-        const existing = await this.prisma.chatMessageRecord.findUnique({
-          where: { id: m.id },
-        });
-
-        if (!existing) {
-          // Verify thread exists
-          const thread = await this.prisma.chatThread.findUnique({
-            where: { id: m.threadId },
-          });
-
-          if (thread) {
-            await this.prisma.chatMessageRecord.create({
-              data: {
-                id: m.id,
-                threadId: m.threadId,
-                sender: m.sender,
-                senderName: m.senderName,
-                senderRole: m.senderRole,
-                avatar: m.avatar,
-                text: m.text,
-                sources: m.sources || [],
-                createdAt: new Date(m.createdAt),
-              },
-            });
-            appliedEntities++;
-          }
-        }
-      }
-    }
-
-    // 3. Links
+    // 2. Links
     if (pkg.changes.links && pkg.changes.links.length > 0) {
       for (const link of pkg.changes.links) {
         if (link.action === 'DELETE') {

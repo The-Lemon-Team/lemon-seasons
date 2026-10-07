@@ -155,8 +155,6 @@ export class SessionService {
 
     // Group pending changes by entity type and ID
     const noteIds = new Set<string>();
-    const threadIds = new Set<string>();
-    const messageIds = new Set<string>();
     const linkIds = new Set<string>();
     const folderIds = new Set<string>();
 
@@ -164,12 +162,6 @@ export class SessionService {
       switch (change.entityType) {
         case 'NOTE':
           noteIds.add(change.entityId);
-          break;
-        case 'CHAT_THREAD':
-          threadIds.add(change.entityId);
-          break;
-        case 'CHAT_MESSAGE':
-          messageIds.add(change.entityId);
           break;
         case 'LINK':
           linkIds.add(change.entityId);
@@ -181,7 +173,7 @@ export class SessionService {
     }
 
     // Fetch entity snapshots from database for affected items
-    const [notes, threads, messages, links, folders] = await Promise.all([
+    const [notes, links, folders] = await Promise.all([
       noteIds.size > 0
         ? this.prisma.note.findMany({
             where: { id: { in: Array.from(noteIds) } },
@@ -191,16 +183,6 @@ export class SessionService {
               folders: { include: { folder: true } },
               links: true,
             },
-          })
-        : [],
-      threadIds.size > 0
-        ? this.prisma.chatThread.findMany({
-            where: { id: { in: Array.from(threadIds) } },
-          })
-        : [],
-      messageIds.size > 0
-        ? this.prisma.chatMessageRecord.findMany({
-            where: { id: { in: Array.from(messageIds) } },
           })
         : [],
       linkIds.size > 0
@@ -236,23 +218,6 @@ export class SessionService {
           version: note.version,
           data: note as any,
         })),
-        chatThreads: threads.map((thread) => ({
-          action: (thread.deletedAt ? 'DELETE' : 'UPSERT') as 'DELETE' | 'UPSERT',
-          id: thread.id,
-          data: thread as any,
-        })),
-        chatMessages: messages.map((msg) => ({
-          action: 'INSERT' as const,
-          id: msg.id,
-          threadId: msg.threadId,
-          sender: msg.sender,
-          senderName: msg.senderName,
-          senderRole: msg.senderRole,
-          avatar: msg.avatar,
-          text: msg.text,
-          createdAt: msg.createdAt.toISOString(),
-          sources: msg.sources,
-        })),
         links: links.map((link) => ({
           action: 'INSERT' as const,
           id: link.id,
@@ -270,8 +235,7 @@ export class SessionService {
     };
 
 
-    const totalEntities =
-      notes.length + threads.length + messages.length + links.length + folders.length;
+    const totalEntities = notes.length + links.length + folders.length;
 
     // Atomically create SyncCommit, close session, and clear pending changes
     const [savedCommit] = await this.prisma.$transaction([

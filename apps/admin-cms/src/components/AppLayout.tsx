@@ -14,6 +14,8 @@ import {
   Globe,
   Calendar,
   Cloud,
+  Bot,
+  ExternalLink,
 } from 'lucide-react';
 import { QuickAddModal } from './QuickAddModal';
 import { LemonLogo } from './LemonLogo';
@@ -32,8 +34,8 @@ export const AppLayout: React.FC = () => {
   const { data: syncData, isFetching: isSyncing } = useSyncChanges();
 
   const getPageTitle = () => {
-    if (location.pathname.startsWith('/chat')) return 'Аналитический Чат-Деск (AI Curation)';
-    if (location.pathname.startsWith('/news')) return 'Ежедневные новости & AI-Куратор';
+    if (location.pathname.startsWith('/chat')) return 'Интеграция: Defi Local Hosted Chat';
+    if (location.pathname.startsWith('/news')) return t.allNotes;
     if (location.pathname.startsWith('/feeds')) return t.feeds;
     if (location.pathname.startsWith('/notes')) return t.allNotes;
     if (location.pathname.startsWith('/taxonomy')) return t.taxonomy;
@@ -79,10 +81,10 @@ export const AppLayout: React.FC = () => {
           </button>
         </div>
 
-        {/* Primary Navigation Links */}
+        {/* Primary Navigation Links: Notes & Content Core */}
         <nav className="flex-1 px-3 space-y-1">
           <NavLink
-            to="/chat"
+            to="/notes"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
                 isActive
@@ -91,26 +93,9 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <MessageSquare className="w-5 h-5 text-primary shrink-0" />
-            <span className="flex-1 truncate">{t.agentChat}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
+            <FileText className="w-5 h-5 text-primary shrink-0" />
+            <span className="flex-1 truncate">{t.allNotes}</span>
           </NavLink>
-
-          <NavLink
-            to="/news"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
-                isActive
-                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
-                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
-              }`
-            }
-          >
-            <Newspaper className="w-5 h-5 text-primary shrink-0" />
-            <span className="flex-1 truncate">Новости & AI</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">Live</span>
-          </NavLink>
-
 
           <NavLink
             to="/feeds"
@@ -123,21 +108,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <Rss className="w-5 h-5 shrink-0" />
-            {t.feeds}
-          </NavLink>
-
-          <NavLink
-            to="/notes"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
-                isActive
-                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
-                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
-              }`
-            }
-          >
-            <FileText className="w-5 h-5 shrink-0" />
-            {t.allNotes}
+            <span className="flex-1 truncate">{t.feeds}</span>
           </NavLink>
 
           <NavLink
@@ -151,7 +122,7 @@ export const AppLayout: React.FC = () => {
             }
           >
             <FolderTree className="w-5 h-5 shrink-0" />
-            {t.taxonomy}
+            <span className="flex-1 truncate">{t.taxonomy}</span>
           </NavLink>
 
           <NavLink
@@ -164,9 +135,9 @@ export const AppLayout: React.FC = () => {
               }`
             }
           >
-            <Sparkles className="w-5 h-5 text-primary shrink-0" />
+            <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
             <span className="flex-1 truncate">{t.generatorLab}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">AI</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-400 font-mono">Lab</span>
           </NavLink>
 
           <NavLink
@@ -180,8 +151,29 @@ export const AppLayout: React.FC = () => {
             }
           >
             <RefreshCw className="w-5 h-5 shrink-0" />
-            {t.syncHub}
+            <span className="flex-1 truncate">{t.syncHub}</span>
           </NavLink>
+
+          {/* External Integrations Section */}
+          <div className="pt-4 mt-3 border-t border-white/5">
+            <p className="px-3.5 mb-1 text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/50">
+              Внешние сервисы
+            </p>
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3.5 py-2 rounded text-sm transition-all duration-200 ${
+                  isActive
+                    ? 'text-cyan-400 font-medium bg-white/5'
+                    : 'text-on-surface-variant/80 font-normal hover:bg-white/5 hover:text-on-surface'
+                }`
+              }
+            >
+              <Bot className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span className="flex-1 truncate text-xs">Defi Chat</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">External</span>
+            </NavLink>
+          </div>
         </nav>
 
         {/* Sync Status Widget in Sidebar */}

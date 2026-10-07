@@ -88,31 +88,21 @@ async function run() {
       testDeviceAlpha,
     );
 
-    // 4. Record a chat message change
-    const thread = await prisma.chatThread.create({
+    // 4. Record a note link change
+    const noteLink = await prisma.noteLink.create({
       data: {
-        title: 'Сессия с Иваном Белым',
-        type: 'DIRECT',
-        targetAgent: 'Иван Белый',
-      },
-    });
-
-    const chatMsg = await prisma.chatMessageRecord.create({
-      data: {
-        threadId: thread.id,
-        sender: 'Иван Белый',
-        senderName: 'Иван Белый',
-        senderRole: 'curator_internal',
-        text: 'Логистические задержки подтверждаются портами Балтики.',
+        noteId: testNote.id,
+        url: 'https://example.com/source',
+        title: 'Источник верификации',
       },
     });
 
     await sessionService.recordChange(
       {
-        entityType: 'CHAT_MESSAGE',
-        entityId: chatMsg.id,
+        entityType: 'LINK',
+        entityId: noteLink.id,
         action: 'INSERT',
-        payload: { text: chatMsg.text },
+        payload: { url: noteLink.url },
       },
       testDeviceAlpha,
     );
@@ -162,8 +152,7 @@ async function run() {
 
     // 9. Cleanup test records
     console.log('9️⃣ Cleaning up test data...');
-    await prisma.chatMessageRecord.deleteMany({ where: { threadId: thread.id } });
-    await prisma.chatThread.delete({ where: { id: thread.id } });
+    await prisma.noteLink.deleteMany({ where: { noteId: testNote.id } });
     await prisma.noteVersion.deleteMany({ where: { noteId: testNote.id } });
     await prisma.note.delete({ where: { id: testNote.id } });
     await prisma.syncCommit.deleteMany({ where: { id: commitResult.commit.id } });

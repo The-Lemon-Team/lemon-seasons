@@ -13,8 +13,6 @@ import { KeysModule } from './keys/keys.module';
 import { HealthModule } from './health/health.module';
 import { ContainersModule } from './containers/containers.module';
 import { StatsModule } from './stats/stats.module';
-import { CurationModule } from './curation/curation.module';
-import { ChatsModule } from './chats/chats.module';
 
 @Module({
   imports: [
@@ -32,8 +30,9 @@ import { ChatsModule } from './chats/chats.module';
     HealthModule,
     ContainersModule,
     StatsModule,
-    CurationModule,
-    ChatsModule,
+    // [DEPRECATED / DECOUPLED]: Moved to Defi Local Hosted project
+    // CurationModule,
+    // ChatsModule,
   ],
 })
 export class AppModule {}
