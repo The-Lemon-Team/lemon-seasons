@@ -67,6 +67,35 @@ export class CreateNoteDto {
   @IsOptional()
   sourceLink?: string;
 
+  @ApiPropertyOptional({ description: 'Source type (MANUAL, GOOGLE_DRIVE, DEFI_CHAT, WEB_CLIP, API)', example: 'GOOGLE_DRIVE' })
+  @IsString()
+  @IsOptional()
+  sourceType?: string;
+
+  @ApiPropertyOptional({ description: 'External identifier in the source platform', example: '1A2b3C_gdrive_id' })
+  @IsString()
+  @IsOptional()
+  externalId?: string;
+
+  @ApiPropertyOptional({ description: 'Raw unparsed content or markdown before LLM processing' })
+  @IsString()
+  @IsOptional()
+  rawContent?: string;
+
+  @ApiPropertyOptional({ description: 'Short summary or TL;DR' })
+  @IsString()
+  @IsOptional()
+  summary?: string;
+
+  @ApiPropertyOptional({ description: 'Processing status (PENDING, PROCESSING, COMPLETED, FAILED)', example: 'COMPLETED' })
+  @IsString()
+  @IsOptional()
+  processingStatus?: string;
+
+  @ApiPropertyOptional({ description: 'Arbitrary metadata object (file sizes, timestamps, etc.)' })
+  @IsOptional()
+  metadata?: any;
+
   @ApiPropertyOptional({ description: 'Optional icon identifier or emoji', example: 'movie' })
   @IsString()
   @IsOptional()

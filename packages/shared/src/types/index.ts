@@ -154,6 +154,12 @@ export interface Note {
   startDate: string;
   endDate: string | null;
   sourceLink: string | null;
+  sourceType?: string | null;
+  externalId?: string | null;
+  rawContent?: string | null;
+  summary?: string | null;
+  metadata?: Record<string, any> | null;
+  processingStatus?: string | null;
   icon: string | null;
   tags: TaxonomyNode[];
   hashtags?: Hashtag[];
@@ -167,6 +173,22 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+export type ProcessingStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export interface IngestionFile {
+  id: string;
+  filePath: string;
+  fileName: string;
+  fileHash: string;
+  fileSize?: number | null;
+  mtime: string;
+  status: ProcessingStatus;
+  errorMessage?: string | null;
+  noteId?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface QueryNotesParams {

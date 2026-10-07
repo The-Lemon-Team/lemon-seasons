@@ -5,6 +5,8 @@ import { GeminiService, GeneratedNoteEnrichment } from './services/gemini.servic
 import { TmdbService, MovieReleaseItem } from './services/tmdb.service';
 import { HolidaysEngineService, HolidayItem } from './services/holidays-engine.service';
 import { PoliticalEngineService, PoliticalEventItem } from './services/political-engine.service';
+import { DriveWatcherService } from './services/drive-watcher.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { NoteType } from '@prisma/client';
 
 export class GenerateNoteAiDto {
@@ -40,6 +42,8 @@ export class IngestionController {
     private readonly tmdbService: TmdbService,
     private readonly holidaysEngine: HolidaysEngineService,
     private readonly politicalEngine: PoliticalEngineService,
+    private readonly driveWatcher: DriveWatcherService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post('sync-all')
@@ -203,5 +207,32 @@ export class IngestionController {
         { slug: 'politics-2026', name: 'Политика 2026', provider: '2026 Global & Russian Agenda & Gemini' },
       ],
     };
+  }
+
+  @Get('watcher/status')
+  @ApiOperation({ summary: 'Получить статус фонового слушателя файлов Gemini Sparks' })
+  async getWatcherStatus() {
+    return this.driveWatcher.getStatus();
+  }
+
+  @Get('watcher/files')
+  @ApiOperation({ summary: 'Получить список обработанных файлов и их этапы (PENDING/PROCESSING/COMPLETED/FAILED)' })
+  async getIngestedFiles(@Query('status') status?: string, @Query('limit') limit = 50) {
+    return this.prisma.ingestionFile.findMany({
+      where: status ? { status } : undefined,
+      orderBy: { updatedAt: 'desc' },
+      take: Number(limit),
+      include: {
+        note: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            startDate: true,
+            processingStatus: true,
+          },
+        },
+      },
+    });
   }
 }
