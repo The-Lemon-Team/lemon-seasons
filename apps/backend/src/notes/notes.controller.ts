@@ -24,11 +24,32 @@ import { QueryNotesDto } from './dto/query-notes.dto';
 import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
 import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
+import { IngestNoteDto } from './dto/ingest-note.dto';
+import { NotesIngestService } from './notes-ingest.service';
 
 @ApiTags('Notes')
-@Controller('notes')
+@Controller(['notes', 'api/v1/notes'])
 export class NotesController {
-  constructor(private readonly notesService: NotesService) {}
+  constructor(
+    private readonly notesService: NotesService,
+    private readonly notesIngestService: NotesIngestService,
+  ) {}
+
+  @Post('ingest')
+  @ApiOperation({ summary: 'Express Ingestion API: save notes and insights from external Defi chat, web clipper, and bots' })
+  @ApiResponse({ status: 201, description: 'Note ingested successfully' })
+  ingest(
+    @Body() ingestDto: IngestNoteDto,
+    @Headers('x-api-key') apiKeyHeader?: string,
+    @Headers('x-user-key') userKeyHeader?: string,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    const token =
+      apiKeyHeader ||
+      userKeyHeader ||
+      (authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined);
+    return this.notesIngestService.ingest(ingestDto, token);
+  }
 
   @Post('ai/parse')
   @ApiOperation({ summary: 'Parse natural language text into calendar cards (supports Trend, Event, Period, Done)' })
