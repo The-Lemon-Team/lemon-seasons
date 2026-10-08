@@ -225,6 +225,63 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Manually trigger re-scan of the watched directory.
+   */
+  public async scanDirectory(): Promise<{ scanned: number }> {
+    this.ensureDirectoryExists(this.watchedDir);
+    const files = await fs.promises.readdir(this.watchedDir);
+    const mdFiles = files.filter((f) => f.toLowerCase().endsWith('.md'));
+
+    for (const file of mdFiles) {
+      const fullPath = path.join(this.watchedDir, file);
+      await this.handleFileEvent('ADD', fullPath);
+    }
+
+    return { scanned: mdFiles.length };
+  }
+
+  /**
+   * Helper to write a test Gemini Spark file for live UI verification.
+   */
+  public async createTestSparkFile(options?: {
+    title?: string;
+    summary?: string;
+    content?: string;
+    tags?: string[];
+  }): Promise<{ filePath: string; fileName: string }> {
+    this.ensureDirectoryExists(this.watchedDir);
+    const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `spark-demo-${dateStr}.md`;
+    const filePath = path.join(this.watchedDir, fileName);
+
+    const title = options?.title || `Gemini Spark: Инсайт от ${new Date().toLocaleDateString('ru-RU')}`;
+    const summary = options?.summary || 'Тестовый инсайт Gemini Spark для проверки конвейера обработки заметок.';
+    const tags = options?.tags || ['gemini-spark', 'auto-ingest', 'test'];
+
+    const mdContent = `---
+title: "${title}"
+start_date: "${new Date().toISOString()}"
+type: "SINGLE"
+tags:
+${tags.map((t) => `  - ${t}`).join('\n')}
+icon: "⚡"
+summary: "${summary}"
+---
+
+# ${title}
+
+${options?.content || 'Автоматически сгенерированный тестовый файл для проверки конвейера **DriveWatcher** и сохранения в базу данных Calendarium.'}
+
+- Время генерации: \`${new Date().toISOString()}\`
+- Источник: \`${fileName}\`
+`;
+
+    await fs.promises.writeFile(filePath, mdContent, 'utf-8');
+    this.logger.log(`📝 Создан тестовый файл Spark: ${filePath}`);
+    return { filePath, fileName };
+  }
+
   private ensureDirectoryExists(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
@@ -232,3 +289,4 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
     }
   }
 }
+

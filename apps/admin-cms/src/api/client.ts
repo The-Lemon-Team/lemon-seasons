@@ -26,6 +26,7 @@ import {
   StartSessionInput,
   CommitSessionInput,
   GDriveSyncResult,
+  IngestionFile,
 } from '../types';
 
 
@@ -430,9 +431,43 @@ export interface ImportNoteDto {
   trailerUrl?: string;
 }
 
+export interface WatcherStatus {
+  isWatching: boolean;
+  watchedDir: string;
+  filesProcessed: number;
+  filesPending: number;
+  filesFailed: number;
+}
+
 export const ingestionApi = {
   getStatus: async (): Promise<IngestionStatus> => {
     const res = await apiClient.get<IngestionStatus>('/ingestion/status');
+    return res.data;
+  },
+  getWatcherStatus: async (): Promise<WatcherStatus> => {
+    const res = await apiClient.get<WatcherStatus>('/ingestion/watcher/status');
+    return res.data;
+  },
+  getIngestedFiles: async (status?: string, limit = 50): Promise<IngestionFile[]> => {
+    const res = await apiClient.get<IngestionFile[]>('/ingestion/watcher/files', {
+      params: { status, limit },
+    });
+    return res.data;
+  },
+  triggerWatcherScan: async (): Promise<{ scanned: number }> => {
+    const res = await apiClient.post<{ scanned: number }>('/ingestion/watcher/scan');
+    return res.data;
+  },
+  createTestSpark: async (data?: {
+    title?: string;
+    summary?: string;
+    content?: string;
+    tags?: string[];
+  }): Promise<{ filePath: string; fileName: string }> => {
+    const res = await apiClient.post<{ filePath: string; fileName: string }>(
+      '/ingestion/watcher/test-spark',
+      data,
+    );
     return res.data;
   },
   syncAll: async (): Promise<{ success: boolean; results: IngestionResult[] }> => {
@@ -468,6 +503,7 @@ export const ingestionApi = {
     return res.data;
   },
 };
+
 
 export const statsApi = {
   getStats: async (): Promise<SystemStats> => {

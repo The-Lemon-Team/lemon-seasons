@@ -13,6 +13,8 @@ import {
   Modal,
 } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
+import { useSearchParams } from 'react-router-dom';
+import { SparksIngestionTab } from './components/SparksIngestionTab';
 import { NoteType } from '@lenta/shared';
 import {
   ingestionApi,
@@ -29,6 +31,8 @@ const { TextArea } = Input;
 
 export const GeneratorLabPage: React.FC = () => {
   const { t } = useAdminI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'sparks';
   const { data: feeds = [] } = useFeeds();
 
   // Status & Provider info
@@ -350,9 +354,23 @@ export const GeneratorLabPage: React.FC = () => {
       {/* Main Tabs Container */}
       <div className="bg-surface-container rounded-xl border border-white/5 p-6 shadow-md">
         <Tabs
-          defaultActiveKey="gemini"
+          activeKey={activeTab}
+          onChange={(key) => setSearchParams({ tab: key })}
           tabBarStyle={{ marginBottom: 24 }}
           items={[
+            // TAB 0: Gemini Sparks & Google Drive Ingestion Hub
+            {
+              key: 'sparks',
+              label: (
+                <span className="flex items-center gap-2 font-semibold text-sm">
+                  <span className="material-symbols-outlined text-[18px] text-cyan-400">
+                    cloud_sync
+                  </span>
+                  Файлы Gemini Sparks & Drive
+                </span>
+              ),
+              children: <SparksIngestionTab />,
+            },
             // TAB 1: Gemini AI Studio
             {
               key: 'gemini',

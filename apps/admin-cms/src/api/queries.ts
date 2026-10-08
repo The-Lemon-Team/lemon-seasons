@@ -9,6 +9,7 @@ import {
   statsApi,
   curationApi,
   chatsApi,
+  ingestionApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -889,5 +890,51 @@ export function useGenerateThreadPodcast() {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Ingestion Watcher Hooks (Sparks & Google Drive)
+// ---------------------------------------------------------------------------
+
+export function useWatcherStatus(refetchInterval = 4000) {
+  return useQuery({
+    queryKey: ['ingestion-watcher-status'],
+    queryFn: () => ingestionApi.getWatcherStatus(),
+    refetchInterval,
+  });
+}
+
+export function useIngestedFiles(status?: string, limit = 50, refetchInterval = 4000) {
+  return useQuery({
+    queryKey: ['ingestion-files', { status, limit }],
+    queryFn: () => ingestionApi.getIngestedFiles(status, limit),
+    refetchInterval,
+  });
+}
+
+export function useTriggerWatcherScan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => ingestionApi.triggerWatcherScan(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingestion-watcher-status'] });
+      queryClient.invalidateQueries({ queryKey: ['ingestion-files'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function useCreateTestSpark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data?: { title?: string; summary?: string; content?: string; tags?: string[] }) =>
+      ingestionApi.createTestSpark(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingestion-watcher-status'] });
+      queryClient.invalidateQueries({ queryKey: ['ingestion-files'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
 
 

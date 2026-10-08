@@ -7,6 +7,7 @@ import {
   useFolders,
   useSyncChanges,
   useSystemStats,
+  useWatcherStatus,
 } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../components/HashtagBadge';
@@ -42,6 +43,7 @@ export const DashboardPage: React.FC = () => {
   const notes = notesData?.items || [];
   const totalNotes = notesData?.total || 0;
   const { data: stats } = useSystemStats();
+  const { data: watcherStatus } = useWatcherStatus(5000);
 
   return (
     <div className="space-y-6">
@@ -118,18 +120,24 @@ export const DashboardPage: React.FC = () => {
           <p className="text-xs text-outline mt-1 font-mono">{t.ltreeSub}</p>
         </div>
 
-        <div className="bg-surface-container rounded-lg border border-white/5 p-5">
+        <div
+          onClick={() => navigate('/generators?tab=sparks')}
+          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+        >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">{t.syncStateMetric}</span>
-            <Cloud className="w-5 h-5 text-[#bfecda]" />
+            <span className="font-mono text-xs uppercase tracking-wider">Файловый конвейер</span>
+            <Cloud className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-xl text-on-surface flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary" /> {t.activeStatus}
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                watcherStatus?.isWatching ? 'bg-primary animate-pulse' : 'bg-rose-400'
+              }`}
+            />
+            {watcherStatus?.isWatching ? t.activeStatus : 'Остановлен'}
           </div>
           <p className="text-xs text-outline mt-1 font-mono">
-            {syncData?.syncedAt
-              ? `${t.updated} ${new Date(syncData.syncedAt).toLocaleTimeString()}`
-              : t.syncReady}
+            {watcherStatus ? `${watcherStatus.filesProcessed} готово • ${watcherStatus.filesPending} в очереди` : t.syncReady}
           </p>
         </div>
       </div>

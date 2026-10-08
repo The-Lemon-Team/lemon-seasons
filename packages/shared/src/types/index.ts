@@ -187,6 +187,13 @@ export interface IngestionFile {
   status: ProcessingStatus;
   errorMessage?: string | null;
   noteId?: string | null;
+  note?: {
+    id: string;
+    title: string;
+    type: NoteType;
+    startDate: string;
+    processingStatus?: ProcessingStatus | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }

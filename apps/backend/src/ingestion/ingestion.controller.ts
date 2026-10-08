@@ -235,4 +235,25 @@ export class IngestionController {
       },
     });
   }
+
+  @Post('watcher/scan')
+  @ApiOperation({ summary: 'Принудительно просканировать входящую директорию Sparks' })
+  async scanIncomingDirectory() {
+    return this.driveWatcher.scanDirectory();
+  }
+
+  @Post('watcher/test-spark')
+  @ApiOperation({ summary: 'Сгенерировать тестовый файл Gemini Spark для проверки конвейера' })
+  async createTestSpark(
+    @Body()
+    body?: {
+      title?: string;
+      summary?: string;
+      content?: string;
+      tags?: string[];
+    },
+  ) {
+    return this.driveWatcher.createTestSparkFile(body);
+  }
 }
+
