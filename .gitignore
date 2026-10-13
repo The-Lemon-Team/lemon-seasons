@@ -48,3 +48,4 @@ test-artifacts/
 
 packages/obsidian-containers/
 .turbo/
+test_*.png

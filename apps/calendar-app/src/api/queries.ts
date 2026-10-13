@@ -42,6 +42,7 @@ export const queryKeys = {
 export function useTimeSliceNotes(filter: TimeSliceFilter) {
   return useQuery({
     queryKey: queryKeys.timeSliceNotes(filter),
+    placeholderData: (previousData) => previousData,
     queryFn: async () => {
       const params: QueryNotesParams = {
         startDateFrom: filter.start,

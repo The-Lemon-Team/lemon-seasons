@@ -42,6 +42,15 @@ services:
     volumes:
       - backend_uploads:/app/apps/backend/uploads
 
+  feed-app:
+    build:
+      context: .
+      dockerfile: apps/feed-app/Dockerfile
+    container_name: lemon-calendarium-feed
+    restart: unless-stopped
+    ports:
+      - "5175:80"
+
   calendar-app:
     build:
       context: .
@@ -50,8 +59,6 @@ services:
     restart: unless-stopped
     ports:
       - "5174:80"
-    depends_on:
-      - backend
 
   admin-cms:
     build:
@@ -61,8 +68,21 @@ services:
     restart: unless-stopped
     ports:
       - "5173:80"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: lemon-calendarium-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      - backend
+      - feed-app
+      - calendar-app
+      - admin-cms
 
   container-sync-server:
     build:

@@ -104,7 +104,8 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
     const filePath = path.normalize(rawFilePath);
     const fileName = path.basename(filePath);
 
-    if (!fileName.toLowerCase().endsWith('.md')) {
+    const lowerName = fileName.toLowerCase();
+    if (!lowerName.endsWith('.md') || lowerName.includes('template') || fileName.startsWith('_') || lowerName.includes('config')) {
       return;
     }
 
@@ -157,25 +158,19 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
         size: stats.size,
       });
 
-      // Обеспечиваем фид по умолчанию для новостей из Google Drive / Sparks
-      let defaultFeed = await this.prisma.feed.findFirst({
-        where: { slug: 'gdrive-news' },
-      });
+      // Smart Feed Resolution:
+      // Map folder (spark/AI, spark/Habr, etc.) to dedicated thematic feeds
+      const targetFeed = await this.resolveFeedForFile(filePath, parsed.noteDto.metadata?.feedSlug);
+      parsed.noteDto.feedId = parsed.noteDto.feedId || targetFeed.id;
 
-      if (!defaultFeed) {
-        defaultFeed = await this.prisma.feed.findFirst();
-        if (!defaultFeed) {
-          defaultFeed = await this.prisma.feed.create({
-            data: {
-              title: 'Новости Google Drive',
-              slug: 'gdrive-news',
-              description: 'Автоматически импортированные новости и дайджесты из Google Drive',
-            },
-          });
-        }
+      // Assign folder taxonomy for Obsidian / folder navigation (e.g. "Spark/AI" or "Spark/Habr")
+      const relPath = path.relative(this.watchedDir, filePath);
+      const parts = relPath.split(path.sep);
+      if (parts.length > 1) {
+        parsed.noteDto.folders = [`Spark/${parts[0]}`];
+      } else {
+        parsed.noteDto.folders = ['Spark'];
       }
-
-      parsed.noteDto.feedId = parsed.noteDto.feedId || defaultFeed.id;
 
       let targetNoteId: string;
 
@@ -226,15 +221,98 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Manually trigger re-scan of the watched directory.
+   * Resolves or automatically provisions a thematic Feed based on subfolder (AI, Habr, etc.)
+   */
+  private async resolveFeedForFile(filePath: string, frontmatterFeed?: string) {
+    const rel = path.relative(this.watchedDir, filePath);
+    const relParts = rel.split(path.sep);
+    const subfolder = relParts.length > 1 ? relParts[0] : null;
+
+    let targetSlug = 'spark-general';
+    let targetTitle = 'Spark — Общая лента';
+    let targetDesc = 'Автоматически импортированные новости и дайджесты из Google Drive';
+
+    if (subfolder) {
+      const lowerFolder = subfolder.toLowerCase();
+      targetSlug = `spark-${lowerFolder.replace(/[^a-z0-9а-яё]/gi, '-')}`;
+      targetTitle = `${subfolder} (Spark)`;
+      targetDesc = `Тематическая новостная лента по категории ${subfolder} от Spark`;
+
+      const channelConfigPath = path.join(this.watchedDir, subfolder, '_channel.md');
+      if (fs.existsSync(channelConfigPath)) {
+        try {
+          const rawContent = fs.readFileSync(channelConfigPath, 'utf-8');
+          const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          if (fmMatch) {
+            const yamlLines = fmMatch[1].split(/\r?\n/);
+            for (const line of yamlLines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('title:')) {
+                targetTitle = trimmed.replace(/^title:\s*["']?/, '').replace(/["']?$/, '').trim() || targetTitle;
+              } else if (trimmed.startsWith('slug:')) {
+                targetSlug = trimmed.replace(/^slug:\s*["']?/, '').replace(/["']?$/, '').trim() || targetSlug;
+              } else if (trimmed.startsWith('description:')) {
+                targetDesc = trimmed.replace(/^description:\s*["']?/, '').replace(/["']?$/, '').trim() || targetDesc;
+              }
+            }
+          }
+        } catch (e: any) {
+          this.logger.warn(`Не удалось прочитать конфигурацию канала ${channelConfigPath}: ${e.message}`);
+        }
+      }
+    } else if (frontmatterFeed && frontmatterFeed !== 'news') {
+      targetSlug = `spark-${frontmatterFeed.toLowerCase()}`;
+      targetTitle = `Spark — ${frontmatterFeed}`;
+    }
+
+    let feed = await this.prisma.feed.findUnique({
+      where: { slug: targetSlug },
+    });
+
+    if (!feed) {
+      feed = await this.prisma.feed.create({
+        data: {
+          slug: targetSlug,
+          title: targetTitle,
+          description: targetDesc,
+        },
+      });
+      this.logger.log(`📢 Автоматически создана лента новостей: "${targetTitle}" [slug: ${targetSlug}]`);
+    }
+
+    return feed;
+  }
+
+  /**
+   * Recursively finds all .md files in the watched directory and all subdirectories.
+   */
+  private async findMarkdownFilesRecursive(dir: string): Promise<string[]> {
+    if (!fs.existsSync(dir)) return [];
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    const results: string[] = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.')) {
+          const subFiles = await this.findMarkdownFilesRecursive(fullPath);
+          results.push(...subFiles);
+        }
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
+        results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  /**
+   * Manually trigger re-scan of the watched directory and all nested topic folders.
    */
   public async scanDirectory(): Promise<{ scanned: number }> {
     this.ensureDirectoryExists(this.watchedDir);
-    const files = await fs.promises.readdir(this.watchedDir);
-    const mdFiles = files.filter((f) => f.toLowerCase().endsWith('.md'));
+    const mdFiles = await this.findMarkdownFilesRecursive(this.watchedDir);
 
-    for (const file of mdFiles) {
-      const fullPath = path.join(this.watchedDir, file);
+    for (const fullPath of mdFiles) {
       await this.handleFileEvent('ADD', fullPath);
     }
 

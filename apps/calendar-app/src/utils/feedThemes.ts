@@ -226,6 +226,34 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeConfig> = {
     emoji: '🌐',
     iconName: 'Globe',
   },
+  'spark-ai': {
+    slug: 'spark-ai',
+    title: 'AI & Нейросети (Spark)',
+    shortTitle: 'Spark AI',
+    tagline: 'Релизы LLM, Decision Models, агентные песочницы и прорывы',
+    category: 'engineering',
+    accentColor: '#a855f7', // Purple/Violet
+    gradient: 'from-purple-500/20 via-fuchsia-500/10 to-transparent',
+    borderAccent: '#9333ea',
+    bgLight: 'rgba(168, 85, 247, 0.12)',
+    badgeBg: 'rgba(168, 85, 247, 0.25)',
+    emoji: '🤖',
+    iconName: 'Sparkles',
+  },
+  'spark-habr': {
+    slug: 'spark-habr',
+    title: 'Хабр & IT (Spark)',
+    shortTitle: 'Spark Хабр',
+    tagline: 'Сводки сообщества Хабр, разработка, софт и инфраструктура',
+    category: 'engineering',
+    accentColor: '#06b6d4', // Cyan
+    gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
+    borderAccent: '#0891b2',
+    bgLight: 'rgba(6, 182, 212, 0.12)',
+    badgeBg: 'rgba(6, 182, 212, 0.25)',
+    emoji: '📰',
+    iconName: 'Newspaper',
+  },
 };
 
 // Curated dynamic palette for unmapped feeds
@@ -280,9 +308,29 @@ export const FEED_PRESET_OPTIONS: FeedPresetOption[] = [
     id: 'all',
     name: 'All Channels',
     emoji: '📡',
-    description: 'All news channels and editorial streams combined',
+    description: 'Все каналы и объединенные потоки новостей',
     slug: undefined,
   },
+  {
+    id: 'spark-ai',
+    name: 'Spark AI',
+    emoji: '🤖',
+    description: 'AI & Нейросети: релизы LLM, агентные вычисления и прорывы',
+    slug: 'spark-ai',
+  },
+  {
+    id: 'spark-habr',
+    name: 'Spark Хабр',
+    emoji: '💻',
+    description: 'Хабр & IT: архитектура ПО, разработка и статьи сообщества',
+    slug: 'spark-habr',
+  },
+];
+
+/**
+ * Legacy feed presets preserved for future migration with a revised concept.
+ */
+export const LEGACY_FEED_PRESETS: FeedPresetOption[] = [
   {
     id: 'mcu-radar',
     name: 'MCU Radar',
@@ -389,4 +437,5 @@ export const FEED_PRESET_OPTIONS: FeedPresetOption[] = [
     slug: 'politics-2026',
   },
 ];
+
 

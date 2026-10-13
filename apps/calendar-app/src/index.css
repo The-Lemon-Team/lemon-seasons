@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light dark;
   }
   
   body {
-    @apply bg-[#121414] text-[#e2e2e2] font-sans antialiased overflow-x-hidden;
+    @apply bg-[#f8fafc] text-slate-800 dark:bg-[#121414] dark:text-[#e2e2e2] font-sans antialiased overflow-x-hidden;
   }
 
   /* Custom Scrollbars */
@@ -17,14 +17,14 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #121414;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #333535;
+    background: rgba(140, 160, 180, 0.25);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #444747;
+    background: rgba(140, 160, 180, 0.45);
   }
 }
 

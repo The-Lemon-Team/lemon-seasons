@@ -7,6 +7,7 @@ export interface ParsedSparkResult {
   noteDto: CreateNoteDto;
   suggestedTags: string[];
   summary: string;
+  timeSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'ALL_DAY';
 }
 
 @Injectable()
@@ -30,7 +31,10 @@ export class SparksParserService {
     if (!title || title === 'Untitled Note') {
       // Try resolving title from filename stripping date prefix and extension
       const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
-      const cleanName = nameWithoutExt.replace(/^\d{4}-\d{2}-\d{2}\s*[-_]?\s*/, '').trim();
+      const cleanName = nameWithoutExt
+        .replace(/^\d{4}-\d{2}-\d{2}\s*[-_]?\s*/, '')
+        .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_]?\s*/, '')
+        .trim();
       title = cleanName || 'Gemini Spark Note';
     }
 
@@ -40,19 +44,67 @@ export class SparksParserService {
     // 3. Resolve Note Type
     const type = this.resolveNoteType(fm, title, startDate, endDate);
 
-    // 4. Resolve Tags & Hashtags
+    // 4. Resolve Time Slot (Утро / День / Вечер)
+    const timeSlot = this.resolveTimeSlot(title, fileName, startDate);
+
+    // 5. Resolve Tags & Hashtags (including time-slot and digest badges)
+    const slotTags: string[] = [];
+    if (timeSlot === 'MORNING') slotTags.push('утро');
+    if (timeSlot === 'AFTERNOON') slotTags.push('день');
+    if (timeSlot === 'EVENING') slotTags.push('вечер');
+    if (type === NoteType.PERIOD) slotTags.push('сводка', 'дайджест');
+
     const tags = Array.from(
       new Set([
         ...(parsedMd.hashtags || []),
         ...(Array.isArray(fm.tags) ? fm.tags : []),
+        ...slotTags,
         'gemini-spark',
       ]),
     ).filter(Boolean);
 
-    // 5. Resolve Summary (TL;DR)
+    // 6. Resolve Summary (TL;DR)
     const summary = this.extractSummary(fm, parsedMd.body);
 
-    // 6. Build CreateNoteDto
+    // 7. Resolve Resonance Score
+    const rawScore = fm.resonance_score ?? fm.resonanceScore;
+    const resonanceScore =
+      typeof rawScore === 'number'
+        ? rawScore
+        : typeof rawScore === 'string' && !isNaN(parseInt(rawScore, 10))
+        ? parseInt(rawScore, 10)
+        : undefined;
+
+    // 8. Resolve Links
+    const links = Array.isArray(fm.links)
+      ? fm.links
+          .filter((l: any) => l && typeof l.url === 'string' && l.url.trim().length > 0)
+          .map((l: any, idx: number) => ({
+            url: l.url.trim(),
+            title: l.title || '',
+            isSource: Boolean(l.is_source ?? l.isSource ?? (idx === 0)),
+            order: idx,
+          }))
+      : undefined;
+
+    const sourceLink =
+      links?.find((l: any) => l.isSource)?.url ||
+      (fm.source || fm.sourceLink || fm.url) as string | undefined;
+
+    // 9. Resolve Icon
+    const defaultIcon =
+      timeSlot === 'MORNING'
+        ? '🌅'
+        : timeSlot === 'EVENING'
+        ? '🌆'
+        : timeSlot === 'AFTERNOON'
+        ? '☀️'
+        : type === NoteType.PERIOD
+        ? '📰'
+        : '✨';
+    const icon = (fm.icon as string) || defaultIcon;
+
+    // 10. Build CreateNoteDto
     const noteDto: CreateNoteDto = {
       title,
       description: parsedMd.body,
@@ -61,16 +113,21 @@ export class SparksParserService {
       endDate: endDate ? endDate.toISOString() : undefined,
       sourceType: 'GOOGLE_DRIVE',
       externalId: filePath,
-      sourceLink: (fm.source || fm.sourceLink || fm.url) as string | undefined,
+      sourceLink,
       rawContent: fileContent,
       summary,
-      icon: (fm.icon as string) || '✨',
+      icon,
+      curator: (fm.curator as string) || 'auto',
+      resonanceScore,
       hashtags: tags,
+      links,
       processingStatus: 'COMPLETED',
       metadata: {
         generator: 'gemini-spark',
         fileName,
         filePath,
+        timeSlot,
+        feedSlug: fm.feed || undefined,
         fileSize: fileStats?.size,
         fileMtime: fileStats?.mtime?.toISOString(),
         ingestedAt: new Date().toISOString(),
@@ -81,6 +138,7 @@ export class SparksParserService {
       noteDto,
       suggestedTags: tags,
       summary,
+      timeSlot,
     };
   }
 
@@ -105,7 +163,20 @@ export class SparksParserService {
       if (!isNaN(parsed.getTime())) end = parsed;
     }
 
-    // Check date pattern in filename: YYYY-MM-DD
+    // Check Russian date pattern in filename: DD.MM.YY or DD.MM.YYYY
+    if (!start) {
+      const ruDateMatch = fileName.match(/(\d{2})\.(\d{2})\.(\d{2,4})/);
+      if (ruDateMatch) {
+        const day = ruDateMatch[1];
+        const month = ruDateMatch[2];
+        let year = ruDateMatch[3];
+        if (year.length === 2) year = `20${year}`;
+        const parsed = new Date(`${year}-${month}-${day}T12:00:00.000Z`);
+        if (!isNaN(parsed.getTime())) start = parsed;
+      }
+    }
+
+    // Check ISO date pattern in filename: YYYY-MM-DD
     if (!start) {
       const dateMatch = fileName.match(/(\d{4})-(\d{2})-(\d{2})/);
       if (dateMatch) {
@@ -125,6 +196,30 @@ export class SparksParserService {
     };
   }
 
+  private resolveTimeSlot(
+    title: string,
+    fileName: string,
+    startDate: Date,
+  ): 'MORNING' | 'AFTERNOON' | 'EVENING' | 'ALL_DAY' {
+    const text = `${title} ${fileName}`.toLowerCase();
+    if (text.includes('утренн') || text.includes('10_00') || text.includes('10:00')) {
+      return 'MORNING';
+    }
+    if (text.includes('вечерн') || text.includes('18_00') || text.includes('18:00')) {
+      return 'EVENING';
+    }
+    if (text.includes('дневн') || text.includes('14_00') || text.includes('14:00') || text.includes('выпуск 1')) {
+      return 'AFTERNOON';
+    }
+
+    const hour = startDate.getUTCHours();
+    if (hour >= 5 && hour < 12) return 'MORNING';
+    if (hour >= 12 && hour < 17) return 'AFTERNOON';
+    if (hour >= 17) return 'EVENING';
+
+    return 'ALL_DAY';
+  }
+
   private resolveNoteType(
     fm: Record<string, any>,
     title: string,
@@ -140,6 +235,10 @@ export class SparksParserService {
     }
 
     const lower = title.toLowerCase();
+    if (lower.includes('дайджест') || lower.includes('сводный') || lower.includes('обзор')) {
+      return NoteType.PERIOD;
+    }
+
     if (lower.includes('митап') || lower.includes('конференция') || lower.includes('созвон')) {
       return NoteType.EVENT;
     }
@@ -156,17 +255,34 @@ export class SparksParserService {
       return fm.description.trim();
     }
 
-    // Extract first non-heading paragraph from Markdown body
+    // Try extracting content under dedicated summary sections (e.g. "## 📌 Суть события" or "## Суть")
+    const sectionMatch = body.match(/##\s*[^\n]*(?:Суть|Главное|Ключевое)[^\n]*\n+([\s\S]*?)(?=\n##|\n---|$)/i);
+    if (sectionMatch && sectionMatch[1].trim()) {
+      const cleanSection = sectionMatch[1]
+        .split(/\n\s*\n/)[0]
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // un-markdown links
+        .replace(/[#*`_>]/g, '')
+        .trim();
+      if (cleanSection.length > 0) {
+        return cleanSection.length > 280 ? `${cleanSection.slice(0, 277)}...` : cleanSection;
+      }
+    }
+
+    // Extract first meaningful non-heading, non-blockquote paragraph from Markdown body
     const paragraphs = body
       .split(/\n\s*\n/)
       .map((p) => p.trim())
-      .filter((p) => p.length > 0 && !p.startsWith('#') && !p.startsWith('---'));
+      .filter((p) => p.length > 0 && !p.startsWith('#') && !p.startsWith('---') && !p.startsWith('>'));
 
     if (paragraphs.length > 0) {
-      const first = paragraphs[0].replace(/[#*`_\[\]]/g, '').trim();
+      const first = paragraphs[0]
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/[#*`_\[\]]/g, '')
+        .trim();
       return first.length > 280 ? `${first.slice(0, 277)}...` : first;
     }
 
     return '';
   }
 }
+

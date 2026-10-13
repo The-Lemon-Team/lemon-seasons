@@ -111,6 +111,13 @@ export class CreateNoteDto {
   @IsOptional()
   parentNoteId?: string;
 
+  @ApiPropertyOptional({ description: 'Resonance score percentage (0-100)', example: 88 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  resonanceScore?: number;
+
   @ApiPropertyOptional({
     description: 'Array of TaxonomyNode IDs or Ltree paths to associate with this note',
     example: ['tech.frontend.react', 'uuid-node-id'],

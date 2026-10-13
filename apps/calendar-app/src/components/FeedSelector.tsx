@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useFeeds } from '../api/queries';
 import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
+import { resolveSparkFeeds } from '../utils/sparkFeeds';
 import { useI18n } from '../i18n';
 
 interface FeedSelectorProps {
@@ -83,6 +84,11 @@ export const FeedSelector: React.FC<FeedSelectorProps> = ({
     }
   }, [isOpen]);
 
+  // Dynamic mechanism: Resolve only Spark feeds (2 primary + dynamic folders)
+  const sparkFeeds = useMemo(() => {
+    return resolveSparkFeeds(allFeeds, notes);
+  }, [allFeeds, notes]);
+
   // Compute note counts per feed
   const feedCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -96,21 +102,21 @@ export const FeedSelector: React.FC<FeedSelectorProps> = ({
 
   // Filtered feeds by search query
   const filteredFeeds = useMemo(() => {
-    if (!searchQuery.trim()) return allFeeds;
+    if (!searchQuery.trim()) return sparkFeeds;
     const q = searchQuery.toLowerCase().trim();
-    return allFeeds.filter(
+    return sparkFeeds.filter(
       (f) =>
         f.title.toLowerCase().includes(q) ||
         f.slug.toLowerCase().includes(q) ||
         (f.description?.toLowerCase().includes(q))
     );
-  }, [allFeeds, searchQuery]);
+  }, [sparkFeeds, searchQuery]);
 
   const activeTheme = useMemo(() => {
     if (!activeFeedSlug) return null;
-    const feed = allFeeds.find((f) => f.slug === activeFeedSlug);
+    const feed = sparkFeeds.find((f) => f.slug === activeFeedSlug);
     return getFeedTheme(activeFeedSlug, feed?.title);
-  }, [activeFeedSlug, allFeeds]);
+  }, [activeFeedSlug, sparkFeeds]);
 
   // Handler for single feed selection
   const handleSelect = (slug?: string) => {

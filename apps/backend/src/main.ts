@@ -3,10 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import compression = require('compression');
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Enable HTTP response compression for JSON APIs & static assets
+  app.use(compression());
 
   // Static Assets Upload Serving
   app.useStaticAssets(join(process.cwd(), 'uploads'), {

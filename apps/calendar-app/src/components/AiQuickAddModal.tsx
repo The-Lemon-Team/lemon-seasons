@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles,
@@ -69,6 +69,21 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cards, setCards] = useState<ParsedNoteCard[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -191,8 +206,18 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#161818] border border-[#2b2e2e] rounded-xl shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#161818] border border-[#2b2e2e] rounded-xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-gradient-to-r from-purple-950/20 via-pink-950/10 to-transparent">
           <div className="flex items-center gap-3">

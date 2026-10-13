@@ -127,7 +127,7 @@ const CalendarAppInner: React.FC = () => {
         start: filters.start,
         end: filters.end,
         view: filters.view,
-        feed: filters.feed,
+        feed: undefined, // Cached full notes in memory: instant 0ms tab switches without network flickering
         search: filters.search,
         containers: [],
         tags: [],
@@ -180,7 +180,7 @@ const CalendarAppInner: React.FC = () => {
 
   // Tier 2 & 3: Logged In Members & Admins -> Full Workspace Application
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#121414] text-[#e2e2e2]">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f1f5f9] text-slate-800 dark:bg-[#121414] dark:text-[#e2e2e2] transition-colors">
       {/* 1. Left SideNavBar */}
       <SideNavBar
         currentView={filters.view}

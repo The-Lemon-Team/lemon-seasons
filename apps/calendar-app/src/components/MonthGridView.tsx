@@ -618,6 +618,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   const persona = getCuratorPersona(note.curator);
                   const curatorIcon = persona ? persona.emoji : note.curator ? '👤' : null;
 
+                  const feedTheme = note.feed ? getFeedTheme(note.feed.slug, note.feed.title) : null;
+                  const feedIcon = feedTheme ? feedTheme.emoji : null;
+
                   return (
                     <button
                       key={note.id}
@@ -631,16 +634,20 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                         color: typeColor.text,
                         borderColor: typeColor.border,
                       }}
-                      title={`${startHour} • ${note.title}${note.curator ? ` [${note.curator}]` : ''}`}
+                      title={`${startHour} • ${note.title}${note.curator ? ` [${note.curator}]` : ''}${feedTheme ? ` • [${feedTheme.shortTitle}]` : ''}`}
                     >
                       <span className="opacity-75 text-[9px] font-mono flex-shrink-0">
                         {startHour}
                       </span>
-                      {curatorIcon && (
+                      {feedIcon ? (
+                        <span className="text-[10px] shrink-0 leading-none" title={feedTheme?.title}>
+                          {feedIcon}
+                        </span>
+                      ) : curatorIcon ? (
                         <span className="text-[10px] shrink-0 leading-none">
                           {curatorIcon}
                         </span>
-                      )}
+                      ) : null}
                       <span className="truncate flex-1">{note.title}</span>
                     </button>
                   );

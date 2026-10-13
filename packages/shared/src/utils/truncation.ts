@@ -54,3 +54,72 @@ export function truncateMarkdown(
 
   return `${truncated}…`;
 }
+
+/**
+ * Strips duplicate title headers, frontmatter metadata blockquotes,
+ * horizontal rules, and boilerplate section headers from note markdown.
+ */
+export function cleanNoteMarkdown(
+  markdown?: string | null,
+  options?: { title?: string | null }
+): string {
+  if (!markdown) return '';
+
+  let text = markdown;
+
+  // 1. Remove YAML frontmatter if present
+  text = text.replace(/^---[\s\S]*?---\s*/m, '');
+
+  // 2. Strip leading heading if it duplicates or matches the note title
+  if (options?.title) {
+    const escaped = options.title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(`^#+\\s*${escaped}\\s*\\n*`, 'i'), '');
+  }
+  // Strip generic top-level # title if present
+  text = text.replace(/^#\s+[^\n]+\n+/, '');
+
+  // 3. Remove metadata blockquote lines (Источники, Тип записи, Резонанс, Оценка, Links, etc.)
+  text = text.replace(
+    /^>\s*\*\*(?:Источники|Тип записи|Индекс резонанса|Резонанс|Оценка|Куратор|Теги|Категория)[^*]*\*\*:[^\n]*\n?/gmi,
+    ''
+  );
+  // Also strip any standalone blockquote lines that just refer to frontmatter or technical metadata
+  text = text.replace(/^>\s*(?:см\.?\s*`?links`?|см\.?\s*frontmatter)[^\n]*\n?/gmi, '');
+
+  // 4. Remove horizontal rules
+  text = text.replace(/^---+\s*$/gm, '');
+
+  // 5. Remove leading section banners like "## 📌 Суть события" or "## Суть события"
+  text = text.replace(
+    /^##+\s*(?:[📌🔎🧭💡⚡✨]\s*)?(?:Суть(?:\s*события)?|Ключевые факты|Главное|Детали|Контекст)\s*$/gmi,
+    ''
+  );
+
+  return text.trim();
+}
+
+/**
+ * Extracts a clean, high-density snippet for cards and previews,
+ * prioritizing note.summary if available, or cleaning raw markdown.
+ */
+export function extractCleanSnippet(
+  markdown?: string | null,
+  maxLength = 220,
+  options?: {
+    summary?: string | null;
+    title?: string | null;
+  }
+): string {
+  // If clean summary is available and informative, use it directly
+  if (options?.summary && options.summary.trim().length > 10) {
+    const summaryTrimmed = options.summary.trim();
+    if (summaryTrimmed.length <= maxLength) return summaryTrimmed;
+    const truncated = summaryTrimmed.slice(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return lastSpace > maxLength * 0.7 ? `${truncated.slice(0, lastSpace)}…` : `${truncated}…`;
+  }
+
+  const cleaned = cleanNoteMarkdown(markdown, { title: options?.title });
+  return truncateMarkdown(cleaned, maxLength);
+}
+
