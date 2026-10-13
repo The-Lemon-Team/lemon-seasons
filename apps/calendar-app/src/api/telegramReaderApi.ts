@@ -54,7 +54,12 @@ export interface TelegramFeedPostsResponse {
   nextCursor?: string | null;
 }
 
-const DEFAULT_READER_BASE_URL = 'http://localhost:4000';
+const DEFAULT_READER_BASE_URL =
+  import.meta.env.VITE_TWR_API_URL !== undefined
+    ? import.meta.env.VITE_TWR_API_URL
+    : import.meta.env.PROD
+    ? ''
+    : 'http://localhost:4000';
 const DEFAULT_READER_KEY = 'twr_master_key_2026';
 
 export class TelegramReaderApi {
