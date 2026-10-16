@@ -1133,7 +1133,7 @@ export const FolderManagerView: React.FC = () => {
         initialFolderPath={createNoteFolderPath || selectedFolder?.path}
         onSuccess={() => {
           const folderName = selectedFolder?.name || createNoteFolderPath || 'Корневая папка';
-          const targetPath = createNoteFolderPath || selectedFolder?.path || '01_Daily_Logs';
+          const targetPath = createNoteFolderPath || selectedFolder?.path || 'Notes';
           addSessionChange({
             type: 'add',
             entityType: 'note',

@@ -1,6 +1,6 @@
 export interface ObsidianRouteInfo {
   containerId: string | null;
-  tab: 'files' | 'history' | 'folders' | 'settings';
+  tab: 'files' | 'history' | 'folders' | 'feeds' | 'settings';
   folderPath: string;
   filePath: string | null;
 }
@@ -15,6 +15,7 @@ export interface ObsidianRouteInfo {
  *   /obsidian/:containerId/files/:filePath (if last segment has an extension like .md)
  *   /obsidian/:containerId/history
  *   /obsidian/:containerId/folders
+ *   /obsidian/:containerId/feeds
  *   /obsidian/:containerId/settings
  */
 export function parseObsidianRoute(pathname: string = window.location.pathname): ObsidianRouteInfo {
@@ -43,10 +44,15 @@ export function parseObsidianRoute(pathname: string = window.location.pathname):
     }
 
     const tabCandidate = parts[2] || 'files';
-    let tab: 'files' | 'history' | 'folders' | 'settings' = 'files';
+    let tab: 'files' | 'history' | 'folders' | 'feeds' | 'settings' = 'files';
     let subparts: string[] = [];
 
-    if (tabCandidate === 'history' || tabCandidate === 'folders' || tabCandidate === 'settings') {
+    if (
+      tabCandidate === 'history' ||
+      tabCandidate === 'folders' ||
+      tabCandidate === 'feeds' ||
+      tabCandidate === 'settings'
+    ) {
       tab = tabCandidate;
       subparts = parts.slice(3);
     } else if (tabCandidate === 'files') {
@@ -88,7 +94,7 @@ export function buildObsidianUrl({
   filePath = null,
 }: {
   containerId?: string | null;
-  tab?: 'files' | 'history' | 'folders' | 'settings';
+  tab?: 'files' | 'history' | 'folders' | 'feeds' | 'settings';
   folderPath?: string;
   filePath?: string | null;
 }): string {
@@ -121,7 +127,7 @@ export function buildObsidianUrl({
  */
 export function navigateObsidian(params: {
   containerId?: string | null;
-  tab?: 'files' | 'history' | 'folders' | 'settings';
+  tab?: 'files' | 'history' | 'folders' | 'feeds' | 'settings';
   folderPath?: string;
   filePath?: string | null;
   replace?: boolean;

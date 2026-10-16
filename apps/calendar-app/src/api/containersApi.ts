@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ContainerConfig } from '@lenta/shared';
 
 const CONTAINERS_API_URL = import.meta.env.VITE_CONTAINERS_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -22,6 +23,7 @@ export interface ContainerSummaryDto {
   totalSizeBytes?: number;
   lastModified?: string;
   visibility?: 'private' | 'public';
+  config?: ContainerConfig | Record<string, any> | null;
 }
 
 export interface RegisterContainerRequestDto {
@@ -167,6 +169,41 @@ export const containersApi = {
   getContainerCommits: async (id: string, limit = 50): Promise<CommitSummaryDto[]> => {
     const res = await containersApiClient.get<CommitSummaryDto[]>(`/containers/${id}/commits`, {
       params: { limit },
+    });
+    return res.data;
+  },
+
+  // Container Configuration & Feed Projection
+  getContainerConfig: async (id: string): Promise<ContainerConfig | null> => {
+    try {
+      const res = await containersApiClient.get<{ success: boolean; config: ContainerConfig | null }>(
+        `/containers/${id}/config`
+      );
+      return res.data.config;
+    } catch {
+      return null;
+    }
+  },
+
+  updateContainerConfig: async (
+    id: string,
+    config: ContainerConfig
+  ): Promise<{ success: boolean; config: ContainerConfig }> => {
+    const res = await containersApiClient.put<{ success: boolean; config: ContainerConfig }>(
+      `/containers/${id}/config`,
+      { config }
+    );
+    return res.data;
+  },
+
+  // Trigger container sync via Command Bus
+  syncContainerViaBus: async (containerId: string, sourceType?: string): Promise<any> => {
+    const res = await containersApiClient.post('/bus/execute', {
+      type: 'UPDATE_CONTAINER',
+      payload: {
+        containerId,
+        sourceType,
+      },
     });
     return res.data;
   },

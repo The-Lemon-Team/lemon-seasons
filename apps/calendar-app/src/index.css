@@ -8,7 +8,7 @@
   }
   
   body {
-    @apply bg-[#f8fafc] text-slate-800 dark:bg-[#121414] dark:text-[#e2e2e2] font-sans antialiased overflow-x-hidden;
+    @apply bg-[#121414] text-[#e2e2e2] font-sans antialiased overflow-x-hidden;
   }
 
   /* Custom Scrollbars */

@@ -11,6 +11,7 @@ import {
 } from '../../api/queries';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../components/HashtagBadge';
+import { NoteDetailModal } from '../../components/NoteDetailModal';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -30,6 +31,7 @@ export const DashboardPage: React.FC = () => {
   const { t } = useAdminI18n();
   const navigate = useNavigate();
   const [sinceTime, setSinceTime] = useState<string>('');
+  const [viewingNoteId, setViewingNoteId] = useState<string | null>(null);
 
   const { data: feeds = [] } = useFeeds();
   const { data: notesData } = useNotes({ limit: 6 });
@@ -222,7 +224,7 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={note.id}
-                    onClick={() => navigate(`/notes/${note.id}`)}
+                    onClick={() => setViewingNoteId(note.id)}
                     className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-4">
@@ -330,6 +332,17 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Quick View / Detail Modal */}
+      <NoteDetailModal
+        noteId={viewingNoteId}
+        open={Boolean(viewingNoteId)}
+        onClose={() => setViewingNoteId(null)}
+        onEdit={(id) => navigate(`/notes/${id}`)}
+        onSelectFolder={(folderPath) => navigate(`/notes?folder=${encodeURIComponent(folderPath)}`)}
+        onSelectTag={(path) => navigate(`/notes?tagPath=${encodeURIComponent(path)}`)}
+        onSelectHashtag={(name) => navigate(`/notes?hashtag=${encodeURIComponent(name)}`)}
+      />
     </div>
   );
 };

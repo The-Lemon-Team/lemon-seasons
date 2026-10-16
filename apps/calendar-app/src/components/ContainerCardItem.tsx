@@ -217,37 +217,6 @@ export const ContainerCardItem: React.FC<ContainerCardItemProps> = ({
           onClick={(e) => e.stopPropagation()}
           className="mt-2 pt-3 border-t border-[#242828] space-y-3 animate-in fade-in duration-150 text-xs cursor-default"
         >
-          {/* Unpushed Local Changes Section */}
-          <div className="p-3 rounded-lg bg-[#121414] border border-[#242828] space-y-2">
-            <div className="flex items-center justify-between font-mono text-[11px] font-bold text-[#e5e971]">
-              <span className="flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-[#c9cd58]" />
-                <span>Локальные несинхронизированные изменения (Unpushed)</span>
-              </span>
-              <span className="px-2 py-0.5 rounded bg-[#c9cd58]/15 text-[#e5e971] border border-[#c9cd58]/30 text-[10px]">
-                {pendingChangesCount > 0
-                  ? `${pendingChangesCount} файла в очереди`
-                  : 'Все изменения запушены'}
-              </span>
-            </div>
-
-            {pendingChangesCount > 0 ? (
-              <div className="space-y-1 font-mono text-[11px]">
-                <div className="flex items-center justify-between text-[#d8b4fe] bg-[#1a1726] p-2 rounded border border-[#a855f7]/30">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse" />
-                    <span>● Изменено: Note Q4 Content Strategy Review.md</span>
-                  </span>
-                  <span className="text-[10px] text-[#93927e]">не запушено</span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-[11px] font-mono text-[#93927e]">
-                ✓ Нет локальных изменений, ожидающих отправки на сервер.
-              </p>
-            )}
-          </div>
-
           {/* Compact Note ChangeLog Stream */}
           <ContainerChangeLogStream
             container={container}

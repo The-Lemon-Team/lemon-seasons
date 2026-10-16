@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemon_secret}
       POSTGRES_DB: ${POSTGRES_DB:-lemon_calendarium}
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "${POSTGRES_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,6 +29,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public
       PORT: 3001
       NODE_ENV: production
+      SPARKS_INCOMING_DIR: /app/sparks
     ports:
       - "3001:3001"
     depends_on:
@@ -41,6 +42,7 @@ services:
       retries: 3
     volumes:
       - backend_uploads:/app/apps/backend/uploads
+      - "${SPARKS_HOST_DIR:-C:/Users/Ilege/Мой диск/spark}:/app/sparks"
 
   feed-app:
     build:
@@ -61,6 +63,8 @@ services:
     restart: unless-stopped
     ports:
       - "5174:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   admin-cms:
     build:

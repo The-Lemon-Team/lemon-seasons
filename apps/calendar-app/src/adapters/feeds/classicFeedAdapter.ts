@@ -7,7 +7,7 @@ import {
 } from './types';
 import { getThematicCategoryBadge } from '../../utils/sparkFeeds';
 
-export const CLASSIC_FEED_PRESETS: Array<{
+export interface ClassicFeedPreset {
   slug: string;
   title: string;
   shortTitle: string;
@@ -19,97 +19,51 @@ export const CLASSIC_FEED_PRESETS: Array<{
   badgeBgDark: string;
   badgeTextDark: string;
   description: string;
-}> = [
+  matchingSlugs: string[];
+}
+
+export const CLASSIC_FEED_PRESETS: ClassicFeedPreset[] = [
   {
-    slug: 'russian-official',
-    title: 'Русские государственные праздники',
-    shortTitle: 'Госпраздники РФ',
+    slug: 'russian-holidays',
+    title: 'Российские праздники',
+    shortTitle: 'Российские праздники',
     emoji: '🇷🇺',
-    category: 'Праздники РФ',
+    category: 'Российские праздники',
     accentColor: '#ef4444',
     badgeBgLight: 'rgba(239, 68, 68, 0.1)',
     badgeTextLight: '#b91c1c',
     badgeBgDark: 'rgba(239, 68, 68, 0.25)',
     badgeTextDark: '#fca5a5',
-    description: 'Официальные нерабочие праздничные дни по ст. 112 ТК РФ и памятные даты России',
-  },
-  {
-    slug: 'russian-military',
-    title: 'Дни воинской славы России',
-    shortTitle: 'Воинская слава',
-    emoji: '🎖️',
-    category: 'Воинская слава',
-    accentColor: '#b45309',
-    badgeBgLight: 'rgba(180, 83, 9, 0.1)',
-    badgeTextLight: '#92400e',
-    badgeBgDark: 'rgba(180, 83, 9, 0.25)',
-    badgeTextDark: '#fcd34d',
-    description: 'Дни воинской славы и памятные даты России по 32-ФЗ, рода войск ВС РФ',
+    description: 'Официальные нерабочие праздничные дни по ТК РФ, памятные даты и Дни воинской славы России по 32-ФЗ',
+    matchingSlugs: ['russian-holidays', 'russian-official', 'russian-military'],
   },
   {
     slug: 'orthodox-holidays',
-    title: 'Православный календарь',
-    shortTitle: 'Православие',
+    title: 'Православные праздники',
+    shortTitle: 'Православные праздники',
     emoji: '☦️',
-    category: 'Православие',
+    category: 'Православные праздники',
     accentColor: '#f59e0b',
     badgeBgLight: 'rgba(245, 158, 11, 0.1)',
     badgeTextLight: '#b45309',
     badgeBgDark: 'rgba(245, 158, 11, 0.25)',
     badgeTextDark: '#fde68a',
     description: 'Двунадесятые праздники, Пасха Христова, посты и дни памяти святых',
+    matchingSlugs: ['orthodox-holidays', 'christian-holidays'],
   },
   {
-    slug: 'catholic-holidays',
-    title: 'Католический календарь',
-    shortTitle: 'Католицизм',
-    emoji: '✝️',
-    category: 'Католицизм',
-    accentColor: '#8b5cf6',
-    badgeBgLight: 'rgba(139, 92, 246, 0.1)',
-    badgeTextLight: '#6d28d9',
-    badgeBgDark: 'rgba(139, 92, 246, 0.25)',
-    badgeTextDark: '#c4b5fd',
-    description: 'Литургический год латинского обряда Римско-католической церкви',
-  },
-  {
-    slug: 'islamic-holidays',
-    title: 'Исламский календарь',
-    shortTitle: 'Ислам',
-    emoji: '☪️',
-    category: 'Ислам (Хиджра)',
-    accentColor: '#10b981',
-    badgeBgLight: 'rgba(16, 185, 129, 0.1)',
-    badgeTextLight: '#047857',
-    badgeBgDark: 'rgba(16, 185, 129, 0.25)',
-    badgeTextDark: '#6ee7b7',
-    description: 'Календарь Хиджры 1447–1448: Рамадан, Ураза-байрам, Курбан-байрам',
-  },
-  {
-    slug: 'world-religions',
-    title: 'Мировые религии: Ислам, Иудаизм, Буддизм',
-    shortTitle: 'Религии мира',
-    emoji: '🕊️',
-    category: 'Межконфессиональный',
-    accentColor: '#06b6d4',
-    badgeBgLight: 'rgba(6, 182, 212, 0.1)',
-    badgeTextLight: '#0e7490',
-    badgeBgDark: 'rgba(6, 182, 212, 0.25)',
-    badgeTextDark: '#67e8f9',
-    description: 'Священные даты мировых духовных традиций: Ислам, Иудаизм, Буддизм',
-  },
-  {
-    slug: 'world-holidays',
-    title: 'Праздники стран мира',
-    shortTitle: 'Страны мира',
-    emoji: '🌍',
-    category: 'Мировые праздники',
-    accentColor: '#3b82f6',
-    badgeBgLight: 'rgba(59, 130, 246, 0.1)',
-    badgeTextLight: '#1d4ed8',
-    badgeBgDark: 'rgba(59, 130, 246, 0.25)',
-    badgeTextDark: '#93c5fd',
-    description: 'Знаменитые национальные и культурные праздники стран мира',
+    slug: 'wiki',
+    title: 'Этот день в истории (Wiki)',
+    shortTitle: 'Wiki история',
+    emoji: '📖',
+    category: 'Wiki история',
+    accentColor: '#0ea5e9',
+    badgeBgLight: 'rgba(14, 165, 233, 0.1)',
+    badgeTextLight: '#0284c7',
+    badgeBgDark: 'rgba(14, 165, 233, 0.25)',
+    badgeTextDark: '#7dd3fc',
+    description: 'Сводка исторических событий, открытий и памятных вех текущего дня из свободной энциклопедии Wikipedia',
+    matchingSlugs: ['wiki', 'wiki-history', 'wikipedia'],
   },
   {
     slug: 'mcu-radar',
@@ -123,6 +77,7 @@ export const CLASSIC_FEED_PRESETS: Array<{
     badgeBgDark: 'rgba(236, 72, 153, 0.25)',
     badgeTextDark: '#f472b6',
     description: 'Радар релизов Фаз 5 и 6 и хронология Саги Мультивселенной',
+    matchingSlugs: ['mcu-radar'],
   },
   {
     slug: 'politics-2026',
@@ -136,34 +91,49 @@ export const CLASSIC_FEED_PRESETS: Array<{
     badgeBgDark: 'rgba(100, 116, 139, 0.25)',
     badgeTextDark: '#cbd5e1',
     description: 'Международные саммиты, выборы, парламентские сессии 2026 года',
+    matchingSlugs: ['politics-2026'],
   },
 ];
 
-const CLASSIC_SLUGS = new Set(CLASSIC_FEED_PRESETS.map((p) => p.slug));
+export function getPresetForSlug(feedSlug?: string | null): ClassicFeedPreset | undefined {
+  if (!feedSlug) return undefined;
+  return CLASSIC_FEED_PRESETS.find(
+    (p) => p.slug === feedSlug || p.matchingSlugs.includes(feedSlug)
+  );
+}
+
+export function isClassicSlug(feedSlug?: string | null): boolean {
+  return Boolean(getPresetForSlug(feedSlug));
+}
 
 export const ClassicFeedAdapter: FeedAdapter = {
   sourceType: 'classic',
   label: 'Classic Календари',
   shortLabel: 'Classic',
   emoji: '🏛️',
-  description: 'Государственные и религиозные праздники, мировые события и радары',
+  description: 'Российские и православные праздники, историческая хроника Wiki, мировые события и радары',
 
   getTabs(context: FeedAdapterContext): UnifiedFeedTab[] {
-    const countsBySlug: Record<string, number> = {};
+    const countsByPreset: Record<string, number> = {};
     for (const n of context.notes) {
-      if (n.feed?.slug && CLASSIC_SLUGS.has(n.feed.slug)) {
-        countsBySlug[n.feed.slug] = (countsBySlug[n.feed.slug] || 0) + 1;
+      const preset = getPresetForSlug(n.feed?.slug);
+      if (preset) {
+        countsByPreset[preset.slug] = (countsByPreset[preset.slug] || 0) + 1;
       }
     }
 
     return CLASSIC_FEED_PRESETS.map((preset) => {
-      const dbFeed = context.allFeeds.find((f) => f.slug === preset.slug);
-      const count = countsBySlug[preset.slug] ?? dbFeed?._count?.notes ?? 0;
+      const dbFeed = context.allFeeds.find((f) => preset.matchingSlugs.includes(f.slug));
+      const dbCount = context.allFeeds
+        .filter((f) => preset.matchingSlugs.includes(f.slug))
+        .reduce((sum, f) => sum + (f._count?.notes || 0), 0);
+
+      const count = countsByPreset[preset.slug] ?? dbCount;
 
       return {
         id: dbFeed?.id || preset.slug,
         slug: preset.slug,
-        title: dbFeed?.title || preset.title,
+        title: preset.title,
         shortTitle: preset.shortTitle,
         emoji: preset.emoji,
         category: preset.category,
@@ -179,15 +149,19 @@ export const ClassicFeedAdapter: FeedAdapter = {
   },
 
   adaptNotes(notes: Note[], activeFeedSlug?: string, searchQuery?: string): UnifiedFeedItem[] {
-    // 1. Strictly filter only Classic feed notes
-    let matched = notes.filter((n) => n.feed?.slug && CLASSIC_SLUGS.has(n.feed.slug));
+    const activePreset = getPresetForSlug(activeFeedSlug);
 
-    // 2. Specific feed filter
-    if (activeFeedSlug) {
-      matched = matched.filter((n) => n.feed?.slug === activeFeedSlug);
-    }
+    // 1. Strictly filter Classic feed notes
+    let matched = notes.filter((n) => {
+      const preset = getPresetForSlug(n.feed?.slug);
+      if (!preset) return false;
+      if (activePreset) {
+        return preset.slug === activePreset.slug;
+      }
+      return true;
+    });
 
-    // 3. Search query filter
+    // 2. Search query filter
     if (searchQuery && searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       matched = matched.filter((n) => {
@@ -199,12 +173,12 @@ export const ClassicFeedAdapter: FeedAdapter = {
       });
     }
 
-    // 4. Sort chronologically
+    // 3. Sort chronologically
     matched.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
-    // 5. Convert to UnifiedFeedItem
-    return matched.map((n) => {
-      const preset = CLASSIC_FEED_PRESETS.find((p) => p.slug === n.feed?.slug);
+    // 4. Convert to UnifiedFeedItem
+    const items: UnifiedFeedItem[] = matched.map((n) => {
+      const preset = getPresetForSlug(n.feed?.slug);
       const badge = preset
         ? { label: preset.category, emoji: preset.emoji, colorClass: `border-[${preset.accentColor}]/30 text-[${preset.accentColor}]` }
         : getThematicCategoryBadge(n.feed?.title || 'Classic');
@@ -212,9 +186,9 @@ export const ClassicFeedAdapter: FeedAdapter = {
       return {
         id: n.id,
         sourceType: 'classic',
-        feedSlug: n.feed?.slug || 'classic',
+        feedSlug: preset?.slug || n.feed?.slug || 'classic',
         channelTitle: preset?.title || n.feed?.title || 'Classic Feed',
-        channelHandle: n.feed?.slug || 'classic',
+        channelHandle: preset?.slug || n.feed?.slug || 'classic',
         avatarIcon: preset?.emoji || '📅',
         category: badge,
         title: n.title,
@@ -228,5 +202,7 @@ export const ClassicFeedAdapter: FeedAdapter = {
         rawPayload: n,
       };
     });
+
+    return items;
   },
 };

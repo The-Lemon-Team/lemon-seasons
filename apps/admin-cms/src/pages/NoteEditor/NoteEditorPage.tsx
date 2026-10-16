@@ -11,7 +11,6 @@ import {
 } from '../../api/queries';
 import { notesApi } from '../../api/client';
 import { NoteType, CreateNoteLinkInput, FolderInputItem } from '../../types';
-import { ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
@@ -322,27 +321,21 @@ export const NoteEditorPage: React.FC = () => {
             <NoteTypeSelect value={type} onChange={setType} />
           </div>
 
-          {/* Curator / Persona */}
+          {/* Curator / Source */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Куратор / Персона
+                Куратор / Источник
               </label>
-              {curator && <span className="text-[10px] font-mono text-primary">Активен</span>}
+              {curator && <span className="text-[10px] font-mono text-primary">{curator}</span>}
             </div>
-            <select
+            <input
+              type="text"
               value={curator}
               onChange={(e) => setCurator(e.target.value)}
+              placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
               className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-xs focus:border-primary outline-none"
-            >
-              <option value="">Без куратора</option>
-              {ACTIVE_CURATOR_PERSONAS_LIST.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.emoji} {p.name} ({p.role})
-                </option>
-              ))}
-              <option value="Пользователь">👤 Пользователь (Синтез / Done)</option>
-            </select>
+            />
           </div>
 
           {/* Start Date */}

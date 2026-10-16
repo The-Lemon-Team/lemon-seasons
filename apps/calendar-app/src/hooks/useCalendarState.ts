@@ -43,11 +43,11 @@ export function getPathForView(view: CalendarViewMode): string {
 
 export function getViewFromPath(pathname: string = window.location.pathname, viewQueryParam?: string | null): CalendarViewMode {
   const path = (pathname || '/').toLowerCase().replace(/\/+$/, '');
+  if (path.startsWith('/obsidian') || path === '/obsidian' || path.split('/').includes('obsidian')) return 'obsidian';
   if (path.endsWith('/calendar')) return 'month';
   if (path.endsWith('/gantt') || path.endsWith('/gantts') || path.endsWith('/gannts')) return 'gantt';
-  if (path.endsWith('/feeds')) return 'feeds';
-  if (path.endsWith('/folders')) return 'folders';
-  if (path.startsWith('/obsidian') || path === '/obsidian' || path.split('/').includes('obsidian')) return 'obsidian';
+  if (path.endsWith('/feeds') || path === '/feeds') return 'feeds';
+  if (path.endsWith('/folders') || path === '/folders') return 'folders';
 
   if (viewQueryParam) {
     if (

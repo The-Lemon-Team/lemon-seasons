@@ -157,7 +157,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#121414]">
       {/* Top Inline Quick Filter Toolbar */}
       {filterState && (
         <div className="bg-[#16191b] border-b border-[#242828] px-4 lg:px-8 py-2.5 flex items-center justify-between gap-3 flex-wrap text-xs font-mono flex-shrink-0">

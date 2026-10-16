@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Popconfirm, message } from 'antd';
 import {
@@ -14,14 +14,17 @@ import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { HashtagBadge } from '../../components/HashtagBadge';
 import { FolderExplorer } from '../../components/FolderExplorer';
+import { NoteDetailModal } from '../../components/NoteDetailModal';
 import { NoteType } from '../../types';
-import { CURATOR_PERSONAS_LIST, getCuratorPersona } from '@lenta/shared';
 import { useAdminI18n } from '../../i18n';
 
 export const NotesListPage: React.FC = () => {
   const { t } = useAdminI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Selected note for modal preview
+  const [viewingNoteId, setViewingNoteId] = useState<string | null>(null);
 
   // Query filters from URL params
   const feedId = searchParams.get('feedId') || undefined;
@@ -61,6 +64,16 @@ export const NotesListPage: React.FC = () => {
   // Query total count and unfiled count for explorer
   const { data: allNotesStats } = useNotes({ limit: 1 });
   const { data: unfiledNotesStats } = useNotes({ unfiled: true, limit: 1 });
+
+  // Dynamic distinct list of creators/sources for filtering
+  const availableCurators = useMemo(() => {
+    const set = new Set<string>();
+    if (curatorParam) set.add(curatorParam);
+    notesData?.items?.forEach((n) => {
+      if (n.curator?.trim()) set.add(n.curator.trim());
+    });
+    return Array.from(set).sort();
+  }, [notesData?.items, curatorParam]);
 
   const deleteNoteMutation = useDeleteNote();
   const restoreNoteMutation = useRestoreNote();
@@ -306,19 +319,18 @@ export const NotesListPage: React.FC = () => {
                 ))}
               </select>
 
-              {/* Curator Filter Dropdown */}
+              {/* Curator / Source Filter Dropdown */}
               <select
                 value={curatorParam || ''}
                 onChange={(e) => handleFilterChange('curator', e.target.value || undefined)}
                 className="bg-surface-container border border-sky-500/30 text-sky-300 font-mono rounded px-2.5 py-1 text-xs focus:border-primary outline-none"
               >
-                <option value="" className="text-on-surface">Все кураторы</option>
-                {CURATOR_PERSONAS_LIST.map((p) => (
-                  <option key={p.id} value={p.name} className="text-on-surface">
-                    {p.emoji} {p.name}
+                <option value="" className="text-on-surface">Все авторы / кураторы</option>
+                {availableCurators.map((name) => (
+                  <option key={name} value={name} className="text-on-surface">
+                    👤 {name}
                   </option>
                 ))}
-                <option value="Пользователь" className="text-on-surface">👤 Пользователь (Синтез)</option>
               </select>
 
               {/* Taxonomy Filter */}
@@ -413,7 +425,7 @@ export const NotesListPage: React.FC = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       {thumbUrl && (
                         <div
-                          onClick={() => navigate(`/notes/${note.id}`)}
+                          onClick={() => setViewingNoteId(note.id)}
                           className="relative w-11 h-11 flex-shrink-0 rounded-md overflow-hidden bg-black/40 border border-white/10 cursor-pointer group-hover:border-primary/50 transition-all shadow-sm"
                         >
                           <img
@@ -431,7 +443,7 @@ export const NotesListPage: React.FC = () => {
                       )}
                       <div className="min-w-0">
                         <div
-                          onClick={() => navigate(`/notes/${note.id}`)}
+                          onClick={() => setViewingNoteId(note.id)}
                           className="font-sans font-semibold text-sm text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
                         >
                           {note.title}
@@ -444,7 +456,7 @@ export const NotesListPage: React.FC = () => {
                           )}
                           {note.curator && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
-                              <span>{getCuratorPersona(note.curator)?.emoji || '👤'}</span>
+                              <span>👤</span>
                               <span>{note.curator}</span>
                             </span>
                           )}
@@ -565,6 +577,13 @@ export const NotesListPage: React.FC = () => {
                       {!isDeleted ? (
                         <>
                           <button
+                            onClick={() => setViewingNoteId(note.id)}
+                            className="p-1 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-white/5"
+                            title={t.quickPreview}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
+                          </button>
+                          <button
                             onClick={() => navigate(`/notes/${note.id}`)}
                             className="p-1 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-white/5"
                             title={t.edit}
@@ -644,6 +663,17 @@ export const NotesListPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Quick View / Detail Modal */}
+      <NoteDetailModal
+        noteId={viewingNoteId}
+        open={Boolean(viewingNoteId)}
+        onClose={() => setViewingNoteId(null)}
+        onEdit={(id) => navigate(`/notes/${id}`)}
+        onSelectFolder={(folderPath) => handleSelectFolder(folderPath)}
+        onSelectTag={(path) => handleFilterChange('tagPath', path)}
+        onSelectHashtag={(name) => handleFilterChange('hashtag', name)}
+      />
     </div>
   );
 };

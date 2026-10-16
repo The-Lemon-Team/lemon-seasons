@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Plus,
-  MessageSquare,
-  Newspaper,
   Rss,
   FileText,
   FolderTree,
@@ -34,8 +32,6 @@ export const AppLayout: React.FC = () => {
   const { data: syncData, isFetching: isSyncing } = useSyncChanges();
 
   const getPageTitle = () => {
-    if (location.pathname.startsWith('/chat')) return 'Интеграция: Defi Local Hosted Chat';
-    if (location.pathname.startsWith('/news')) return t.allNotes;
     if (location.pathname.startsWith('/feeds')) return t.feeds;
     if (location.pathname.startsWith('/notes')) return t.allNotes;
     if (location.pathname.startsWith('/taxonomy')) return t.taxonomy;
@@ -159,20 +155,17 @@ export const AppLayout: React.FC = () => {
             <p className="px-3.5 mb-1 text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/50">
               Внешние сервисы
             </p>
-            <NavLink
-              to="/chat"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2 rounded text-sm transition-all duration-200 ${
-                  isActive
-                    ? 'text-cyan-400 font-medium bg-white/5'
-                    : 'text-on-surface-variant/80 font-normal hover:bg-white/5 hover:text-on-surface'
-                }`
-              }
+            <a
+              href="http://localhost:3000"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 px-3.5 py-2 rounded text-sm text-on-surface-variant/80 font-normal hover:bg-white/5 hover:text-on-surface transition-all duration-200 group"
+              title="Открыть Defi Chat (http://localhost:3000)"
             >
               <Bot className="w-4 h-4 text-cyan-400 shrink-0" />
               <span className="flex-1 truncate text-xs">Defi Chat</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">External</span>
-            </NavLink>
+              <ExternalLink className="w-3 h-3 text-on-surface-variant/50 group-hover:text-cyan-400 transition-colors shrink-0" />
+            </a>
           </div>
         </nav>
 
@@ -278,21 +271,9 @@ export const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Page Content Canvas (Scrollable for normal pages, fixed & non-expanding for chat) */}
-        <main
-          className={`flex-1 w-full ${
-            location.pathname.startsWith('/chat')
-              ? 'h-[calc(100vh-4rem)] overflow-hidden p-3 md:p-4 flex flex-col min-h-0'
-              : 'overflow-y-auto p-6 md:p-8'
-          }`}
-        >
-          <div
-            className={`mx-auto w-full ${
-              location.pathname.startsWith('/chat')
-                ? 'h-full flex-1 flex flex-col min-h-0 max-w-[1680px]'
-                : 'max-w-[1440px] pb-16'
-            }`}
-          >
+        {/* Page Content Canvas */}
+        <main className="flex-1 w-full overflow-y-auto p-6 md:p-8">
+          <div className="mx-auto w-full max-w-[1440px] pb-16">
             <ErrorBoundary fallbackTitle="Ошибка отображения страницы">
               <Outlet />
             </ErrorBoundary>

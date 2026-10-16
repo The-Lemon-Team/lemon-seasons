@@ -27,18 +27,14 @@ export const TelegramMediaGallery: React.FC<TelegramMediaGalleryProps> = ({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
 
-  if (!media || media.length === 0) {
-    return null;
-  }
-
   const handleMediaError = (url: string) => {
     setFailedUrls((prev) => new Set(prev).add(url));
   };
 
-  const photos = media.filter((m) => m.type === 'photo');
-  const videos = media.filter((m) => m.type === 'video');
-  const audios = media.filter((m) => m.type === 'audio' || m.type === 'voice');
-  const documents = media.filter((m) => m.type === 'document');
+  const photos = media ? media.filter((m) => m.type === 'photo') : [];
+  const videos = media ? media.filter((m) => m.type === 'video') : [];
+  const audios = media ? media.filter((m) => m.type === 'audio' || m.type === 'voice') : [];
+  const documents = media ? media.filter((m) => m.type === 'document') : [];
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -71,6 +67,10 @@ export const TelegramMediaGallery: React.FC<TelegramMediaGalleryProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxIndex, handlePrev, handleNext]);
+
+  if (!media || media.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-2.5 my-2.5 w-full overflow-hidden">

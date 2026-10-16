@@ -29,393 +29,13 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/util.js
-var util, objectUtil, ZodParsedType, getParsedType;
-var init_util = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/util.js"() {
-    (function(util2) {
-      util2.assertEqual = (_) => {
-      };
-      function assertIs(_arg) {
-      }
-      util2.assertIs = assertIs;
-      function assertNever(_x) {
-        throw new Error();
-      }
-      util2.assertNever = assertNever;
-      util2.arrayToEnum = (items) => {
-        const obj = {};
-        for (const item of items) {
-          obj[item] = item;
-        }
-        return obj;
-      };
-      util2.getValidEnumValues = (obj) => {
-        const validKeys = util2.objectKeys(obj).filter((k) => typeof obj[obj[k]] !== "number");
-        const filtered = {};
-        for (const k of validKeys) {
-          filtered[k] = obj[k];
-        }
-        return util2.objectValues(filtered);
-      };
-      util2.objectValues = (obj) => {
-        return util2.objectKeys(obj).map(function(e) {
-          return obj[e];
-        });
-      };
-      util2.objectKeys = typeof Object.keys === "function" ? (obj) => Object.keys(obj) : (object) => {
-        const keys = [];
-        for (const key in object) {
-          if (Object.prototype.hasOwnProperty.call(object, key)) {
-            keys.push(key);
-          }
-        }
-        return keys;
-      };
-      util2.find = (arr, checker) => {
-        for (const item of arr) {
-          if (checker(item))
-            return item;
-        }
-        return void 0;
-      };
-      util2.isInteger = typeof Number.isInteger === "function" ? (val) => Number.isInteger(val) : (val) => typeof val === "number" && Number.isFinite(val) && Math.floor(val) === val;
-      function joinValues(array, separator = " | ") {
-        return array.map((val) => typeof val === "string" ? `'${val}'` : val).join(separator);
-      }
-      util2.joinValues = joinValues;
-      util2.jsonStringifyReplacer = (_, value) => {
-        if (typeof value === "bigint") {
-          return value.toString();
-        }
-        return value;
-      };
-    })(util || (util = {}));
-    (function(objectUtil2) {
-      objectUtil2.mergeShapes = (first, second) => {
-        return {
-          ...first,
-          ...second
-          // second overwrites first
-        };
-      };
-    })(objectUtil || (objectUtil = {}));
-    ZodParsedType = util.arrayToEnum([
-      "string",
-      "nan",
-      "number",
-      "integer",
-      "float",
-      "boolean",
-      "date",
-      "bigint",
-      "symbol",
-      "function",
-      "undefined",
-      "null",
-      "array",
-      "object",
-      "unknown",
-      "promise",
-      "void",
-      "never",
-      "map",
-      "set"
-    ]);
-    getParsedType = (data) => {
-      const t = typeof data;
-      switch (t) {
-        case "undefined":
-          return ZodParsedType.undefined;
-        case "string":
-          return ZodParsedType.string;
-        case "number":
-          return Number.isNaN(data) ? ZodParsedType.nan : ZodParsedType.number;
-        case "boolean":
-          return ZodParsedType.boolean;
-        case "function":
-          return ZodParsedType.function;
-        case "bigint":
-          return ZodParsedType.bigint;
-        case "symbol":
-          return ZodParsedType.symbol;
-        case "object":
-          if (Array.isArray(data)) {
-            return ZodParsedType.array;
-          }
-          if (data === null) {
-            return ZodParsedType.null;
-          }
-          if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
-            return ZodParsedType.promise;
-          }
-          if (typeof Map !== "undefined" && data instanceof Map) {
-            return ZodParsedType.map;
-          }
-          if (typeof Set !== "undefined" && data instanceof Set) {
-            return ZodParsedType.set;
-          }
-          if (typeof Date !== "undefined" && data instanceof Date) {
-            return ZodParsedType.date;
-          }
-          return ZodParsedType.object;
-        default:
-          return ZodParsedType.unknown;
-      }
-    };
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/ZodError.js
-var ZodIssueCode, quotelessJson, ZodError;
-var init_ZodError = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/ZodError.js"() {
-    init_util();
-    ZodIssueCode = util.arrayToEnum([
-      "invalid_type",
-      "invalid_literal",
-      "custom",
-      "invalid_union",
-      "invalid_union_discriminator",
-      "invalid_enum_value",
-      "unrecognized_keys",
-      "invalid_arguments",
-      "invalid_return_type",
-      "invalid_date",
-      "invalid_string",
-      "too_small",
-      "too_big",
-      "invalid_intersection_types",
-      "not_multiple_of",
-      "not_finite"
-    ]);
-    quotelessJson = (obj) => {
-      const json = JSON.stringify(obj, null, 2);
-      return json.replace(/"([^"]+)":/g, "$1:");
-    };
-    ZodError = class _ZodError extends Error {
-      get errors() {
-        return this.issues;
-      }
-      constructor(issues) {
-        super();
-        this.issues = [];
-        this.addIssue = (sub) => {
-          this.issues = [...this.issues, sub];
-        };
-        this.addIssues = (subs = []) => {
-          this.issues = [...this.issues, ...subs];
-        };
-        const actualProto = new.target.prototype;
-        if (Object.setPrototypeOf) {
-          Object.setPrototypeOf(this, actualProto);
-        } else {
-          this.__proto__ = actualProto;
-        }
-        this.name = "ZodError";
-        this.issues = issues;
-      }
-      format(_mapper) {
-        const mapper = _mapper || function(issue) {
-          return issue.message;
-        };
-        const fieldErrors = { _errors: [] };
-        const processError = (error) => {
-          for (const issue of error.issues) {
-            if (issue.code === "invalid_union") {
-              issue.unionErrors.map(processError);
-            } else if (issue.code === "invalid_return_type") {
-              processError(issue.returnTypeError);
-            } else if (issue.code === "invalid_arguments") {
-              processError(issue.argumentsError);
-            } else if (issue.path.length === 0) {
-              fieldErrors._errors.push(mapper(issue));
-            } else {
-              let curr = fieldErrors;
-              let i = 0;
-              while (i < issue.path.length) {
-                const el = issue.path[i];
-                const terminal = i === issue.path.length - 1;
-                if (!terminal) {
-                  curr[el] = curr[el] || { _errors: [] };
-                } else {
-                  curr[el] = curr[el] || { _errors: [] };
-                  curr[el]._errors.push(mapper(issue));
-                }
-                curr = curr[el];
-                i++;
-              }
-            }
-          }
-        };
-        processError(this);
-        return fieldErrors;
-      }
-      static assert(value) {
-        if (!(value instanceof _ZodError)) {
-          throw new Error(`Not a ZodError: ${value}`);
-        }
-      }
-      toString() {
-        return this.message;
-      }
-      get message() {
-        return JSON.stringify(this.issues, util.jsonStringifyReplacer, 2);
-      }
-      get isEmpty() {
-        return this.issues.length === 0;
-      }
-      flatten(mapper = (issue) => issue.message) {
-        const fieldErrors = {};
-        const formErrors = [];
-        for (const sub of this.issues) {
-          if (sub.path.length > 0) {
-            const firstEl = sub.path[0];
-            fieldErrors[firstEl] = fieldErrors[firstEl] || [];
-            fieldErrors[firstEl].push(mapper(sub));
-          } else {
-            formErrors.push(mapper(sub));
-          }
-        }
-        return { formErrors, fieldErrors };
-      }
-      get formErrors() {
-        return this.flatten();
-      }
-    };
-    ZodError.create = (issues) => {
-      const error = new ZodError(issues);
-      return error;
-    };
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/locales/en.js
-var errorMap, en_default;
-var init_en = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/locales/en.js"() {
-    init_ZodError();
-    init_util();
-    errorMap = (issue, _ctx) => {
-      let message;
-      switch (issue.code) {
-        case ZodIssueCode.invalid_type:
-          if (issue.received === ZodParsedType.undefined) {
-            message = "Required";
-          } else {
-            message = `Expected ${issue.expected}, received ${issue.received}`;
-          }
-          break;
-        case ZodIssueCode.invalid_literal:
-          message = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
-          break;
-        case ZodIssueCode.unrecognized_keys:
-          message = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
-          break;
-        case ZodIssueCode.invalid_union:
-          message = `Invalid input`;
-          break;
-        case ZodIssueCode.invalid_union_discriminator:
-          message = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
-          break;
-        case ZodIssueCode.invalid_enum_value:
-          message = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
-          break;
-        case ZodIssueCode.invalid_arguments:
-          message = `Invalid function arguments`;
-          break;
-        case ZodIssueCode.invalid_return_type:
-          message = `Invalid function return type`;
-          break;
-        case ZodIssueCode.invalid_date:
-          message = `Invalid date`;
-          break;
-        case ZodIssueCode.invalid_string:
-          if (typeof issue.validation === "object") {
-            if ("includes" in issue.validation) {
-              message = `Invalid input: must include "${issue.validation.includes}"`;
-              if (typeof issue.validation.position === "number") {
-                message = `${message} at one or more positions greater than or equal to ${issue.validation.position}`;
-              }
-            } else if ("startsWith" in issue.validation) {
-              message = `Invalid input: must start with "${issue.validation.startsWith}"`;
-            } else if ("endsWith" in issue.validation) {
-              message = `Invalid input: must end with "${issue.validation.endsWith}"`;
-            } else {
-              util.assertNever(issue.validation);
-            }
-          } else if (issue.validation !== "regex") {
-            message = `Invalid ${issue.validation}`;
-          } else {
-            message = "Invalid";
-          }
-          break;
-        case ZodIssueCode.too_small:
-          if (issue.type === "array")
-            message = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
-          else if (issue.type === "string")
-            message = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
-          else if (issue.type === "number")
-            message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
-          else if (issue.type === "bigint")
-            message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
-          else if (issue.type === "date")
-            message = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
-          else
-            message = "Invalid input";
-          break;
-        case ZodIssueCode.too_big:
-          if (issue.type === "array")
-            message = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
-          else if (issue.type === "string")
-            message = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
-          else if (issue.type === "number")
-            message = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
-          else if (issue.type === "bigint")
-            message = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
-          else if (issue.type === "date")
-            message = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
-          else
-            message = "Invalid input";
-          break;
-        case ZodIssueCode.custom:
-          message = `Invalid input`;
-          break;
-        case ZodIssueCode.invalid_intersection_types:
-          message = `Intersection results could not be merged`;
-          break;
-        case ZodIssueCode.not_multiple_of:
-          message = `Number must be a multiple of ${issue.multipleOf}`;
-          break;
-        case ZodIssueCode.not_finite:
-          message = "Number must be finite";
-          break;
-        default:
-          message = _ctx.defaultError;
-          util.assertNever(issue);
-      }
-      return { message };
-    };
-    en_default = errorMap;
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/errors.js
+// ../shared/dist/index.mjs
 function setErrorMap(map) {
   overrideErrorMap = map;
 }
 function getErrorMap() {
   return overrideErrorMap;
 }
-var overrideErrorMap;
-var init_errors = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/errors.js"() {
-    init_en();
-    overrideErrorMap = en_default;
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/parseUtil.js
 function addIssueToContext(ctx, issueData) {
   const overrideMap = getErrorMap();
   const issue = makeIssue({
@@ -435,121 +55,6 @@ function addIssueToContext(ctx, issueData) {
   });
   ctx.common.issues.push(issue);
 }
-var makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync;
-var init_parseUtil = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/parseUtil.js"() {
-    init_errors();
-    init_en();
-    makeIssue = (params) => {
-      const { data, path, errorMaps, issueData } = params;
-      const fullPath = [...path, ...issueData.path || []];
-      const fullIssue = {
-        ...issueData,
-        path: fullPath
-      };
-      if (issueData.message !== void 0) {
-        return {
-          ...issueData,
-          path: fullPath,
-          message: issueData.message
-        };
-      }
-      let errorMessage = "";
-      const maps = errorMaps.filter((m) => !!m).slice().reverse();
-      for (const map of maps) {
-        errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
-      }
-      return {
-        ...issueData,
-        path: fullPath,
-        message: errorMessage
-      };
-    };
-    EMPTY_PATH = [];
-    ParseStatus = class _ParseStatus {
-      constructor() {
-        this.value = "valid";
-      }
-      dirty() {
-        if (this.value === "valid")
-          this.value = "dirty";
-      }
-      abort() {
-        if (this.value !== "aborted")
-          this.value = "aborted";
-      }
-      static mergeArray(status, results) {
-        const arrayValue = [];
-        for (const s of results) {
-          if (s.status === "aborted")
-            return INVALID;
-          if (s.status === "dirty")
-            status.dirty();
-          arrayValue.push(s.value);
-        }
-        return { status: status.value, value: arrayValue };
-      }
-      static async mergeObjectAsync(status, pairs) {
-        const syncPairs = [];
-        for (const pair of pairs) {
-          const key = await pair.key;
-          const value = await pair.value;
-          syncPairs.push({
-            key,
-            value
-          });
-        }
-        return _ParseStatus.mergeObjectSync(status, syncPairs);
-      }
-      static mergeObjectSync(status, pairs) {
-        const finalObject = {};
-        for (const pair of pairs) {
-          const { key, value } = pair;
-          if (key.status === "aborted")
-            return INVALID;
-          if (value.status === "aborted")
-            return INVALID;
-          if (key.status === "dirty")
-            status.dirty();
-          if (value.status === "dirty")
-            status.dirty();
-          if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
-            finalObject[key.value] = value.value;
-          }
-        }
-        return { status: status.value, value: finalObject };
-      }
-    };
-    INVALID = Object.freeze({
-      status: "aborted"
-    });
-    DIRTY = (value) => ({ status: "dirty", value });
-    OK = (value) => ({ status: "valid", value });
-    isAborted = (x) => x.status === "aborted";
-    isDirty = (x) => x.status === "dirty";
-    isValid = (x) => x.status === "valid";
-    isAsync = (x) => typeof Promise !== "undefined" && x instanceof Promise;
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/typeAliases.js
-var init_typeAliases = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/typeAliases.js"() {
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/errorUtil.js
-var errorUtil;
-var init_errorUtil = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/errorUtil.js"() {
-    (function(errorUtil2) {
-      errorUtil2.errToObj = (message) => typeof message === "string" ? { message } : message || {};
-      errorUtil2.toString = (message) => typeof message === "string" ? message : message?.message;
-    })(errorUtil || (errorUtil = {}));
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js
 function processCreateParams(params) {
   if (!params)
     return {};
@@ -741,14 +246,1163 @@ function custom(check, _params = {}, fatal) {
     });
   return ZodAny.create();
 }
-var ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER;
-var init_types = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js"() {
-    init_ZodError();
-    init_errors();
-    init_errorUtil();
-    init_parseUtil();
-    init_util();
+var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, ACTIVE_CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, WORKER_AGENTS, WORKER_AGENTS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var init_dist = __esm({
+  "../shared/dist/index.mjs"() {
+    "use strict";
+    __defProp2 = Object.defineProperty;
+    __export2 = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    NoteType = {
+      SINGLE: "SINGLE",
+      PERIOD: "PERIOD",
+      EVENT: "EVENT",
+      FILM_RELEASE: "FILM_RELEASE",
+      MENTION: "MENTION",
+      DONE: "DONE"
+    };
+    NOTE_TEMPLATE_TRENDS_TODAY = "trends_today";
+    NOTE_TEMPLATE_TREND_PERIOD = "trend_period";
+    NOTE_TEMPLATE_EVENT = "event";
+    NOTE_TEMPLATE_DONE = "done";
+    NOTE_TEMPLATE_POINT_NOTE = "point_note";
+    DEFAULT_NOTE_TEMPLATES = {
+      [NOTE_TEMPLATE_TRENDS_TODAY]: {
+        id: NOTE_TEMPLATE_TRENDS_TODAY,
+        name: "\u0422\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+        aliases: [
+          "\u0442\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+          "\u0442\u0440\u0435\u043D\u0434\u044B",
+          "\u0442\u0440\u0435\u043D\u0434 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+          "\u0442\u0440\u0435\u043D\u0434",
+          "trends today",
+          "trends",
+          "trend",
+          "/today",
+          "/trend",
+          "/tr",
+          "!\u0442\u0440\u0435\u043D\u0434\u044B",
+          "!\u0442\u0440\u0435\u043D\u0434",
+          "!today"
+        ],
+        defaultType: NoteType.SINGLE,
+        defaultDisplayType: "Trend",
+        defaultFolder: "Trends",
+        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
+        icon: "trending-up"
+      },
+      [NOTE_TEMPLATE_TREND_PERIOD]: {
+        id: NOTE_TEMPLATE_TREND_PERIOD,
+        name: "\u0422\u0440\u0435\u043D\u0434 \u041F\u0435\u0440\u0438\u043E\u0434",
+        aliases: [
+          "\u0442\u0440\u0435\u043D\u0434 \u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u0442\u0440\u0435\u043D\u0434-\u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u043F\u0435\u0440\u0438\u043E\u0434 \u0442\u0440\u0435\u043D\u0434\u0430",
+          "\u043F\u0435\u0440\u0438\u043E\u0434",
+          "\u043C\u0430\u0440\u0430\u0444\u043E\u043D",
+          "\u0441\u0435\u0437\u043E\u043D",
+          "trend period",
+          "trend-period",
+          "period",
+          "/period",
+          "/trp",
+          "!\u043F\u0435\u0440\u0438\u043E\u0434",
+          "!trend-period"
+        ],
+        defaultType: NoteType.PERIOD,
+        defaultDisplayType: "Trend",
+        defaultFolder: "Trends",
+        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
+        icon: "trending-up"
+      },
+      [NOTE_TEMPLATE_EVENT]: {
+        id: NOTE_TEMPLATE_EVENT,
+        name: "\u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441 \u0434\u0430\u0442\u043E\u0439",
+        aliases: [
+          "\u0441\u043E\u0431\u044B\u0442\u0438\u0435",
+          "\u0438\u0432\u0435\u043D\u0442",
+          "\u043C\u0438\u0442\u0430\u043F",
+          "\u0432\u0441\u0442\u0440\u0435\u0447\u0430",
+          "\u0441\u043E\u0437\u0432\u043E\u043D",
+          "\u0432\u0435\u0431\u0438\u043D\u0430\u0440",
+          "event",
+          "/event",
+          "!event"
+        ],
+        defaultType: NoteType.EVENT,
+        defaultDisplayType: "Scheduled Event",
+        defaultFolder: "Notes",
+        defaultHashtags: ["\u0441\u043E\u0431\u044B\u0442\u0438\u0435"],
+        icon: "calendar"
+      },
+      [NOTE_TEMPLATE_DONE]: {
+        id: NOTE_TEMPLATE_DONE,
+        name: "\u0421\u0434\u0435\u043B\u0430\u043D\u043E",
+        aliases: [
+          "\u0441\u0434\u0435\u043B\u0430\u043D\u043E",
+          "\u0433\u043E\u0442\u043E\u0432\u043E",
+          "done",
+          "\u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E",
+          "\u0447\u0435\u043A",
+          "v",
+          "+",
+          "/done",
+          "!done"
+        ],
+        defaultType: NoteType.DONE,
+        defaultDisplayType: "Done",
+        defaultFolder: "Notes",
+        defaultHashtags: ["done"],
+        icon: "check-circle"
+      },
+      [NOTE_TEMPLATE_POINT_NOTE]: {
+        id: NOTE_TEMPLATE_POINT_NOTE,
+        name: "\u0417\u0430\u043C\u0435\u0442\u043A\u0430",
+        aliases: ["\u0437\u0430\u043C\u0435\u0442\u043A\u0430", "\u043C\u044B\u0441\u043B\u044C", "note", "point", "\u0444\u0430\u043A\u0442", "/note", "!note"],
+        defaultType: NoteType.SINGLE,
+        defaultDisplayType: "Point Note",
+        defaultFolder: "Notes",
+        defaultHashtags: [],
+        icon: "file-text"
+      }
+    };
+    CURATOR_PERSONAS = {
+      "ivan-bely": {
+        id: "ivan-bely",
+        name: "\u0418\u0432\u0430\u043D \u0411\u0435\u043B\u044B\u0439",
+        shortName: "\u0418\u0432\u0430\u043D",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u041A\u043E\u043D\u0442\u0443\u0440\u0443 \u0420\u0424, \u0437\u0430\u043A\u043E\u043D\u043E\u0434\u0430\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0443 \u0438 \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u0438\u043A\u0435",
+        scope: "\u0412\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424, \u0413\u043E\u0441\u0434\u0443\u043C\u0430, \u041F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u043E \u0420\u0424, \u043D\u0430\u043B\u043E\u0433\u0438, \u0431\u044E\u0434\u0436\u0435\u0442, \u0426\u0411 \u0420\u0424, \u0424\u0410\u0421, \u0442\u043E\u043F\u043B\u0438\u0432\u043D\u044B\u0439 \u0434\u0435\u043C\u043F\u0444\u0435\u0440, \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u0440\u044B\u043D\u043E\u043A",
+        accentColor: "#38bdf8",
+        // Sky/Cyan
+        borderAccent: "#0284c7",
+        bgLight: "rgba(56, 189, 248, 0.12)",
+        badgeBg: "rgba(56, 189, 248, 0.22)",
+        emoji: "\u{1F1F7}\u{1F1FA}",
+        iconName: "ShieldCheck",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0420\u043E\u0441\u0441\u0438\u0438. \u0424\u043E\u043A\u0443\u0441\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0437\u0430\u043A\u043E\u043D\u0430\u0445, \u043F\u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F\u0445 \u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430, \u0446\u0435\u043D\u043E\u0432\u043E\u043C \u0431\u0430\u043B\u0430\u043D\u0441\u0435 \u0438 \u0432\u043B\u0438\u044F\u043D\u0438\u0438 \u043D\u0430 \u0433\u0440\u0430\u0436\u0434\u0430\u043D \u0438 \u0431\u0438\u0437\u043D\u0435\u0441."
+      },
+      "kirk-kitten": {
+        id: "kirk-kitten",
+        name: "Kirk Kitten",
+        shortName: "Kirk",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0443 \u0421\u0428\u0410, \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u044B\u043C \u0440\u044B\u043D\u043A\u0430\u043C \u0438 \u0441\u0430\u043D\u043A\u0446\u0438\u044F\u043C",
+        scope: "\u0421\u0428\u0410, \u0412\u0430\u0448\u0438\u043D\u0433\u0442\u043E\u043D, \u041A\u043E\u043D\u0433\u0440\u0435\u0441\u0441, \u0411\u0435\u043B\u044B\u0439 \u0434\u043E\u043C, \u0440\u0435\u0448\u0435\u043D\u0438\u044F \u0424\u0420\u0421, \u0441\u0430\u043D\u043A\u0446\u0438\u0438 OFAC, \u0415\u0421, \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u0430\u044F \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u043A\u0430 \u0438 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u0440\u044B\u043D\u043A\u0438",
+        accentColor: "#fbbf24",
+        // Amber/Gold
+        borderAccent: "#d97706",
+        bgLight: "rgba(251, 191, 36, 0.12)",
+        badgeBg: "rgba(251, 191, 36, 0.22)",
+        emoji: "\u{1F310}",
+        iconName: "Radar",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u043E\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0438 \u0421\u0428\u0410. \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0435 \u0444\u0430\u043A\u0442\u044B \u043F\u043E \u0430\u043D\u0433\u043B\u043E\u044F\u0437\u044B\u0447\u043D\u044B\u043C \u0440\u0435\u0435\u0441\u0442\u0440\u0430\u043C, \u0431\u0438\u0440\u0436\u0435\u0432\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C \u0438 \u0440\u0435\u0448\u0435\u043D\u0438\u044F\u043C \u0430\u043C\u0435\u0440\u0438\u043A\u0430\u043D\u0441\u043A\u0438\u0445 \u0438 \u0435\u0432\u0440\u043E\u043F\u0435\u0439\u0441\u043A\u0438\u0445 \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u043E\u0432."
+      },
+      "okatsiya": {
+        id: "okatsiya",
+        name: "\u0410\u043A\u0430\u0446\u0438\u044F IT",
+        shortName: "\u0410\u043A\u0430\u0446\u0438\u044F",
+        role: "\u041A\u0443\u0440\u0430\u0442\u043E\u0440 Hi-Tech, IT & AI \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u043D\u043E\u0432\u044B\u0445 \u0434\u0435\u0432\u0430\u0439\u0441\u043E\u0432 \u0438 \u0433\u0440\u043E\u043C\u043A\u0438\u0445 \u0430\u043D\u043E\u043D\u0441\u043E\u0432",
+        scope: "\u041D\u043E\u0432\u043E\u0441\u0442\u0438 hi-tech, IT, AI \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u043D\u043E\u0432\u044B\u0435 \u0434\u0435\u0432\u0430\u0439\u0441\u044B (\u0433\u0430\u0434\u0436\u0435\u0442\u044B, \u0447\u0438\u043F\u044B, VR/AR, \u0441\u043C\u0430\u0440\u0442\u0444\u043E\u043D\u044B), \u0433\u0440\u043E\u043C\u043A\u0438\u0435 \u0430\u043D\u043E\u043D\u0441\u044B BigTech, \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u0430",
+        accentColor: "#a855f7",
+        // Neon Violet/Purple
+        borderAccent: "#9333ea",
+        bgLight: "rgba(168, 85, 247, 0.12)",
+        badgeBg: "rgba(168, 85, 247, 0.22)",
+        emoji: "\u26A1",
+        iconName: "Cpu",
+        description: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 Hi-Tech \u0438 \u0430\u043D\u043E\u043D\u0441\u043E\u0432. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0440\u0435\u043B\u0438\u0437\u044B \u043D\u043E\u0432\u044B\u0445 \u0434\u0435\u0432\u0430\u0439\u0441\u043E\u0432, \u0433\u0440\u043E\u043C\u043A\u0438\u0435 \u0430\u043D\u043E\u043D\u0441\u044B \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0433\u0438\u0433\u0430\u043D\u0442\u043E\u0432, \u043F\u043E\u0442\u0440\u0435\u0431\u0438\u0442\u0435\u043B\u044C\u0441\u043A\u0443\u044E \u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043D\u0438\u043A\u0443, \u0447\u0438\u043F\u044B \u0438 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0442\u0440\u0435\u043D\u0434\u044B IT & AI."
+      },
+      "simon-habr": {
+        id: "simon-habr",
+        name: "\u0421\u0430\u0439\u043C\u043E\u043D",
+        shortName: "\u0421\u0430\u0439\u043C\u043E\u043D",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u0440\u0430\u0437\u0431\u043E\u0440\u0443 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 Habr",
+        scope: "\u0420\u0430\u0437\u0431\u043E\u0440 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u0438 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 \u0425\u0430\u0431\u0440\u0430 (Habr), \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0435 \u0441\u0442\u0430\u0442\u044C\u0438, \u043E\u043B\u0434\u0441\u043A\u0443\u043B-\u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0438, \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0430, \u0430\u0432\u0442\u043E\u0440\u0441\u043A\u0438\u0435 \u043A\u0435\u0439\u0441\u044B \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430",
+        accentColor: "#10b981",
+        // Terminal Green
+        borderAccent: "#059669",
+        bgLight: "rgba(16, 185, 129, 0.12)",
+        badgeBg: "rgba(16, 185, 129, 0.22)",
+        emoji: "\u{1F4DF}",
+        iconName: "Terminal",
+        description: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0438 \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u0425\u0430\u0431\u0440\u0430. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0441\u0432\u0435\u0436\u0438\u0435 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0438 \u043D\u0430 Habr, \u0433\u043B\u0443\u0431\u043E\u043A\u0438\u0435 \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0435 \u043B\u043E\u043D\u0433\u0440\u0438\u0434\u044B, \u0440\u0430\u0437\u0431\u043E\u0440\u044B \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0438, \u0440\u0435\u0442\u0440\u043E-\u0436\u0435\u043B\u0435\u0437\u0430 \u0438 \u043F\u0440\u0430\u043A\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043A\u0435\u0439\u0441\u044B \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432."
+      },
+      "presijo-ai": {
+        id: "presijo-ai",
+        name: "Presijo AI & IT",
+        shortName: "Presijo",
+        role: "AI & IT \u0442\u0440\u0435\u043D\u0434-\u0445\u0430\u043D\u0442\u0435\u0440, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0435\u0440 \u0438 \u043E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432",
+        scope: "\u041D\u043E\u0432\u043E\u0441\u0442\u0438 \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438 AI, \u043D\u043E\u0432\u044B\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B \u043D\u0430 \u0440\u044B\u043D\u043A\u0435, \u0441\u0432\u0435\u0436\u0438\u0435 \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, \u0440\u0430\u0431\u043E\u0442\u0430 \u0441 Telegram-\u043A\u0430\u043D\u0430\u043B\u0430\u043C\u0438, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0438\u043D\u0433",
+        accentColor: "#ec4899",
+        // Pink / Fuchsia
+        borderAccent: "#db2777",
+        bgLight: "rgba(236, 72, 153, 0.12)",
+        badgeBg: "rgba(236, 72, 153, 0.22)",
+        emoji: "\u{1F680}",
+        iconName: "Sparkles",
+        description: "\u041A\u0443\u0440\u0430\u0442\u043E\u0440 \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u043E\u0433\u043E AI-\u043B\u0430\u043D\u0434\u0448\u0430\u0444\u0442\u0430 \u0438 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0435\u0440. \u041E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u0442 \u043D\u043E\u0432\u044B\u0435 \u0418\u0418-\u0442\u0443\u043B\u0437\u044B, \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B open-source \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, \u0432\u0435\u0434\u0435\u0442 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 Telegram-\u043A\u0430\u043D\u0430\u043B\u043E\u0432 \u0438 \u0443\u043F\u0430\u043A\u043E\u0432\u044B\u0432\u0430\u0435\u0442 \u0442\u0440\u0435\u043D\u0434\u044B \u0432 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0435\u043D\u0442."
+      },
+      "chen-wei": {
+        id: "chen-wei",
+        name: "\u0427\u044D\u043D\u044C \u0412\u044D\u0439",
+        shortName: "\u0427\u044D\u043D\u044C",
+        role: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0410\u0422\u0420, \u041A\u0438\u0442\u0430\u044F \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u044B\u0445 \u0446\u0435\u043F\u043E\u0447\u0435\u043A \u043F\u043E\u0441\u0442\u0430\u0432\u043E\u043A",
+        scope: "\u041A\u0438\u0442\u0430\u0439, \u042E\u0433\u043E-\u0412\u043E\u0441\u0442\u043E\u0447\u043D\u0430\u044F \u0410\u0437\u0438\u044F, \u0411\u0420\u0418\u041A\u0421, \u0440\u0430\u0441\u0447\u0435\u0442\u044B \u0432 \u043D\u0430\u0446\u0432\u0430\u043B\u044E\u0442\u0430\u0445, \u0442\u043E\u0440\u0433\u043E\u0432\u044B\u0435 \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u044B, \u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043D\u0438\u043A\u0430 \u0438 \u0441\u044B\u0440\u044C\u0435",
+        accentColor: "#ef4444",
+        // Red
+        borderAccent: "#dc2626",
+        bgLight: "rgba(239, 68, 68, 0.12)",
+        badgeBg: "rgba(239, 68, 68, 0.22)",
+        emoji: "\u{1F1E8}\u{1F1F3}",
+        iconName: "Globe2",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0410\u0437\u0438\u0430\u0442\u0441\u043A\u043E-\u0422\u0438\u0445\u043E\u043E\u043A\u0435\u0430\u043D\u0441\u043A\u043E\u0433\u043E \u0440\u0435\u0433\u0438\u043E\u043D\u0430 \u0438 \u0441\u0442\u0440\u0430\u043D \u0411\u0420\u0418\u041A\u0421. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0442\u043E\u0432\u0430\u0440\u043E\u043E\u0431\u043E\u0440\u043E\u0442, \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u044B (\u041C\u0422\u041A \u0421\u0435\u0432\u0435\u0440-\u042E\u0433, \u0421\u0435\u0432\u043C\u043E\u0440\u043F\u0443\u0442\u044C) \u0438 \u0444\u0438\u043D\u0430\u043D\u0441\u043E\u0432\u044B\u0439 \u043A\u043B\u0438\u0440\u0438\u043D\u0433."
+      },
+      "alex-vector": {
+        id: "alex-vector",
+        name: "\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440",
+        shortName: "\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043E\u0431\u0449\u0435\u0439 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0435 \u0438 \u0441\u0432\u0435\u0436\u0438\u043C \u043C\u0438\u0440\u043E\u0432\u044B\u043C \u043D\u043E\u0432\u043E\u0441\u0442\u044F\u043C",
+        scope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043D\u043E\u0432\u043E\u0441\u0442\u0438, \u043E\u0431\u0449\u0430\u044F \u043C\u0438\u0440\u043E\u0432\u0430\u044F \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0430, \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438, \u044D\u043A\u0441\u0442\u0440\u0435\u043D\u043D\u044B\u0435 \u043A\u043E\u043C\u043C\u044E\u043D\u0438\u043A\u0435, \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0435 \u0441\u044E\u0436\u0435\u0442\u044B, X/Twitter, \u0441\u0430\u043C\u043C\u0438\u0442\u044B",
+        accentColor: "#f97316",
+        // Orange / Flame
+        borderAccent: "#ea580c",
+        bgLight: "rgba(249, 115, 22, 0.12)",
+        badgeBg: "rgba(249, 115, 22, 0.22)",
+        emoji: "\u{1F525}",
+        iconName: "Flame",
+        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0432\u0435\u0436\u0435\u0439 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0438 \u0438 \u043C\u0438\u0440\u043E\u0432\u043E\u0433\u043E \u043E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u043E\u0433\u043E \u043F\u0443\u043B\u044C\u0441\u0430. \u041E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u0442 \u0432\u0437\u0440\u044B\u0432\u043D\u044B\u0435 \u0438\u043D\u0444\u043E\u043F\u043E\u0432\u043E\u0434\u044B, breaking-\u043D\u044C\u044E\u0441 \u043C\u0438\u0440\u043E\u0432\u044B\u0445 \u0430\u0433\u0435\u043D\u0442\u0441\u0442\u0432 \u0438 \u043E\u0442\u0434\u0435\u043B\u044F\u0435\u0442 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0439 \u0448\u0443\u043C \u043E\u0442 \u0442\u0435\u043A\u0442\u043E\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u0434\u0432\u0438\u0433\u043E\u0432."
+      },
+      "marcus-vane": {
+        id: "marcus-vane",
+        name: "\u041C\u0430\u0440\u043A\u0443\u0441 \u0412\u0435\u0439\u043D",
+        shortName: "\u041C\u0430\u0440\u043A\u0443\u0441",
+        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u044D\u0444\u0444\u0435\u043A\u0442\u0430 \u0434\u043E\u043C\u0438\u043D\u043E \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u043E\u0431\u044B\u0442\u0438\u0439 [Standby]",
+        scope: "\u041A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0435 \u0440\u0438\u0441\u043A\u0438, \u0432\u0430\u043A\u0443\u0443\u043C \u0441\u0438\u043B\u044B, \u0433\u0435\u043E\u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0443\u0437\u043B\u044B, \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u044B \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0441\u044E\u0436\u0435\u0442\u043E\u0432",
+        accentColor: "#10b981",
+        // Emerald
+        borderAccent: "#059669",
+        bgLight: "rgba(16, 185, 129, 0.12)",
+        badgeBg: "rgba(16, 185, 129, 0.22)",
+        emoji: "\u265F\uFE0F",
+        iconName: "GitBranch",
+        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0445 \u043A\u0430\u0441\u043A\u0430\u0434\u043E\u0432 \u0438 \u0442\u0435\u043E\u0440\u0438\u0438 \u0438\u0433\u0440 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 \u043E\u0436\u0438\u0434\u0430\u043D\u0438\u044F \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438).",
+        isStandby: true
+      },
+      "tariq-said": {
+        id: "tariq-said",
+        name: "\u0422\u0430\u0440\u0438\u043A \u0421\u0430\u0438\u0434",
+        shortName: "\u0422\u0430\u0440\u0438\u043A",
+        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0443 \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u0437\u043E\u043D\u044B \u0417\u0430\u043B\u0438\u0432\u0430 (MENA)",
+        scope: "\u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A, \u0418\u0440\u0430\u043A, \u0418\u0440\u0430\u043D, \u043C\u043E\u043D\u0430\u0440\u0445\u0438\u0438 \u0417\u0430\u043B\u0438\u0432\u0430, \u041B\u0435\u0432\u0430\u043D\u0442, \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C \u0431\u0430\u0437, OPEC+, \u0441\u0443\u043D\u043D\u0438\u0442\u0441\u043A\u043E-\u0448\u0438\u0438\u0442\u0441\u043A\u0438\u0439 \u0431\u0430\u043B\u0430\u043D\u0441",
+        accentColor: "#eab308",
+        // Desert Gold
+        borderAccent: "#ca8a04",
+        bgLight: "rgba(234, 179, 8, 0.12)",
+        badgeBg: "rgba(234, 179, 8, 0.22)",
+        emoji: "\u{1F54C}",
+        iconName: "Compass",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0411\u043E\u043B\u044C\u0448\u043E\u0433\u043E \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u0440\u0435\u0433\u0438\u043E\u043D\u0430 MENA. \u0410\u043D\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u0435\u0442 \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u043C\u043E\u043D\u0430\u0440\u0445\u0438\u0439 \u0417\u0430\u043B\u0438\u0432\u0430, \u0432\u043B\u0438\u044F\u043D\u0438\u0435 \u043F\u0440\u043E\u0438\u0440\u0430\u043D\u0441\u043A\u0438\u0445 \u043E\u0441\u0435\u0439, \u0442\u0443\u0440\u0435\u0446\u043A\u0438\u0439 \u0444\u0430\u043A\u0442\u043E\u0440 \u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C \u0438\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u044B."
+      },
+      "helena-brandt": {
+        id: "helena-brandt",
+        name: "\u0425\u0435\u043B\u0435\u043D\u0430 \u0411\u0440\u0430\u043D\u0434\u0442",
+        shortName: "\u0425\u0435\u043B\u0435\u043D\u0430",
+        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u043A\u0440\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0430\u0440\u0442\u0435\u0440\u0438\u0439, \u0441\u044B\u0440\u044C\u044F \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u0439 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u043A\u0438",
+        scope: "\u041D\u0435\u0444\u0442\u044C Brent/WTI, \u0421\u041F\u0413, \u043C\u043E\u0440\u0441\u043A\u0438\u0435 \u0443\u0437\u043B\u044B (\u041E\u0440\u043C\u0443\u0437, \u0421\u0443\u044D\u0446, \u0411\u0430\u0431-\u044D\u043B\u044C-\u041C\u0430\u043D\u0434\u0435\u0431), \u0441\u0442\u0440\u0430\u0445\u043E\u0432\u043E\u0439 \u0444\u0440\u0430\u0445\u0442 Lloyd's, \u0440\u0435\u0434\u043A\u043E\u0437\u0435\u043C\u0435\u043B\u044C\u043D\u044B\u0435 \u043C\u0435\u0442\u0430\u043B\u043B\u044B",
+        accentColor: "#06b6d4",
+        // Maritime Cyan
+        borderAccent: "#0891b2",
+        bgLight: "rgba(6, 182, 212, 0.12)",
+        badgeBg: "rgba(6, 182, 212, 0.22)",
+        emoji: "\u2693",
+        iconName: "Anchor",
+        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0444\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0430\u0440\u0442\u0435\u0440\u0438\u0439 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u0439 \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u043A\u0438. \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u0442 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u043E\u0441\u043B\u0435\u0434\u0441\u0442\u0432\u0438\u044F \u0433\u0435\u043E\u043F\u043E\u043B\u0438\u0442\u0438\u043A\u0438: \u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442\u044C \u043F\u0440\u043E\u043B\u0438\u0432\u043E\u0432, \u0441\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0444\u0440\u0430\u0445\u0442\u0430 \u0442\u0430\u043D\u043A\u0435\u0440\u043E\u0432 \u0438 \u0434\u0435\u0444\u0438\u0446\u0438\u0442\u044B \u0441\u044B\u0440\u044C\u044F."
+      },
+      "german-kernel": {
+        id: "german-kernel",
+        name: "\u0413\u0435\u0440\u043C\u0430\u043D \xAB\u041A\u0435\u0440\u043D\u0435\u043B\xBB",
+        shortName: "\u0413\u0435\u0440\u043C\u0430\u043D",
+        role: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C Habr, IT-\u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u0438 \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u043E\u0432",
+        scope: "Habr, \u0436\u0443\u0440\u043D\u0430\u043B \xAB\u0425\u0430\u043A\u0435\u0440\xBB (xakep.ru), \u0441\u0442\u0430\u0442\u044C\u0438 IT-\u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430, \u043E\u043B\u0434\u0441\u043A\u0443\u043B-\u0440\u0430\u0437\u0431\u043E\u0440\u044B \u043F\u043B\u0430\u0442 \u0438 \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0438, \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 Note",
+        accentColor: "#10b981",
+        // Emerald CRT / Terminal Green
+        borderAccent: "#059669",
+        bgLight: "rgba(16, 185, 129, 0.12)",
+        badgeBg: "rgba(16, 185, 129, 0.22)",
+        emoji: "\u{1F4DF}",
+        iconName: "Terminal",
+        description: "\u0418\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u0430\u044F \u0438 \u043A\u043E\u043C\u044C\u044E\u043D\u0438\u0442\u0438-\u043E\u043F\u0442\u0438\u043A\u0430. \u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u043D\u0430\u0432\u044B\u043A \u2014 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u043D\u0430 Habr \u0438 IT-\u0441\u0442\u0430\u0442\u0435\u0439 \u0438\u0437 \u0441\u0435\u0442\u0438, \u0440\u0430\u0437\u0431\u043E\u0440 \u043E\u043B\u0434\u0441\u043A\u0443\u043B\u044C\u043D\u044B\u0445 \u0442\u0435\u043C \u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 Note \u043F\u043E \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u0430\u043C."
+      }
+    };
+    CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
+    ACTIVE_CURATOR_PERSONAS_LIST = CURATOR_PERSONAS_LIST.filter((p) => !p.isStandby);
+    CURATOR_GROUPS = {
+      "political-group": {
+        id: "political-group",
+        name: "\u041F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F (\u0420\u0424, \u0421\u0428\u0410, \u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A & \u041F\u043E\u0432\u0435\u0441\u0442\u043A\u0430)",
+        shortName: "\u041F\u043E\u043B\u0438\u0442\u0438\u043A\u0430",
+        emoji: "\u{1F3DB}\uFE0F",
+        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432: \u041A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424 (\u0418\u0432\u0430\u043D \u0411\u0435\u043B\u044B\u0439), \u041A\u043E\u043D\u0442\u0443\u0440 \u0421\u0428\u0410 (Kirk Kitten), \u041A\u043E\u043D\u0442\u0443\u0440 \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 (\u0422\u0430\u0440\u0438\u043A \u0421\u0430\u0438\u0434) \u0438 \u0421\u0432\u0435\u0436\u0438\u0435 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043D\u043E\u0432\u043E\u0441\u0442\u0438 (\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440)",
+        curatorIds: ["ivan-bely", "kirk-kitten", "tariq-said", "alex-vector"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#38bdf8",
+        badgeBg: "rgba(56, 189, 248, 0.16)",
+        defaultScope: "\u0412\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424, \u0432\u043D\u0435\u0448\u043D\u0435\u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0421\u0428\u0410, \u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A (MENA) \u0438 \u043E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u0430\u044F \u043C\u0438\u0440\u043E\u0432\u0430\u044F \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0430"
+      },
+      "tech-group": {
+        id: "tech-group",
+        name: "IT & AI \u0413\u0440\u0443\u043F\u043F\u0430 (\u0410\u043A\u0430\u0446\u0438\u044F IT, \u0421\u0430\u0439\u043C\u043E\u043D & Presijo)",
+        shortName: "IT & AI",
+        emoji: "\u26A1",
+        description: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0433\u0440\u0443\u043F\u043F\u0430: \u0410\u043A\u0430\u0446\u0438\u044F IT (Hi-Tech, \u0434\u0435\u0432\u0430\u0439\u0441\u044B, \u0430\u043D\u043E\u043D\u0441\u044B), \u0421\u0430\u0439\u043C\u043E\u043D (\u0440\u0430\u0437\u0431\u043E\u0440 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 \u0425\u0430\u0431\u0440\u0430) \u0438 Presijo AI & IT (\u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B, \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, Telegram, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0438\u043D\u0433)",
+        curatorIds: ["okatsiya", "simon-habr", "presijo-ai"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#a855f7",
+        badgeBg: "rgba(168, 85, 247, 0.16)",
+        defaultScope: "Hi-Tech, \u0434\u0435\u0432\u0430\u0439\u0441\u044B, \u0430\u043D\u043E\u043D\u0441\u044B BigTech, \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0438 \u043D\u0430 \u0425\u0430\u0431\u0440\u0435, AI \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B, \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A\u0438 \u0438 Telegram-\u043A\u0430\u043D\u0430\u043B\u044B"
+      },
+      "macro-group": {
+        id: "macro-group",
+        name: "\u041C\u0430\u043A\u0440\u043E\u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C",
+        shortName: "\u041C\u0430\u043A\u0440\u043E",
+        emoji: "\u{1F4CA}",
+        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u0441\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0441\u0442\u0438 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u0438 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u043E\u043D\u0442\u0443\u0440\u043E\u0432",
+        curatorIds: ["ivan-bely", "kirk-kitten"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#fbbf24",
+        badgeBg: "rgba(251, 191, 36, 0.16)",
+        defaultScope: "\u0414\u0435\u043C\u043F\u0444\u0435\u0440, \u0432\u0430\u043B\u044E\u0442\u043D\u044B\u0435 \u043A\u0443\u0440\u0441\u044B, \u0441\u0430\u043D\u043A\u0446\u0438\u043E\u043D\u043D\u043E\u0435 \u0432\u043E\u0437\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435, \u0444\u0440\u0430\u0445\u0442 \u0438 \u0438\u043D\u0444\u043B\u044F\u0446\u0438\u044F"
+      },
+      "hot-pulse-group": {
+        id: "hot-pulse-group",
+        name: "\u0413\u0440\u0443\u043F\u043F\u0430 \u0431\u044B\u0441\u0442\u0440\u043E\u0433\u043E \u0440\u0435\u0430\u0433\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F (\u041C\u0438\u0440\u043E\u0432\u043E\u0439 \u043F\u0443\u043B\u044C\u0441)",
+        shortName: "\u0413\u043E\u0440\u044F\u0447\u0438\u0439 \u043F\u0443\u043B\u044C\u0441",
+        emoji: "\u{1F525}",
+        description: "\u041E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u044D\u043A\u0441\u0442\u0440\u0435\u043D\u043D\u044B\u043C \u043C\u0438\u0440\u043E\u0432\u044B\u043C \u0441\u043E\u0431\u044B\u0442\u0438\u044F\u043C, breaking news \u0438 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u043C \u0442\u0440\u0435\u043D\u0434\u0430\u043C",
+        curatorIds: ["alex-vector", "kirk-kitten"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#f97316",
+        badgeBg: "rgba(249, 115, 22, 0.16)",
+        defaultScope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438 \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u0430\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0444\u0430\u043A\u0442\u043E\u0432"
+      },
+      "domino-nexus-group": {
+        id: "domino-nexus-group",
+        name: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F [Standby]",
+        shortName: "\u042D\u0444\u0444\u0435\u043A\u0442 \u0434\u043E\u043C\u0438\u043D\u043E",
+        emoji: "\u265F\uFE0F",
+        description: "\u0413\u0440\u0443\u043F\u043F\u0430 \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 Standby \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438)",
+        curatorIds: ["tariq-said", "helena-brandt", "chen-wei"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#10b981",
+        badgeBg: "rgba(168, 85, 247, 0.16)",
+        defaultScope: "\u041E\u0446\u0435\u043D\u043A\u0430 \u0442\u043E\u0447\u0435\u043A \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u0445 \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442\u043E\u0432, \u0446\u0435\u043F\u043E\u0447\u043A\u0438 \u0441\u044B\u0440\u044C\u0435\u0432\u044B\u0445 \u0438 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0448\u043E\u043A\u043E\u0432",
+        isStandby: true
+      },
+      "mena-security-group": {
+        id: "mena-security-group",
+        name: "\u041A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u042E\u0436\u043D\u043E\u0433\u043E \u043F\u0435\u0440\u0438\u043C\u0435\u0442\u0440\u0430",
+        shortName: "\u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A",
+        emoji: "\u{1F54C}",
+        description: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438 \u0437\u043E\u043D\u044B \u0417\u0430\u043B\u0438\u0432\u0430, \u041B\u0435\u0432\u0430\u043D\u0442\u0430, \u0421\u0443\u044D\u0446\u043A\u043E\u0433\u043E \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u0430 \u0438 \u044D\u043D\u0435\u0440\u0433\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0431\u0430\u043B\u0430\u043D\u0441\u0430",
+        curatorIds: ["tariq-said", "ivan-bely", "kirk-kitten", "helena-brandt"],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#eab308",
+        badgeBg: "rgba(234, 179, 8, 0.16)",
+        defaultScope: "\u0412\u043E\u0435\u043D\u043D\u043E-\u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0434\u0438\u043D\u0430\u043C\u0438\u043A\u0430 MENA, \u041E\u0440\u043C\u0443\u0437\u0441\u043A\u0438\u0439 \u043F\u0440\u043E\u043B\u0438\u0432, \u0440\u044B\u043D\u043E\u043A \u043D\u0435\u0444\u0442\u0438 \u0438 \u043F\u043E\u0437\u0438\u0446\u0438\u044F \u0420\u0424/\u0421\u0428\u0410"
+      },
+      "all-curators": {
+        id: "all-curators",
+        name: "\u041F\u043E\u043B\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
+        shortName: "\u0412\u0441\u0435 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u044B",
+        emoji: "\u{1F310}",
+        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442 \u0432\u0441\u0435\u0445 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 Project Lenta",
+        curatorIds: [
+          "ivan-bely",
+          "kirk-kitten",
+          "tariq-said",
+          "alex-vector",
+          "okatsiya",
+          "simon-habr",
+          "presijo-ai",
+          "chen-wei",
+          "helena-brandt",
+          "german-kernel"
+        ],
+        coordinatorId: "survey-coordinator",
+        accentColor: "#3b82f6",
+        badgeBg: "rgba(59, 130, 246, 0.16)",
+        defaultScope: "\u0421\u043A\u0432\u043E\u0437\u043D\u0430\u044F 360-\u043F\u0430\u043D\u043E\u0440\u0430\u043C\u0430 \u0432\u0441\u0435\u0445 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0445 \u043C\u0438\u0440\u043E\u0432\u044B\u0445, \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0445, \u044D\u043D\u0435\u0440\u0433\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445, \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u044B\u0445 \u0438 \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u043E\u0431\u044B\u0442\u0438\u0439"
+      }
+    };
+    CURATOR_GROUPS_LIST = Object.values(CURATOR_GROUPS);
+    WORKER_AGENTS = {
+      "harvester-agent": {
+        id: "harvester-agent",
+        name: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u044B\u0439 \u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
+        shortName: "\u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0441\u0431\u043E\u0440\u0430 \u0434\u0430\u043D\u043D\u044B\u0445, RSS \u0438 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433\u0430 \u043F\u0435\u0440\u0432\u043E\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432",
+        avatar: "\u{1F4E1}",
+        category: "ingestion",
+        accentColor: "#10b981",
+        badgeBg: "rgba(16, 185, 129, 0.16)",
+        description: "\u041E\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043B\u044F\u0435\u0442 \u043D\u0435\u043F\u0440\u0435\u0440\u044B\u0432\u043D\u044B\u0439 \u0441\u0431\u043E\u0440 \u0441\u044B\u0440\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439, \u043F\u0430\u0440\u0441\u0438\u043D\u0433 \u0432\u043D\u0435\u0448\u043D\u0438\u0445 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432, \u0434\u0435\u0434\u0443\u043F\u043B\u0438\u043A\u0430\u0446\u0438\u044E \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0439 \u0442\u0440\u0438\u0430\u0436 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u043E\u0432 \u043F\u0435\u0440\u0435\u0434 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0435\u0439 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u0430\u043C.",
+        capabilities: ["rss_ingestion", "web_scraping", "deduplication", "source_validation"],
+        suggestedSnippets: ["/harvest", "/sources"]
+      },
+      "survey-coordinator": {
+        id: "survey-coordinator",
+        name: "\u041A\u043E\u043E\u0440\u0434\u0438\u043D\u0430\u0442\u043E\u0440 \u041E\u043F\u0440\u043E\u0441\u043E\u0432",
+        shortName: "\u041E\u043F\u0440\u043E\u0441\u0447\u0438\u043A",
+        role: "\u0410\u0433\u0435\u043D\u0442-\u043E\u043F\u0440\u043E\u0441\u0447\u0438\u043A \u0438 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0433\u0440\u0443\u043F\u043F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
+        avatar: "\u{1F9ED}",
+        category: "survey",
+        accentColor: "#6366f1",
+        badgeBg: "rgba(99, 102, 241, 0.16)",
+        description: "\u041E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0433\u0440\u0443\u043F\u043F\u0443 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 (\u0438\u043B\u0438 \u0432\u0441\u0435\u0445) \u0437\u0430 \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B (\u0441\u0435\u0433\u043E\u0434\u043D\u044F, \u0432\u0447\u0435\u0440\u0430, \u043D\u0435\u0434\u0435\u043B\u044F) \u0438 \u0441\u0432\u043E\u0434\u0438\u0442 \u0438\u0445 \u0434\u043E\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0437\u0438\u0446\u0438\u0438.",
+        capabilities: ["group_polling", "temporal_slicing", "cross_curator_comparison"],
+        suggestedSnippets: ["/survey", "/survey-today", "/survey-yesterday", "/survey-week"]
+      },
+      "sidework-producer": {
+        id: "sidework-producer",
+        name: "\u041F\u0440\u043E\u0434\u044E\u0441\u0435\u0440 \u0421\u0430\u0439\u0434-\u0420\u0430\u0431\u043E\u0442\u044B",
+        shortName: "\u0421\u0430\u0439\u0434-\u0432\u043E\u0440\u043A\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u0440\u043E\u0434\u0430\u043A\u0448\u043D\u0430, \u043C\u0435\u0434\u0438\u0430-\u043E\u0431\u043E\u0433\u0430\u0449\u0435\u043D\u0438\u044F \u0438 \u043E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u044F",
+        avatar: "\u{1F3A8}",
+        category: "sidework",
+        accentColor: "#ec4899",
+        badgeBg: "rgba(236, 72, 153, 0.16)",
+        description: "\u0412\u0435\u0434\u0435\u0442 \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u0443\u044E \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0443: \u0441\u043E\u0437\u0434\u0430\u0435\u0442 \u0441\u0442\u0430\u0442\u044C\u0438, \u043F\u043E\u0441\u0442\u044B \u0438 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u044B \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0434\u0430\u043D\u043D\u044B\u0445, \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043F\u0440\u043E\u043C\u043F\u0442\u044B \u0434\u043B\u044F AI-\u0438\u043B\u043B\u044E\u0441\u0442\u0440\u0430\u0446\u0438\u0439, \u0441\u0445\u0435\u043C\u044B Mermaid \u0438 \u0434\u043E\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u043C\u0438 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u043C\u0438.",
+        capabilities: ["content_drafting", "image_prompt_generation", "mermaid_generation", "commentary_enrichment", "obsidian_export"],
+        suggestedSnippets: ["/sidework", "/media", "/comment", "/draft"]
+      },
+      "podcast-producer": {
+        id: "podcast-producer",
+        name: "\u0420\u0435\u0436\u0438\u0441\u0441\u0435\u0440 \u041F\u043E\u0434\u043A\u0430\u0441\u0442\u043E\u0432",
+        shortName: "\u041F\u043E\u0434\u043A\u0430\u0441\u0442\u0435\u0440",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0435\u0432 NotebookLM",
+        avatar: "\u{1F399}\uFE0F",
+        category: "sidework",
+        accentColor: "#f97316",
+        badgeBg: "rgba(249, 115, 22, 0.16)",
+        description: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u0430\u044F \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0430: \u043F\u0440\u0435\u0432\u0440\u0430\u0449\u0430\u0435\u0442 \u043F\u043E\u0434\u0431\u043E\u0440\u043A\u0443 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0432 \u0436\u0438\u0432\u043E\u0439 \u0434\u0438\u0430\u043B\u043E\u0433\u043E\u0432\u044B\u0439 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0439 \u0434\u0432\u0443\u0445 \u0432\u0435\u0434\u0443\u0449\u0438\u0445.",
+        capabilities: ["podcast_scripting", "audio_overview", "dialogue_balancing"],
+        suggestedSnippets: ["/podcast"]
+      },
+      "notebook-producer": {
+        id: "notebook-producer",
+        name: "\u0420\u0435\u0436\u0438\u0441\u0441\u0435\u0440 NotebookLM",
+        shortName: "NotebookLM \u0410\u0433\u0435\u043D\u0442",
+        role: "\u0410\u0433\u0435\u043D\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u044F \u0434\u043D\u0435\u0432\u043D\u0438\u043A\u043E\u0432, \u043F\u043E\u0434\u043A\u0430\u0441\u0442\u043E\u0432 \u0438 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432 NotebookLM",
+        avatar: "\u{1F4D3}",
+        category: "sidework",
+        accentColor: "#8b5cf6",
+        badgeBg: "rgba(139, 92, 246, 0.16)",
+        description: "\u0411\u0435\u0440\u0435\u0442 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 Super Note, \u0443\u043F\u0430\u043A\u043E\u0432\u044B\u0432\u0430\u0435\u0442 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438 \u0432 markdown-\u0431\u0430\u043D\u0434\u043B, \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 NotebookLM-\u0434\u043D\u0435\u0432\u043D\u0438\u043A\u0430 \u0432 \u0444\u043E\u043D\u0435 \u0438 \u043F\u043E \u043A\u043E\u043B\u043B\u0431\u044D\u043A\u0443 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u0446\u0435\u043B\u0435\u0432\u0443\u044E \u0437\u0430\u043C\u0435\u0442\u043A\u0443.",
+        capabilities: ["source_bundling", "notebooklm_dispatch", "eta_estimation", "async_note_callback", "audio_overview_pipeline"],
+        suggestedSnippets: ["/notebook", "/notebook-create", "/notebook-eta"]
+      }
+    };
+    WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
+    IT_SECTOR_REGISTRY = {
+      ai: {
+        id: "ai",
+        name: "\u0418\u0441\u043A\u0443\u0441\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 \u0418\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442 & LLM",
+        shortName: "AI & ML",
+        emoji: "\u{1F9E0}",
+        category: "ai",
+        folder: "Tech/AI",
+        taxonomyPath: "tech.ai.llm",
+        hashtags: ["AI", "LLM", "\u041D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u0438", "MachineLearning", "GenAI"],
+        keywords: ["ai", "\u0438\u0438", "llm", "\u043D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u044C", "\u043D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u0438", "deepseek", "openai", "anthropic", "gemini", "gpt", "transformers", "diffusion", "rag", "\u0430\u0433\u0435\u043D\u0442", "prompt", "rag"],
+        description: "\u0411\u043E\u043B\u044C\u0448\u0438\u0435 \u044F\u0437\u044B\u043A\u043E\u0432\u044B\u0435 \u043C\u043E\u0434\u0435\u043B\u0438, \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u043E\u0434\u0430\u043B\u044C\u043D\u044B\u0435 \u0441\u0435\u0442\u0438, \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0435 \u0432\u0435\u0441\u0430, \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u044B \u0442\u0440\u0430\u043D\u0441\u0444\u043E\u0440\u043C\u0435\u0440\u043E\u0432 \u0438 \u0430\u0433\u0435\u043D\u0442\u043D\u044B\u0435 \u0444\u0440\u0435\u0439\u043C\u0432\u043E\u0440\u043A\u0438."
+      },
+      devops: {
+        id: "devops",
+        name: "DevOps, SRE & \u0418\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430",
+        shortName: "DevOps",
+        emoji: "\u{1F6A2}",
+        category: "engineering",
+        folder: "Tech/DevOps",
+        taxonomyPath: "tech.devops.infra",
+        hashtags: ["DevOps", "SRE", "Kubernetes", "CICD", "Infrastructure"],
+        keywords: ["devops", "\u0434\u0435\u0432\u043E\u043F\u0441", "sre", "kubernetes", "k8s", "docker", "ci/cd", "helm", "terraform", "ansible", "container", "\u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440", "\u043A\u043B\u0430\u0441\u0442\u0435\u0440", "observability"],
+        description: "\u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u0438\u0437\u0430\u0446\u0438\u044F, \u043E\u0440\u043A\u0435\u0441\u0442\u0440\u0430\u0446\u0438\u044F Kubernetes, \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044F CI/CD \u043F\u0430\u0439\u043F\u043B\u0430\u0439\u043D\u043E\u0432, \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 \u0438 \u043D\u0430\u0434\u0435\u0436\u043D\u043E\u0441\u0442\u044C \u0441\u0435\u0440\u0432\u0438\u0441\u043E\u0432."
+      },
+      bigtech: {
+        id: "bigtech",
+        name: "\u0411\u0438\u0433\u0442\u0435\u0445 & \u0420\u044B\u043D\u043E\u043A \u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0439",
+        shortName: "BigTech",
+        emoji: "\u{1F3E2}",
+        category: "business",
+        folder: "Tech/BigTech",
+        taxonomyPath: "tech.bigtech.market",
+        hashtags: ["BigTech", "\u0411\u0438\u0433\u0442\u0435\u0445", "ITBusiness", "\u0420\u044B\u043D\u043E\u043A", "Tech\u041A\u043E\u0440\u043F\u043E\u0440\u0430\u0446\u0438\u0438"],
+        keywords: ["bigtech", "\u0431\u0438\u0433\u0442\u0435\u0445", "google", "apple", "microsoft", "meta", "nvidia", "amazon", "\u044F\u043D\u0434\u0435\u043A\u0441", "yandex", "\u0430\u043D\u0442\u0438\u043C\u043E\u043D\u043E\u043F\u043E\u043B", "m&a", "\u043A\u0430\u043F\u0438\u0442\u0430\u043B\u0438\u0437\u0430\u0446\u0438", "\u043A\u0432\u0430\u0440\u0442\u0430\u043B\u044C\u043D\u044B\u0439 \u043E\u0442\u0447\u0435\u0442", "\u0430\u043A\u0446\u0438\u0438"],
+        description: "\u041A\u043E\u0440\u043F\u043E\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0435 \u0433\u0438\u0433\u0430\u043D\u0442\u044B \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u0438\u043D\u0432\u0435\u0441\u0442\u0438\u0446\u0438\u0438, \u0430\u043D\u0442\u0438\u043C\u043E\u043D\u043E\u043F\u043E\u043B\u044C\u043D\u044B\u0435 \u0440\u0430\u0441\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u043D\u0438\u044F, \u043F\u043E\u0433\u043B\u043E\u0449\u0435\u043D\u0438\u044F (M&A) \u0438 \u0444\u0438\u043D\u0430\u043D\u0441\u043E\u0432\u044B\u0435 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B."
+      },
+      backend: {
+        id: "backend",
+        name: "Backend & \u0420\u0430\u0441\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0435 \u0421\u0438\u0441\u0442\u0435\u043C\u044B",
+        shortName: "Backend",
+        emoji: "\u2699\uFE0F",
+        category: "engineering",
+        folder: "Tech/Backend",
+        taxonomyPath: "tech.backend.systems",
+        hashtags: ["Backend", "\u0411\u044D\u043A\u0435\u043D\u0434", "Architecture", "Databases", "HighLoad"],
+        keywords: ["backend", "\u0431\u044D\u043A\u0435\u043D\u0434", "\u043C\u0438\u043A\u0440\u043E\u0441\u0435\u0440\u0432\u0438\u0441", "\u0441\u0435\u0440\u0432\u0435\u0440", "\u0431\u0430\u0437\u0430 \u0434\u0430\u043D\u043D\u044B\u0445", "\u0431\u0434", "postgres", "postgresql", "redis", "kafka", "grpc", "rest", "golang", "rust", "java", "node.js", "highload", "\u0440\u0430\u0441\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u043D"],
+        description: "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u0430\u044F \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u0430, \u0431\u0430\u0437\u044B \u0434\u0430\u043D\u043D\u044B\u0445, \u0431\u0440\u043E\u043A\u0435\u0440\u044B \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439, \u043C\u0430\u0441\u0448\u0442\u0430\u0431\u0438\u0440\u0443\u0435\u043C\u043E\u0441\u0442\u044C HighLoad \u0438 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0435 \u044F\u0437\u044B\u043A\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F."
+      },
+      frontend: {
+        id: "frontend",
+        name: "Frontend & Web-\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0430",
+        shortName: "Frontend",
+        emoji: "\u{1F310}",
+        category: "engineering",
+        folder: "Tech/Frontend",
+        taxonomyPath: "tech.frontend.web",
+        hashtags: ["Frontend", "\u0424\u0440\u043E\u043D\u0442\u0435\u043D\u0434", "WebDev", "React", "UIUX"],
+        keywords: ["frontend", "\u0444\u0440\u043E\u043D\u0442\u0435\u043D\u0434", "react", "vue", "svelte", "angular", "nextjs", "vite", "javascript", "typescript", "css", "\u0431\u0440\u0430\u0443\u0437\u0435\u0440", "webassembly", "wasm", "ui"],
+        description: "\u0412\u0435\u0431-\u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u044B, \u043A\u043B\u0438\u0435\u043D\u0442\u0441\u043A\u0438\u0435 \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u044B, \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u0440\u0435\u043D\u0434\u0435\u0440\u0438\u043D\u0433\u0430, \u0444\u0440\u0435\u0439\u043C\u0432\u043E\u0440\u043A\u0438 \u0438 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u043D\u044B\u0435 \u0434\u0432\u0438\u0436\u043A\u0438."
+      },
+      mobile: {
+        id: "mobile",
+        name: "Mobile \u0420\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0430 (iOS & Android)",
+        shortName: "Mobile",
+        emoji: "\u{1F4F1}",
+        category: "engineering",
+        folder: "Tech/Mobile",
+        taxonomyPath: "tech.mobile.apps",
+        hashtags: ["Mobile", "iOS", "Android", "Flutter", "ReactNative"],
+        keywords: ["mobile", "\u043C\u043E\u0431\u0438\u043B\u044C\u043D", "ios", "android", "swift", "kotlin", "flutter", "react native", "app store", "google play", "apk"],
+        description: "\u041D\u0430\u0442\u0438\u0432\u043D\u0430\u044F \u0438 \u043A\u0440\u043E\u0441\u0441\u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0435\u043D\u043D\u0430\u044F \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u0430\u044F \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0430, \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u0435 \u041E\u0421, \u043C\u0430\u0433\u0430\u0437\u0438\u043D\u044B \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0439 \u0438 \u044D\u043A\u043E\u0441\u0438\u0441\u0442\u0435\u043C\u044B \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432."
+      },
+      infosec: {
+        id: "infosec",
+        name: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u0430\u044F \u0411\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C & SecOps",
+        shortName: "InfoSec",
+        emoji: "\u{1F6E1}\uFE0F",
+        category: "engineering",
+        folder: "Tech/Security",
+        taxonomyPath: "tech.infosec.security",
+        hashtags: ["InfoSec", "CyberSecurity", "CVE", "\u0411\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C", "SecOps"],
+        keywords: ["infosec", "security", "\u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442", "\u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442", "cve", "zero-day", "\u0432\u0437\u043B\u043E\u043C", "\u0445\u0430\u043A\u0435\u0440", "malware", "\u043A\u0440\u0438\u043F\u0442\u043E\u0433\u0440\u0430\u0444\u0438", "ddos", "\u0444\u0438\u0448\u0438\u043D\u0433", "\u0430\u0443\u0434\u0438\u0442 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438"],
+        description: "\u041A\u0438\u0431\u0435\u0440\u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C, \u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442\u0438 CVE, \u0437\u0430\u0449\u0438\u0442\u0430 \u043F\u0435\u0440\u0438\u043C\u0435\u0442\u0440\u0430, \u0430\u0443\u0434\u0438\u0442 \u043A\u043E\u0434\u0430, \u043A\u0440\u0438\u043F\u0442\u043E\u0433\u0440\u0430\u0444\u0438\u044F \u0438 \u0440\u0435\u0430\u0433\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u043D\u0430 \u0438\u043D\u0446\u0438\u0434\u0435\u043D\u0442\u044B."
+      },
+      cloud: {
+        id: "cloud",
+        name: "Cloud-\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B & Serverless",
+        shortName: "Cloud",
+        emoji: "\u2601\uFE0F",
+        category: "engineering",
+        folder: "Tech/Cloud",
+        taxonomyPath: "tech.cloud.platforms",
+        hashtags: ["Cloud", "AWS", "GCP", "Azure", "Serverless"],
+        keywords: ["cloud", "\u043E\u0431\u043B\u0430\u043A", "aws", "gcp", "azure", "yandex cloud", "serverless", "lambda", "s3", "iaas", "paas", "edge"],
+        description: "\u041E\u0431\u043B\u0430\u0447\u043D\u044B\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u044B, \u0431\u0435\u0441\u0441\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u044F, \u0433\u0438\u0431\u0440\u0438\u0434\u043D\u044B\u0435 \u043E\u0431\u043B\u0430\u043A\u0430, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u0430\u044F \u0441\u0432\u044F\u0437\u043D\u043E\u0441\u0442\u044C."
+      },
+      data: {
+        id: "data",
+        name: "Data Engineering & Big Data",
+        shortName: "Data",
+        emoji: "\u{1F4CA}",
+        category: "engineering",
+        folder: "Tech/Data",
+        taxonomyPath: "tech.data.engineering",
+        hashtags: ["DataEngineering", "BigData", "Analytics", "ClickHouse", "ETL"],
+        keywords: ["data", "\u0434\u0430\u043D\u043D\u044B\u0435", "big data", "etl", "elt", "clickhouse", "spark", "hadoop", "snowflake", "dbt", "lakehouse", "\u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u0434\u0430\u043D\u043D\u044B\u0445", "\u043F\u0430\u0439\u043F\u043B\u0430\u0439\u043D \u0434\u0430\u043D\u043D\u044B\u0445"],
+        description: "\u041F\u0430\u0439\u043F\u043B\u0430\u0439\u043D\u044B \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0438 \u0434\u0430\u043D\u043D\u044B\u0445, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 DWH/Lakehouse, \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0421\u0423\u0411\u0414 \u0438 \u043F\u043E\u0442\u043E\u043A\u043E\u0432\u0430\u044F \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430."
+      },
+      hardware: {
+        id: "hardware",
+        name: "Hardware, \u0427\u0438\u043F\u044B & \u041F\u043E\u043B\u0443\u043F\u0440\u043E\u0432\u043E\u0434\u043D\u0438\u043A\u0438",
+        shortName: "Hardware",
+        emoji: "\u{1F52C}",
+        category: "engineering",
+        folder: "Tech/Hardware",
+        taxonomyPath: "tech.hardware.semiconductors",
+        hashtags: ["Hardware", "Chips", "Semiconductors", "Nvidia", "TSMC"],
+        keywords: ["hardware", "\u0436\u0435\u043B\u0435\u0437\u043E", "\u0447\u0438\u043F", "\u0447\u0438\u043F\u044B", "\u043F\u043E\u043B\u0443\u043F\u0440\u043E\u0432\u043E\u0434\u043D\u0438\u043A", "\u043F\u0440\u043E\u0446\u0435\u0441\u0441\u043E\u0440", "gpu", "cpu", "nvidia", "tsmc", "asml", "intel", "amd", "arm", "risc-v", "\u043A\u0432\u0430\u043D\u0442\u043E\u0432"],
+        description: "\u041A\u0440\u0435\u043C\u043D\u0438\u0435\u0432\u0430\u044F \u043B\u0438\u0442\u043E\u0433\u0440\u0430\u0444\u0438\u044F, \u0443\u0441\u043A\u043E\u0440\u0438\u0442\u0435\u043B\u0438 \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0439 (GPU/TPU/NPU), RISC-V, \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u044B \u0438 \u0434\u0430\u0442\u0430-\u0446\u0435\u043D\u0442\u0440\u044B."
+      },
+      gamedev: {
+        id: "gamedev",
+        name: "GameDev & \u041A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u043D\u0430\u044F \u0413\u0440\u0430\u0444\u0438\u043A\u0430",
+        shortName: "GameDev",
+        emoji: "\u{1F3AE}",
+        category: "engineering",
+        folder: "Tech/GameDev",
+        taxonomyPath: "tech.gamedev.graphics",
+        hashtags: ["GameDev", "UnrealEngine", "Unity", "Graphics", "RayTracing"],
+        keywords: ["gamedev", "\u0433\u0435\u0439\u043C\u0434\u0435\u0432", "\u0438\u0433\u0440\u044B", "unreal engine", "unity", "godot", "\u0448\u0435\u0439\u0434\u0435\u0440", "ray tracing", "3d", "\u0433\u0440\u0430\u0444\u0438\u043A\u0430", "directx", "vulkan"],
+        description: "\u0418\u0433\u0440\u043E\u0432\u044B\u0435 \u0434\u0432\u0438\u0436\u043A\u0438, \u0440\u0435\u043D\u0434\u0435\u0440\u0438\u043D\u0433 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438, \u0444\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0441\u0438\u043C\u0443\u043B\u044F\u0446\u0438\u0438 \u0438 \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0438 \u0432\u0438\u0434\u0435\u043E\u0438\u0433\u0440."
+      },
+      qa: {
+        id: "qa",
+        name: "QA & \u0418\u043D\u0436\u0435\u043D\u0435\u0440\u0438\u044F \u041A\u0430\u0447\u0435\u0441\u0442\u0432\u0430",
+        shortName: "QA",
+        emoji: "\u{1F9EA}",
+        category: "engineering",
+        folder: "Tech/QA",
+        taxonomyPath: "tech.qa.testing",
+        hashtags: ["QA", "Testing", "Automation", "QualityEngineering"],
+        keywords: ["qa", "\u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D", "e2e", "cypress", "playwright", "unit test", "\u0430\u0432\u0442\u043E\u0442\u0435\u0441\u0442", "\u043D\u0430\u0433\u0440\u0443\u0437\u043E\u0447\u043D\u043E\u0435 \u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435", "qa engineering"],
+        description: "\u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044F \u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F, E2E \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438, \u043D\u0430\u0433\u0440\u0443\u0437\u043E\u0447\u043D\u044B\u0435 \u0438\u0441\u043F\u044B\u0442\u0430\u043D\u0438\u044F, \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u043D\u0430\u0434\u0435\u0436\u043D\u043E\u0441\u0442\u0438 \u0438 \u043A\u0430\u0447\u0435\u0441\u0442\u0432\u043E \u041F\u041E."
+      }
+    };
+    IT_SECTOR_LIST = Object.values(IT_SECTOR_REGISTRY);
+    external_exports = {};
+    __export2(external_exports, {
+      BRAND: () => BRAND,
+      DIRTY: () => DIRTY,
+      EMPTY_PATH: () => EMPTY_PATH,
+      INVALID: () => INVALID,
+      NEVER: () => NEVER,
+      OK: () => OK,
+      ParseStatus: () => ParseStatus,
+      Schema: () => ZodType,
+      ZodAny: () => ZodAny,
+      ZodArray: () => ZodArray,
+      ZodBigInt: () => ZodBigInt,
+      ZodBoolean: () => ZodBoolean,
+      ZodBranded: () => ZodBranded,
+      ZodCatch: () => ZodCatch,
+      ZodDate: () => ZodDate,
+      ZodDefault: () => ZodDefault,
+      ZodDiscriminatedUnion: () => ZodDiscriminatedUnion,
+      ZodEffects: () => ZodEffects,
+      ZodEnum: () => ZodEnum,
+      ZodError: () => ZodError,
+      ZodFirstPartyTypeKind: () => ZodFirstPartyTypeKind,
+      ZodFunction: () => ZodFunction,
+      ZodIntersection: () => ZodIntersection,
+      ZodIssueCode: () => ZodIssueCode,
+      ZodLazy: () => ZodLazy,
+      ZodLiteral: () => ZodLiteral,
+      ZodMap: () => ZodMap,
+      ZodNaN: () => ZodNaN,
+      ZodNativeEnum: () => ZodNativeEnum,
+      ZodNever: () => ZodNever,
+      ZodNull: () => ZodNull,
+      ZodNullable: () => ZodNullable,
+      ZodNumber: () => ZodNumber,
+      ZodObject: () => ZodObject,
+      ZodOptional: () => ZodOptional,
+      ZodParsedType: () => ZodParsedType,
+      ZodPipeline: () => ZodPipeline,
+      ZodPromise: () => ZodPromise,
+      ZodReadonly: () => ZodReadonly,
+      ZodRecord: () => ZodRecord,
+      ZodSchema: () => ZodType,
+      ZodSet: () => ZodSet,
+      ZodString: () => ZodString,
+      ZodSymbol: () => ZodSymbol,
+      ZodTransformer: () => ZodEffects,
+      ZodTuple: () => ZodTuple,
+      ZodType: () => ZodType,
+      ZodUndefined: () => ZodUndefined,
+      ZodUnion: () => ZodUnion,
+      ZodUnknown: () => ZodUnknown,
+      ZodVoid: () => ZodVoid,
+      addIssueToContext: () => addIssueToContext,
+      any: () => anyType,
+      array: () => arrayType,
+      bigint: () => bigIntType,
+      boolean: () => booleanType,
+      coerce: () => coerce,
+      custom: () => custom,
+      date: () => dateType,
+      datetimeRegex: () => datetimeRegex,
+      defaultErrorMap: () => en_default,
+      discriminatedUnion: () => discriminatedUnionType,
+      effect: () => effectsType,
+      enum: () => enumType,
+      function: () => functionType,
+      getErrorMap: () => getErrorMap,
+      getParsedType: () => getParsedType,
+      instanceof: () => instanceOfType,
+      intersection: () => intersectionType,
+      isAborted: () => isAborted,
+      isAsync: () => isAsync,
+      isDirty: () => isDirty,
+      isValid: () => isValid,
+      late: () => late,
+      lazy: () => lazyType,
+      literal: () => literalType,
+      makeIssue: () => makeIssue,
+      map: () => mapType,
+      nan: () => nanType,
+      nativeEnum: () => nativeEnumType,
+      never: () => neverType,
+      null: () => nullType,
+      nullable: () => nullableType,
+      number: () => numberType,
+      object: () => objectType,
+      objectUtil: () => objectUtil,
+      oboolean: () => oboolean,
+      onumber: () => onumber,
+      optional: () => optionalType,
+      ostring: () => ostring,
+      pipeline: () => pipelineType,
+      preprocess: () => preprocessType,
+      promise: () => promiseType,
+      quotelessJson: () => quotelessJson,
+      record: () => recordType,
+      set: () => setType,
+      setErrorMap: () => setErrorMap,
+      strictObject: () => strictObjectType,
+      string: () => stringType,
+      symbol: () => symbolType,
+      transformer: () => effectsType,
+      tuple: () => tupleType,
+      undefined: () => undefinedType,
+      union: () => unionType,
+      unknown: () => unknownType,
+      util: () => util,
+      void: () => voidType
+    });
+    (function(util2) {
+      util2.assertEqual = (_) => {
+      };
+      function assertIs(_arg) {
+      }
+      util2.assertIs = assertIs;
+      function assertNever(_x) {
+        throw new Error();
+      }
+      util2.assertNever = assertNever;
+      util2.arrayToEnum = (items) => {
+        const obj = {};
+        for (const item of items) {
+          obj[item] = item;
+        }
+        return obj;
+      };
+      util2.getValidEnumValues = (obj) => {
+        const validKeys = util2.objectKeys(obj).filter((k) => typeof obj[obj[k]] !== "number");
+        const filtered = {};
+        for (const k of validKeys) {
+          filtered[k] = obj[k];
+        }
+        return util2.objectValues(filtered);
+      };
+      util2.objectValues = (obj) => {
+        return util2.objectKeys(obj).map(function(e) {
+          return obj[e];
+        });
+      };
+      util2.objectKeys = typeof Object.keys === "function" ? (obj) => Object.keys(obj) : (object) => {
+        const keys = [];
+        for (const key in object) {
+          if (Object.prototype.hasOwnProperty.call(object, key)) {
+            keys.push(key);
+          }
+        }
+        return keys;
+      };
+      util2.find = (arr, checker) => {
+        for (const item of arr) {
+          if (checker(item))
+            return item;
+        }
+        return void 0;
+      };
+      util2.isInteger = typeof Number.isInteger === "function" ? (val) => Number.isInteger(val) : (val) => typeof val === "number" && Number.isFinite(val) && Math.floor(val) === val;
+      function joinValues(array, separator = " | ") {
+        return array.map((val) => typeof val === "string" ? `'${val}'` : val).join(separator);
+      }
+      util2.joinValues = joinValues;
+      util2.jsonStringifyReplacer = (_, value) => {
+        if (typeof value === "bigint") {
+          return value.toString();
+        }
+        return value;
+      };
+    })(util || (util = {}));
+    (function(objectUtil2) {
+      objectUtil2.mergeShapes = (first, second) => {
+        return {
+          ...first,
+          ...second
+          // second overwrites first
+        };
+      };
+    })(objectUtil || (objectUtil = {}));
+    ZodParsedType = util.arrayToEnum([
+      "string",
+      "nan",
+      "number",
+      "integer",
+      "float",
+      "boolean",
+      "date",
+      "bigint",
+      "symbol",
+      "function",
+      "undefined",
+      "null",
+      "array",
+      "object",
+      "unknown",
+      "promise",
+      "void",
+      "never",
+      "map",
+      "set"
+    ]);
+    getParsedType = (data) => {
+      const t = typeof data;
+      switch (t) {
+        case "undefined":
+          return ZodParsedType.undefined;
+        case "string":
+          return ZodParsedType.string;
+        case "number":
+          return Number.isNaN(data) ? ZodParsedType.nan : ZodParsedType.number;
+        case "boolean":
+          return ZodParsedType.boolean;
+        case "function":
+          return ZodParsedType.function;
+        case "bigint":
+          return ZodParsedType.bigint;
+        case "symbol":
+          return ZodParsedType.symbol;
+        case "object":
+          if (Array.isArray(data)) {
+            return ZodParsedType.array;
+          }
+          if (data === null) {
+            return ZodParsedType.null;
+          }
+          if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
+            return ZodParsedType.promise;
+          }
+          if (typeof Map !== "undefined" && data instanceof Map) {
+            return ZodParsedType.map;
+          }
+          if (typeof Set !== "undefined" && data instanceof Set) {
+            return ZodParsedType.set;
+          }
+          if (typeof Date !== "undefined" && data instanceof Date) {
+            return ZodParsedType.date;
+          }
+          return ZodParsedType.object;
+        default:
+          return ZodParsedType.unknown;
+      }
+    };
+    ZodIssueCode = util.arrayToEnum([
+      "invalid_type",
+      "invalid_literal",
+      "custom",
+      "invalid_union",
+      "invalid_union_discriminator",
+      "invalid_enum_value",
+      "unrecognized_keys",
+      "invalid_arguments",
+      "invalid_return_type",
+      "invalid_date",
+      "invalid_string",
+      "too_small",
+      "too_big",
+      "invalid_intersection_types",
+      "not_multiple_of",
+      "not_finite"
+    ]);
+    quotelessJson = (obj) => {
+      const json = JSON.stringify(obj, null, 2);
+      return json.replace(/"([^"]+)":/g, "$1:");
+    };
+    ZodError = class _ZodError extends Error {
+      get errors() {
+        return this.issues;
+      }
+      constructor(issues) {
+        super();
+        this.issues = [];
+        this.addIssue = (sub) => {
+          this.issues = [...this.issues, sub];
+        };
+        this.addIssues = (subs = []) => {
+          this.issues = [...this.issues, ...subs];
+        };
+        const actualProto = new.target.prototype;
+        if (Object.setPrototypeOf) {
+          Object.setPrototypeOf(this, actualProto);
+        } else {
+          this.__proto__ = actualProto;
+        }
+        this.name = "ZodError";
+        this.issues = issues;
+      }
+      format(_mapper) {
+        const mapper = _mapper || function(issue) {
+          return issue.message;
+        };
+        const fieldErrors = { _errors: [] };
+        const processError = (error) => {
+          for (const issue of error.issues) {
+            if (issue.code === "invalid_union") {
+              issue.unionErrors.map(processError);
+            } else if (issue.code === "invalid_return_type") {
+              processError(issue.returnTypeError);
+            } else if (issue.code === "invalid_arguments") {
+              processError(issue.argumentsError);
+            } else if (issue.path.length === 0) {
+              fieldErrors._errors.push(mapper(issue));
+            } else {
+              let curr = fieldErrors;
+              let i = 0;
+              while (i < issue.path.length) {
+                const el = issue.path[i];
+                const terminal = i === issue.path.length - 1;
+                if (!terminal) {
+                  curr[el] = curr[el] || { _errors: [] };
+                } else {
+                  curr[el] = curr[el] || { _errors: [] };
+                  curr[el]._errors.push(mapper(issue));
+                }
+                curr = curr[el];
+                i++;
+              }
+            }
+          }
+        };
+        processError(this);
+        return fieldErrors;
+      }
+      static assert(value) {
+        if (!(value instanceof _ZodError)) {
+          throw new Error(`Not a ZodError: ${value}`);
+        }
+      }
+      toString() {
+        return this.message;
+      }
+      get message() {
+        return JSON.stringify(this.issues, util.jsonStringifyReplacer, 2);
+      }
+      get isEmpty() {
+        return this.issues.length === 0;
+      }
+      flatten(mapper = (issue) => issue.message) {
+        const fieldErrors = {};
+        const formErrors = [];
+        for (const sub of this.issues) {
+          if (sub.path.length > 0) {
+            const firstEl = sub.path[0];
+            fieldErrors[firstEl] = fieldErrors[firstEl] || [];
+            fieldErrors[firstEl].push(mapper(sub));
+          } else {
+            formErrors.push(mapper(sub));
+          }
+        }
+        return { formErrors, fieldErrors };
+      }
+      get formErrors() {
+        return this.flatten();
+      }
+    };
+    ZodError.create = (issues) => {
+      const error = new ZodError(issues);
+      return error;
+    };
+    errorMap = (issue, _ctx) => {
+      let message;
+      switch (issue.code) {
+        case ZodIssueCode.invalid_type:
+          if (issue.received === ZodParsedType.undefined) {
+            message = "Required";
+          } else {
+            message = `Expected ${issue.expected}, received ${issue.received}`;
+          }
+          break;
+        case ZodIssueCode.invalid_literal:
+          message = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
+          break;
+        case ZodIssueCode.unrecognized_keys:
+          message = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
+          break;
+        case ZodIssueCode.invalid_union:
+          message = `Invalid input`;
+          break;
+        case ZodIssueCode.invalid_union_discriminator:
+          message = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
+          break;
+        case ZodIssueCode.invalid_enum_value:
+          message = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
+          break;
+        case ZodIssueCode.invalid_arguments:
+          message = `Invalid function arguments`;
+          break;
+        case ZodIssueCode.invalid_return_type:
+          message = `Invalid function return type`;
+          break;
+        case ZodIssueCode.invalid_date:
+          message = `Invalid date`;
+          break;
+        case ZodIssueCode.invalid_string:
+          if (typeof issue.validation === "object") {
+            if ("includes" in issue.validation) {
+              message = `Invalid input: must include "${issue.validation.includes}"`;
+              if (typeof issue.validation.position === "number") {
+                message = `${message} at one or more positions greater than or equal to ${issue.validation.position}`;
+              }
+            } else if ("startsWith" in issue.validation) {
+              message = `Invalid input: must start with "${issue.validation.startsWith}"`;
+            } else if ("endsWith" in issue.validation) {
+              message = `Invalid input: must end with "${issue.validation.endsWith}"`;
+            } else {
+              util.assertNever(issue.validation);
+            }
+          } else if (issue.validation !== "regex") {
+            message = `Invalid ${issue.validation}`;
+          } else {
+            message = "Invalid";
+          }
+          break;
+        case ZodIssueCode.too_small:
+          if (issue.type === "array")
+            message = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
+          else if (issue.type === "string")
+            message = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
+          else if (issue.type === "number")
+            message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+          else if (issue.type === "bigint")
+            message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+          else if (issue.type === "date")
+            message = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodIssueCode.too_big:
+          if (issue.type === "array")
+            message = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
+          else if (issue.type === "string")
+            message = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
+          else if (issue.type === "number")
+            message = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+          else if (issue.type === "bigint")
+            message = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+          else if (issue.type === "date")
+            message = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodIssueCode.custom:
+          message = `Invalid input`;
+          break;
+        case ZodIssueCode.invalid_intersection_types:
+          message = `Intersection results could not be merged`;
+          break;
+        case ZodIssueCode.not_multiple_of:
+          message = `Number must be a multiple of ${issue.multipleOf}`;
+          break;
+        case ZodIssueCode.not_finite:
+          message = "Number must be finite";
+          break;
+        default:
+          message = _ctx.defaultError;
+          util.assertNever(issue);
+      }
+      return { message };
+    };
+    en_default = errorMap;
+    overrideErrorMap = en_default;
+    makeIssue = (params) => {
+      const { data, path, errorMaps, issueData } = params;
+      const fullPath = [...path, ...issueData.path || []];
+      const fullIssue = {
+        ...issueData,
+        path: fullPath
+      };
+      if (issueData.message !== void 0) {
+        return {
+          ...issueData,
+          path: fullPath,
+          message: issueData.message
+        };
+      }
+      let errorMessage = "";
+      const maps = errorMaps.filter((m) => !!m).slice().reverse();
+      for (const map of maps) {
+        errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
+      }
+      return {
+        ...issueData,
+        path: fullPath,
+        message: errorMessage
+      };
+    };
+    EMPTY_PATH = [];
+    ParseStatus = class _ParseStatus {
+      constructor() {
+        this.value = "valid";
+      }
+      dirty() {
+        if (this.value === "valid")
+          this.value = "dirty";
+      }
+      abort() {
+        if (this.value !== "aborted")
+          this.value = "aborted";
+      }
+      static mergeArray(status, results) {
+        const arrayValue = [];
+        for (const s of results) {
+          if (s.status === "aborted")
+            return INVALID;
+          if (s.status === "dirty")
+            status.dirty();
+          arrayValue.push(s.value);
+        }
+        return { status: status.value, value: arrayValue };
+      }
+      static async mergeObjectAsync(status, pairs) {
+        const syncPairs = [];
+        for (const pair of pairs) {
+          const key = await pair.key;
+          const value = await pair.value;
+          syncPairs.push({
+            key,
+            value
+          });
+        }
+        return _ParseStatus.mergeObjectSync(status, syncPairs);
+      }
+      static mergeObjectSync(status, pairs) {
+        const finalObject = {};
+        for (const pair of pairs) {
+          const { key, value } = pair;
+          if (key.status === "aborted")
+            return INVALID;
+          if (value.status === "aborted")
+            return INVALID;
+          if (key.status === "dirty")
+            status.dirty();
+          if (value.status === "dirty")
+            status.dirty();
+          if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
+            finalObject[key.value] = value.value;
+          }
+        }
+        return { status: status.value, value: finalObject };
+      }
+    };
+    INVALID = Object.freeze({
+      status: "aborted"
+    });
+    DIRTY = (value) => ({ status: "dirty", value });
+    OK = (value) => ({ status: "valid", value });
+    isAborted = (x) => x.status === "aborted";
+    isDirty = (x) => x.status === "dirty";
+    isValid = (x) => x.status === "valid";
+    isAsync = (x) => typeof Promise !== "undefined" && x instanceof Promise;
+    (function(errorUtil2) {
+      errorUtil2.errToObj = (message) => typeof message === "string" ? { message } : message || {};
+      errorUtil2.toString = (message) => typeof message === "string" ? message : message?.message;
+    })(errorUtil || (errorUtil = {}));
     ParseInputLazyPath = class {
       constructor(parent, value, path, key) {
         this._cachedPath = [];
@@ -2466,8 +3120,9 @@ var init_types = __esm({
               });
               status.dirty();
             }
-          } else if (unknownKeys === "strip") {
-          } else {
+          } else if (unknownKeys === "strip")
+            ;
+          else {
             throw new Error(`Internal ZodObject error: invalid unknownKeys value.`);
           }
         } else {
@@ -3818,7 +4473,7 @@ var init_types = __esm({
         ...processCreateParams(params)
       });
     };
-    BRAND = Symbol("zod_brand");
+    BRAND = /* @__PURE__ */ Symbol("zod_brand");
     ZodBranded = class extends ZodType {
       _parse(input) {
         const { ctx } = this._processInputParams(input);
@@ -4002,742 +4657,6 @@ var init_types = __esm({
       date: (arg) => ZodDate.create({ ...arg, coerce: true })
     };
     NEVER = INVALID;
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js
-var external_exports = {};
-__export(external_exports, {
-  BRAND: () => BRAND,
-  DIRTY: () => DIRTY,
-  EMPTY_PATH: () => EMPTY_PATH,
-  INVALID: () => INVALID,
-  NEVER: () => NEVER,
-  OK: () => OK,
-  ParseStatus: () => ParseStatus,
-  Schema: () => ZodType,
-  ZodAny: () => ZodAny,
-  ZodArray: () => ZodArray,
-  ZodBigInt: () => ZodBigInt,
-  ZodBoolean: () => ZodBoolean,
-  ZodBranded: () => ZodBranded,
-  ZodCatch: () => ZodCatch,
-  ZodDate: () => ZodDate,
-  ZodDefault: () => ZodDefault,
-  ZodDiscriminatedUnion: () => ZodDiscriminatedUnion,
-  ZodEffects: () => ZodEffects,
-  ZodEnum: () => ZodEnum,
-  ZodError: () => ZodError,
-  ZodFirstPartyTypeKind: () => ZodFirstPartyTypeKind,
-  ZodFunction: () => ZodFunction,
-  ZodIntersection: () => ZodIntersection,
-  ZodIssueCode: () => ZodIssueCode,
-  ZodLazy: () => ZodLazy,
-  ZodLiteral: () => ZodLiteral,
-  ZodMap: () => ZodMap,
-  ZodNaN: () => ZodNaN,
-  ZodNativeEnum: () => ZodNativeEnum,
-  ZodNever: () => ZodNever,
-  ZodNull: () => ZodNull,
-  ZodNullable: () => ZodNullable,
-  ZodNumber: () => ZodNumber,
-  ZodObject: () => ZodObject,
-  ZodOptional: () => ZodOptional,
-  ZodParsedType: () => ZodParsedType,
-  ZodPipeline: () => ZodPipeline,
-  ZodPromise: () => ZodPromise,
-  ZodReadonly: () => ZodReadonly,
-  ZodRecord: () => ZodRecord,
-  ZodSchema: () => ZodType,
-  ZodSet: () => ZodSet,
-  ZodString: () => ZodString,
-  ZodSymbol: () => ZodSymbol,
-  ZodTransformer: () => ZodEffects,
-  ZodTuple: () => ZodTuple,
-  ZodType: () => ZodType,
-  ZodUndefined: () => ZodUndefined,
-  ZodUnion: () => ZodUnion,
-  ZodUnknown: () => ZodUnknown,
-  ZodVoid: () => ZodVoid,
-  addIssueToContext: () => addIssueToContext,
-  any: () => anyType,
-  array: () => arrayType,
-  bigint: () => bigIntType,
-  boolean: () => booleanType,
-  coerce: () => coerce,
-  custom: () => custom,
-  date: () => dateType,
-  datetimeRegex: () => datetimeRegex,
-  defaultErrorMap: () => en_default,
-  discriminatedUnion: () => discriminatedUnionType,
-  effect: () => effectsType,
-  enum: () => enumType,
-  function: () => functionType,
-  getErrorMap: () => getErrorMap,
-  getParsedType: () => getParsedType,
-  instanceof: () => instanceOfType,
-  intersection: () => intersectionType,
-  isAborted: () => isAborted,
-  isAsync: () => isAsync,
-  isDirty: () => isDirty,
-  isValid: () => isValid,
-  late: () => late,
-  lazy: () => lazyType,
-  literal: () => literalType,
-  makeIssue: () => makeIssue,
-  map: () => mapType,
-  nan: () => nanType,
-  nativeEnum: () => nativeEnumType,
-  never: () => neverType,
-  null: () => nullType,
-  nullable: () => nullableType,
-  number: () => numberType,
-  object: () => objectType,
-  objectUtil: () => objectUtil,
-  oboolean: () => oboolean,
-  onumber: () => onumber,
-  optional: () => optionalType,
-  ostring: () => ostring,
-  pipeline: () => pipelineType,
-  preprocess: () => preprocessType,
-  promise: () => promiseType,
-  quotelessJson: () => quotelessJson,
-  record: () => recordType,
-  set: () => setType,
-  setErrorMap: () => setErrorMap,
-  strictObject: () => strictObjectType,
-  string: () => stringType,
-  symbol: () => symbolType,
-  transformer: () => effectsType,
-  tuple: () => tupleType,
-  undefined: () => undefinedType,
-  union: () => unionType,
-  unknown: () => unknownType,
-  util: () => util,
-  void: () => voidType
-});
-var init_external = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js"() {
-    init_errors();
-    init_parseUtil();
-    init_typeAliases();
-    init_util();
-    init_types();
-    init_ZodError();
-  }
-});
-
-// ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/index.js
-var init_zod = __esm({
-  "../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/index.js"() {
-    init_external();
-    init_external();
-  }
-});
-
-// ../shared/dist/index.mjs
-var NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, CURATOR_PERSONAS, CURATOR_PERSONAS_LIST, ACTIVE_CURATOR_PERSONAS_LIST, CURATOR_GROUPS, CURATOR_GROUPS_LIST, WORKER_AGENTS, WORKER_AGENTS_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
-var init_dist = __esm({
-  "../shared/dist/index.mjs"() {
-    "use strict";
-    init_zod();
-    NoteType = {
-      SINGLE: "SINGLE",
-      PERIOD: "PERIOD",
-      EVENT: "EVENT",
-      FILM_RELEASE: "FILM_RELEASE",
-      MENTION: "MENTION",
-      DONE: "DONE"
-    };
-    NOTE_TEMPLATE_TRENDS_TODAY = "trends_today";
-    NOTE_TEMPLATE_TREND_PERIOD = "trend_period";
-    NOTE_TEMPLATE_EVENT = "event";
-    NOTE_TEMPLATE_DONE = "done";
-    NOTE_TEMPLATE_POINT_NOTE = "point_note";
-    DEFAULT_NOTE_TEMPLATES = {
-      [NOTE_TEMPLATE_TRENDS_TODAY]: {
-        id: NOTE_TEMPLATE_TRENDS_TODAY,
-        name: "\u0422\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
-        aliases: [
-          "\u0442\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
-          "\u0442\u0440\u0435\u043D\u0434\u044B",
-          "\u0442\u0440\u0435\u043D\u0434 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
-          "\u0442\u0440\u0435\u043D\u0434",
-          "trends today",
-          "trends",
-          "trend",
-          "/today",
-          "/trend",
-          "/tr",
-          "!\u0442\u0440\u0435\u043D\u0434\u044B",
-          "!\u0442\u0440\u0435\u043D\u0434",
-          "!today"
-        ],
-        defaultType: NoteType.SINGLE,
-        defaultDisplayType: "Trend",
-        defaultFolder: "Trends",
-        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
-        icon: "trending-up"
-      },
-      [NOTE_TEMPLATE_TREND_PERIOD]: {
-        id: NOTE_TEMPLATE_TREND_PERIOD,
-        name: "\u0422\u0440\u0435\u043D\u0434 \u041F\u0435\u0440\u0438\u043E\u0434",
-        aliases: [
-          "\u0442\u0440\u0435\u043D\u0434 \u043F\u0435\u0440\u0438\u043E\u0434",
-          "\u0442\u0440\u0435\u043D\u0434-\u043F\u0435\u0440\u0438\u043E\u0434",
-          "\u043F\u0435\u0440\u0438\u043E\u0434 \u0442\u0440\u0435\u043D\u0434\u0430",
-          "\u043F\u0435\u0440\u0438\u043E\u0434",
-          "\u043C\u0430\u0440\u0430\u0444\u043E\u043D",
-          "\u0441\u0435\u0437\u043E\u043D",
-          "trend period",
-          "trend-period",
-          "period",
-          "/period",
-          "/trp",
-          "!\u043F\u0435\u0440\u0438\u043E\u0434",
-          "!trend-period"
-        ],
-        defaultType: NoteType.PERIOD,
-        defaultDisplayType: "Trend",
-        defaultFolder: "Trends",
-        defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
-        icon: "trending-up"
-      },
-      [NOTE_TEMPLATE_EVENT]: {
-        id: NOTE_TEMPLATE_EVENT,
-        name: "\u0421\u043E\u0431\u044B\u0442\u0438\u0435 \u0441 \u0434\u0430\u0442\u043E\u0439",
-        aliases: [
-          "\u0441\u043E\u0431\u044B\u0442\u0438\u0435",
-          "\u0438\u0432\u0435\u043D\u0442",
-          "\u043C\u0438\u0442\u0430\u043F",
-          "\u0432\u0441\u0442\u0440\u0435\u0447\u0430",
-          "\u0441\u043E\u0437\u0432\u043E\u043D",
-          "\u0432\u0435\u0431\u0438\u043D\u0430\u0440",
-          "event",
-          "/event",
-          "!event"
-        ],
-        defaultType: NoteType.EVENT,
-        defaultDisplayType: "Scheduled Event",
-        defaultFolder: "Notes",
-        defaultHashtags: ["\u0441\u043E\u0431\u044B\u0442\u0438\u0435"],
-        icon: "calendar"
-      },
-      [NOTE_TEMPLATE_DONE]: {
-        id: NOTE_TEMPLATE_DONE,
-        name: "\u0421\u0434\u0435\u043B\u0430\u043D\u043E",
-        aliases: [
-          "\u0441\u0434\u0435\u043B\u0430\u043D\u043E",
-          "\u0433\u043E\u0442\u043E\u0432\u043E",
-          "done",
-          "\u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E",
-          "\u0447\u0435\u043A",
-          "v",
-          "+",
-          "/done",
-          "!done"
-        ],
-        defaultType: NoteType.DONE,
-        defaultDisplayType: "Done",
-        defaultFolder: "Notes",
-        defaultHashtags: ["done"],
-        icon: "check-circle"
-      },
-      [NOTE_TEMPLATE_POINT_NOTE]: {
-        id: NOTE_TEMPLATE_POINT_NOTE,
-        name: "\u0417\u0430\u043C\u0435\u0442\u043A\u0430",
-        aliases: ["\u0437\u0430\u043C\u0435\u0442\u043A\u0430", "\u043C\u044B\u0441\u043B\u044C", "note", "point", "\u0444\u0430\u043A\u0442", "/note", "!note"],
-        defaultType: NoteType.SINGLE,
-        defaultDisplayType: "Point Note",
-        defaultFolder: "Notes",
-        defaultHashtags: [],
-        icon: "file-text"
-      }
-    };
-    CURATOR_PERSONAS = {
-      "ivan-bely": {
-        id: "ivan-bely",
-        name: "\u0418\u0432\u0430\u043D \u0411\u0435\u043B\u044B\u0439",
-        shortName: "\u0418\u0432\u0430\u043D",
-        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u041A\u043E\u043D\u0442\u0443\u0440\u0443 \u0420\u0424, \u0437\u0430\u043A\u043E\u043D\u043E\u0434\u0430\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0443 \u0438 \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u0438\u043A\u0435",
-        scope: "\u0412\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424, \u0413\u043E\u0441\u0434\u0443\u043C\u0430, \u041F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u043E \u0420\u0424, \u043D\u0430\u043B\u043E\u0433\u0438, \u0431\u044E\u0434\u0436\u0435\u0442, \u0426\u0411 \u0420\u0424, \u0424\u0410\u0421, \u0442\u043E\u043F\u043B\u0438\u0432\u043D\u044B\u0439 \u0434\u0435\u043C\u043F\u0444\u0435\u0440, \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u0440\u044B\u043D\u043E\u043A",
-        accentColor: "#38bdf8",
-        // Sky/Cyan
-        borderAccent: "#0284c7",
-        bgLight: "rgba(56, 189, 248, 0.12)",
-        badgeBg: "rgba(56, 189, 248, 0.22)",
-        emoji: "\u{1F1F7}\u{1F1FA}",
-        iconName: "ShieldCheck",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0420\u043E\u0441\u0441\u0438\u0438. \u0424\u043E\u043A\u0443\u0441\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0437\u0430\u043A\u043E\u043D\u0430\u0445, \u043F\u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F\u0445 \u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430, \u0446\u0435\u043D\u043E\u0432\u043E\u043C \u0431\u0430\u043B\u0430\u043D\u0441\u0435 \u0438 \u0432\u043B\u0438\u044F\u043D\u0438\u0438 \u043D\u0430 \u0433\u0440\u0430\u0436\u0434\u0430\u043D \u0438 \u0431\u0438\u0437\u043D\u0435\u0441."
-      },
-      "kirk-kitten": {
-        id: "kirk-kitten",
-        name: "Kirk Kitten",
-        shortName: "Kirk",
-        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0443 \u0421\u0428\u0410, \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u044B\u043C \u0440\u044B\u043D\u043A\u0430\u043C \u0438 \u0441\u0430\u043D\u043A\u0446\u0438\u044F\u043C",
-        scope: "\u0421\u0428\u0410, \u0412\u0430\u0448\u0438\u043D\u0433\u0442\u043E\u043D, \u041A\u043E\u043D\u0433\u0440\u0435\u0441\u0441, \u0411\u0435\u043B\u044B\u0439 \u0434\u043E\u043C, \u0440\u0435\u0448\u0435\u043D\u0438\u044F \u0424\u0420\u0421, \u0441\u0430\u043D\u043A\u0446\u0438\u0438 OFAC, \u0415\u0421, \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u0430\u044F \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u043A\u0430 \u0438 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u0440\u044B\u043D\u043A\u0438",
-        accentColor: "#fbbf24",
-        // Amber/Gold
-        borderAccent: "#d97706",
-        bgLight: "rgba(251, 191, 36, 0.12)",
-        badgeBg: "rgba(251, 191, 36, 0.22)",
-        emoji: "\u{1F310}",
-        iconName: "Radar",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u043C\u0435\u0436\u0434\u0443\u043D\u0430\u0440\u043E\u0434\u043D\u043E\u0433\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0438 \u0421\u0428\u0410. \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0435 \u0444\u0430\u043A\u0442\u044B \u043F\u043E \u0430\u043D\u0433\u043B\u043E\u044F\u0437\u044B\u0447\u043D\u044B\u043C \u0440\u0435\u0435\u0441\u0442\u0440\u0430\u043C, \u0431\u0438\u0440\u0436\u0435\u0432\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C \u0438 \u0440\u0435\u0448\u0435\u043D\u0438\u044F\u043C \u0430\u043C\u0435\u0440\u0438\u043A\u0430\u043D\u0441\u043A\u0438\u0445 \u0438 \u0435\u0432\u0440\u043E\u043F\u0435\u0439\u0441\u043A\u0438\u0445 \u0440\u0435\u0433\u0443\u043B\u044F\u0442\u043E\u0440\u043E\u0432."
-      },
-      "okatsiya": {
-        id: "okatsiya",
-        name: "\u0410\u043A\u0430\u0446\u0438\u044F IT",
-        shortName: "\u0410\u043A\u0430\u0446\u0438\u044F",
-        role: "\u041A\u0443\u0440\u0430\u0442\u043E\u0440 Hi-Tech, IT & AI \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u043D\u043E\u0432\u044B\u0445 \u0434\u0435\u0432\u0430\u0439\u0441\u043E\u0432 \u0438 \u0433\u0440\u043E\u043C\u043A\u0438\u0445 \u0430\u043D\u043E\u043D\u0441\u043E\u0432",
-        scope: "\u041D\u043E\u0432\u043E\u0441\u0442\u0438 hi-tech, IT, AI \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u043D\u043E\u0432\u044B\u0435 \u0434\u0435\u0432\u0430\u0439\u0441\u044B (\u0433\u0430\u0434\u0436\u0435\u0442\u044B, \u0447\u0438\u043F\u044B, VR/AR, \u0441\u043C\u0430\u0440\u0442\u0444\u043E\u043D\u044B), \u0433\u0440\u043E\u043C\u043A\u0438\u0435 \u0430\u043D\u043E\u043D\u0441\u044B BigTech, \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u0430",
-        accentColor: "#a855f7",
-        // Neon Violet/Purple
-        borderAccent: "#9333ea",
-        bgLight: "rgba(168, 85, 247, 0.12)",
-        badgeBg: "rgba(168, 85, 247, 0.22)",
-        emoji: "\u26A1",
-        iconName: "Cpu",
-        description: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 Hi-Tech \u0438 \u0430\u043D\u043E\u043D\u0441\u043E\u0432. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0440\u0435\u043B\u0438\u0437\u044B \u043D\u043E\u0432\u044B\u0445 \u0434\u0435\u0432\u0430\u0439\u0441\u043E\u0432, \u0433\u0440\u043E\u043C\u043A\u0438\u0435 \u0430\u043D\u043E\u043D\u0441\u044B \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0433\u0438\u0433\u0430\u043D\u0442\u043E\u0432, \u043F\u043E\u0442\u0440\u0435\u0431\u0438\u0442\u0435\u043B\u044C\u0441\u043A\u0443\u044E \u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043D\u0438\u043A\u0443, \u0447\u0438\u043F\u044B \u0438 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0442\u0440\u0435\u043D\u0434\u044B IT & AI."
-      },
-      "simon-habr": {
-        id: "simon-habr",
-        name: "\u0421\u0430\u0439\u043C\u043E\u043D",
-        shortName: "\u0421\u0430\u0439\u043C\u043E\u043D",
-        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u0440\u0430\u0437\u0431\u043E\u0440\u0443 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 Habr",
-        scope: "\u0420\u0430\u0437\u0431\u043E\u0440 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u0438 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 \u0425\u0430\u0431\u0440\u0430 (Habr), \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0435 \u0441\u0442\u0430\u0442\u044C\u0438, \u043E\u043B\u0434\u0441\u043A\u0443\u043B-\u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0438, \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0430, \u0430\u0432\u0442\u043E\u0440\u0441\u043A\u0438\u0435 \u043A\u0435\u0439\u0441\u044B \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430",
-        accentColor: "#10b981",
-        // Terminal Green
-        borderAccent: "#059669",
-        bgLight: "rgba(16, 185, 129, 0.12)",
-        badgeBg: "rgba(16, 185, 129, 0.22)",
-        emoji: "\u{1F4DF}",
-        iconName: "Terminal",
-        description: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0438 \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u0425\u0430\u0431\u0440\u0430. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0441\u0432\u0435\u0436\u0438\u0435 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0438 \u043D\u0430 Habr, \u0433\u043B\u0443\u0431\u043E\u043A\u0438\u0435 \u0438\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u044B\u0435 \u043B\u043E\u043D\u0433\u0440\u0438\u0434\u044B, \u0440\u0430\u0437\u0431\u043E\u0440\u044B \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0438, \u0440\u0435\u0442\u0440\u043E-\u0436\u0435\u043B\u0435\u0437\u0430 \u0438 \u043F\u0440\u0430\u043A\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043A\u0435\u0439\u0441\u044B \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432."
-      },
-      "presijo-ai": {
-        id: "presijo-ai",
-        name: "Presijo AI & IT",
-        shortName: "Presijo",
-        role: "AI & IT \u0442\u0440\u0435\u043D\u0434-\u0445\u0430\u043D\u0442\u0435\u0440, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0435\u0440 \u0438 \u043E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432",
-        scope: "\u041D\u043E\u0432\u043E\u0441\u0442\u0438 \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438 AI, \u043D\u043E\u0432\u044B\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B \u043D\u0430 \u0440\u044B\u043D\u043A\u0435, \u0441\u0432\u0435\u0436\u0438\u0435 \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, \u0440\u0430\u0431\u043E\u0442\u0430 \u0441 Telegram-\u043A\u0430\u043D\u0430\u043B\u0430\u043C\u0438, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0438\u043D\u0433",
-        accentColor: "#ec4899",
-        // Pink / Fuchsia
-        borderAccent: "#db2777",
-        bgLight: "rgba(236, 72, 153, 0.12)",
-        badgeBg: "rgba(236, 72, 153, 0.22)",
-        emoji: "\u{1F680}",
-        iconName: "Sparkles",
-        description: "\u041A\u0443\u0440\u0430\u0442\u043E\u0440 \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u043E\u0433\u043E AI-\u043B\u0430\u043D\u0434\u0448\u0430\u0444\u0442\u0430 \u0438 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0435\u0440. \u041E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u0442 \u043D\u043E\u0432\u044B\u0435 \u0418\u0418-\u0442\u0443\u043B\u0437\u044B, \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B open-source \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, \u0432\u0435\u0434\u0435\u0442 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 Telegram-\u043A\u0430\u043D\u0430\u043B\u043E\u0432 \u0438 \u0443\u043F\u0430\u043A\u043E\u0432\u044B\u0432\u0430\u0435\u0442 \u0442\u0440\u0435\u043D\u0434\u044B \u0432 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0435\u043D\u0442."
-      },
-      "chen-wei": {
-        id: "chen-wei",
-        name: "\u0427\u044D\u043D\u044C \u0412\u044D\u0439",
-        shortName: "\u0427\u044D\u043D\u044C",
-        role: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C \u0410\u0422\u0420, \u041A\u0438\u0442\u0430\u044F \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u044B\u0445 \u0446\u0435\u043F\u043E\u0447\u0435\u043A \u043F\u043E\u0441\u0442\u0430\u0432\u043E\u043A",
-        scope: "\u041A\u0438\u0442\u0430\u0439, \u042E\u0433\u043E-\u0412\u043E\u0441\u0442\u043E\u0447\u043D\u0430\u044F \u0410\u0437\u0438\u044F, \u0411\u0420\u0418\u041A\u0421, \u0440\u0430\u0441\u0447\u0435\u0442\u044B \u0432 \u043D\u0430\u0446\u0432\u0430\u043B\u044E\u0442\u0430\u0445, \u0442\u043E\u0440\u0433\u043E\u0432\u044B\u0435 \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u044B, \u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043D\u0438\u043A\u0430 \u0438 \u0441\u044B\u0440\u044C\u0435",
-        accentColor: "#ef4444",
-        // Red
-        borderAccent: "#dc2626",
-        bgLight: "rgba(239, 68, 68, 0.12)",
-        badgeBg: "rgba(239, 68, 68, 0.22)",
-        emoji: "\u{1F1E8}\u{1F1F3}",
-        iconName: "Globe2",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0410\u0437\u0438\u0430\u0442\u0441\u043A\u043E-\u0422\u0438\u0445\u043E\u043E\u043A\u0435\u0430\u043D\u0441\u043A\u043E\u0433\u043E \u0440\u0435\u0433\u0438\u043E\u043D\u0430 \u0438 \u0441\u0442\u0440\u0430\u043D \u0411\u0420\u0418\u041A\u0421. \u041C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u0442 \u0442\u043E\u0432\u0430\u0440\u043E\u043E\u0431\u043E\u0440\u043E\u0442, \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u044B (\u041C\u0422\u041A \u0421\u0435\u0432\u0435\u0440-\u042E\u0433, \u0421\u0435\u0432\u043C\u043E\u0440\u043F\u0443\u0442\u044C) \u0438 \u0444\u0438\u043D\u0430\u043D\u0441\u043E\u0432\u044B\u0439 \u043A\u043B\u0438\u0440\u0438\u043D\u0433."
-      },
-      "alex-vector": {
-        id: "alex-vector",
-        name: "\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440",
-        shortName: "\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440",
-        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043E\u0431\u0449\u0435\u0439 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0435 \u0438 \u0441\u0432\u0435\u0436\u0438\u043C \u043C\u0438\u0440\u043E\u0432\u044B\u043C \u043D\u043E\u0432\u043E\u0441\u0442\u044F\u043C",
-        scope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043D\u043E\u0432\u043E\u0441\u0442\u0438, \u043E\u0431\u0449\u0430\u044F \u043C\u0438\u0440\u043E\u0432\u0430\u044F \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0430, \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438, \u044D\u043A\u0441\u0442\u0440\u0435\u043D\u043D\u044B\u0435 \u043A\u043E\u043C\u043C\u044E\u043D\u0438\u043A\u0435, \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0435 \u0441\u044E\u0436\u0435\u0442\u044B, X/Twitter, \u0441\u0430\u043C\u043C\u0438\u0442\u044B",
-        accentColor: "#f97316",
-        // Orange / Flame
-        borderAccent: "#ea580c",
-        bgLight: "rgba(249, 115, 22, 0.12)",
-        badgeBg: "rgba(249, 115, 22, 0.22)",
-        emoji: "\u{1F525}",
-        iconName: "Flame",
-        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0432\u0435\u0436\u0435\u0439 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0438 \u0438 \u043C\u0438\u0440\u043E\u0432\u043E\u0433\u043E \u043E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u043E\u0433\u043E \u043F\u0443\u043B\u044C\u0441\u0430. \u041E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u0442 \u0432\u0437\u0440\u044B\u0432\u043D\u044B\u0435 \u0438\u043D\u0444\u043E\u043F\u043E\u0432\u043E\u0434\u044B, breaking-\u043D\u044C\u044E\u0441 \u043C\u0438\u0440\u043E\u0432\u044B\u0445 \u0430\u0433\u0435\u043D\u0442\u0441\u0442\u0432 \u0438 \u043E\u0442\u0434\u0435\u043B\u044F\u0435\u0442 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u0439 \u0448\u0443\u043C \u043E\u0442 \u0442\u0435\u043A\u0442\u043E\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u0434\u0432\u0438\u0433\u043E\u0432."
-      },
-      "marcus-vane": {
-        id: "marcus-vane",
-        name: "\u041C\u0430\u0440\u043A\u0443\u0441 \u0412\u0435\u0439\u043D",
-        shortName: "\u041C\u0430\u0440\u043A\u0443\u0441",
-        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u044D\u0444\u0444\u0435\u043A\u0442\u0430 \u0434\u043E\u043C\u0438\u043D\u043E \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F \u0441\u043E\u0431\u044B\u0442\u0438\u0439 [Standby]",
-        scope: "\u041A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0435 \u0440\u0438\u0441\u043A\u0438, \u0432\u0430\u043A\u0443\u0443\u043C \u0441\u0438\u043B\u044B, \u0433\u0435\u043E\u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0443\u0437\u043B\u044B, \u0442\u0440\u0438\u0433\u0433\u0435\u0440\u044B \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0441\u044E\u0436\u0435\u0442\u043E\u0432",
-        accentColor: "#10b981",
-        // Emerald
-        borderAccent: "#059669",
-        bgLight: "rgba(16, 185, 129, 0.12)",
-        badgeBg: "rgba(16, 185, 129, 0.22)",
-        emoji: "\u265F\uFE0F",
-        iconName: "GitBranch",
-        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0445 \u043A\u0430\u0441\u043A\u0430\u0434\u043E\u0432 \u0438 \u0442\u0435\u043E\u0440\u0438\u0438 \u0438\u0433\u0440 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 \u043E\u0436\u0438\u0434\u0430\u043D\u0438\u044F \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438).",
-        isStandby: true
-      },
-      "tariq-said": {
-        id: "tariq-said",
-        name: "\u0422\u0430\u0440\u0438\u043A \u0421\u0430\u0438\u0434",
-        shortName: "\u0422\u0430\u0440\u0438\u043A",
-        role: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0441\u0442 \u043F\u043E \u043A\u043E\u043D\u0442\u0443\u0440\u0443 \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u0437\u043E\u043D\u044B \u0417\u0430\u043B\u0438\u0432\u0430 (MENA)",
-        scope: "\u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A, \u0418\u0440\u0430\u043A, \u0418\u0440\u0430\u043D, \u043C\u043E\u043D\u0430\u0440\u0445\u0438\u0438 \u0417\u0430\u043B\u0438\u0432\u0430, \u041B\u0435\u0432\u0430\u043D\u0442, \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C \u0431\u0430\u0437, OPEC+, \u0441\u0443\u043D\u043D\u0438\u0442\u0441\u043A\u043E-\u0448\u0438\u0438\u0442\u0441\u043A\u0438\u0439 \u0431\u0430\u043B\u0430\u043D\u0441",
-        accentColor: "#eab308",
-        // Desert Gold
-        borderAccent: "#ca8a04",
-        bgLight: "rgba(234, 179, 8, 0.12)",
-        badgeBg: "rgba(234, 179, 8, 0.22)",
-        emoji: "\u{1F54C}",
-        iconName: "Compass",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043E\u043F\u0442\u0438\u043A\u0430 \u0411\u043E\u043B\u044C\u0448\u043E\u0433\u043E \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u0440\u0435\u0433\u0438\u043E\u043D\u0430 MENA. \u0410\u043D\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u0435\u0442 \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u043C\u043E\u043D\u0430\u0440\u0445\u0438\u0439 \u0417\u0430\u043B\u0438\u0432\u0430, \u0432\u043B\u0438\u044F\u043D\u0438\u0435 \u043F\u0440\u043E\u0438\u0440\u0430\u043D\u0441\u043A\u0438\u0445 \u043E\u0441\u0435\u0439, \u0442\u0443\u0440\u0435\u0446\u043A\u0438\u0439 \u0444\u0430\u043A\u0442\u043E\u0440 \u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C \u0438\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u044B."
-      },
-      "helena-brandt": {
-        id: "helena-brandt",
-        name: "\u0425\u0435\u043B\u0435\u043D\u0430 \u0411\u0440\u0430\u043D\u0434\u0442",
-        shortName: "\u0425\u0435\u043B\u0435\u043D\u0430",
-        role: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u043A\u0440\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0430\u0440\u0442\u0435\u0440\u0438\u0439, \u0441\u044B\u0440\u044C\u044F \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u0439 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u043A\u0438",
-        scope: "\u041D\u0435\u0444\u0442\u044C Brent/WTI, \u0421\u041F\u0413, \u043C\u043E\u0440\u0441\u043A\u0438\u0435 \u0443\u0437\u043B\u044B (\u041E\u0440\u043C\u0443\u0437, \u0421\u0443\u044D\u0446, \u0411\u0430\u0431-\u044D\u043B\u044C-\u041C\u0430\u043D\u0434\u0435\u0431), \u0441\u0442\u0440\u0430\u0445\u043E\u0432\u043E\u0439 \u0444\u0440\u0430\u0445\u0442 Lloyd's, \u0440\u0435\u0434\u043A\u043E\u0437\u0435\u043C\u0435\u043B\u044C\u043D\u044B\u0435 \u043C\u0435\u0442\u0430\u043B\u043B\u044B",
-        accentColor: "#06b6d4",
-        // Maritime Cyan
-        borderAccent: "#0891b2",
-        bgLight: "rgba(6, 182, 212, 0.12)",
-        badgeBg: "rgba(6, 182, 212, 0.22)",
-        emoji: "\u2693",
-        iconName: "Anchor",
-        description: "\u041E\u043F\u0442\u0438\u043A\u0430 \u0444\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0430\u0440\u0442\u0435\u0440\u0438\u0439 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u0439 \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u043A\u0438. \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u0442 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u043E\u0441\u043B\u0435\u0434\u0441\u0442\u0432\u0438\u044F \u0433\u0435\u043E\u043F\u043E\u043B\u0438\u0442\u0438\u043A\u0438: \u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442\u044C \u043F\u0440\u043E\u043B\u0438\u0432\u043E\u0432, \u0441\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0444\u0440\u0430\u0445\u0442\u0430 \u0442\u0430\u043D\u043A\u0435\u0440\u043E\u0432 \u0438 \u0434\u0435\u0444\u0438\u0446\u0438\u0442\u044B \u0441\u044B\u0440\u044C\u044F."
-      },
-      "german-kernel": {
-        id: "german-kernel",
-        name: "\u0413\u0435\u0440\u043C\u0430\u043D \xAB\u041A\u0435\u0440\u043D\u0435\u043B\xBB",
-        shortName: "\u0413\u0435\u0440\u043C\u0430\u043D",
-        role: "\u041E\u0431\u043E\u0437\u0440\u0435\u0432\u0430\u0442\u0435\u043B\u044C Habr, IT-\u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u0438 \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u043E\u0432",
-        scope: "Habr, \u0436\u0443\u0440\u043D\u0430\u043B \xAB\u0425\u0430\u043A\u0435\u0440\xBB (xakep.ru), \u0441\u0442\u0430\u0442\u044C\u0438 IT-\u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430, \u043E\u043B\u0434\u0441\u043A\u0443\u043B-\u0440\u0430\u0437\u0431\u043E\u0440\u044B \u043F\u043B\u0430\u0442 \u0438 \u0441\u0445\u0435\u043C\u043E\u0442\u0435\u0445\u043D\u0438\u043A\u0438, \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 Note",
-        accentColor: "#10b981",
-        // Emerald CRT / Terminal Green
-        borderAccent: "#059669",
-        bgLight: "rgba(16, 185, 129, 0.12)",
-        badgeBg: "rgba(16, 185, 129, 0.22)",
-        emoji: "\u{1F4DF}",
-        iconName: "Terminal",
-        description: "\u0418\u043D\u0436\u0435\u043D\u0435\u0440\u043D\u0430\u044F \u0438 \u043A\u043E\u043C\u044C\u044E\u043D\u0438\u0442\u0438-\u043E\u043F\u0442\u0438\u043A\u0430. \u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u043D\u0430\u0432\u044B\u043A \u2014 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0439 \u043D\u0430 Habr \u0438 IT-\u0441\u0442\u0430\u0442\u0435\u0439 \u0438\u0437 \u0441\u0435\u0442\u0438, \u0440\u0430\u0437\u0431\u043E\u0440 \u043E\u043B\u0434\u0441\u043A\u0443\u043B\u044C\u043D\u044B\u0445 \u0442\u0435\u043C \u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 Note \u043F\u043E \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u0430\u043C."
-      }
-    };
-    CURATOR_PERSONAS_LIST = Object.values(CURATOR_PERSONAS);
-    ACTIVE_CURATOR_PERSONAS_LIST = CURATOR_PERSONAS_LIST.filter((p) => !p.isStandby);
-    CURATOR_GROUPS = {
-      "political-group": {
-        id: "political-group",
-        name: "\u041F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F (\u0420\u0424, \u0421\u0428\u0410, \u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A & \u041F\u043E\u0432\u0435\u0441\u0442\u043A\u0430)",
-        shortName: "\u041F\u043E\u043B\u0438\u0442\u0438\u043A\u0430",
-        emoji: "\u{1F3DB}\uFE0F",
-        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432: \u041A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424 (\u0418\u0432\u0430\u043D \u0411\u0435\u043B\u044B\u0439), \u041A\u043E\u043D\u0442\u0443\u0440 \u0421\u0428\u0410 (Kirk Kitten), \u041A\u043E\u043D\u0442\u0443\u0440 \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 (\u0422\u0430\u0440\u0438\u043A \u0421\u0430\u0438\u0434) \u0438 \u0421\u0432\u0435\u0436\u0438\u0435 \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u043D\u043E\u0432\u043E\u0441\u0442\u0438 (\u0410\u043B\u0435\u043A\u0441 \u0412\u0435\u043A\u0442\u043E\u0440)",
-        curatorIds: ["ivan-bely", "kirk-kitten", "tariq-said", "alex-vector"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#38bdf8",
-        badgeBg: "rgba(56, 189, 248, 0.16)",
-        defaultScope: "\u0412\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0420\u0424, \u0432\u043D\u0435\u0448\u043D\u0435\u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0442\u0443\u0440 \u0421\u0428\u0410, \u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A (MENA) \u0438 \u043E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u0430\u044F \u043C\u0438\u0440\u043E\u0432\u0430\u044F \u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043F\u043E\u0432\u0435\u0441\u0442\u043A\u0430"
-      },
-      "tech-group": {
-        id: "tech-group",
-        name: "IT & AI \u0413\u0440\u0443\u043F\u043F\u0430 (\u0410\u043A\u0430\u0446\u0438\u044F IT, \u0421\u0430\u0439\u043C\u043E\u043D & Presijo)",
-        shortName: "IT & AI",
-        emoji: "\u26A1",
-        description: "\u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0433\u0440\u0443\u043F\u043F\u0430: \u0410\u043A\u0430\u0446\u0438\u044F IT (Hi-Tech, \u0434\u0435\u0432\u0430\u0439\u0441\u044B, \u0430\u043D\u043E\u043D\u0441\u044B), \u0421\u0430\u0439\u043C\u043E\u043D (\u0440\u0430\u0437\u0431\u043E\u0440 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0441 \u0425\u0430\u0431\u0440\u0430) \u0438 Presijo AI & IT (\u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B, \u0444\u0438\u0447\u0438, \u0440\u0435\u043B\u0438\u0437\u044B \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A, Telegram, \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043C\u0435\u0439\u043A\u0438\u043D\u0433)",
-        curatorIds: ["okatsiya", "simon-habr", "presijo-ai"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#a855f7",
-        badgeBg: "rgba(168, 85, 247, 0.16)",
-        defaultScope: "Hi-Tech, \u0434\u0435\u0432\u0430\u0439\u0441\u044B, \u0430\u043D\u043E\u043D\u0441\u044B BigTech, \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0438 \u043D\u0430 \u0425\u0430\u0431\u0440\u0435, AI \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B, \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A\u0438 \u0438 Telegram-\u043A\u0430\u043D\u0430\u043B\u044B"
-      },
-      "macro-group": {
-        id: "macro-group",
-        name: "\u041C\u0430\u043A\u0440\u043E\u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C",
-        shortName: "\u041C\u0430\u043A\u0440\u043E",
-        emoji: "\u{1F4CA}",
-        description: "\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u0441\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0441\u0442\u0438 \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0435\u0433\u043E \u0438 \u0432\u043D\u0435\u0448\u043D\u0435\u0433\u043E \u044D\u043A\u043E\u043D\u043E\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u043E\u043D\u0442\u0443\u0440\u043E\u0432",
-        curatorIds: ["ivan-bely", "kirk-kitten"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#fbbf24",
-        badgeBg: "rgba(251, 191, 36, 0.16)",
-        defaultScope: "\u0414\u0435\u043C\u043F\u0444\u0435\u0440, \u0432\u0430\u043B\u044E\u0442\u043D\u044B\u0435 \u043A\u0443\u0440\u0441\u044B, \u0441\u0430\u043D\u043A\u0446\u0438\u043E\u043D\u043D\u043E\u0435 \u0432\u043E\u0437\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435, \u0444\u0440\u0430\u0445\u0442 \u0438 \u0438\u043D\u0444\u043B\u044F\u0446\u0438\u044F"
-      },
-      "hot-pulse-group": {
-        id: "hot-pulse-group",
-        name: "\u0413\u0440\u0443\u043F\u043F\u0430 \u0431\u044B\u0441\u0442\u0440\u043E\u0433\u043E \u0440\u0435\u0430\u0433\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F (\u041C\u0438\u0440\u043E\u0432\u043E\u0439 \u043F\u0443\u043B\u044C\u0441)",
-        shortName: "\u0413\u043E\u0440\u044F\u0447\u0438\u0439 \u043F\u0443\u043B\u044C\u0441",
-        emoji: "\u{1F525}",
-        description: "\u041E\u043F\u0435\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0439 \u043A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u043F\u043E \u044D\u043A\u0441\u0442\u0440\u0435\u043D\u043D\u044B\u043C \u043C\u0438\u0440\u043E\u0432\u044B\u043C \u0441\u043E\u0431\u044B\u0442\u0438\u044F\u043C, breaking news \u0438 \u0432\u0438\u0440\u0430\u043B\u044C\u043D\u044B\u043C \u0442\u0440\u0435\u043D\u0434\u0430\u043C",
-        curatorIds: ["alex-vector", "kirk-kitten"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#f97316",
-        badgeBg: "rgba(249, 115, 22, 0.16)",
-        defaultScope: "\u0421\u0432\u0435\u0436\u0438\u0435 \u043C\u0438\u0440\u043E\u0432\u044B\u0435 \u043C\u043E\u043B\u043D\u0438\u0438 \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u0430\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0444\u0430\u043A\u0442\u043E\u0432"
-      },
-      "domino-nexus-group": {
-        id: "domino-nexus-group",
-        name: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 \u0438 \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u044F [Standby]",
-        shortName: "\u042D\u0444\u0444\u0435\u043A\u0442 \u0434\u043E\u043C\u0438\u043D\u043E",
-        emoji: "\u265F\uFE0F",
-        description: "\u0413\u0440\u0443\u043F\u043F\u0430 \u043A\u0430\u0441\u043A\u0430\u0434\u043D\u044B\u0445 \u0440\u0438\u0441\u043A\u043E\u0432 (\u0432 \u0440\u0435\u0436\u0438\u043C\u0435 Standby \u0434\u043E \u0430\u043A\u0442\u0438\u0432\u0430\u0446\u0438\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438)",
-        curatorIds: ["tariq-said", "helena-brandt", "chen-wei"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#10b981",
-        badgeBg: "rgba(168, 85, 247, 0.16)",
-        defaultScope: "\u041E\u0446\u0435\u043D\u043A\u0430 \u0442\u043E\u0447\u0435\u043A \u0431\u0438\u0444\u0443\u0440\u043A\u0430\u0446\u0438\u0438, \u0432\u0435\u0442\u0432\u043B\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u0445 \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442\u043E\u0432, \u0446\u0435\u043F\u043E\u0447\u043A\u0438 \u0441\u044B\u0440\u044C\u0435\u0432\u044B\u0445 \u0438 \u043B\u043E\u0433\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0448\u043E\u043A\u043E\u0432",
-        isStandby: true
-      },
-      "mena-security-group": {
-        id: "mena-security-group",
-        name: "\u041A\u043E\u043D\u0441\u0438\u043B\u0438\u0443\u043C \u0411\u043B\u0438\u0436\u043D\u0435\u0433\u043E \u0412\u043E\u0441\u0442\u043E\u043A\u0430 \u0438 \u042E\u0436\u043D\u043E\u0433\u043E \u043F\u0435\u0440\u0438\u043C\u0435\u0442\u0440\u0430",
-        shortName: "\u0411\u043B\u0438\u0436\u043D\u0438\u0439 \u0412\u043E\u0441\u0442\u043E\u043A",
-        emoji: "\u{1F54C}",
-        description: "\u041A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438 \u0437\u043E\u043D\u044B \u0417\u0430\u043B\u0438\u0432\u0430, \u041B\u0435\u0432\u0430\u043D\u0442\u0430, \u0421\u0443\u044D\u0446\u043A\u043E\u0433\u043E \u043A\u043E\u0440\u0438\u0434\u043E\u0440\u0430 \u0438 \u044D\u043D\u0435\u0440\u0433\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0431\u0430\u043B\u0430\u043D\u0441\u0430",
-        curatorIds: ["tariq-said", "ivan-bely", "kirk-kitten", "helena-brandt"],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#eab308",
-        badgeBg: "rgba(234, 179, 8, 0.16)",
-        defaultScope: "\u0412\u043E\u0435\u043D\u043D\u043E-\u043F\u043E\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0434\u0438\u043D\u0430\u043C\u0438\u043A\u0430 MENA, \u041E\u0440\u043C\u0443\u0437\u0441\u043A\u0438\u0439 \u043F\u0440\u043E\u043B\u0438\u0432, \u0440\u044B\u043D\u043E\u043A \u043D\u0435\u0444\u0442\u0438 \u0438 \u043F\u043E\u0437\u0438\u0446\u0438\u044F \u0420\u0424/\u0421\u0428\u0410"
-      },
-      "all-curators": {
-        id: "all-curators",
-        name: "\u041F\u043E\u043B\u043D\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u0433\u0438\u044F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
-        shortName: "\u0412\u0441\u0435 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u044B",
-        emoji: "\u{1F310}",
-        description: "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442 \u0432\u0441\u0435\u0445 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u044B\u0445 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 Project Lenta",
-        curatorIds: [
-          "ivan-bely",
-          "kirk-kitten",
-          "tariq-said",
-          "alex-vector",
-          "okatsiya",
-          "simon-habr",
-          "presijo-ai",
-          "chen-wei",
-          "helena-brandt",
-          "german-kernel"
-        ],
-        coordinatorId: "survey-coordinator",
-        accentColor: "#3b82f6",
-        badgeBg: "rgba(59, 130, 246, 0.16)",
-        defaultScope: "\u0421\u043A\u0432\u043E\u0437\u043D\u0430\u044F 360-\u043F\u0430\u043D\u043E\u0440\u0430\u043C\u0430 \u0432\u0441\u0435\u0445 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0445 \u043C\u0438\u0440\u043E\u0432\u044B\u0445, \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0445, \u044D\u043D\u0435\u0440\u0433\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445, \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u044B\u0445 \u0438 \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u043E\u0431\u044B\u0442\u0438\u0439"
-      }
-    };
-    CURATOR_GROUPS_LIST = Object.values(CURATOR_GROUPS);
-    WORKER_AGENTS = {
-      "harvester-agent": {
-        id: "harvester-agent",
-        name: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u044B\u0439 \u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
-        shortName: "\u0425\u0430\u0440\u0432\u0435\u0441\u0442\u0435\u0440",
-        role: "\u0410\u0433\u0435\u043D\u0442 \u0441\u0431\u043E\u0440\u0430 \u0434\u0430\u043D\u043D\u044B\u0445, RSS \u0438 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433\u0430 \u043F\u0435\u0440\u0432\u043E\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432",
-        avatar: "\u{1F4E1}",
-        category: "ingestion",
-        accentColor: "#10b981",
-        badgeBg: "rgba(16, 185, 129, 0.16)",
-        description: "\u041E\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043B\u044F\u0435\u0442 \u043D\u0435\u043F\u0440\u0435\u0440\u044B\u0432\u043D\u044B\u0439 \u0441\u0431\u043E\u0440 \u0441\u044B\u0440\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439, \u043F\u0430\u0440\u0441\u0438\u043D\u0433 \u0432\u043D\u0435\u0448\u043D\u0438\u0445 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432, \u0434\u0435\u0434\u0443\u043F\u043B\u0438\u043A\u0430\u0446\u0438\u044E \u0438 \u043F\u0435\u0440\u0432\u0438\u0447\u043D\u044B\u0439 \u0442\u0440\u0438\u0430\u0436 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u043E\u0432 \u043F\u0435\u0440\u0435\u0434 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0435\u0439 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u0430\u043C.",
-        capabilities: ["rss_ingestion", "web_scraping", "deduplication", "source_validation"],
-        suggestedSnippets: ["/harvest", "/sources"]
-      },
-      "survey-coordinator": {
-        id: "survey-coordinator",
-        name: "\u041A\u043E\u043E\u0440\u0434\u0438\u043D\u0430\u0442\u043E\u0440 \u041E\u043F\u0440\u043E\u0441\u043E\u0432",
-        shortName: "\u041E\u043F\u0440\u043E\u0441\u0447\u0438\u043A",
-        role: "\u0410\u0433\u0435\u043D\u0442-\u043E\u043F\u0440\u043E\u0441\u0447\u0438\u043A \u0438 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0433\u0440\u0443\u043F\u043F \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432",
-        avatar: "\u{1F9ED}",
-        category: "survey",
-        accentColor: "#6366f1",
-        badgeBg: "rgba(99, 102, 241, 0.16)",
-        description: "\u041E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0433\u0440\u0443\u043F\u043F\u0443 \u043A\u0443\u0440\u0430\u0442\u043E\u0440\u043E\u0432 (\u0438\u043B\u0438 \u0432\u0441\u0435\u0445) \u0437\u0430 \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u0438\u043D\u0442\u0435\u0440\u0432\u0430\u043B (\u0441\u0435\u0433\u043E\u0434\u043D\u044F, \u0432\u0447\u0435\u0440\u0430, \u043D\u0435\u0434\u0435\u043B\u044F) \u0438 \u0441\u0432\u043E\u0434\u0438\u0442 \u0438\u0445 \u0434\u043E\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0437\u0438\u0446\u0438\u0438.",
-        capabilities: ["group_polling", "temporal_slicing", "cross_curator_comparison"],
-        suggestedSnippets: ["/survey", "/survey-today", "/survey-yesterday", "/survey-week"]
-      },
-      "sidework-producer": {
-        id: "sidework-producer",
-        name: "\u041F\u0440\u043E\u0434\u044E\u0441\u0435\u0440 \u0421\u0430\u0439\u0434-\u0420\u0430\u0431\u043E\u0442\u044B",
-        shortName: "\u0421\u0430\u0439\u0434-\u0432\u043E\u0440\u043A\u0435\u0440",
-        role: "\u0410\u0433\u0435\u043D\u0442 \u043A\u043E\u043D\u0442\u0435\u043D\u0442-\u043F\u0440\u043E\u0434\u0430\u043A\u0448\u043D\u0430, \u043C\u0435\u0434\u0438\u0430-\u043E\u0431\u043E\u0433\u0430\u0449\u0435\u043D\u0438\u044F \u0438 \u043E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u044F",
-        avatar: "\u{1F3A8}",
-        category: "sidework",
-        accentColor: "#ec4899",
-        badgeBg: "rgba(236, 72, 153, 0.16)",
-        description: "\u0412\u0435\u0434\u0435\u0442 \u043F\u0440\u0438\u043A\u043B\u0430\u0434\u043D\u0443\u044E \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0443: \u0441\u043E\u0437\u0434\u0430\u0435\u0442 \u0441\u0442\u0430\u0442\u044C\u0438, \u043F\u043E\u0441\u0442\u044B \u0438 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u044B \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0434\u0430\u043D\u043D\u044B\u0445, \u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043F\u0440\u043E\u043C\u043F\u0442\u044B \u0434\u043B\u044F AI-\u0438\u043B\u043B\u044E\u0441\u0442\u0440\u0430\u0446\u0438\u0439, \u0441\u0445\u0435\u043C\u044B Mermaid \u0438 \u0434\u043E\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u043C\u0438 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u043C\u0438.",
-        capabilities: ["content_drafting", "image_prompt_generation", "mermaid_generation", "commentary_enrichment", "obsidian_export"],
-        suggestedSnippets: ["/sidework", "/media", "/comment", "/draft"]
-      },
-      "podcast-producer": {
-        id: "podcast-producer",
-        name: "\u0420\u0435\u0436\u0438\u0441\u0441\u0435\u0440 \u041F\u043E\u0434\u043A\u0430\u0441\u0442\u043E\u0432",
-        shortName: "\u041F\u043E\u0434\u043A\u0430\u0441\u0442\u0435\u0440",
-        role: "\u0410\u0433\u0435\u043D\u0442 \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0435\u0432 NotebookLM",
-        avatar: "\u{1F399}\uFE0F",
-        category: "sidework",
-        accentColor: "#f97316",
-        badgeBg: "rgba(249, 115, 22, 0.16)",
-        description: "\u0421\u043F\u0435\u0446\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u0430\u044F \u0441\u0430\u0439\u0434-\u0440\u0430\u0431\u043E\u0442\u0430: \u043F\u0440\u0435\u0432\u0440\u0430\u0449\u0430\u0435\u0442 \u043F\u043E\u0434\u0431\u043E\u0440\u043A\u0443 \u043A\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u043D\u043E\u0432\u043E\u0441\u0442\u0435\u0439 \u0432 \u0436\u0438\u0432\u043E\u0439 \u0434\u0438\u0430\u043B\u043E\u0433\u043E\u0432\u044B\u0439 \u0430\u0443\u0434\u0438\u043E-\u0441\u0446\u0435\u043D\u0430\u0440\u0438\u0439 \u0434\u0432\u0443\u0445 \u0432\u0435\u0434\u0443\u0449\u0438\u0445.",
-        capabilities: ["podcast_scripting", "audio_overview", "dialogue_balancing"],
-        suggestedSnippets: ["/podcast"]
-      },
-      "notebook-producer": {
-        id: "notebook-producer",
-        name: "\u0420\u0435\u0436\u0438\u0441\u0441\u0435\u0440 NotebookLM",
-        shortName: "NotebookLM \u0410\u0433\u0435\u043D\u0442",
-        role: "\u0410\u0433\u0435\u043D\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u044F \u0434\u043D\u0435\u0432\u043D\u0438\u043A\u043E\u0432, \u043F\u043E\u0434\u043A\u0430\u0441\u0442\u043E\u0432 \u0438 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u043E\u0432 NotebookLM",
-        avatar: "\u{1F4D3}",
-        category: "sidework",
-        accentColor: "#8b5cf6",
-        badgeBg: "rgba(139, 92, 246, 0.16)",
-        description: "\u0411\u0435\u0440\u0435\u0442 \u0442\u0435\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 Super Note, \u0443\u043F\u0430\u043A\u043E\u0432\u044B\u0432\u0430\u0435\u0442 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438 \u0432 markdown-\u0431\u0430\u043D\u0434\u043B, \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 NotebookLM-\u0434\u043D\u0435\u0432\u043D\u0438\u043A\u0430 \u0432 \u0444\u043E\u043D\u0435 \u0438 \u043F\u043E \u043A\u043E\u043B\u043B\u0431\u044D\u043A\u0443 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u0446\u0435\u043B\u0435\u0432\u0443\u044E \u0437\u0430\u043C\u0435\u0442\u043A\u0443.",
-        capabilities: ["source_bundling", "notebooklm_dispatch", "eta_estimation", "async_note_callback", "audio_overview_pipeline"],
-        suggestedSnippets: ["/notebook", "/notebook-create", "/notebook-eta"]
-      }
-    };
-    WORKER_AGENTS_LIST = Object.values(WORKER_AGENTS);
-    IT_SECTOR_REGISTRY = {
-      ai: {
-        id: "ai",
-        name: "\u0418\u0441\u043A\u0443\u0441\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 \u0418\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442 & LLM",
-        shortName: "AI & ML",
-        emoji: "\u{1F9E0}",
-        category: "ai",
-        folder: "Tech/AI",
-        taxonomyPath: "tech.ai.llm",
-        hashtags: ["AI", "LLM", "\u041D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u0438", "MachineLearning", "GenAI"],
-        keywords: ["ai", "\u0438\u0438", "llm", "\u043D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u044C", "\u043D\u0435\u0439\u0440\u043E\u0441\u0435\u0442\u0438", "deepseek", "openai", "anthropic", "gemini", "gpt", "transformers", "diffusion", "rag", "\u0430\u0433\u0435\u043D\u0442", "prompt", "rag"],
-        description: "\u0411\u043E\u043B\u044C\u0448\u0438\u0435 \u044F\u0437\u044B\u043A\u043E\u0432\u044B\u0435 \u043C\u043E\u0434\u0435\u043B\u0438, \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u043E\u0434\u0430\u043B\u044C\u043D\u044B\u0435 \u0441\u0435\u0442\u0438, \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0435 \u0432\u0435\u0441\u0430, \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u044B \u0442\u0440\u0430\u043D\u0441\u0444\u043E\u0440\u043C\u0435\u0440\u043E\u0432 \u0438 \u0430\u0433\u0435\u043D\u0442\u043D\u044B\u0435 \u0444\u0440\u0435\u0439\u043C\u0432\u043E\u0440\u043A\u0438."
-      },
-      devops: {
-        id: "devops",
-        name: "DevOps, SRE & \u0418\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430",
-        shortName: "DevOps",
-        emoji: "\u{1F6A2}",
-        category: "engineering",
-        folder: "Tech/DevOps",
-        taxonomyPath: "tech.devops.infra",
-        hashtags: ["DevOps", "SRE", "Kubernetes", "CICD", "Infrastructure"],
-        keywords: ["devops", "\u0434\u0435\u0432\u043E\u043F\u0441", "sre", "kubernetes", "k8s", "docker", "ci/cd", "helm", "terraform", "ansible", "container", "\u043A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440", "\u043A\u043B\u0430\u0441\u0442\u0435\u0440", "observability"],
-        description: "\u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u0438\u0437\u0430\u0446\u0438\u044F, \u043E\u0440\u043A\u0435\u0441\u0442\u0440\u0430\u0446\u0438\u044F Kubernetes, \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044F CI/CD \u043F\u0430\u0439\u043F\u043B\u0430\u0439\u043D\u043E\u0432, \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\u043D\u0433 \u0438 \u043D\u0430\u0434\u0435\u0436\u043D\u043E\u0441\u0442\u044C \u0441\u0435\u0440\u0432\u0438\u0441\u043E\u0432."
-      },
-      bigtech: {
-        id: "bigtech",
-        name: "\u0411\u0438\u0433\u0442\u0435\u0445 & \u0420\u044B\u043D\u043E\u043A \u0422\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0439",
-        shortName: "BigTech",
-        emoji: "\u{1F3E2}",
-        category: "business",
-        folder: "Tech/BigTech",
-        taxonomyPath: "tech.bigtech.market",
-        hashtags: ["BigTech", "\u0411\u0438\u0433\u0442\u0435\u0445", "ITBusiness", "\u0420\u044B\u043D\u043E\u043A", "Tech\u041A\u043E\u0440\u043F\u043E\u0440\u0430\u0446\u0438\u0438"],
-        keywords: ["bigtech", "\u0431\u0438\u0433\u0442\u0435\u0445", "google", "apple", "microsoft", "meta", "nvidia", "amazon", "\u044F\u043D\u0434\u0435\u043A\u0441", "yandex", "\u0430\u043D\u0442\u0438\u043C\u043E\u043D\u043E\u043F\u043E\u043B", "m&a", "\u043A\u0430\u043F\u0438\u0442\u0430\u043B\u0438\u0437\u0430\u0446\u0438", "\u043A\u0432\u0430\u0440\u0442\u0430\u043B\u044C\u043D\u044B\u0439 \u043E\u0442\u0447\u0435\u0442", "\u0430\u043A\u0446\u0438\u0438"],
-        description: "\u041A\u043E\u0440\u043F\u043E\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0435 \u0433\u0438\u0433\u0430\u043D\u0442\u044B \u0438\u043D\u0434\u0443\u0441\u0442\u0440\u0438\u0438, \u0438\u043D\u0432\u0435\u0441\u0442\u0438\u0446\u0438\u0438, \u0430\u043D\u0442\u0438\u043C\u043E\u043D\u043E\u043F\u043E\u043B\u044C\u043D\u044B\u0435 \u0440\u0430\u0441\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u043D\u0438\u044F, \u043F\u043E\u0433\u043B\u043E\u0449\u0435\u043D\u0438\u044F (M&A) \u0438 \u0444\u0438\u043D\u0430\u043D\u0441\u043E\u0432\u044B\u0435 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B."
-      },
-      backend: {
-        id: "backend",
-        name: "Backend & \u0420\u0430\u0441\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0435 \u0421\u0438\u0441\u0442\u0435\u043C\u044B",
-        shortName: "Backend",
-        emoji: "\u2699\uFE0F",
-        category: "engineering",
-        folder: "Tech/Backend",
-        taxonomyPath: "tech.backend.systems",
-        hashtags: ["Backend", "\u0411\u044D\u043A\u0435\u043D\u0434", "Architecture", "Databases", "HighLoad"],
-        keywords: ["backend", "\u0431\u044D\u043A\u0435\u043D\u0434", "\u043C\u0438\u043A\u0440\u043E\u0441\u0435\u0440\u0432\u0438\u0441", "\u0441\u0435\u0440\u0432\u0435\u0440", "\u0431\u0430\u0437\u0430 \u0434\u0430\u043D\u043D\u044B\u0445", "\u0431\u0434", "postgres", "postgresql", "redis", "kafka", "grpc", "rest", "golang", "rust", "java", "node.js", "highload", "\u0440\u0430\u0441\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u043D"],
-        description: "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u0430\u044F \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u0430, \u0431\u0430\u0437\u044B \u0434\u0430\u043D\u043D\u044B\u0445, \u0431\u0440\u043E\u043A\u0435\u0440\u044B \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439, \u043C\u0430\u0441\u0448\u0442\u0430\u0431\u0438\u0440\u0443\u0435\u043C\u043E\u0441\u0442\u044C HighLoad \u0438 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0435 \u044F\u0437\u044B\u043A\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F."
-      },
-      frontend: {
-        id: "frontend",
-        name: "Frontend & Web-\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0430",
-        shortName: "Frontend",
-        emoji: "\u{1F310}",
-        category: "engineering",
-        folder: "Tech/Frontend",
-        taxonomyPath: "tech.frontend.web",
-        hashtags: ["Frontend", "\u0424\u0440\u043E\u043D\u0442\u0435\u043D\u0434", "WebDev", "React", "UIUX"],
-        keywords: ["frontend", "\u0444\u0440\u043E\u043D\u0442\u0435\u043D\u0434", "react", "vue", "svelte", "angular", "nextjs", "vite", "javascript", "typescript", "css", "\u0431\u0440\u0430\u0443\u0437\u0435\u0440", "webassembly", "wasm", "ui"],
-        description: "\u0412\u0435\u0431-\u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u044B, \u043A\u043B\u0438\u0435\u043D\u0442\u0441\u043A\u0438\u0435 \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u044B, \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u0440\u0435\u043D\u0434\u0435\u0440\u0438\u043D\u0433\u0430, \u0444\u0440\u0435\u0439\u043C\u0432\u043E\u0440\u043A\u0438 \u0438 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u043D\u044B\u0435 \u0434\u0432\u0438\u0436\u043A\u0438."
-      },
-      mobile: {
-        id: "mobile",
-        name: "Mobile \u0420\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0430 (iOS & Android)",
-        shortName: "Mobile",
-        emoji: "\u{1F4F1}",
-        category: "engineering",
-        folder: "Tech/Mobile",
-        taxonomyPath: "tech.mobile.apps",
-        hashtags: ["Mobile", "iOS", "Android", "Flutter", "ReactNative"],
-        keywords: ["mobile", "\u043C\u043E\u0431\u0438\u043B\u044C\u043D", "ios", "android", "swift", "kotlin", "flutter", "react native", "app store", "google play", "apk"],
-        description: "\u041D\u0430\u0442\u0438\u0432\u043D\u0430\u044F \u0438 \u043A\u0440\u043E\u0441\u0441\u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0435\u043D\u043D\u0430\u044F \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u0430\u044F \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0430, \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u0435 \u041E\u0421, \u043C\u0430\u0433\u0430\u0437\u0438\u043D\u044B \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0439 \u0438 \u044D\u043A\u043E\u0441\u0438\u0441\u0442\u0435\u043C\u044B \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432."
-      },
-      infosec: {
-        id: "infosec",
-        name: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u043E\u043D\u043D\u0430\u044F \u0411\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C & SecOps",
-        shortName: "InfoSec",
-        emoji: "\u{1F6E1}\uFE0F",
-        category: "engineering",
-        folder: "Tech/Security",
-        taxonomyPath: "tech.infosec.security",
-        hashtags: ["InfoSec", "CyberSecurity", "CVE", "\u0411\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C", "SecOps"],
-        keywords: ["infosec", "security", "\u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442", "\u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442", "cve", "zero-day", "\u0432\u0437\u043B\u043E\u043C", "\u0445\u0430\u043A\u0435\u0440", "malware", "\u043A\u0440\u0438\u043F\u0442\u043E\u0433\u0440\u0430\u0444\u0438", "ddos", "\u0444\u0438\u0448\u0438\u043D\u0433", "\u0430\u0443\u0434\u0438\u0442 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438"],
-        description: "\u041A\u0438\u0431\u0435\u0440\u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C, \u0443\u044F\u0437\u0432\u0438\u043C\u043E\u0441\u0442\u0438 CVE, \u0437\u0430\u0449\u0438\u0442\u0430 \u043F\u0435\u0440\u0438\u043C\u0435\u0442\u0440\u0430, \u0430\u0443\u0434\u0438\u0442 \u043A\u043E\u0434\u0430, \u043A\u0440\u0438\u043F\u0442\u043E\u0433\u0440\u0430\u0444\u0438\u044F \u0438 \u0440\u0435\u0430\u0433\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u043D\u0430 \u0438\u043D\u0446\u0438\u0434\u0435\u043D\u0442\u044B."
-      },
-      cloud: {
-        id: "cloud",
-        name: "Cloud-\u041F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u044B & Serverless",
-        shortName: "Cloud",
-        emoji: "\u2601\uFE0F",
-        category: "engineering",
-        folder: "Tech/Cloud",
-        taxonomyPath: "tech.cloud.platforms",
-        hashtags: ["Cloud", "AWS", "GCP", "Azure", "Serverless"],
-        keywords: ["cloud", "\u043E\u0431\u043B\u0430\u043A", "aws", "gcp", "azure", "yandex cloud", "serverless", "lambda", "s3", "iaas", "paas", "edge"],
-        description: "\u041E\u0431\u043B\u0430\u0447\u043D\u044B\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u044B, \u0431\u0435\u0441\u0441\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u044F, \u0433\u0438\u0431\u0440\u0438\u0434\u043D\u044B\u0435 \u043E\u0431\u043B\u0430\u043A\u0430, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 \u0438 \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u0430\u044F \u0441\u0432\u044F\u0437\u043D\u043E\u0441\u0442\u044C."
-      },
-      data: {
-        id: "data",
-        name: "Data Engineering & Big Data",
-        shortName: "Data",
-        emoji: "\u{1F4CA}",
-        category: "engineering",
-        folder: "Tech/Data",
-        taxonomyPath: "tech.data.engineering",
-        hashtags: ["DataEngineering", "BigData", "Analytics", "ClickHouse", "ETL"],
-        keywords: ["data", "\u0434\u0430\u043D\u043D\u044B\u0435", "big data", "etl", "elt", "clickhouse", "spark", "hadoop", "snowflake", "dbt", "lakehouse", "\u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A \u0434\u0430\u043D\u043D\u044B\u0445", "\u043F\u0430\u0439\u043F\u043B\u0430\u0439\u043D \u0434\u0430\u043D\u043D\u044B\u0445"],
-        description: "\u041F\u0430\u0439\u043F\u043B\u0430\u0439\u043D\u044B \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0438 \u0434\u0430\u043D\u043D\u044B\u0445, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 DWH/Lakehouse, \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0421\u0423\u0411\u0414 \u0438 \u043F\u043E\u0442\u043E\u043A\u043E\u0432\u0430\u044F \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430."
-      },
-      hardware: {
-        id: "hardware",
-        name: "Hardware, \u0427\u0438\u043F\u044B & \u041F\u043E\u043B\u0443\u043F\u0440\u043E\u0432\u043E\u0434\u043D\u0438\u043A\u0438",
-        shortName: "Hardware",
-        emoji: "\u{1F52C}",
-        category: "engineering",
-        folder: "Tech/Hardware",
-        taxonomyPath: "tech.hardware.semiconductors",
-        hashtags: ["Hardware", "Chips", "Semiconductors", "Nvidia", "TSMC"],
-        keywords: ["hardware", "\u0436\u0435\u043B\u0435\u0437\u043E", "\u0447\u0438\u043F", "\u0447\u0438\u043F\u044B", "\u043F\u043E\u043B\u0443\u043F\u0440\u043E\u0432\u043E\u0434\u043D\u0438\u043A", "\u043F\u0440\u043E\u0446\u0435\u0441\u0441\u043E\u0440", "gpu", "cpu", "nvidia", "tsmc", "asml", "intel", "amd", "arm", "risc-v", "\u043A\u0432\u0430\u043D\u0442\u043E\u0432"],
-        description: "\u041A\u0440\u0435\u043C\u043D\u0438\u0435\u0432\u0430\u044F \u043B\u0438\u0442\u043E\u0433\u0440\u0430\u0444\u0438\u044F, \u0443\u0441\u043A\u043E\u0440\u0438\u0442\u0435\u043B\u0438 \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0439 (GPU/TPU/NPU), RISC-V, \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u044B \u0438 \u0434\u0430\u0442\u0430-\u0446\u0435\u043D\u0442\u0440\u044B."
-      },
-      gamedev: {
-        id: "gamedev",
-        name: "GameDev & \u041A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u043D\u0430\u044F \u0413\u0440\u0430\u0444\u0438\u043A\u0430",
-        shortName: "GameDev",
-        emoji: "\u{1F3AE}",
-        category: "engineering",
-        folder: "Tech/GameDev",
-        taxonomyPath: "tech.gamedev.graphics",
-        hashtags: ["GameDev", "UnrealEngine", "Unity", "Graphics", "RayTracing"],
-        keywords: ["gamedev", "\u0433\u0435\u0439\u043C\u0434\u0435\u0432", "\u0438\u0433\u0440\u044B", "unreal engine", "unity", "godot", "\u0448\u0435\u0439\u0434\u0435\u0440", "ray tracing", "3d", "\u0433\u0440\u0430\u0444\u0438\u043A\u0430", "directx", "vulkan"],
-        description: "\u0418\u0433\u0440\u043E\u0432\u044B\u0435 \u0434\u0432\u0438\u0436\u043A\u0438, \u0440\u0435\u043D\u0434\u0435\u0440\u0438\u043D\u0433 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438, \u0444\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0441\u0438\u043C\u0443\u043B\u044F\u0446\u0438\u0438 \u0438 \u0442\u0435\u0445\u043D\u043E\u043B\u043E\u0433\u0438\u0438 \u0432\u0438\u0434\u0435\u043E\u0438\u0433\u0440."
-      },
-      qa: {
-        id: "qa",
-        name: "QA & \u0418\u043D\u0436\u0435\u043D\u0435\u0440\u0438\u044F \u041A\u0430\u0447\u0435\u0441\u0442\u0432\u0430",
-        shortName: "QA",
-        emoji: "\u{1F9EA}",
-        category: "engineering",
-        folder: "Tech/QA",
-        taxonomyPath: "tech.qa.testing",
-        hashtags: ["QA", "Testing", "Automation", "QualityEngineering"],
-        keywords: ["qa", "\u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D", "e2e", "cypress", "playwright", "unit test", "\u0430\u0432\u0442\u043E\u0442\u0435\u0441\u0442", "\u043D\u0430\u0433\u0440\u0443\u0437\u043E\u0447\u043D\u043E\u0435 \u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435", "qa engineering"],
-        description: "\u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044F \u0442\u0435\u0441\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F, E2E \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438, \u043D\u0430\u0433\u0440\u0443\u0437\u043E\u0447\u043D\u044B\u0435 \u0438\u0441\u043F\u044B\u0442\u0430\u043D\u0438\u044F, \u043E\u0431\u0435\u0441\u043F\u0435\u0447\u0435\u043D\u0438\u0435 \u043D\u0430\u0434\u0435\u0436\u043D\u043E\u0441\u0442\u0438 \u0438 \u043A\u0430\u0447\u0435\u0441\u0442\u0432\u043E \u041F\u041E."
-      }
-    };
-    IT_SECTOR_LIST = Object.values(IT_SECTOR_REGISTRY);
     noteTypeSchema = external_exports.enum([
       "SINGLE",
       "PERIOD",

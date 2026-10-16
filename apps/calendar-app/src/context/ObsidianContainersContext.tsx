@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ObsidianContainer, BoundFolder, ContainerPrivacy, FolderPrivacy } from '@lenta/shared';
 import { containersApi, ContainerSummaryDto } from '../api/containersApi';
+import {
+  getStoredContainerLastVisited,
+  setStoredContainerLastVisited,
+} from '../utils/obsidianContainers.utils';
 
 export interface ContainerPrivacyImpact {
   containerId: string;
@@ -96,6 +100,10 @@ export interface ObsidianContainersContextType {
   isSyncingId: string | null;
   syncDirection: 'push' | 'pull' | null;
   pendingChanges: Record<string, number>;
+  // Delta & Watermark
+  lastVisitedMap: Record<string, number>;
+  getContainerLastVisited: (containerId: string) => number;
+  markContainerVisited: (containerId: string, timestamp?: number) => void;
   // Session Changes
   sessionChanges: SessionChange[];
   addSessionChange: (change: Omit<SessionChange, 'id' | 'timestamp' | 'dateStr' | 'staged'>) => void;
@@ -117,18 +125,6 @@ const SELECTED_KEY = 'lemon_lenta_selected_container_ids_v1';
 const SESSION_CHANGES_KEY = 'lemon_lenta_session_changes_v1';
 
 const INITIAL_SESSION_CHANGES: SessionChange[] = [
-  {
-    id: 'chg-1',
-    type: 'add',
-    entityType: 'note',
-    title: 'Release Planning v2.1',
-    path: '01_Daily_Logs/Release_Planning.md',
-    containerId: 'cont-personal-vault',
-    timestamp: Date.now() - 1000 * 60 * 12,
-    dateStr: '12 мин назад',
-    contentSnippet: '# Release Planning v2.1\n- [x] Push & Pull interactive modal\n- [x] Auto-generate commit message',
-    staged: true,
-  },
   {
     id: 'chg-2',
     type: 'modify',
@@ -170,20 +166,10 @@ const INITIAL_CONTAINERS: ObsidianContainer[] = [
     color: '#a855f7',
     boundFolders: [
       {
-        id: 'f-1',
-        path: '01_Daily_Logs',
-        name: 'Ежедневные логи',
-        isPrimary: true,
-        observeMode: 'recursive',
-        notesCount: 28,
-        status: 'active',
-        privacy: 'private',
-      },
-      {
         id: 'f-2',
         path: '04_Archive/Thoughts',
         name: 'Архив мыслей',
-        isPrimary: false,
+        isPrimary: true,
         observeMode: 'all',
         notesCount: 14,
         status: 'active',
@@ -205,20 +191,10 @@ const INITIAL_CONTAINERS: ObsidianContainer[] = [
     color: '#c9cd58',
     boundFolders: [
       {
-        id: 'f-3',
-        path: '02_Projects/Lenta',
-        name: 'Проекты Lenta',
-        isPrimary: true,
-        observeMode: 'recursive',
-        notesCount: 52,
-        status: 'active',
-        privacy: 'public',
-      },
-      {
         id: 'f-4',
         path: '03_Research/AI',
         name: 'Исследования ИИ',
-        isPrimary: false,
+        isPrimary: true,
         observeMode: 'filtered',
         filterTag: 'ai.research',
         notesCount: 21,
@@ -302,11 +278,29 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
   const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
   const [syncDirection, setSyncDirection] = useState<'push' | 'pull' | null>(null);
 
-  // pendingChanges: number of local notes modified since last sync per container
+  // lastVisitedMap: watermark timestamp of last visit per container
+  const [lastVisitedMap, setLastVisitedMap] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    INITIAL_CONTAINERS.forEach((c) => {
+      map[c.id] = getStoredContainerLastVisited(c.id);
+    });
+    return map;
+  });
+
+  const getContainerLastVisited = useCallback((containerId: string) => {
+    return lastVisitedMap[containerId] ?? getStoredContainerLastVisited(containerId);
+  }, [lastVisitedMap]);
+
+  const markContainerVisited = useCallback((containerId: string, timestamp = Date.now()) => {
+    setStoredContainerLastVisited(containerId, timestamp);
+    setLastVisitedMap((prev) => ({ ...prev, [containerId]: timestamp }));
+  }, []);
+
+  // pendingChanges: zero initialized (no artificial random mock mutations)
   const [pendingChanges, setPendingChanges] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
     INITIAL_CONTAINERS.forEach((c) => {
-      init[c.id] = Math.floor(Math.random() * 5);
+      init[c.id] = 0;
     });
     return init;
   });
@@ -948,6 +942,9 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
         isSyncingId,
         syncDirection,
         pendingChanges,
+        lastVisitedMap,
+        getContainerLastVisited,
+        markContainerVisited,
         sessionChanges,
         addSessionChange,
         toggleStageSessionChange,

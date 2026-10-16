@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Note,
   NoteType,
@@ -56,6 +56,7 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
   const { data: summaryData } = useDailySummaryQuery(dateKey);
   const [isPlayingPodcast, setIsPlayingPodcast] = useState(false);
   const [activeTurnIdx, setActiveTurnIdx] = useState(-1);
+  const backdropMouseDownRef = useRef(false);
 
   const stopPodcastAudio = () => {
     if ('speechSynthesis' in window) {
@@ -198,8 +199,6 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
       onSelectDate(next);
     }
   };
-
-  const backdropMouseDownRef = React.useRef(false);
 
   return (
     <>

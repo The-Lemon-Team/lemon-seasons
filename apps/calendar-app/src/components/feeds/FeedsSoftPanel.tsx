@@ -124,6 +124,18 @@ export const FeedsSoftPanel: React.FC<FeedsSoftPanelProps> = ({
 
             <button
               type="button"
+              onClick={() => onSetStreamSource('seasons')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors duration-150 flex items-center gap-1 sm:gap-1.5 font-medium ${
+                streamSource === 'seasons'
+                  ? 'bg-white dark:bg-[#243343] text-[#2481cc] dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🍋 Seasons</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => onSetStreamSource('classic')}
               className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors duration-150 flex items-center gap-1 sm:gap-1.5 font-medium ${
                 streamSource === 'classic'

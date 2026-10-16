@@ -7,12 +7,52 @@ import {
 
 export interface ChangeLogItem {
   id: string;
-  type: 'add' | 'update' | 'commit';
+  noteId?: string;
+  type: 'add' | 'update' | 'delete' | 'commit';
   symbol: string;
   colorClass: string;
+  badgeClass?: string;
+  badgeText?: string;
   text: string;
+  rawTitle?: string;
+  curator?: string | null;
+  curatorLabel?: string;
   date: string;
   timestamp: number;
+  isUnread?: boolean;
+}
+
+export const CONTAINER_LAST_VISITED_KEY = 'lemon_lenta_container_last_visited_v1';
+
+export function getStoredContainerLastVisited(containerId: string): number {
+  try {
+    const raw = localStorage.getItem(`${CONTAINER_LAST_VISITED_KEY}_${containerId}`);
+    if (raw) {
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  } catch {}
+  // Default to 24 hours ago if no previous visit was saved
+  return Date.now() - 24 * 60 * 60 * 1000;
+}
+
+export function setStoredContainerLastVisited(containerId: string, timestamp = Date.now()): void {
+  try {
+    localStorage.setItem(`${CONTAINER_LAST_VISITED_KEY}_${containerId}`, timestamp.toString());
+  } catch {}
+}
+
+export function formatCuratorLabel(curator?: string | null): string {
+  if (!curator) return 'Система';
+  const c = curator.toLowerCase();
+  if (c.includes('spark') || c.includes('gemini')) return '⚡ Gemini Spark';
+  if (c === 'bus' || c.includes('command')) return '🚌 Command Bus';
+  if (c.includes('obsidian')) return '💎 Obsidian';
+  if (c === 'ivan-bely') return 'Иван Белый';
+  if (c === 'kirk-kitten') return 'Кирк Киттен';
+  if (c === 'german-kernel') return 'Герман Кернел';
+  if (c === 'okatsiya') return 'Окация';
+  return curator;
 }
 
 /**
@@ -42,9 +82,13 @@ export function filterNotesForContainer(
 }
 
 /**
- * Computes note additions/updates for the container change stream.
+ * Computes note additions/updates for the container change stream,
+ * checking against the lastVisitedAt watermark.
  */
-export function computeNoteChanges(containerNotes: any[]): ChangeLogItem[] {
+export function computeNoteChanges(
+  containerNotes: any[],
+  lastVisitedAt?: number,
+): ChangeLogItem[] {
   return [...containerNotes]
     .sort(
       (a, b) =>
@@ -52,118 +96,88 @@ export function computeNoteChanges(containerNotes: any[]): ChangeLogItem[] {
         new Date(a.updatedAt || a.startDate).getTime(),
     )
     .map((note) => {
-      const isNew = dayjs(note.createdAt).isSame(dayjs(note.updatedAt), 'minute');
+      const isNew = dayjs(note.createdAt).isSame(dayjs(note.updatedAt), 'minute') ||
+        Math.abs(new Date(note.createdAt).getTime() - new Date(note.updatedAt).getTime()) < 3000;
+      const noteTime = new Date(note.updatedAt || note.createdAt).getTime();
+      const isUnread = Boolean(lastVisitedAt && noteTime > lastVisitedAt);
+      const curatorLabel = formatCuratorLabel(note.curator);
+
       return {
         id: `note-${note.id}`,
+        noteId: note.id,
         type: isNew ? ('add' as const) : ('update' as const),
         symbol: isNew ? '+' : '~',
         colorClass: isNew ? 'text-[#22c55e]' : 'text-[#e5e971]',
-        text: isNew ? `Добавлено Note ${note.title}` : `Обновлена заметка ${note.title}`,
-        date: dayjs(note.updatedAt || note.createdAt).format('DD.MM.YY'),
-        timestamp: new Date(note.updatedAt || note.createdAt).getTime(),
+        badgeClass: isNew
+          ? 'bg-[#22c55e]/15 text-[#86efac] border-[#22c55e]/30'
+          : 'bg-[#e5e971]/15 text-[#fef08a] border-[#e5e971]/30',
+        badgeText: isNew ? 'НОВОЕ' : 'ОБНОВЛЕНО',
+        rawTitle: note.title,
+        curator: note.curator,
+        curatorLabel,
+        text: isNew ? `Добавлено: ${note.title}` : `Обновлено: ${note.title}`,
+        date: dayjs(note.updatedAt || note.createdAt).format('DD.MM.YY HH:mm'),
+        timestamp: noteTime,
+        isUnread,
       };
     });
 }
 
 /**
- * Computes commit change items from server commits.
+ * Computes delta metrics (unread count and total recent count).
  */
-export function computeCommitChanges(serverCommits: any[]): ChangeLogItem[] {
-  return (serverCommits || []).map((c) => ({
-    id: `commit-${c.hash}`,
-    type: 'commit' as const,
-    symbol: '●',
-    colorClass: 'text-[#a855f7]',
-    text: c.message || `Синхронизация коммита ${c.shortHash}`,
-    date: c.date ? dayjs(c.date).format('DD.MM.YY') : dayjs().format('DD.MM.YY'),
-    timestamp: c.date ? new Date(c.date).getTime() : Date.now(),
-  }));
-}
-
-/**
- * Fallback items when no commits or notes are recorded yet.
- */
-export function getDefaultFallbackChanges(
+export function getContainerDeltaStats(
   container: ObsidianContainer,
-): ChangeLogItem[] {
-  return [
-    {
-      id: `fallback-1-${container.id}`,
-      type: 'add' as const,
-      symbol: '+',
-      colorClass: 'text-[#22c55e]',
-      text: `Добавлено Note ${container.boundFolders[0]?.name || 'Новости Мира, ООН'}`,
-      date: dayjs().format('DD.MM.YY'),
-      timestamp: Date.now() - 1000 * 60 * 60,
-    },
-    {
-      id: `fallback-2-${container.id}`,
-      type: 'add' as const,
-      symbol: '+',
-      colorClass: 'text-[#22c55e]',
-      text: `Добавлено Note ${container.boundFolders[1]?.name || 'Выборы в Конгресс США'}`,
-      date: dayjs().format('DD.MM.YY'),
-      timestamp: Date.now() - 1000 * 60 * 120,
-    },
-    {
-      id: `fallback-3-${container.id}`,
-      type: 'update' as const,
-      symbol: '~',
-      colorClass: 'text-[#e5e971]',
-      text: `Обновлена заметка ${container.name} - План релизов v2.1`,
-      date: dayjs().subtract(1, 'day').format('DD.MM.YY'),
-      timestamp: Date.now() - 1000 * 60 * 60 * 24,
-    },
-    {
-      id: `fallback-4-${container.id}`,
-      type: 'update' as const,
-      symbol: '~',
-      colorClass: 'text-[#e5e971]',
-      text: `Обновлена заметка ИИ Архитектура & Vector Pipelines`,
-      date: dayjs().subtract(2, 'day').format('DD.MM.YY'),
-      timestamp: Date.now() - 1000 * 60 * 60 * 48,
-    },
-    {
-      id: `fallback-5-${container.id}`,
-      type: 'add' as const,
-      symbol: '+',
-      colorClass: 'text-[#22c55e]',
-      text: `Добавлено Note Релизы и Премьеры 2026`,
-      date: dayjs().subtract(3, 'day').format('DD.MM.YY'),
-      timestamp: Date.now() - 1000 * 60 * 60 * 72,
-    },
-    {
-      id: `fallback-6-${container.id}`,
-      type: 'commit' as const,
-      symbol: '●',
-      colorClass: 'text-[#a855f7]',
-      text: `Инициализация структуры контейнера vault`,
-      date: dayjs(container.createdAt || Date.now()).format('DD.MM.YY'),
-      timestamp: new Date(container.createdAt || Date.now()).getTime(),
-    },
-  ];
+  notes: any[],
+  lastVisitedAt?: number,
+) {
+  const containerNotes = filterNotesForContainer(notes, container);
+  const items = computeNoteChanges(containerNotes, lastVisitedAt);
+  const unreadCount = items.filter((i) => i.isUnread).length;
+  return {
+    totalNotes: containerNotes.length,
+    unreadCount,
+    items,
+  };
 }
 
 /**
- * Combines note changes and commit changes into a unified stream for display.
+ * Combines real note changes and optional server commits into a unified stream for display.
+ * Prioritizes actual note data over server commits.
  */
 export function getContainerChangeLogItems(
   container: ObsidianContainer,
-  serverCommits: any[],
-  notes: any[],
+  notesOrCommits: any[],
+  maybeNotes?: any[],
   limit = 6,
+  lastVisitedAt?: number,
 ): ChangeLogItem[] {
-  const containerNotes = filterNotesForContainer(notes, container);
-  const noteChanges = computeNoteChanges(containerNotes);
-  const commitChanges = computeCommitChanges(serverCommits);
+  // Support both (container, serverCommits, notes) and (container, notes) signatures
+  const rawNotes = Array.isArray(maybeNotes) ? maybeNotes : notesOrCommits;
+  const containerNotes = filterNotesForContainer(rawNotes, container);
+  const noteChanges = computeNoteChanges(containerNotes, lastVisitedAt);
 
-  const combined = [...noteChanges, ...commitChanges].sort(
-    (a, b) => b.timestamp - a.timestamp,
-  );
+  if (noteChanges.length > 0) {
+    return noteChanges.slice(0, limit);
+  }
 
-  return (
-    combined.length > 0 ? combined : getDefaultFallbackChanges(container)
-  ).slice(0, limit);
+  // Graceful empty state placeholder
+  return [
+    {
+      id: `empty-${container.id}`,
+      type: 'add' as const,
+      symbol: '●',
+      colorClass: 'text-[#93927e]',
+      badgeClass: 'bg-[#93927e]/15 text-[#c9c7b2] border-[#93927e]/30',
+      badgeText: 'ОЖИДАНИЕ',
+      rawTitle: container.name,
+      curatorLabel: 'Система',
+      text: `Контейнер готов к приёму заметок (Gemini Spark, Bus, Obsidian)`,
+      date: dayjs(container.createdAt || Date.now()).format('DD.MM.YY'),
+      timestamp: new Date(container.createdAt || Date.now()).getTime(),
+      isUnread: false,
+    },
+  ];
 }
 
 /**

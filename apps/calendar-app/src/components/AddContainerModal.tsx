@@ -55,8 +55,8 @@ export const AddContainerModal: React.FC<AddContainerModalProps> = ({
     privacy: 'private',
     folders: [
       {
-        path: '01_Daily_Logs',
-        name: 'Ежедневные заметки',
+        path: 'Notes',
+        name: 'Заметки',
         isPrimary: true,
         observeMode: 'recursive',
       },
@@ -125,8 +125,8 @@ export const AddContainerModal: React.FC<AddContainerModalProps> = ({
       privacy: 'private',
       folders: [
         {
-          path: '01_Daily_Logs',
-          name: 'Ежедневные заметки',
+          path: 'Notes',
+          name: 'Заметки',
           isPrimary: true,
           observeMode: 'recursive',
         },

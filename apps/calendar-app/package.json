@@ -10,7 +10,6 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@lemon/agents": "workspace:*",
     "@lenta/shared": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-virtual": "^3.13.2",

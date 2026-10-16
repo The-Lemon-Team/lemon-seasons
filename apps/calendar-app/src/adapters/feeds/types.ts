@@ -1,6 +1,6 @@
 import { Note } from '@lenta/shared';
 
-export type FeedSourceMode = 'spark' | 'classic' | 'telegram';
+export type FeedSourceMode = 'spark' | 'seasons' | 'classic' | 'telegram';
 
 export interface ThematicCategoryBadge {
   label: string;

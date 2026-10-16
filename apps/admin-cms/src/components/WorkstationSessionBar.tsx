@@ -42,7 +42,6 @@ export const WorkstationSessionBar: React.FC = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['sync-status'] });
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['chat-threads'] });
     },
     onError: (err: any) => {
       message.error(`Ошибка синхронизации: ${err.message || err}`);

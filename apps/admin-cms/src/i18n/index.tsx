@@ -15,7 +15,6 @@ export interface AdminTranslations {
   taxonomy: string;
   syncHub: string;
   generatorLab: string;
-  agentChat: string;
   quickAdd: string;
 
   apiDocs: string;
@@ -84,6 +83,10 @@ export interface AdminTranslations {
   feedDefaultFolderLabel: string;
   feedConflictStrategyLabel: string;
   feedOrderLabel: string;
+  feedFolderPathsLabel: string;
+  feedFolderPathsHelp: string;
+  feedFolderAddPlaceholder: string;
+  addFolderBtn: string;
   confirmDeleteFeed: string;
   feedDeletedSuccess: string;
   feedSavedSuccess: string;
@@ -146,6 +149,18 @@ export interface AdminTranslations {
   quickAddModalSub: string;
   quickAddNoteCreated: string;
 
+  // Note Preview Modal
+  viewNoteModalTitle: string;
+  quickPreview: string;
+  editInEditor: string;
+  copyNoteLink: string;
+  copied: string;
+  noteNotFound: string;
+  summaryLabel: string;
+  linksSection: string;
+  gallerySection: string;
+  folderSection: string;
+
   // Taxonomy Page
   taxonomyPageTitle: string;
   taxonomyPageSubtitle: string;
@@ -180,7 +195,6 @@ export const ruAdminTranslations: AdminTranslations = {
   taxonomy: 'Таксономия',
   syncHub: 'Центр синхронизации',
   generatorLab: 'Генератор & AI Лаборатория',
-  agentChat: 'Чат с агентами',
   quickAdd: 'Быстрое добавление',
 
   apiDocs: 'Документация API',
@@ -249,6 +263,10 @@ export const ruAdminTranslations: AdminTranslations = {
   feedDefaultFolderLabel: 'Папка по умолчанию в Obsidian',
   feedConflictStrategyLabel: 'Стратегия конфликтов',
   feedOrderLabel: 'Порядок отображения',
+  feedFolderPathsLabel: 'Привязанные папки (Folder Projections)',
+  feedFolderPathsHelp: 'Заметки из выбранных папок автоматически проецируются в эту ленту.',
+  feedFolderAddPlaceholder: 'Путь к папке (например, Spark/AI)...',
+  addFolderBtn: 'Добавить папку',
   confirmDeleteFeed: 'Вы уверены, что хотите удалить эту ленту?',
   feedDeletedSuccess: 'Лента успешно удалена',
   feedSavedSuccess: 'Лента успешно сохранена',
@@ -311,6 +329,18 @@ export const ruAdminTranslations: AdminTranslations = {
   quickAddModalSub: 'Быстро зафиксируйте мысль, событие или релиз с минимальным набором полей.',
   quickAddNoteCreated: 'Запись успешно создана!',
 
+  // Note Preview Modal
+  viewNoteModalTitle: 'Просмотр записи',
+  quickPreview: 'Быстрый просмотр',
+  editInEditor: 'Редактировать в редакторе',
+  copyNoteLink: 'Скопировать ссылку',
+  copied: 'Скопировано в буфер обмена!',
+  noteNotFound: 'Заметка не найдена или была удалена',
+  summaryLabel: 'Краткое содержание (AI Резюме)',
+  linksSection: 'Связанные ссылки',
+  gallerySection: 'Прикреплённые изображения',
+  folderSection: 'Расположение в Vault',
+
   // Taxonomy Page
   taxonomyPageTitle: 'Дерево таксономии',
   taxonomyPageSubtitle: 'Иерархическая структура категорий на базе PostgreSQL Ltree для удобной навигации.',
@@ -345,7 +375,6 @@ export const enAdminTranslations: AdminTranslations = {
   taxonomy: 'Taxonomy',
   syncHub: 'Sync Hub',
   generatorLab: 'AI & Generation Lab',
-  agentChat: 'Agent Chat Desk',
   quickAdd: 'Quick Add',
 
   apiDocs: 'API Docs',
@@ -414,6 +443,10 @@ export const enAdminTranslations: AdminTranslations = {
   feedDefaultFolderLabel: 'Default Obsidian Folder',
   feedConflictStrategyLabel: 'Conflict Strategy',
   feedOrderLabel: 'Display Order',
+  feedFolderPathsLabel: 'Linked Folders (Folder Projections)',
+  feedFolderPathsHelp: 'Notes from these folders are automatically projected into this feed.',
+  feedFolderAddPlaceholder: 'Folder path (e.g. Spark/AI)...',
+  addFolderBtn: 'Add Folder',
   confirmDeleteFeed: 'Are you sure you want to delete this feed?',
   feedDeletedSuccess: 'Feed deleted successfully',
   feedSavedSuccess: 'Feed saved successfully',
@@ -475,6 +508,18 @@ export const enAdminTranslations: AdminTranslations = {
   quickAddModalTitle: 'Quick Add Note',
   quickAddModalSub: 'Rapidly capture a thought, event, or release with essential fields.',
   quickAddNoteCreated: 'Note created successfully!',
+
+  // Note Preview Modal
+  viewNoteModalTitle: 'View Note',
+  quickPreview: 'Quick Preview',
+  editInEditor: 'Edit in Full Editor',
+  copyNoteLink: 'Copy Link',
+  copied: 'Copied to clipboard!',
+  noteNotFound: 'Note not found or has been deleted',
+  summaryLabel: 'Summary (AI Synopsis)',
+  linksSection: 'Attached Links',
+  gallerySection: 'Media Gallery',
+  folderSection: 'Vault Location',
 
   // Taxonomy Page
   taxonomyPageTitle: 'Taxonomy Tree',

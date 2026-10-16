@@ -180,7 +180,7 @@ const CalendarAppInner: React.FC = () => {
 
   // Tier 2 & 3: Logged In Members & Admins -> Full Workspace Application
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#f1f5f9] text-slate-800 dark:bg-[#121414] dark:text-[#e2e2e2] transition-colors">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#121414] text-[#e2e2e2] transition-colors">
       {/* 1. Left SideNavBar */}
       <SideNavBar
         currentView={filters.view}
@@ -196,7 +196,7 @@ const CalendarAppInner: React.FC = () => {
 
 
       {/* 2. Main Content Canvas */}
-      <div className="flex-1 flex flex-col md:ml-64 h-full relative overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col md:ml-64 h-full relative overflow-hidden min-h-0 bg-[#121414]">
         {/* Top App Bar */}
         <Navbar
           startDate={filters.start}
@@ -215,7 +215,7 @@ const CalendarAppInner: React.FC = () => {
         />
 
         {/* View Content Canvas */}
-        <main className="flex-1 flex overflow-hidden relative min-h-0">
+        <main className="flex-1 flex overflow-hidden relative min-h-0 bg-[#121414]">
           <ErrorBoundary fallbackTitle="View Failed to Render">
             {filters.view === 'timeline' && (
               <TimelineView

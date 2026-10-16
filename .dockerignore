@@ -1,0 +1,16 @@
+node_modules
+.git
+.turbo
+dist
+!packages/shared/dist
+!apps/feed-app/dist
+build
+coverage
+uploads
+scratch
+prototypes
+test-artifacts
+*.log
+*.db
+*.sqlite
+postgres_data

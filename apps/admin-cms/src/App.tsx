@@ -9,7 +9,6 @@ import { AdminI18nProvider, useAdminI18n } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const DashboardPage = React.lazy(() => import('./pages/Dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const DefiChatPlaceholderPage = React.lazy(() => import('./pages/AgentChat/DefiChatPlaceholderPage').then(m => ({ default: m.DefiChatPlaceholderPage })));
 const FeedsPage = React.lazy(() => import('./pages/Feeds/FeedsPage').then(m => ({ default: m.FeedsPage })));
 const NotesListPage = React.lazy(() => import('./pages/Notes/NotesListPage').then(m => ({ default: m.NotesListPage })));
 const NoteEditorPage = React.lazy(() => import('./pages/NoteEditor/NoteEditorPage').then(m => ({ default: m.NoteEditorPage })));
@@ -43,7 +42,7 @@ const AppContent: React.FC = () => {
             <Routes>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/chat" element={<DefiChatPlaceholderPage />} />
+                <Route path="/chat" element={<Navigate to="/notes" replace />} />
                 <Route path="/news" element={<Navigate to="/notes" replace />} />
                 <Route path="/feeds" element={<FeedsPage />} />
                 <Route path="/notes" element={<NotesListPage />} />

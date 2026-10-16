@@ -65,20 +65,6 @@ const INITIAL_FOLDERS: Folder[] = [
     _count: { noteFolders: 2 },
   },
   {
-    id: 'fld-daily-logs',
-    name: '01_Daily_Logs',
-    path: '01_Daily_Logs',
-    icon: 'book-open',
-    color: '#a855f7',
-    privacy: 'private',
-    containerId: 'cont-personal-vault',
-    scope: 'internal',
-    createdAt: '2026-08-01T10:00:00.000Z',
-    updatedAt: '2026-08-20T10:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 14 },
-  },
-  {
     id: 'fld-archive',
     name: '04_Archive',
     path: '04_Archive',
@@ -119,20 +105,6 @@ const INITIAL_FOLDERS: Folder[] = [
     updatedAt: '2026-08-22T09:00:00.000Z',
     deletedAt: null,
     _count: { noteFolders: 6 },
-  },
-  {
-    id: 'fld-projects-lenta',
-    name: 'Lenta',
-    path: '02_Projects/Lenta',
-    icon: 'lemon',
-    color: '#c9cd58',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-05T09:30:00.000Z',
-    updatedAt: '2026-08-23T12:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 24 },
   },
   {
     id: 'fld-research',
@@ -271,8 +243,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
           containerId:
             f.containerId !== undefined
               ? f.containerId
-              : f.path.startsWith('01_Daily_Logs') ||
-                f.path.startsWith('04_Archive') ||
+              : f.path.startsWith('04_Archive') ||
                 f.path.startsWith('Core_Strategy') ||
                 f.path.startsWith('Financials')
               ? 'cont-personal-vault'
@@ -447,7 +418,12 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   // Delete folder
-  const deleteFolder = useCallback((id: string) => {
+  const deleteFolder = useCallback(async (id: string) => {
+    try {
+      await calendarApi.deleteFolder(id);
+    } catch (e) {
+      console.warn('Failed to delete folder on server', e);
+    }
     setFolders((prev) => {
       const target = prev.find((f) => f.id === id);
       if (!target) return prev;
@@ -537,20 +513,13 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const refreshFolders = useCallback(async () => {
     try {
       const serverFolders = await calendarApi.getFolders(false, undefined, undefined, 'all');
-      if (Array.isArray(serverFolders) && serverFolders.length > 0) {
-        setFolders((prev) => {
-          const map = new Map<string, Folder>();
-          prev.forEach((f) => map.set(f.path, f));
-          serverFolders.forEach((sf) => {
-            const existing = map.get(sf.path);
-            map.set(sf.path, {
-              ...existing,
-              ...sf,
-              scope: sf.scope || (sf.containerId ? 'internal' : 'external'),
-            });
-          });
-          return Array.from(map.values());
-        });
+      if (Array.isArray(serverFolders)) {
+        setFolders(
+          serverFolders.map((sf) => ({
+            ...sf,
+            scope: sf.scope || (sf.containerId ? 'internal' : 'external'),
+          }))
+        );
       }
     } catch (e) {
       console.warn('Could not refresh folders from server, using local cache', e);

@@ -33,15 +33,18 @@ import {
   Settings,
   Zap,
   Layers,
+  Rss,
 } from 'lucide-react';
 import { ObsidianContainerFileManager } from './ObsidianContainerFileManager';
+import { ContainerFeedBindingSection } from './ContainerFeedBindingSection';
+import { ContainerActivityHistoryTab } from './ContainerActivityHistoryTab';
 import { parseObsidianRoute, navigateObsidian } from '../utils/obsidianRouting';
 import dayjs from 'dayjs';
 
 interface SingleContainerDetailViewProps {
   containerId: string;
   onBack: () => void;
-  initialTab?: 'files' | 'history' | 'folders' | 'settings';
+  initialTab?: 'files' | 'history' | 'folders' | 'feeds' | 'settings';
 }
 
 export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps> = ({
@@ -68,11 +71,12 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
   } = useObsidianContainers();
 
   const { folders, getInternalFoldersForContainer, deleteFolder: deleteInternalFolder } = useFoldersContext();
+  const { data: serverCommits = [] } = useObsidianContainerCommitsQuery(containerId);
 
   const container = containers.find((c) => c.id === containerId);
 
   const initialRoute = parseObsidianRoute();
-  const [activeTab, setActiveTab] = useState<'files' | 'history' | 'folders' | 'settings'>(() => {
+  const [activeTab, setActiveTab] = useState<'files' | 'history' | 'folders' | 'feeds' | 'settings'>(() => {
     if (initialRoute.containerId === containerId && initialRoute.tab) {
       return initialRoute.tab;
     }
@@ -91,7 +95,7 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
     return () => window.removeEventListener('popstate', handlePopState);
   }, [containerId, activeTab]);
 
-  const handleTabChange = (tab: 'files' | 'history' | 'folders' | 'settings') => {
+  const handleTabChange = (tab: 'files' | 'history' | 'folders' | 'feeds' | 'settings') => {
     setActiveTab(tab);
     navigateObsidian({ containerId, tab });
   };
@@ -206,37 +210,6 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
       filterTag: '',
     });
   };
-
-  // Real container commit history query
-  const { data: serverCommits = [] } = useObsidianContainerCommitsQuery(containerId);
-
-  const commitHistory = serverCommits.length > 0
-    ? serverCommits.map((c) => ({
-        hash: c.shortHash || c.hash?.slice(0, 7) || 'HEAD',
-        message: c.message || 'Container sync commit',
-        author: c.author || 'obsidian-agent',
-        date: c.date ? dayjs(c.date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss'),
-        changes: c.filesChanged ? `${c.filesChanged} file(s) changed` : 'Sync update',
-        type: 'sync' as const,
-      }))
-    : [
-        {
-          hash: 'a7f93d2e',
-          message: 'Sync notes from Obsidian Vault (2-Way Merge)',
-          author: 'obsidian-agent',
-          date: dayjs().subtract(15, 'minute').format('YYYY-MM-DD HH:mm:ss'),
-          changes: '+4 files, -1 file',
-          type: 'sync' as const,
-        },
-        {
-          hash: '90c421ab',
-          message: 'Initial container structure created',
-          author: 'system',
-          date: dayjs(container?.createdAt || Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-          changes: 'Created vault workspace',
-          type: 'create' as const,
-        },
-      ];
 
   // Mock notes for preview tab
   const mockNotesPreview = [
@@ -370,12 +343,12 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
           onClick={() => handleTabChange('history')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
             activeTab === 'history'
-              ? 'border-[#a855f7] text-white font-bold'
+              ? 'border-[#22c55e] text-white font-bold'
               : 'border-transparent text-[#93927e] hover:text-[#e2e2e2]'
           }`}
         >
-          <Clock className="w-3.5 h-3.5 text-[#a855f7]" />
-          <span>История коммитов (Time Machine)</span>
+          <Clock className="w-3.5 h-3.5 text-[#22c55e]" />
+          <span>Журнал изменений (Activity Stream)</span>
         </button>
 
         <button
@@ -388,6 +361,18 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
         >
           <FolderGit2 className="w-3.5 h-3.5 text-[#c9cd58]" />
           <span>Привязанные папки ({container.boundFolders.length})</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('feeds')}
+          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-mono font-medium transition-all ${
+            activeTab === 'feeds'
+              ? 'border-[#0ea5e9] text-[#38bdf8] font-bold'
+              : 'border-transparent text-[#93927e] hover:text-[#e2e2e2]'
+          }`}
+        >
+          <Rss className="w-3.5 h-3.5 text-[#0ea5e9]" />
+          <span>Лента & Проекция {container.config?.feedProjection?.enabled ? '•' : ''}</span>
         </button>
 
         <button
@@ -418,61 +403,10 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
       ) : (
         <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           <div className="max-w-5xl mx-auto space-y-6">
-            {/* TAB 1: Change History (Time Machine) */}
-            {activeTab === 'history' && (
-            <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-4">
-                <div className="flex items-center justify-between border-b border-[#242828] pb-3">
-                  <div>
-                    <h3 className="font-sans font-bold text-base text-white flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#a855f7]" />
-                      <span>Хронологическая история изменений</span>
-                    </h3>
-                    <p className="text-xs text-[#93927e] mt-0.5">
-                      Фиксация коммитов и синхронизаций между Obsidian Vault и сервером.
-                    </p>
-                  </div>
-
-                  <span className="px-2.5 py-1 rounded bg-[#a855f7]/15 text-[#d8b4fe] font-mono text-xs border border-[#a855f7]/30">
-                    Live Sync Active
-                  </span>
-                </div>
-
-                {/* Commit Timeline List */}
-                <div className="space-y-3">
-                  {commitHistory.map((item) => (
-                    <div
-                      key={item.hash}
-                      className="p-4 rounded-xl bg-[#121414] border border-[#242828] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-[#a855f7]/20 text-[#d8b4fe] border border-[#a855f7]/40">
-                            {item.hash}
-                          </span>
-                          <h4 className="font-sans font-semibold text-sm text-[#e2e2e2]">
-                            {item.message}
-                          </h4>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-xs font-mono text-[#93927e]">
-                          <span>Автор: {item.author}</span>
-                          <span>•</span>
-                          <span>{item.date}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 font-mono text-xs shrink-0">
-                        <span className="px-2.5 py-1 rounded bg-[#1e2020] text-[#c9cd58] border border-[#2d3030]">
-                          {item.changes}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+            {/* TAB 1: Change History (Activity Stream) */}
+            {activeTab === 'history' && container && (
+              <ContainerActivityHistoryTab container={container} />
+            )}
 
           {/* TAB 2: Bound Folders & Internal Folders Manager */}
           {activeTab === 'folders' && (
@@ -730,7 +664,18 @@ export const SingleContainerDetailView: React.FC<SingleContainerDetailViewProps>
             </div>
           )}
 
-          {/* TAB 4: Container Settings & Token */}
+          {/* TAB 4: Feed Projections & Bindings */}
+          {activeTab === 'feeds' && (
+            <div className="max-w-4xl">
+              <ContainerFeedBindingSection
+                container={container}
+                allContainers={containers}
+                onConfigSaved={(newCfg) => updateContainer(container.id, { config: newCfg })}
+              />
+            </div>
+          )}
+
+          {/* TAB 5: Container Settings & Token */}
           {activeTab === 'settings' && (
             <div className="space-y-4">
               <div className="p-5 rounded-2xl bg-[#181a1a] border border-[#242828] space-y-5">

@@ -213,7 +213,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   }, [selectedDayKey, calendarCells, notes]);
 
   return (
-    <div className="flex-1 flex flex-col p-3 lg:p-4 overflow-hidden h-full max-w-[1600px] mx-auto w-full gap-2.5 min-h-0">
+    <div className="flex-1 flex flex-col p-3 lg:p-4 overflow-hidden h-full max-w-[1600px] mx-auto w-full gap-2.5 min-h-0 bg-[#121414]">
       {/* 1. Header Toolbar & Direct Filter Navigation */}
       <div className="bg-[#1a1c1c] border border-[#242828] rounded-xl p-3 flex flex-col gap-2.5 shadow-md flex-shrink-0">
         {/* Top Level: Month Title, Quick Stats & Jump to Filters Buttons */}
