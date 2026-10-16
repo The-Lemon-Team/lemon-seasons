@@ -21,6 +21,13 @@ export enum NoteType {
   DONE = 'DONE',
 }
 
+export enum NoteStatus {
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  PUBLISHED = 'PUBLISHED',
+  ARCHIVED = 'ARCHIVED',
+}
+
 export class CreateNoteDto {
   @ApiPropertyOptional({ description: 'Feed ID this note belongs to' })
   @IsString()
@@ -31,6 +38,25 @@ export class CreateNoteDto {
   @IsString()
   @IsOptional()
   containerId?: string;
+
+  @ApiPropertyOptional({
+    enum: NoteStatus,
+    description: 'Publication lifecycle status',
+    example: NoteStatus.PUBLISHED,
+  })
+  @IsEnum(NoteStatus)
+  @IsOptional()
+  status?: NoteStatus;
+
+  @ApiPropertyOptional({ description: 'Scheduled publication date and time (ISO string)', example: '2026-10-17T09:00:00.000Z' })
+  @IsDateString()
+  @IsOptional()
+  publishAt?: string;
+
+  @ApiPropertyOptional({ description: 'Logical or relative folder path (e.g. Spark/AI)', example: 'Spark/AI' })
+  @IsString()
+  @IsOptional()
+  folderPath?: string;
 
   @ApiProperty({ description: 'Title of the note', example: 'Marvel Cinematic Universe Phase 5 Overview' })
   @IsString()

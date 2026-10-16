@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateFeedDto {
   @ApiProperty({ description: 'Title of the feed', example: 'Product Milestones' })
@@ -16,4 +16,10 @@ export class CreateFeedDto {
   @IsString()
   @IsOptional()
   slug?: string;
+
+  @ApiPropertyOptional({ description: 'List of folder paths bound to this feed', example: ['Spark/AI', 'Spark/Habr'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  folderPaths?: string[];
 }

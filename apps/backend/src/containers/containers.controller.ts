@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Param,
   Body,
   Query,
@@ -43,6 +44,21 @@ export class ContainersController {
   @Get(':id')
   async getContainerSummary(@Param('id') id: string): Promise<ContainerSummaryDto> {
     return this.containersService.getContainerSummary(id);
+  }
+
+  @Get(':id/config')
+  async getContainerConfig(@Param('id') id: string) {
+    const config = this.containersService.getContainerConfig(id);
+    return { success: true, config };
+  }
+
+  @Put(':id/config')
+  async updateContainerConfig(@Param('id') id: string, @Body() body: { config: any }) {
+    if (!body || !body.config) {
+      throw new BadRequestException('Property "config" is required in request body.');
+    }
+    const updated = this.containersService.updateContainerConfig(id, body.config);
+    return { success: true, config: updated };
   }
 
   @Post(':id/privacy')

@@ -6,6 +6,7 @@ import { TmdbService, MovieReleaseItem } from './services/tmdb.service';
 import { HolidaysEngineService, HolidayItem } from './services/holidays-engine.service';
 import { PoliticalEngineService, PoliticalEventItem } from './services/political-engine.service';
 import { DriveWatcherService } from './services/drive-watcher.service';
+import { WikiEngineService } from './services/wiki-engine.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NoteType } from '@prisma/client';
 
@@ -43,6 +44,7 @@ export class IngestionController {
     private readonly holidaysEngine: HolidaysEngineService,
     private readonly politicalEngine: PoliticalEngineService,
     private readonly driveWatcher: DriveWatcherService,
+    private readonly wikiEngine: WikiEngineService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -188,6 +190,27 @@ export class IngestionController {
     };
   }
 
+  @Get('wiki/preview')
+  @ApiOperation({ summary: 'Предпросмотр исторических событий дня из Wikipedia' })
+  @ApiQuery({ name: 'date', required: false, description: 'ISO date string (YYYY-MM-DD)' })
+  async getWikiPreview(@Query('date') dateStr?: string) {
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    return this.wikiEngine.getEventsForDate(targetDate);
+  }
+
+  @Post('wiki/sync')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронизировать события дня из Wikipedia в календарь' })
+  @ApiQuery({ name: 'date', required: false, description: 'ISO date string (YYYY-MM-DD)' })
+  async syncWiki(@Query('date') dateStr?: string) {
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    const result = await this.ingestionService.syncWikiEvents(targetDate);
+    return {
+      success: true,
+      result,
+    };
+  }
+
   @Get('status')
   @ApiOperation({ summary: 'Получить статус провайдеров данных и сервисов генерации' })
   getStatus() {
@@ -196,13 +219,9 @@ export class IngestionController {
       geminiActive: Boolean(process.env.GEMINI_API_KEY),
       tmdbActive: Boolean(process.env.TMDB_API_KEY),
       availableFeeds: [
+        { slug: 'russian-holidays', name: 'Российские праздники', provider: 'ТК РФ ст. 112 и 32-ФЗ Дни воинской славы' },
         { slug: 'orthodox-holidays', name: 'Православные праздники', provider: 'Meeus/Computus Пасхалия 2026' },
-        { slug: 'catholic-holidays', name: 'Католические праздники', provider: 'Meeus/Jones/Butcher Computus' },
-        { slug: 'islamic-holidays', name: 'Исламский календарь & Рамадан', provider: 'Umm al-Qura Hijri Calendar 1447–1448' },
-        { slug: 'world-religions', name: 'Мировые религии (Ислам, Иудаизм, Буддизм)', provider: 'Interfaith Liturgical Calendars' },
-        { slug: 'russian-official', name: 'Русские праздники (Официальные)', provider: 'Трудовой кодекс РФ ст. 112' },
-        { slug: 'russian-military', name: 'Дни воинской славы и военные праздники', provider: '32-ФЗ РФ и Указы Президента' },
-        { slug: 'world-holidays', name: 'Праздники стран мира', provider: 'International & National observances' },
+        { slug: 'wiki', name: 'Этот день в истории (Wiki)', provider: 'Wikimedia REST API (On This Day)' },
         { slug: 'mcu-radar', name: 'Marvel Cinematic Universe', provider: 'TMDB API & Phase 5/6 Dataset' },
         { slug: 'politics-2026', name: 'Политика 2026', provider: '2026 Global & Russian Agenda & Gemini' },
       ],

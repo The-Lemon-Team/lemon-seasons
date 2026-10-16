@@ -33,6 +33,7 @@ export class FeedsService {
         title: createFeedDto.title,
         description: createFeedDto.description,
         slug,
+        folderPaths: createFeedDto.folderPaths || [],
       },
       include: {
         _count: {
@@ -118,6 +119,7 @@ export class FeedsService {
         ...(updateFeedDto.title ? { title: updateFeedDto.title } : {}),
         ...(updateFeedDto.description !== undefined ? { description: updateFeedDto.description } : {}),
         ...(slug ? { slug } : {}),
+        ...(updateFeedDto.folderPaths !== undefined ? { folderPaths: updateFeedDto.folderPaths } : {}),
       },
       include: {
         _count: {

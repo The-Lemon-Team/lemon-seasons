@@ -4,6 +4,7 @@ import { GeminiService } from './services/gemini.service';
 import { TmdbService } from './services/tmdb.service';
 import { HolidaysEngineService } from './services/holidays-engine.service';
 import { PoliticalEngineService } from './services/political-engine.service';
+import { WikiEngineService } from './services/wiki-engine.service';
 import { NoteType } from '@prisma/client';
 
 export interface IngestionResult {
@@ -24,6 +25,7 @@ export class IngestionService {
     private readonly tmdbService: TmdbService,
     private readonly holidaysEngine: HolidaysEngineService,
     private readonly politicalEngine: PoliticalEngineService,
+    private readonly wikiEngine: WikiEngineService,
   ) {}
 
   /**
@@ -72,6 +74,9 @@ export class IngestionService {
         return this.syncChristianHolidays();
       case 'politics-2026':
         return this.syncPolitics2026();
+      case 'wiki':
+      case 'wiki-history':
+        return this.syncWikiEvents();
       default:
         throw new Error(`Unknown feed slug: ${slug}`);
     }
@@ -875,4 +880,55 @@ export class IngestionService {
       updated,
     };
   }
+
+  /**
+   * Syncs historical events from Wikipedia for the specified date (defaults to today)
+   */
+  async syncWikiEvents(date: Date = new Date()): Promise<IngestionResult> {
+    const feed = await this.ensureFeed(
+      'wiki',
+      'Этот день в истории (Wiki)',
+      'Сводка исторических событий, открытий и вех текущего дня из свободной энциклопедии Wikipedia',
+    );
+    const container = await this.ensureContainer(
+      'wiki-daily-history',
+      'Wiki Daily History',
+      'Контейнер ежедневных исторических выжимок и хроник из Wikipedia',
+    );
+
+    const events = await this.wikiEngine.getEventsForDate(date);
+    let created = 0;
+    let updated = 0;
+
+    for (const item of events) {
+      const res = await this.upsertCalendarNote({
+        feedId: feed.id,
+        containerId: container.id,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        icon: item.icon,
+        sourceLink: item.sourceLink,
+        taxonomyPath: item.taxonomyPath,
+        folders: item.folders,
+        hashtags: item.hashtags,
+        imageUrl: item.imageUrl,
+        imageCaption: item.imageCaption,
+      });
+
+      if (res.isNew) created++;
+      else updated++;
+    }
+
+    return {
+      feedSlug: feed.slug,
+      feedTitle: feed.title,
+      notesCount: events.length,
+      created,
+      updated,
+    };
+  }
 }
+

@@ -74,10 +74,21 @@ export class HashtagsService {
       if (existing) {
         resolvedIds.push(existing.id);
       } else {
-        const created = await this.prisma.hashtag.create({
-          data: { name },
-        });
-        resolvedIds.push(created.id);
+        try {
+          const created = await this.prisma.hashtag.create({
+            data: { name },
+          });
+          resolvedIds.push(created.id);
+        } catch (err: any) {
+          const concurrent = await this.prisma.hashtag.findFirst({
+            where: { name },
+          });
+          if (concurrent) {
+            resolvedIds.push(concurrent.id);
+          } else {
+            throw err;
+          }
+        }
       }
     }
 

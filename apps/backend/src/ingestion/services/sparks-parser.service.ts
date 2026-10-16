@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
-import { LentaFrontmatterUtil, NoteType } from '@lenta/shared';
+import { LentaFrontmatterUtil, NoteType, NoteStatus, RelatedNoteItem } from '@lenta/shared';
 import { CreateNoteDto } from '../../notes/dto/create-note.dto';
 
 export interface ParsedSparkResult {
@@ -104,11 +104,54 @@ export class SparksParserService {
         : '✨';
     const icon = (fm.icon as string) || defaultIcon;
 
-    // 10. Build CreateNoteDto
+    // 10. Resolve Publication Lifecycle Status & Scheduled Publish Time
+    const rawStatus = (fm.status as string)?.toUpperCase();
+    const status =
+      rawStatus === 'DRAFT'
+        ? NoteStatus.DRAFT
+        : rawStatus === 'SCHEDULED'
+        ? NoteStatus.SCHEDULED
+        : rawStatus === 'ARCHIVED'
+        ? NoteStatus.ARCHIVED
+        : NoteStatus.PUBLISHED;
+
+    const rawPublishAt = fm.publish_at || fm.publishAt;
+    let publishAt: string | undefined = undefined;
+    if (rawPublishAt) {
+      const parsedP = new Date(rawPublishAt);
+      if (!isNaN(parsedP.getTime())) publishAt = parsedP.toISOString();
+    }
+
+    // 10.5. Extract & Clean Related Notes (Wikilinks)
+    const { links: relatedLinks, cleanedBody, rawRelatedSection } =
+      LentaFrontmatterUtil.extractRelatedLinks(parsedMd.body, fm);
+
+    const relatedNotesData: RelatedNoteItem[] = relatedLinks.map((link) => {
+      const pipeIdx = link.indexOf('|');
+      const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
+      const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : undefined;
+      const cleanTitle = targetName
+        .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
+        .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
+        .trim();
+      const isVaultDoc = targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники');
+
+      return {
+        raw: link,
+        cleanTitle: cleanTitle || targetName,
+        alias,
+        resolved: false,
+        isVaultDoc,
+      };
+    });
+
+    // 11. Build CreateNoteDto
     const noteDto: CreateNoteDto = {
       title,
-      description: parsedMd.body,
+      description: cleanedBody, // Cleaned description without the raw trailing markdown block
       type: type as any,
+      status: status as any,
+      publishAt,
       startDate: startDate.toISOString(),
       endDate: endDate ? endDate.toISOString() : undefined,
       sourceType: 'GOOGLE_DRIVE',
@@ -131,6 +174,8 @@ export class SparksParserService {
         fileSize: fileStats?.size,
         fileMtime: fileStats?.mtime?.toISOString(),
         ingestedAt: new Date().toISOString(),
+        relatedNotes: relatedNotesData,
+        rawRelatedSection,
       },
     };
 

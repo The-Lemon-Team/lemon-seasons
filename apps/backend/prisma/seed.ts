@@ -417,6 +417,7 @@ async function main() {
     trailerUrl?: string;
     curator?: string;
     parentNoteId?: string;
+    resonanceScore?: number;
   }) {
     const tagId = await getOrCreateTaxonomy(item.taxonomyPath);
     const sDate = new Date(item.startDate);
@@ -433,6 +434,7 @@ async function main() {
         endDate: eDate,
         icon: item.icon,
         curator: item.curator,
+        resonanceScore: item.resonanceScore,
         parentNoteId: item.parentNoteId,
         sourceLink: item.sourceLink,
         tags: {
@@ -971,6 +973,7 @@ async function main() {
       hashtags: ['CoreStrategy', 'Principles', 'Privacy'],
       description: `### The Three Non-Negotiable Pillars\n1. **User Owns Their Data**: Notes live as plain text Markdown on the local filesystem.\n2. **Privacy by Design**: Private vaults are physically partitioned by container IDs and never broadcast.\n3. **Frictionless Sync**: Delta-based synchronization with deterministic conflict resolution.`,
     },
+
   ];
 
   for (const n of techNotes) {

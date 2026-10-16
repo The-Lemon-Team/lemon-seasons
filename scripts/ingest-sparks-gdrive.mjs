@@ -7,6 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://lemon:lemon_secret@localhost:5435/lemon_calendarium?schema=public';
+}
+
 const prismaPath = require.resolve('@prisma/client', { paths: [path.join(process.cwd(), 'apps/backend')] });
 const { PrismaClient } = require(prismaPath);
 const prisma = new PrismaClient();
@@ -219,7 +223,11 @@ async function run() {
   for (const [fTitle, count] of Object.entries(feedStats)) {
     console.log(`    - ${fTitle}: ${count} новостей`);
   }
-  console.log('═══════════════════════════════════════════════════════════════════════');
+  console.log('═══════════════════════════════════════════════════════════════════════\n');
+
+  // Automatic cross-link resolution
+  const { runResolution } = await import('./resolve-db-related-notes.mjs');
+  await runResolution();
 }
 
 run()

@@ -1,10 +1,13 @@
-import { NoteType, ConflictStrategy } from '../constants';
+import { NoteType, NoteStatus, ConflictStrategy } from '../constants';
+
+export { NoteStatus } from '../constants';
 
 export interface Feed {
   id: string;
   title: string;
   description: string | null;
   slug: string;
+  folderPaths?: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -144,9 +147,12 @@ export interface UpdateNoteLinkInput {
 
 export interface Note {
   id: string;
-  feedId: string;
+  feedId?: string | null;
   feed?: Feed;
   containerId?: string | null;
+  status?: NoteStatus;
+  publishAt?: string | null;
+  folderPath?: string | null;
   filePath?: string | null;
   title: string;
   description: string | null;
@@ -238,6 +244,9 @@ export interface NotesResponse {
 export interface CreateNoteInput {
   feedId?: string;
   containerId?: string | null;
+  status?: NoteStatus;
+  publishAt?: string | null;
+  folderPath?: string | null;
   title: string;
   description?: string;
   type: NoteType;
@@ -260,6 +269,9 @@ export interface UpdateNoteInput {
   title?: string;
   description?: string;
   type?: NoteType;
+  status?: NoteStatus;
+  publishAt?: string | null;
+  folderPath?: string | null;
   startDate?: string;
   endDate?: string | null;
   sourceLink?: string;
@@ -280,6 +292,14 @@ export interface CreateFeedInput {
   title: string;
   description?: string;
   slug?: string;
+  folderPaths?: string[];
+}
+
+export interface UpdateFeedInput {
+  title?: string;
+  description?: string;
+  slug?: string;
+  folderPaths?: string[];
 }
 
 export interface CreateFolderInput {
@@ -360,10 +380,27 @@ export interface LentaFrontmatter {
   persona?: string;
   assistants?: string[];
   parent_note_id?: string | null;
+  related_notes?: string[];
+  related_files?: string[];
   updated_at?: string;
   updatedAt?: string;
   deleted?: boolean;
   [key: string]: any;
+}
+
+export interface RelatedNoteItem {
+  raw: string;
+  cleanTitle: string;
+  alias?: string;
+  resolved: boolean;
+  targetNoteId?: string;
+  targetTitle?: string;
+  targetType?: NoteType | string;
+  targetCurator?: string | null;
+  targetIcon?: string | null;
+  targetDate?: string | null;
+  isParent?: boolean;
+  isVaultDoc?: boolean;
 }
 
 export interface ParsedMarkdownNote {
@@ -505,6 +542,54 @@ export interface BoundFolder {
   scope?: FolderScope;
 }
 
+export interface ContainerSourceConfig {
+  mode?: 'daily' | 'common' | 'stream' | 'notebooklm' | (string & {});
+  type?: 'daily' | 'common' | 'wiki' | 'api' | 'rss' | 'stream' | 'notebooklm' | (string & {});
+  schedule?: string;
+  provider?: string;
+  endpoint?: string;
+  apiUrl?: string;
+  syncStrategy?: 'append' | 'replace' | 'merge';
+  params?: Record<string, any>;
+  lazyLoading?: {
+    enabled?: boolean;
+    ttlDays?: number;
+  };
+  defaultFolders?: string[];
+  defaultTags?: string[];
+}
+
+export interface ContainerAgentConfig {
+  enabled?: boolean;
+  curatorId?: string;
+  name?: string;
+  emoji?: string;
+  role?: string;
+  systemPrompt?: string;
+  modelPreference?: string;
+}
+
+export interface ContainerFeedProjectionConfig {
+  enabled?: boolean;
+  feedSlug?: string;
+  feedTitle?: string;
+  targetTab?: string;
+  accentColor?: string;
+  emoji?: string;
+  combineWith?: string[];
+}
+
+export interface ContainerConfig {
+  id?: string;
+  name?: string;
+  version?: string;
+  metadata?: Record<string, any>;
+  source?: ContainerSourceConfig;
+  agent?: ContainerAgentConfig;
+  feedProjection?: ContainerFeedProjectionConfig;
+  [key: string]: any;
+}
+
 export interface ObsidianContainer {
   id: string;
   name: string;
@@ -519,7 +604,9 @@ export interface ObsidianContainer {
   lastSyncedAt?: string;
   status: 'connected' | 'idle' | 'syncing' | 'error';
   color?: string;
+  config?: ContainerConfig | Record<string, any> | null;
 }
+
 
 export interface PrivateContainer {
   id: string;
@@ -1141,6 +1228,9 @@ export interface SideWorkResult {
   suggestedObsidianFrontmatter?: Record<string, any>;
   createdAt: string;
 }
+
+export * from './bus';
+
 
 
 

@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service';
-import { LentaFrontmatterUtil } from '@lenta/shared';
+import { ContainerConfig, LentaFrontmatterUtil } from '@lenta/shared';
 
 export interface ContainerSummaryDto {
   id: string;
@@ -10,6 +12,7 @@ export interface ContainerSummaryDto {
   visibility: 'public' | 'private';
   totalNotes: number;
   ownerUserId?: string;
+  config?: ContainerConfig | Record<string, any> | null;
 }
 
 export interface FileItemDto {
@@ -41,7 +44,92 @@ export interface FileVersionDto {
 
 @Injectable()
 export class ContainersService {
+  private readonly configFilePath = path.resolve(process.cwd(), 'uploads', 'container-configs.json');
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private loadAllConfigs(): Record<string, ContainerConfig> {
+    try {
+      if (fs.existsSync(this.configFilePath)) {
+        const raw = fs.readFileSync(this.configFilePath, 'utf-8');
+        return JSON.parse(raw);
+      }
+    } catch {
+      // ignore
+    }
+    return this.getDefaultSeedConfigs();
+  }
+
+  private saveAllConfigs(configs: Record<string, ContainerConfig>): void {
+    try {
+      const dir = path.dirname(this.configFilePath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(this.configFilePath, JSON.stringify(configs, null, 2), 'utf-8');
+    } catch {
+      // ignore
+    }
+  }
+
+  private getDefaultSeedConfigs(): Record<string, ContainerConfig> {
+    return {
+      'wiki-daily-history': {
+        version: '1.0.0',
+        source: {
+          type: 'daily',
+          apiUrl: 'https://ru.wikipedia.org/api/rest_v1/feed/onthisday/events',
+          schedule: '0 4 * * *',
+          syncStrategy: 'merge',
+        },
+        feedProjection: {
+          enabled: true,
+          feedSlug: 'wiki',
+          feedTitle: 'Этот день в истории (Wiki)',
+          targetTab: 'classic',
+          accentColor: '#0ea5e9',
+          emoji: '📖',
+          combineWith: [],
+        },
+        agent: {
+          curatorId: 'wiki-historian',
+          name: 'Архивариус Wiki',
+          role: 'Хронограф исторических событий',
+        },
+      },
+      'notebooklm-podcasts': {
+        version: '1.0.0',
+        source: {
+          type: 'common',
+          syncStrategy: 'append',
+        },
+        feedProjection: {
+          enabled: true,
+          feedSlug: 'notebooklm-podcasts',
+          feedTitle: 'NotebookLM Deep Dives',
+          targetTab: 'spark',
+          accentColor: '#a855f7',
+          emoji: '🎙️',
+          combineWith: [],
+        },
+        agent: {
+          curatorId: 'notebooklm',
+          name: 'NotebookLM AI',
+          role: 'Глубокий аналитический обзор и подкасты',
+        },
+      },
+    };
+  }
+
+  getContainerConfig(id: string): ContainerConfig | null {
+    const all = this.loadAllConfigs();
+    return all[id] || null;
+  }
+
+  updateContainerConfig(id: string, config: ContainerConfig): ContainerConfig {
+    const all = this.loadAllConfigs();
+    all[id] = { ...all[id], ...config };
+    this.saveAllConfigs(all);
+    return all[id];
+  }
 
   async listContainers(userId?: string, includePrivate = true): Promise<ContainerSummaryDto[]> {
     const whereClause: any = { deletedAt: null };
@@ -68,6 +156,8 @@ export class ContainersService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const configs = this.loadAllConfigs();
+
     const results: ContainerSummaryDto[] = containers.map((c) => ({
       id: c.id,
       name: c.name,
@@ -76,6 +166,7 @@ export class ContainersService {
       visibility: (c.visibility as 'public' | 'private') || 'public',
       totalNotes: c._count.notes,
       ownerUserId: c.ownerUserId || undefined,
+      config: configs[c.id] || null,
     }));
 
     // Synthesize feeds as containers if not explicitly in database
@@ -91,6 +182,7 @@ export class ContainersService {
           description: feed.description || undefined,
           visibility: 'public',
           totalNotes: count,
+          config: configs[feedId] || null,
         });
       }
     }
@@ -111,6 +203,7 @@ export class ContainersService {
         description: feed.description || undefined,
         visibility: 'public',
         totalNotes: count,
+        config: this.getContainerConfig(id),
       };
     }
 
@@ -146,6 +239,7 @@ export class ContainersService {
       visibility: (container.visibility as 'public' | 'private') || 'public',
       totalNotes: container._count?.notes || 0,
       ownerUserId: container.ownerUserId || undefined,
+      config: this.getContainerConfig(container.id),
     };
   }
 

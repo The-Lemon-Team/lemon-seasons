@@ -19,6 +19,44 @@ export const NOTE_TYPES: NoteType[] = [
   'DONE',
 ];
 
+export const NoteStatus = {
+  DRAFT: 'DRAFT',
+  SCHEDULED: 'SCHEDULED',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type NoteStatus = (typeof NoteStatus)[keyof typeof NoteStatus];
+export type NoteStatusValue = NoteStatus;
+
+export const NOTE_STATUSES: NoteStatus[] = [
+  'DRAFT',
+  'SCHEDULED',
+  'PUBLISHED',
+  'ARCHIVED',
+];
+
+export const NoteStatusLabelsRu: Record<NoteStatus, string> = {
+  DRAFT: 'Черновик',
+  SCHEDULED: 'Запланировано',
+  PUBLISHED: 'Опубликовано',
+  ARCHIVED: 'В архиве',
+};
+
+export const NoteStatusLabelsEn: Record<NoteStatus, string> = {
+  DRAFT: 'Draft',
+  SCHEDULED: 'Scheduled',
+  PUBLISHED: 'Published',
+  ARCHIVED: 'Archived',
+};
+
+export function getNoteStatusLabel(status: NoteStatus, lang: Language = 'ru'): string {
+  if (lang === 'ru') {
+    return NoteStatusLabelsRu[status] || status;
+  }
+  return NoteStatusLabelsEn[status] || status;
+}
+
 export type Language = 'ru' | 'en';
 
 export const NoteTypeLabelsEn: Record<NoteType, string> = {

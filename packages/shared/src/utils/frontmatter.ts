@@ -99,6 +99,26 @@ export class LentaFrontmatterUtil {
       }
     }
 
+    // Related Notes block if present in metadata and not already in description
+    const relatedNotes = note.metadata?.relatedNotes || (note as any).relatedNotes;
+    if (Array.isArray(relatedNotes) && relatedNotes.length > 0) {
+      const hasBlock = /##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)/i.test(desc);
+      if (!hasBlock) {
+        lines.push('');
+        lines.push('---');
+        lines.push('');
+        lines.push('## 🔗 Связанные записи');
+        lines.push('');
+        for (const item of relatedNotes) {
+          const rawLink = typeof item === 'string' ? item : (item.raw || item.cleanTitle || item.targetTitle || '');
+          if (rawLink) {
+            const clean = rawLink.replace(/^\[\[|\]\]$/g, '').trim();
+            lines.push(`- [[${clean}]]`);
+          }
+        }
+      }
+    }
+
     return lines.join('\n');
   }
 
@@ -259,5 +279,64 @@ export class LentaFrontmatterUtil {
       }
     }
     return tags;
+  }
+
+  /**
+   * Extracts related notes / wikilinks from frontmatter and from the trailing
+   * `## 🔗 Связанные записи` section of the Markdown body.
+   * Returns the cleaned body (without the trailing related block) and the array of raw links.
+   */
+  public static extractRelatedLinks(
+    body: string,
+    frontmatter?: LentaFrontmatter,
+  ): {
+    links: string[];
+    cleanedBody: string;
+    rawRelatedSection?: string;
+  } {
+    const linksSet = new Set<string>();
+
+    // 1. From frontmatter
+    const fmLinks = [
+      ...(Array.isArray(frontmatter?.related_notes) ? frontmatter.related_notes : []),
+      ...(Array.isArray(frontmatter?.related_files) ? frontmatter.related_files : []),
+    ];
+    for (const raw of fmLinks) {
+      if (typeof raw === 'string') {
+        const clean = raw.replace(/^\[\[|\]\]$/g, '').trim();
+        if (clean && !clean.toLowerCase().includes('другая заметка')) {
+          linksSet.add(clean);
+        }
+      }
+    }
+
+    // 2. From markdown trailing section
+    let cleanedBody = body;
+    let rawRelatedSection: string | undefined = undefined;
+
+    const sectionRegex = /(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i;
+    const match = body.match(sectionRegex);
+
+    if (match) {
+      rawRelatedSection = match[0].trim();
+      cleanedBody = body.replace(sectionRegex, '').trim();
+
+      // Extract [[...]] links while ignoring html comments <!-- ... -->
+      const sectionTextWithoutComments = rawRelatedSection.replace(/<!--[\s\S]*?-->/g, '');
+      const wikiMatches = [...sectionTextWithoutComments.matchAll(/\[\[(.*?)\]\]/g)];
+      for (const m of wikiMatches) {
+        const link = m[1].trim();
+        // Skip placeholders
+        if (link && !link.toLowerCase().includes('другая заметка')) {
+          linksSet.add(link);
+        }
+      }
+    }
+
+    return {
+      links: Array.from(linksSet),
+      cleanedBody,
+      rawRelatedSection,
+    };
   }
 }

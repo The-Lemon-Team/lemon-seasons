@@ -4,9 +4,9 @@ import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import * as chokidar from 'chokidar';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotesService } from '../../notes/notes.service';
-import { SparksParserService } from './sparks-parser.service';
+import { FileDetectedEvent } from '../../events';
 
 export interface WatcherStatus {
   isWatching: boolean;
@@ -24,8 +24,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notesService: NotesService,
-    private readonly sparksParser: SparksParserService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.watchedDir =
       process.env.SPARKS_INCOMING_DIR ||
@@ -97,8 +96,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Processes an incoming or updated file through the 3-stage lifecycle:
-   * 1. PENDING -> 2. PROCESSING -> 3. COMPLETED (or FAILED)
+   * Detects new or changed file, validates its hash and emits FileDetectedEvent onto the event bus.
    */
   public async handleFileEvent(event: 'ADD' | 'CHANGE', rawFilePath: string): Promise<void> {
     const filePath = path.normalize(rawFilePath);
@@ -116,7 +114,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
       const content = await fs.promises.readFile(filePath, 'utf-8');
       const fileHash = crypto.createHash('sha256').update(content).digest('hex');
 
-      // ── ЭТАП 1: PENDING ──────────────────────────────────────────────────
+      // 1. Initial IngestionFile tracking (PENDING)
       const ingestionRecord = await this.prisma.ingestionFile.upsert({
         where: { filePath },
         create: {
@@ -136,7 +134,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
         },
       });
 
-      // Идемпотентность: если файл с таким хэшем уже успешно обработан и привязан к Note, пропускаем
+      // Idempotency: skip if already processed with identical hash
       if (
         event === 'CHANGE' &&
         ingestionRecord.status === 'COMPLETED' &&
@@ -147,140 +145,28 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      // ── ЭТАП 2: PROCESSING ───────────────────────────────────────────────
-      await this.prisma.ingestionFile.update({
-        where: { id: ingestionRecord.id },
-        data: { status: 'PROCESSING' },
-      });
-
-      const parsed = this.sparksParser.parseSparkFile(filePath, content, {
-        mtime: stats.mtime,
-        size: stats.size,
-      });
-
-      // Smart Feed Resolution:
-      // Map folder (spark/AI, spark/Habr, etc.) to dedicated thematic feeds
-      const targetFeed = await this.resolveFeedForFile(filePath, parsed.noteDto.metadata?.feedSlug);
-      parsed.noteDto.feedId = parsed.noteDto.feedId || targetFeed.id;
-
-      // Assign folder taxonomy for Obsidian / folder navigation (e.g. "Spark/AI" or "Spark/Habr")
+      // Resolve assigned folder path (e.g. "Spark/AI" or "Spark/Habr")
       const relPath = path.relative(this.watchedDir, filePath);
       const parts = relPath.split(path.sep);
-      if (parts.length > 1) {
-        parsed.noteDto.folders = [`Spark/${parts[0]}`];
-      } else {
-        parsed.noteDto.folders = ['Spark'];
-      }
+      const assignedFolder = parts.length > 1 ? `Spark/${parts[0]}` : 'Spark';
 
-      let targetNoteId: string;
-
-      if (ingestionRecord.noteId) {
-        // Обновляем уже привязанную заметку
-        const updated = await this.notesService.update(ingestionRecord.noteId, parsed.noteDto);
-        targetNoteId = updated.id;
-        this.logger.log(`🔄 Заметка "${updated.title}" обновлена по файлу: ${fileName}`);
-      } else {
-        // Создаем новую заметку
-        const created = await this.notesService.create(parsed.noteDto);
-        targetNoteId = created.id;
-        this.logger.log(`✨ Создана новая карточка Note: "${created.title}" [id: ${created.id}]`);
-      }
-
-      // ── ЭТАП 3: COMPLETED ────────────────────────────────────────────────
-      await this.prisma.ingestionFile.update({
-        where: { id: ingestionRecord.id },
-        data: {
-          status: 'COMPLETED',
-          noteId: targetNoteId,
-          errorMessage: null,
-        },
-      });
-
-      this.logger.log(`✅ [COMPLETED] Файл "${fileName}" успешно обработан и зафиксирован в БД.`);
+      // 2. Emit event to EventBus
+      this.logger.log(`📢 [file.detected] Отправка события в шину: "${fileName}" [${assignedFolder}]`);
+      this.eventEmitter.emit(
+        'file.detected',
+        new FileDetectedEvent(
+          filePath,
+          fileName,
+          assignedFolder,
+          fileHash,
+          event,
+          stats.mtime,
+          stats.size,
+        ),
+      );
     } catch (err: any) {
-      this.logger.error(`❌ [FAILED] Ошибка обработки файла "${fileName}": ${err.message}`, err.stack);
-
-      await this.prisma.ingestionFile
-        .upsert({
-          where: { filePath },
-          create: {
-            filePath,
-            fileName,
-            fileHash: 'error',
-            mtime: new Date(),
-            status: 'FAILED',
-            errorMessage: err.message || String(err),
-          },
-          update: {
-            status: 'FAILED',
-            errorMessage: err.message || String(err),
-          },
-        })
-        .catch(() => {});
+      this.logger.error(`❌ Ошибка проверки файла "${fileName}": ${err.message}`, err.stack);
     }
-  }
-
-  /**
-   * Resolves or automatically provisions a thematic Feed based on subfolder (AI, Habr, etc.)
-   */
-  private async resolveFeedForFile(filePath: string, frontmatterFeed?: string) {
-    const rel = path.relative(this.watchedDir, filePath);
-    const relParts = rel.split(path.sep);
-    const subfolder = relParts.length > 1 ? relParts[0] : null;
-
-    let targetSlug = 'spark-general';
-    let targetTitle = 'Spark — Общая лента';
-    let targetDesc = 'Автоматически импортированные новости и дайджесты из Google Drive';
-
-    if (subfolder) {
-      const lowerFolder = subfolder.toLowerCase();
-      targetSlug = `spark-${lowerFolder.replace(/[^a-z0-9а-яё]/gi, '-')}`;
-      targetTitle = `${subfolder} (Spark)`;
-      targetDesc = `Тематическая новостная лента по категории ${subfolder} от Spark`;
-
-      const channelConfigPath = path.join(this.watchedDir, subfolder, '_channel.md');
-      if (fs.existsSync(channelConfigPath)) {
-        try {
-          const rawContent = fs.readFileSync(channelConfigPath, 'utf-8');
-          const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-          if (fmMatch) {
-            const yamlLines = fmMatch[1].split(/\r?\n/);
-            for (const line of yamlLines) {
-              const trimmed = line.trim();
-              if (trimmed.startsWith('title:')) {
-                targetTitle = trimmed.replace(/^title:\s*["']?/, '').replace(/["']?$/, '').trim() || targetTitle;
-              } else if (trimmed.startsWith('slug:')) {
-                targetSlug = trimmed.replace(/^slug:\s*["']?/, '').replace(/["']?$/, '').trim() || targetSlug;
-              } else if (trimmed.startsWith('description:')) {
-                targetDesc = trimmed.replace(/^description:\s*["']?/, '').replace(/["']?$/, '').trim() || targetDesc;
-              }
-            }
-          }
-        } catch (e: any) {
-          this.logger.warn(`Не удалось прочитать конфигурацию канала ${channelConfigPath}: ${e.message}`);
-        }
-      }
-    } else if (frontmatterFeed && frontmatterFeed !== 'news') {
-      targetSlug = `spark-${frontmatterFeed.toLowerCase()}`;
-      targetTitle = `Spark — ${frontmatterFeed}`;
-    }
-
-    let feed = await this.prisma.feed.findUnique({
-      where: { slug: targetSlug },
-    });
-
-    if (!feed) {
-      feed = await this.prisma.feed.create({
-        data: {
-          slug: targetSlug,
-          title: targetTitle,
-          description: targetDesc,
-        },
-      });
-      this.logger.log(`📢 Автоматически создана лента новостей: "${targetTitle}" [slug: ${targetSlug}]`);
-    }
-
-    return feed;
   }
 
   /**
@@ -367,4 +253,3 @@ ${options?.content || 'Автоматически сгенерированный
     }
   }
 }
-

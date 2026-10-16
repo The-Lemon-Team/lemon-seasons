@@ -142,4 +142,15 @@ export class SyncController {
   ) {
     return this.syncService.getChangesSince(since, containerId);
   }
+
+  // ==========================================
+  // Mobile LAN Docking (Fast Wi-Fi Snapshot)
+  // ==========================================
+
+  @Get('lan-dock')
+  @ApiOperation({ summary: 'LAN Docking: Fast Wi-Fi snapshot dump for mobile and local clients' })
+  @ApiQuery({ name: 'since', required: false, type: String })
+  lanDock(@Query('since') since?: string) {
+    return this.syncService.getLanDockSnapshot(since);
+  }
 }

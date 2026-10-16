@@ -180,6 +180,14 @@ export class NotesService {
         title: createNoteDto.title,
         description: createNoteDto.description,
         type: (createNoteDto.type as any) || 'SINGLE',
+        status: (createNoteDto.status as any) || 'PUBLISHED',
+        publishAt: createNoteDto.publishAt ? new Date(createNoteDto.publishAt) : null,
+        folderPath:
+          createNoteDto.folderPath ||
+          (createNoteDto.folder as string) ||
+          (Array.isArray(createNoteDto.folders) && typeof createNoteDto.folders[0] === 'string'
+            ? (createNoteDto.folders[0] as string)
+            : undefined),
         startDate: createNoteDto.startDate ? new Date(createNoteDto.startDate) : new Date(),
         endDate: createNoteDto.endDate ? new Date(createNoteDto.endDate) : null,
         sourceLink: initialSourceLink,
@@ -225,18 +233,6 @@ export class NotesService {
     });
 
     this.logger.log(`Created note "${note.title}" [id: ${note.id}]`);
-
-    try {
-      await this.sessionService.recordChange({
-        entityType: 'NOTE',
-        entityId: note.id,
-        action: 'UPSERT',
-        payload: { title: note.title, type: note.type },
-      });
-    } catch {
-      // Continue even if session tracking fails
-    }
-
     return note;
   }
 
@@ -306,23 +302,59 @@ export class NotesService {
       parsedContainers = containers.split(',').map((c) => c.trim()).filter(Boolean);
     }
 
+    let feedFilter: Prisma.NoteWhereInput | undefined = undefined;
+    if (feedId) {
+      const targetFeed = await this.prisma.feed.findUnique({
+        where: { id: feedId },
+        select: { id: true, folderPaths: true },
+      });
+      if (targetFeed && targetFeed.folderPaths && targetFeed.folderPaths.length > 0) {
+        feedFilter = {
+          OR: [
+            { feedId: targetFeed.id },
+            ...targetFeed.folderPaths.map((fp) => ({
+              folderPath: { startsWith: fp, mode: 'insensitive' as const },
+            })),
+          ],
+        };
+      } else {
+        feedFilter = { feedId };
+      }
+    } else if (feedSlug) {
+      const targetFeed = await this.prisma.feed.findFirst({
+        where: { slug: feedSlug, deletedAt: null },
+        select: { id: true, folderPaths: true },
+      });
+      if (targetFeed && targetFeed.folderPaths && targetFeed.folderPaths.length > 0) {
+        feedFilter = {
+          OR: [
+            { feedId: targetFeed.id },
+            ...targetFeed.folderPaths.map((fp) => ({
+              folderPath: { startsWith: fp, mode: 'insensitive' as const },
+            })),
+          ],
+        };
+      } else {
+        feedFilter =
+          feedSlug === 'russian-holidays'
+            ? { feed: { slug: { in: ['russian-holidays', 'russian-official', 'russian-military'] }, deletedAt: null } }
+            : feedSlug === 'christian-holidays' || feedSlug === 'orthodox-holidays'
+            ? { feed: { slug: { in: ['christian-holidays', 'orthodox-holidays'] }, deletedAt: null } }
+            : feedSlug === 'wiki' || feedSlug === 'wiki-history'
+            ? { feed: { slug: { in: ['wiki', 'wiki-history', 'wikipedia'] }, deletedAt: null } }
+            : { feed: { slug: feedSlug, deletedAt: null } };
+      }
+    }
+
     const where: Prisma.NoteWhereInput = {
       deletedAt: null,
-      ...(feedId ? { feedId } : {}),
-      ...(feedSlug
-        ? feedSlug === 'russian-holidays'
-          ? { feed: { slug: { in: ['russian-holidays', 'russian-official', 'russian-military'] }, deletedAt: null } }
-          : feedSlug === 'christian-holidays'
-          ? { feed: { slug: { in: ['christian-holidays', 'orthodox-holidays', 'catholic-holidays'] }, deletedAt: null } }
-          : feedSlug === 'world-religions'
-          ? { feed: { slug: { in: ['world-religions', 'islamic-holidays'] }, deletedAt: null } }
-          : { feed: { slug: feedSlug, deletedAt: null } }
-        : {}),
+      ...(feedFilter ? feedFilter : {}),
       ...(containerId ? { containerId } : {}),
       ...(parsedContainers && parsedContainers.length > 0
         ? { containerId: { in: parsedContainers } }
         : {}),
       ...(type ? { type: type as any } : {}),
+      ...(query.status ? { status: query.status as any } : {}),
       ...(query.curator
         ? {
             OR: [
@@ -389,18 +421,40 @@ export class NotesService {
             },
           }
         : {}),
-      ...(folderPrefix
+      ...(query.folderPath
         ? {
-            folders: {
-              some: {
-                folder: {
-                  path: {
-                    startsWith: FoldersService.normalizePath(folderPrefix),
+            OR: [
+              { folderPath: { equals: query.folderPath, mode: 'insensitive' as const } },
+              {
+                folders: {
+                  some: {
+                    folder: {
+                      path: FoldersService.normalizePath(query.folderPath),
+                      deletedAt: null,
+                    },
                   },
-                  deletedAt: null,
                 },
               },
-            },
+            ],
+          }
+        : {}),
+      ...(folderPrefix
+        ? {
+            OR: [
+              { folderPath: { startsWith: FoldersService.normalizePath(folderPrefix), mode: 'insensitive' as const } },
+              {
+                folders: {
+                  some: {
+                    folder: {
+                      path: {
+                        startsWith: FoldersService.normalizePath(folderPrefix),
+                      },
+                      deletedAt: null,
+                    },
+                  },
+                },
+              },
+            ],
           }
         : {}),
     };
@@ -665,6 +719,11 @@ export class NotesService {
         ...(updateNoteDto.title ? { title: updateNoteDto.title } : {}),
         ...(updateNoteDto.description !== undefined ? { description: updateNoteDto.description } : {}),
         ...(updateNoteDto.type ? { type: updateNoteDto.type as any } : {}),
+        ...(updateNoteDto.status !== undefined ? { status: updateNoteDto.status as any } : {}),
+        ...(updateNoteDto.publishAt !== undefined
+          ? { publishAt: updateNoteDto.publishAt ? new Date(updateNoteDto.publishAt) : null }
+          : {}),
+        ...(updateNoteDto.folderPath !== undefined ? { folderPath: updateNoteDto.folderPath } : {}),
         ...(updateNoteDto.startDate ? { startDate: new Date(updateNoteDto.startDate) } : {}),
         ...(updateNoteDto.endDate !== undefined
           ? { endDate: updateNoteDto.endDate ? new Date(updateNoteDto.endDate) : null }
@@ -707,18 +766,6 @@ export class NotesService {
     });
 
     this.logger.log(`Updated note "${updatedNote.title}" [id: ${updatedNote.id}]`);
-
-    try {
-      await this.sessionService.recordChange({
-        entityType: 'NOTE',
-        entityId: updatedNote.id,
-        action: 'UPSERT',
-        payload: { title: updatedNote.title, type: updatedNote.type },
-      });
-    } catch {
-      // Continue even if session tracking fails
-    }
-
     return updatedNote;
   }
 
@@ -730,18 +777,6 @@ export class NotesService {
       data: { deletedAt: new Date() },
     });
     this.logger.log(`Soft-deleted note [id: ${id}]`);
-
-    try {
-      await this.sessionService.recordChange({
-        entityType: 'NOTE',
-        entityId: id,
-        action: 'DELETE',
-        payload: { id },
-      });
-    } catch {
-      // Continue even if session tracking fails
-    }
-
     return deleted;
   }
 

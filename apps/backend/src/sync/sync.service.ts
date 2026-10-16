@@ -86,4 +86,13 @@ export class SyncService {
       folders,
     };
   }
+
+  async getLanDockSnapshot(sinceIsoString?: string) {
+    const changes = await this.getChangesSince(sinceIsoString);
+    return {
+      mode: 'LAN_DOCK_SNAPSHOT',
+      serverTime: new Date().toISOString(),
+      ...changes,
+    };
+  }
 }

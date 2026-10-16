@@ -156,14 +156,18 @@ export class FoldersService {
         },
       });
       if (!existing) {
-        await this.prisma.folder.create({
-          data: {
-            name: parts[i],
-            path: currentPath,
-            containerId,
-            privacy,
-          },
-        });
+        try {
+          await this.prisma.folder.create({
+            data: {
+              name: parts[i],
+              path: currentPath,
+              containerId,
+              privacy,
+            },
+          });
+        } catch {
+          // Ignore concurrent race create
+        }
       }
     }
   }
@@ -253,14 +257,13 @@ export class FoldersService {
       });
     }
 
-    // 2. Build tree hierarchy
-    for (const folder of folders) {
-      const treeNode = folderMap.get(folder.path)!;
-      const lastSlashIndex = folder.path.lastIndexOf('/');
+    // 2. Build tree hierarchy (iterate over unique nodes to prevent phantom duplicates)
+    for (const treeNode of folderMap.values()) {
+      const lastSlashIndex = treeNode.path.lastIndexOf('/');
       if (lastSlashIndex === -1) {
         roots.push(treeNode);
       } else {
-        const parentPath = folder.path.substring(0, lastSlashIndex);
+        const parentPath = treeNode.path.substring(0, lastSlashIndex);
         const parent = folderMap.get(parentPath);
         if (parent) {
           parent.children.push(treeNode);
@@ -472,14 +475,36 @@ export class FoldersService {
         if (!isUuid) {
           const folderPrivacy = containerId ? 'obsidian' : 'public';
           await this.ensureParentFolders(normalizedPath, containerId || null, folderPrivacy);
-          folder = await this.prisma.folder.create({
-            data: {
-              name: FoldersService.getFolderName(normalizedPath),
-              path: normalizedPath,
+
+          // Re-check right before create to avoid concurrent race duplicates
+          folder = await this.prisma.folder.findFirst({
+            where: {
+              path: { equals: normalizedPath, mode: 'insensitive' },
               containerId: containerId || null,
-              privacy: folderPrivacy,
+              deletedAt: null,
             },
           });
+
+          if (!folder) {
+            try {
+              folder = await this.prisma.folder.create({
+                data: {
+                  name: FoldersService.getFolderName(normalizedPath),
+                  path: normalizedPath,
+                  containerId: containerId || null,
+                  privacy: folderPrivacy,
+                },
+              });
+            } catch {
+              folder = await this.prisma.folder.findFirst({
+                where: {
+                  path: { equals: normalizedPath, mode: 'insensitive' },
+                  containerId: containerId || null,
+                  deletedAt: null,
+                },
+              });
+            }
+          }
         }
       }
 

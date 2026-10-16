@@ -8,4 +8,5 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   minify: false,
+  noExternal: ['zod'],
 });

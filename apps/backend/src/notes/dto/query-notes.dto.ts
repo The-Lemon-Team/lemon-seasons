@@ -34,6 +34,11 @@ export class QueryNotesDto {
   @IsOptional()
   type?: NoteType;
 
+  @ApiPropertyOptional({ description: 'Filter by publication status (DRAFT, SCHEDULED, PUBLISHED, ARCHIVED)' })
+  @IsString()
+  @IsOptional()
+  status?: string;
+
   @ApiPropertyOptional({ description: 'Filter by Curator or Persona name / ID' })
   @IsString()
   @IsOptional()
@@ -103,6 +108,11 @@ export class QueryNotesDto {
   @IsString()
   @IsOptional()
   folder?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by note physical folder path (e.g. "Spark/AI")' })
+  @IsString()
+  @IsOptional()
+  folderPath?: string;
 
   @ApiPropertyOptional({ description: 'Filter by exact Folder UUID' })
   @IsString()
