@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors, ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
 import { useFeeds, useTaxonomyTree, useHashtags } from '../api/queries';
 import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { ObsidianLogo } from './ObsidianLogo';
@@ -320,75 +320,52 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* 3. Curators (Полномочия сбора информации) */}
+        {/* 3. Curators / Sources */}
         <div>
           <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3">
             <div className="flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5 text-sky-400" />
-              <span>{lang === 'ru' ? 'Кураторы' : 'Curators'}</span>
+              <span>{lang === 'ru' ? 'Куратор / Источник' : 'Curator / Source'}</span>
             </div>
             {filterState.curator && (
-              <span className="text-[10px] font-mono text-sky-400 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded-full font-bold">
-                active
-              </span>
+              <button
+                onClick={() => onSelectCurator?.(undefined)}
+                className="text-[10px] font-mono text-sky-400 hover:text-sky-300 underline"
+              >
+                {lang === 'ru' ? 'Сброс' : 'Clear'}
+              </button>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            {/* All Curators */}
-            <button
-              onClick={() => onSelectCurator?.(undefined)}
-              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                !filterState.curator
-                  ? 'bg-neutral-800/80 border-neutral-600 text-white font-medium'
-                  : 'bg-[#121414]/90 border-[#242828] text-neutral-400 hover:text-white hover:bg-[#1a1c1c]'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span>👥</span>
-                <span>{lang === 'ru' ? 'Все кураторы' : 'All Curators'}</span>
-              </div>
-              {!filterState.curator && <Check className="w-3.5 h-3.5 text-[#c9cd58]" />}
-            </button>
-
-            {/* Active Curators from ACTIVE_CURATOR_PERSONAS_LIST */}
-            {ACTIVE_CURATOR_PERSONAS_LIST.map((persona) => {
-              const isSelected =
-                filterState.curator === persona.name ||
-                filterState.curator === persona.id ||
-                filterState.curator === persona.shortName;
-              return (
-                <button
-                  key={persona.id}
-                  onClick={() => onSelectCurator?.(isSelected ? undefined : persona.name)}
-                  className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-mono transition-all border ${
-                    isSelected
-                      ? 'font-medium shadow-sm'
-                      : 'bg-[#121414]/90 border-[#242828] text-neutral-300 hover:text-white hover:bg-[#1a1c1c]'
-                  }`}
-                  style={
-                    isSelected
-                      ? {
-                          backgroundColor: persona.badgeBg,
-                          borderColor: persona.borderAccent,
-                          color: persona.accentColor,
-                        }
-                      : undefined
-                  }
-                >
-                  <div className="flex items-center gap-2 text-left min-w-0">
-                    <span className="text-base shrink-0">{persona.emoji}</span>
-                    <div className="min-w-0">
-                      <div className="font-semibold leading-tight truncate">{persona.name}</div>
-                      <div className="text-[10px] text-neutral-400 truncate">{persona.scope}</div>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 shrink-0" style={{ color: persona.accentColor }} />
-                  )}
-                </button>
-              );
-            })}
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={filterState.curator || ''}
+              onChange={(e) => onSelectCurator?.(e.target.value.trim() || undefined)}
+              placeholder={lang === 'ru' ? 'Имя куратора или источника...' : 'Curator or source name...'}
+              className="w-full bg-[#121414] border border-[#242828] rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:border-sky-500/50 transition-colors"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: '⚡ Gemini Sparks', value: 'Gemini Sparks' },
+                { label: '👑 ' + (lang === 'ru' ? 'Пользователь' : 'User'), value: 'User' },
+              ].map((preset) => {
+                const isSelected = filterState.curator === preset.value;
+                return (
+                  <button
+                    key={preset.value}
+                    onClick={() => onSelectCurator?.(isSelected ? undefined : preset.value)}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-mono border transition-all ${
+                      isSelected
+                        ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-medium'
+                        : 'bg-[#121414]/90 border-[#242828] text-neutral-400 hover:text-white hover:bg-[#1a1c1c]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

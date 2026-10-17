@@ -318,7 +318,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                       type="text"
                       value={editCurator || ''}
                       onChange={(e) => setEditCurator(e.target.value || undefined)}
-                      placeholder="Например: Gemini Spark, Иван Белый, Пользователь..."
+                      placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
                       className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-white outline-none"
                     />
                   </div>

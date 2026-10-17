@@ -57,7 +57,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'book-open',
     color: '#3b82f6',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-01T09:00:00.000Z',
     updatedAt: '2026-08-20T09:00:00.000Z',
@@ -71,7 +71,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'archive',
     color: '#8b5cf6',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-01T11:00:00.000Z',
     updatedAt: '2026-08-15T11:00:00.000Z',
@@ -85,7 +85,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'sparkles',
     color: '#a855f7',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-01T11:30:00.000Z',
     updatedAt: '2026-08-18T11:30:00.000Z',
@@ -183,7 +183,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'lock',
     color: '#f43f5e',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-10T09:15:00.000Z',
     updatedAt: '2026-08-23T11:00:00.000Z',
@@ -197,7 +197,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'circle-dollar-sign',
     color: '#10b981',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-10T10:00:00.000Z',
     updatedAt: '2026-08-22T10:00:00.000Z',
@@ -211,7 +211,7 @@ const INITIAL_FOLDERS: Folder[] = [
     icon: 'trending-up',
     color: '#10b981',
     privacy: 'private',
-    containerId: 'cont-personal-vault',
+    containerId: null,
     scope: 'internal',
     createdAt: '2026-08-10T10:30:00.000Z',
     updatedAt: '2026-08-22T10:30:00.000Z',
@@ -241,12 +241,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
           ...f,
           scope: f.scope || (f.containerId ? 'internal' : 'external'),
           containerId:
-            f.containerId !== undefined
+            f.containerId && f.containerId !== 'cont-personal-vault'
               ? f.containerId
-              : f.path.startsWith('04_Archive') ||
-                f.path.startsWith('Core_Strategy') ||
-                f.path.startsWith('Financials')
-              ? 'cont-personal-vault'
               : null,
         }));
       }

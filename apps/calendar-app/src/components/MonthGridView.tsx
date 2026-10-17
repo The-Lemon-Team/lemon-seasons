@@ -6,7 +6,6 @@ import {
   NoteTypeColors,
   getNoteTypeLabel,
   formatLocalDateKey,
-  getCuratorPersona,
 } from '@lenta/shared';
 import { useFeeds } from '../api/queries';
 import { getFeedTheme } from '../utils/feedThemes';
@@ -615,8 +614,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 {visibleNotes.map((note) => {
                   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
                   const startHour = dayjs(note.startDate).format('HH:mm');
-                  const persona = getCuratorPersona(note.curator);
-                  const curatorIcon = persona ? persona.emoji : note.curator ? '👤' : null;
+                  const curatorIcon = note.curator ? '👤' : null;
 
                   const feedTheme = note.feed ? getFeedTheme(note.feed.slug, note.feed.title) : null;
                   const feedIcon = feedTheme ? feedTheme.emoji : null;

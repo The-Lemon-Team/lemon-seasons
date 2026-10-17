@@ -4834,6 +4834,24 @@ var init_dist = __esm({
             lines.push(desc.trim());
           }
         }
+        const relatedNotes = note.metadata?.relatedNotes || note.relatedNotes;
+        if (Array.isArray(relatedNotes) && relatedNotes.length > 0) {
+          const hasBlock = /##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)/i.test(desc);
+          if (!hasBlock) {
+            lines.push("");
+            lines.push("---");
+            lines.push("");
+            lines.push("## \u{1F517} \u0421\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0435 \u0437\u0430\u043F\u0438\u0441\u0438");
+            lines.push("");
+            for (const item of relatedNotes) {
+              const rawLink = typeof item === "string" ? item : item.raw || item.cleanTitle || item.targetTitle || "";
+              if (rawLink) {
+                const clean = rawLink.replace(/^\[\[|\]\]$/g, "").trim();
+                lines.push(`- [[${clean}]]`);
+              }
+            }
+          }
+        }
         return lines.join("\n");
       }
       /**
@@ -4970,6 +4988,47 @@ var init_dist = __esm({
           }
         }
         return tags;
+      }
+      /**
+       * Extracts related notes / wikilinks from frontmatter and from the trailing
+       * `## 🔗 Связанные записи` section of the Markdown body.
+       * Returns the cleaned body (without the trailing related block) and the array of raw links.
+       */
+      static extractRelatedLinks(body, frontmatter) {
+        const linksSet = /* @__PURE__ */ new Set();
+        const fmLinks = [
+          ...Array.isArray(frontmatter?.related_notes) ? frontmatter.related_notes : [],
+          ...Array.isArray(frontmatter?.related_files) ? frontmatter.related_files : []
+        ];
+        for (const raw of fmLinks) {
+          if (typeof raw === "string") {
+            const clean = raw.replace(/^\[\[|\]\]$/g, "").trim();
+            if (clean && !clean.toLowerCase().includes("\u0434\u0440\u0443\u0433\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430")) {
+              linksSet.add(clean);
+            }
+          }
+        }
+        let cleanedBody = body;
+        let rawRelatedSection = void 0;
+        const sectionRegex = /(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i;
+        const match = body.match(sectionRegex);
+        if (match) {
+          rawRelatedSection = match[0].trim();
+          cleanedBody = body.replace(sectionRegex, "").trim();
+          const sectionTextWithoutComments = rawRelatedSection.replace(/<!--[\s\S]*?-->/g, "");
+          const wikiMatches = [...sectionTextWithoutComments.matchAll(/\[\[(.*?)\]\]/g)];
+          for (const m of wikiMatches) {
+            const link = m[1].trim();
+            if (link && !link.toLowerCase().includes("\u0434\u0440\u0443\u0433\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430")) {
+              linksSet.add(link);
+            }
+          }
+        }
+        return {
+          links: Array.from(linksSet),
+          cleanedBody,
+          rawRelatedSection
+        };
       }
     };
   }

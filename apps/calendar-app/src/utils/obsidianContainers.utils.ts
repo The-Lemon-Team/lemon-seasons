@@ -48,10 +48,6 @@ export function formatCuratorLabel(curator?: string | null): string {
   if (c.includes('spark') || c.includes('gemini')) return '⚡ Gemini Spark';
   if (c === 'bus' || c.includes('command')) return '🚌 Command Bus';
   if (c.includes('obsidian')) return '💎 Obsidian';
-  if (c === 'ivan-bely') return 'Иван Белый';
-  if (c === 'kirk-kitten') return 'Кирк Киттен';
-  if (c === 'german-kernel') return 'Герман Кернел';
-  if (c === 'okatsiya') return 'Окация';
   return curator;
 }
 

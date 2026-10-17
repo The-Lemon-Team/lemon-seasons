@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { NoteType, ACTIVE_CURATOR_PERSONAS_LIST } from '@lenta/shared';
+import { NoteType } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -345,24 +345,18 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 </div>
               </div>
 
-              {/* Curator */}
+              {/* Curator / Source */}
               <div className="p-3 rounded-xl bg-[#141717] border border-[#242828]">
                 <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                  Куратор / Аналитический актор
+                  Куратор / Источник
                 </label>
-                <select
+                <input
+                  type="text"
                   value={curator}
                   onChange={(e) => setCurator(e.target.value)}
+                  placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
                   className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                >
-                  <option value="">Без куратора</option>
-                  {ACTIVE_CURATOR_PERSONAS_LIST.map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.emoji} {p.name} ({p.shortName})
-                    </option>
-                  ))}
-                  <option value="Пользователь">👤 Пользователь (Суверенный синтез)</option>
-                </select>
+                />
               </div>
 
               {/* Grid 3: Start & End Date */}

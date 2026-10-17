@@ -124,131 +124,9 @@ const STORAGE_KEY = 'lemon_lenta_obsidian_containers_v1';
 const SELECTED_KEY = 'lemon_lenta_selected_container_ids_v1';
 const SESSION_CHANGES_KEY = 'lemon_lenta_session_changes_v1';
 
-const INITIAL_SESSION_CHANGES: SessionChange[] = [
-  {
-    id: 'chg-2',
-    type: 'modify',
-    entityType: 'folder',
-    title: '04_Archive/Thoughts',
-    path: '04_Archive/Thoughts',
-    containerId: 'cont-personal-vault',
-    timestamp: Date.now() - 1000 * 60 * 25,
-    dateStr: '25 мин назад',
-    contentSnippet: 'Privacy setting updated: private, bound folder recursive',
-    staged: true,
-  },
-  {
-    id: 'chg-3',
-    type: 'add',
-    entityType: 'note',
-    title: 'AI Architecture & Vector Pipelines',
-    path: '02_Projects/AI_Research.md',
-    containerId: 'main-vault',
-    timestamp: Date.now() - 1000 * 60 * 40,
-    dateStr: '40 мин назад',
-    contentSnippet: 'Recent transformer study notes and embedding caching strategies',
-    staged: true,
-  },
-];
+const INITIAL_SESSION_CHANGES: SessionChange[] = [];
 
-const INITIAL_CONTAINERS: ObsidianContainer[] = [
-  {
-    id: 'cont-personal-vault',
-    name: 'Личный Дневник (Personal Vault)',
-    description: 'Приватный контейнер для личных заметок, ежедневных записей и закрытых размышлений',
-    vaultPath: 'Vault/Personal',
-    privacy: 'private',
-    token: 'lenta_jwt_sec_personal_vault_token_8892',
-    notesCount: 42,
-    createdAt: '2026-08-01T10:00:00.000Z',
-    lastSyncedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    status: 'connected',
-    color: '#a855f7',
-    boundFolders: [
-      {
-        id: 'f-2',
-        path: '04_Archive/Thoughts',
-        name: 'Архив мыслей',
-        isPrimary: true,
-        observeMode: 'all',
-        notesCount: 14,
-        status: 'active',
-        privacy: 'private',
-      },
-    ],
-  },
-  {
-    id: 'cont-public-hub',
-    name: 'Открытый Хаб Знаний (Public Lenta Hub)',
-    description: 'Публичный контейнер для совместных проектов, анонсов кино, статей и новостей',
-    vaultPath: 'Vault/Public_Lenta',
-    privacy: 'public',
-    token: 'lenta_jwt_pub_knowledge_hub_4910',
-    notesCount: 86,
-    createdAt: '2026-08-05T14:30:00.000Z',
-    lastSyncedAt: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-    status: 'connected',
-    color: '#c9cd58',
-    boundFolders: [
-      {
-        id: 'f-4',
-        path: '03_Research/AI',
-        name: 'Исследования ИИ',
-        isPrimary: true,
-        observeMode: 'filtered',
-        filterTag: 'ai.research',
-        notesCount: 21,
-        status: 'active',
-        privacy: 'public',
-      },
-      {
-        id: 'f-5',
-        path: 'News/Cinema',
-        name: 'Кино и релизы',
-        isPrimary: false,
-        observeMode: 'all',
-        notesCount: 13,
-        status: 'active',
-        privacy: 'public',
-      },
-    ],
-  },
-  {
-    id: 'cont-confidential-roadmap',
-    name: 'Секретная Дорожная Карта (Confidential Roadmap)',
-    description: 'Шифрованный контейнер планов развития продукта и конфиденциальных финансовых вех',
-    vaultPath: 'Vault/Confidential/Roadmap',
-    privacy: 'private',
-    token: 'lenta_jwt_sec_confidential_rm_3192',
-    notesCount: 19,
-    createdAt: '2026-08-10T09:15:00.000Z',
-    lastSyncedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    status: 'idle',
-    color: '#f43f5e',
-    boundFolders: [
-      {
-        id: 'f-6',
-        path: 'Core_Strategy',
-        name: 'Стратегия ядра',
-        isPrimary: true,
-        observeMode: 'recursive',
-        notesCount: 12,
-        status: 'active',
-        privacy: 'private',
-      },
-      {
-        id: 'f-7',
-        path: 'Financials/Q3_Q4',
-        name: 'Финансы Q3-Q4',
-        isPrimary: false,
-        observeMode: 'all',
-        notesCount: 7,
-        status: 'active',
-        privacy: 'private',
-      },
-    ],
-  },
-];
+const INITIAL_CONTAINERS: ObsidianContainer[] = [];
 
 const ObsidianContainersContext = createContext<ObsidianContainersContextType | undefined>(undefined);
 
@@ -257,12 +135,20 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (c: any) =>
+              c.id !== 'cont-personal-vault' &&
+              c.id !== 'cont-public-hub' &&
+              c.id !== 'cont-confidential-roadmap'
+          );
+        }
       }
     } catch {
       // ignore
     }
-    return INITIAL_CONTAINERS;
+    return [];
   });
 
   const [activeContainerId, setActiveContainerId] = useState<string | null>(null);
@@ -270,22 +156,24 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     try {
       const saved = localStorage.getItem(SELECTED_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (id: string) =>
+              id !== 'cont-personal-vault' &&
+              id !== 'cont-public-hub' &&
+              id !== 'cont-confidential-roadmap'
+          );
+        }
       }
     } catch {}
-    return INITIAL_CONTAINERS.map((c) => c.id);
+    return [];
   });
   const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
   const [syncDirection, setSyncDirection] = useState<'push' | 'pull' | null>(null);
 
   // lastVisitedMap: watermark timestamp of last visit per container
-  const [lastVisitedMap, setLastVisitedMap] = useState<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    INITIAL_CONTAINERS.forEach((c) => {
-      map[c.id] = getStoredContainerLastVisited(c.id);
-    });
-    return map;
-  });
+  const [lastVisitedMap, setLastVisitedMap] = useState<Record<string, number>>({});
 
   const getContainerLastVisited = useCallback((containerId: string) => {
     return lastVisitedMap[containerId] ?? getStoredContainerLastVisited(containerId);
@@ -296,24 +184,27 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
     setLastVisitedMap((prev) => ({ ...prev, [containerId]: timestamp }));
   }, []);
 
-  // pendingChanges: zero initialized (no artificial random mock mutations)
-  const [pendingChanges, setPendingChanges] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {};
-    INITIAL_CONTAINERS.forEach((c) => {
-      init[c.id] = 0;
-    });
-    return init;
-  });
+  // pendingChanges: zero initialized
+  const [pendingChanges, setPendingChanges] = useState<Record<string, number>>({});
 
   // sessionChanges: list of changes made during the current session
   const [sessionChanges, setSessionChanges] = useState<SessionChange[]>(() => {
     try {
       const saved = localStorage.getItem(SESSION_CHANGES_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (chg: any) =>
+              chg.id !== 'chg-2' &&
+              chg.id !== 'chg-3' &&
+              chg.containerId !== 'cont-personal-vault' &&
+              chg.containerId !== 'main-vault'
+          );
+        }
       }
     } catch {}
-    return INITIAL_SESSION_CHANGES;
+    return [];
   });
 
   // Save sessionChanges to localStorage
@@ -432,8 +323,6 @@ export const ObsidianContainersProvider: React.FC<{ children: React.ReactNode }>
           };
         });
 
-        // Retain any purely local mock containers if server has empty list
-        if (mapped.length === 0) return prev;
         return mapped;
       });
     } catch (err) {

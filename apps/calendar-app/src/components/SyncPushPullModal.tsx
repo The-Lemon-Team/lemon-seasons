@@ -66,7 +66,7 @@ export const SyncPushPullModal: React.FC<SyncPushPullModalProps> = ({
 
   // Selected container
   const [selectedContainerId, setSelectedContainerId] = useState<string>(
-    targetContainerId || containers[0]?.id || 'main-vault'
+    targetContainerId || containers[0]?.id || ''
   );
 
   // Sync mode and container on open/prop changes
@@ -85,13 +85,8 @@ export const SyncPushPullModal: React.FC<SyncPushPullModalProps> = ({
   const selectedContainer = useMemo(() => {
     return (
       containers.find((c) => c.id === selectedContainerId) ||
-      containers[0] || {
-        id: selectedContainerId || 'main-vault',
-        name: 'Основное хранилище (Primary Vault)',
-        type: 'obsidian',
-        privacy: 'public',
-        notesCount: 0,
-      }
+      containers[0] ||
+      null
     );
   }, [containers, selectedContainerId]);
 
