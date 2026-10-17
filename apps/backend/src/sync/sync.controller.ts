@@ -10,7 +10,7 @@ import {
   RecordChangeInput,
 } from '@lenta/shared';
 
-@ApiTags('Sync & Sessions')
+@ApiTags('Sync')
 @Controller('sync')
 export class SyncController {
   constructor(
@@ -25,7 +25,7 @@ export class SyncController {
   // ==========================================
 
   @Get('status')
-  @ApiOperation({ summary: 'Get current workstation sync status, active session, and cloud state' })
+  @ApiOperation({ summary: 'Get current workstation sync status and cloud state' })
   @ApiQuery({ name: 'deviceId', required: false })
   getStatus(@Query('deviceId') deviceId?: string) {
     return this.orchestrator.getStatus(deviceId);
@@ -46,7 +46,8 @@ export class SyncController {
   }
 
   // ==========================================
-  // Workstation Live Sessions
+  // Workstation Live Sessions (Legacy / Deprecated)
+  // Kept for backward compatibility with Obsidian plugin
   // ==========================================
 
   @Get('session/active')

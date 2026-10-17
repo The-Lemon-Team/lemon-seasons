@@ -10,6 +10,11 @@ import {
 } from '@lenta/shared';
 import { randomUUID } from 'crypto';
 
+/**
+ * @deprecated Workstation sessions and commit histories are deprecated.
+ * Direct synchronization via delta changes (/sync/changes) and LWW is used instead.
+ * This service is kept solely for backward compatibility with existing Obsidian plugin clients.
+ */
 @Injectable()
 export class SessionService {
   private readonly logger = new Logger(SessionService.name);

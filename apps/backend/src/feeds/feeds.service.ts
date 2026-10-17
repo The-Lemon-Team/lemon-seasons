@@ -81,7 +81,15 @@ export class FeedsService {
         notes: {
           where: { deletedAt: null },
           orderBy: { startDate: 'desc' },
-          include: { tags: true },
+          include: {
+            hashtags: true,
+            folders: {
+              include: { folder: true },
+              orderBy: { order: 'asc' },
+            },
+            images: { orderBy: { order: 'asc' } },
+            links: { orderBy: { order: 'asc' } },
+          },
         },
         _count: {
           select: {

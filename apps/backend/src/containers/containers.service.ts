@@ -366,14 +366,14 @@ export class ContainersService {
   async getContainerCommits(id: string, limit = 50): Promise<any[]> {
     let dbCommits: any[] = [];
     try {
-      const versions = await (this.prisma as any).noteVersion?.findMany({
+      const versions = await this.prisma.noteVersion.findMany({
         where: { note: { containerId: id } },
         orderBy: { createdAt: 'desc' },
         take: limit,
       });
 
       if (versions) {
-        dbCommits = versions.map((v: any) => ({
+        dbCommits = versions.map((v) => ({
           hash: v.commitHash || v.id,
           commitHash: v.commitHash || v.id,
           shortHash: (v.commitHash || v.id).substring(0, 7),
@@ -384,7 +384,7 @@ export class ContainersService {
         }));
       }
     } catch {
-      // noteVersion may not be in schema
+      // noteVersion lookup fallback
     }
 
     const memoryCommits = this.containerCommits.get(id) || [];
@@ -422,7 +422,7 @@ export class ContainersService {
     }
 
     try {
-      const version = await (this.prisma as any).noteVersion?.findFirst({
+      const version = await this.prisma.noteVersion.findFirst({
         where: {
           note: { containerId: id },
           commitHash,
@@ -489,7 +489,7 @@ export class ContainersService {
         where: { containerId: id, deletedAt: null },
       });
       if (firstNote) {
-        await (this.prisma as any).noteVersion?.create({
+        await this.prisma.noteVersion.create({
           data: {
             noteId: firstNote.id,
             content: dto.files?.[0]?.content || firstNote.description || firstNote.title,

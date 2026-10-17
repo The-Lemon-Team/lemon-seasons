@@ -2,10 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from './services/gemini.service';
 import { TmdbService } from './services/tmdb.service';
-import { HolidaysEngineService } from './services/holidays-engine.service';
-import { PoliticalEngineService } from './services/political-engine.service';
+import { HolidaysEngineService, HolidayItem } from './services/holidays-engine.service';
+import { PoliticalEngineService, PoliticalEventItem } from './services/political-engine.service';
 import { WikiEngineService } from './services/wiki-engine.service';
 import { NoteType } from '@prisma/client';
+import { PRESET_FEED_DEFINITIONS, PresetFeedDefinition } from './preset-feeds.data';
 
 export interface IngestionResult {
   feedSlug: string;
@@ -34,52 +35,27 @@ export class IngestionService {
   async syncAllFeeds(): Promise<IngestionResult[]> {
     const results: IngestionResult[] = [];
     results.push(await this.syncMcuRadar());
-    results.push(await this.syncRussianOfficialHolidays());
-    results.push(await this.syncRussianMilitaryHolidays());
-    results.push(await this.syncOrthodoxHolidays());
-    results.push(await this.syncCatholicHolidays());
-    results.push(await this.syncIslamicHolidays());
-    results.push(await this.syncWorldReligionsHolidays());
-    results.push(await this.syncWorldHolidays());
-    results.push(await this.syncRussianHolidays());
-    results.push(await this.syncChristianHolidays());
-    results.push(await this.syncPolitics2026());
+    for (const def of Object.values(PRESET_FEED_DEFINITIONS)) {
+      results.push(await this.syncPreset(def));
+    }
     return results;
   }
 
   /**
-   * Sync a specific feed by slug.
+   * Sync a specific feed by slug using declarative lookup.
    */
   async syncFeedBySlug(slug: string): Promise<IngestionResult> {
-    switch (slug) {
-      case 'mcu-radar':
-        return this.syncMcuRadar();
-      case 'orthodox-holidays':
-        return this.syncOrthodoxHolidays();
-      case 'catholic-holidays':
-        return this.syncCatholicHolidays();
-      case 'islamic-holidays':
-        return this.syncIslamicHolidays();
-      case 'world-religions':
-        return this.syncWorldReligionsHolidays();
-      case 'russian-official':
-        return this.syncRussianOfficialHolidays();
-      case 'russian-military':
-        return this.syncRussianMilitaryHolidays();
-      case 'world-holidays':
-        return this.syncWorldHolidays();
-      case 'russian-holidays':
-        return this.syncRussianHolidays();
-      case 'christian-holidays':
-        return this.syncChristianHolidays();
-      case 'politics-2026':
-        return this.syncPolitics2026();
-      case 'wiki':
-      case 'wiki-history':
-        return this.syncWikiEvents();
-      default:
-        throw new Error(`Unknown feed slug: ${slug}`);
+    if (slug === 'mcu-radar') {
+      return this.syncMcuRadar();
     }
+    if (slug === 'wiki' || slug === 'wiki-history') {
+      return this.syncWikiEvents();
+    }
+    const preset = PRESET_FEED_DEFINITIONS[slug];
+    if (preset) {
+      return this.syncPreset(preset);
+    }
+    throw new Error(`Unknown feed slug: ${slug}`);
   }
 
   /**
@@ -162,7 +138,7 @@ export class IngestionService {
     endDate?: string | Date;
     icon?: string;
     sourceLink?: string;
-    taxonomyPath: string;
+    taxonomyPath?: string;
     folders: string[];
     hashtags: string[];
     imageUrl?: string;
@@ -187,8 +163,11 @@ export class IngestionService {
       trailerUrl,
     } = params;
 
-    // 1. Ensure taxonomy tag
-    const tagNode = await this.ensureTaxonomyNode(taxonomyPath);
+    // 1. (Optional legacy) Ensure taxonomy tag if provided
+    let tagNode: any = null;
+    if (taxonomyPath) {
+      tagNode = await this.ensureTaxonomyNode(taxonomyPath);
+    }
 
     // 2. Find or create Note
     const existingNote = await this.prisma.note.findFirst({
@@ -222,9 +201,7 @@ export class IngestionService {
           endDate: eDate,
           icon,
           sourceLink: sourceLink || existingNote.sourceLink,
-          tags: {
-            set: [{ id: tagNode.id }],
-          },
+          ...(tagNode ? { tags: { set: [{ id: tagNode.id }] } } : {}),
         },
       });
     } else {
@@ -240,9 +217,7 @@ export class IngestionService {
           endDate: eDate,
           icon,
           sourceLink,
-          tags: {
-            connect: [{ id: tagNode.id }],
-          },
+          ...(tagNode ? { tags: { connect: [{ id: tagNode.id }] } } : {}),
         },
       });
       noteId = createdNote.id;
@@ -355,6 +330,68 @@ export class IngestionService {
   }
 
   /**
+   * Generic batch upsert helper for collection of holiday/event items.
+   */
+  private async upsertNotesBatch(
+    feed: { id: string; slug: string; title: string },
+    items: (HolidayItem | PoliticalEventItem)[],
+    containerId?: string,
+  ): Promise<IngestionResult> {
+    let created = 0;
+    let updated = 0;
+
+    for (const item of items) {
+      const res = await this.upsertCalendarNote({
+        feedId: feed.id,
+        containerId,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        icon: item.icon,
+        sourceLink: item.sourceLink,
+        taxonomyPath: item.taxonomyPath,
+        folders: item.folders,
+        hashtags: item.hashtags,
+        imageUrl: item.imageUrl,
+        imageCaption: item.imageCaption,
+      });
+      if (res.isNew) created++;
+      else updated++;
+    }
+
+    return {
+      feedSlug: feed.slug,
+      feedTitle: feed.title,
+      notesCount: items.length,
+      created,
+      updated,
+    };
+  }
+
+  /**
+   * Generic helper executing preset feed sync using declarative definitions.
+   */
+  private async syncPreset(def: PresetFeedDefinition): Promise<IngestionResult> {
+    this.logger.log(`${def.logEmoji} Syncing ${def.logTitle}...`);
+    let container: any = null;
+    if (def.container) {
+      container = await this.ensureContainer(
+        def.container.id,
+        def.container.name,
+        def.container.description,
+      );
+    }
+    const feed = await this.ensureFeed(def.slug, def.title, def.description);
+    const items = def.getItems({
+      holidays: this.holidaysEngine,
+      politics: this.politicalEngine,
+    });
+    return this.upsertNotesBatch(feed, items, container?.id);
+  }
+
+  /**
    * 1. Sync Marvel Cinematic Universe Radar
    */
   async syncMcuRadar(): Promise<IngestionResult> {
@@ -399,492 +436,55 @@ export class IngestionService {
     };
   }
 
-  /**
-   * 2. Sync Russian Official Holidays
-   */
-  async syncRussianOfficialHolidays(): Promise<IngestionResult> {
-    this.logger.log('🇷🇺 Syncing Russian Official Holidays 2026...');
-    const container = await this.ensureContainer(
-      'cont-russian-official',
-      '🇷🇺 Праздники России (Официальные)',
-      'Государственные праздники РФ по ТК РФ, общенародные и культурные даты.',
-    );
-    const feed = await this.ensureFeed(
-      'russian-official',
-      'Русские праздники (Официальные)',
-      'Официальные нерабочие праздничные дни по ст. 112 ТК РФ, государственные торжества и культурные памятные даты России 2026.',
-    );
+  // ==========================================
+  // Preset Feed Sync Methods (Backward Compatible)
+  // ==========================================
 
-    const holidays = this.holidaysEngine.getRussianOfficialHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of holidays) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: holidays.length,
-      created,
-      updated,
-    };
+  syncRussianOfficialHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['russian-official']);
   }
 
-  /**
-   * 3. Sync Russian Military Holidays
-   */
-  async syncRussianMilitaryHolidays(): Promise<IngestionResult> {
-    this.logger.log('🎖️ Syncing Russian Military Holidays & Days of Glory 2026...');
-    const container = await this.ensureContainer(
-      'cont-russian-military',
-      '🎖️ Дни воинской славы и военные праздники России',
-      'Дни воинской славы и памятные даты России по 32-ФЗ, профессиональные праздники видов и родов войск ВС РФ.',
-    );
-    const feed = await this.ensureFeed(
-      'russian-military',
-      'Дни воинской славы и военные праздники',
-      'Дни воинской славы и памятные даты России по 32-ФЗ, праздники видов и родов войск Вооруженных Сил РФ.',
-    );
-
-    const holidays = this.holidaysEngine.getRussianMilitaryHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of holidays) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: holidays.length,
-      created,
-      updated,
-    };
+  syncRussianMilitaryHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['russian-military']);
   }
 
-  /**
-   * 4. Sync Orthodox Holidays
-   */
-  async syncOrthodoxHolidays(): Promise<IngestionResult> {
-    this.logger.log('☦️ Syncing Orthodox Church Holidays 2026...');
-    const container = await this.ensureContainer(
-      'cont-orthodox-calendar',
-      '☦️ Православный календарь',
-      'Двунадесятые праздники, Пасхальный цикл, многодневные посты и памятные дни святых Православной Церкви.',
-    );
-    const feed = await this.ensureFeed(
-      'orthodox-holidays',
-      'Православные праздники',
-      'Двунадесятые и великие православные праздники, Пасха Христова и ключевые дни литургического года 2026.',
-    );
-
-    const feasts = this.holidaysEngine.getOrthodoxHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncOrthodoxHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['orthodox-holidays']);
   }
 
-  /**
-   * 5. Sync Catholic Holidays
-   */
-  async syncCatholicHolidays(): Promise<IngestionResult> {
-    this.logger.log('✝️ Syncing Catholic Liturgical Holidays 2026...');
-    const container = await this.ensureContainer(
-      'cont-catholic-calendar',
-      '✝️ Католический календарь',
-      'Литургический год Католической церкви: григорианская Пасха, Рождество, Адвент, Великий пост и дни святых.',
-    );
-    const feed = await this.ensureFeed(
-      'catholic-holidays',
-      'Католические праздники',
-      'Торжества и праздники Римско-католической церкви, григорианский пасхальный цикл и дни святых 2026.',
-    );
-
-    const feasts = this.holidaysEngine.getCatholicHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncCatholicHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['catholic-holidays']);
   }
 
-  /**
-   * 6. Sync Islamic Religious Calendar
-   */
-  async syncIslamicHolidays(): Promise<IngestionResult> {
-    this.logger.log('☪️ Syncing Islamic Religious Calendar 2026...');
-    const container = await this.ensureContainer(
-      'cont-islamic-calendar',
-      '☪️ Исламский религиозный календарь',
-      'Календарь Хиджры 1447–1448: Священный месяц Рамадан, Ураза-байрам, Курбан-байрам и памятные даты Ислама.',
-    );
-    const feed = await this.ensureFeed(
-      'islamic-holidays',
-      'Исламский религиозный календарь & Рамадан',
-      'Календарь Хиджры: пост в месяц Рамадан, Ураза-байрам, Курбан-байрам, Ночь Предопределения и памятные даты Ислама.',
-    );
-
-    const feasts = this.holidaysEngine.getIslamicHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncIslamicHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['islamic-holidays']);
   }
 
-  /**
-   * 7. Sync World Religions Calendar
-   */
-  async syncWorldReligionsHolidays(): Promise<IngestionResult> {
-    this.logger.log('🕊️ Syncing World Religions Calendar 2026...');
-    const container = await this.ensureContainer(
-      'cont-world-religions',
-      '🕊️ Мировые религии и духовные традиции',
-      'Сводный календарь священных дат, праздников и постов мировых религий: Ислам, Иудаизм, Буддизм.',
-    );
-    const feed = await this.ensureFeed(
-      'world-religions',
-      'Мировые религии: Ислам, Иудаизм, Буддизм',
-      'Священные даты и праздники мировых духовных традиций: Ислам, Иудаизм (Песах, Ханука), Буддизм (Весак, Сагаалган).',
-    );
-
-    const feasts = this.holidaysEngine.getWorldReligionsHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncWorldReligionsHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['world-religions']);
   }
 
-  /**
-   * 8. Sync World Countries Holidays
-   */
-  async syncWorldHolidays(): Promise<IngestionResult> {
-    this.logger.log('🌍 Syncing World Countries Holidays 2026...');
-    const container = await this.ensureContainer(
-      'cont-world-holidays',
-      '🌍 Праздники стран мира',
-      'Национальные и культурные праздники стран мира: Китайский Новый год, День благодарения, 4th of July, День взятия Бастилии и другие.',
-    );
-    const feed = await this.ensureFeed(
-      'world-holidays',
-      'Праздники стран мира',
-      'Знаменитые национальные, исторические и культурные праздники стран мира 2026 года.',
-    );
-
-    const feasts = this.holidaysEngine.getWorldHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncWorldHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['world-holidays']);
   }
 
-  /**
-   * 9. Sync Russian Holidays & Days of Military Glory (Combined)
-   */
-  async syncRussianHolidays(): Promise<IngestionResult> {
-    this.logger.log('🇷🇺 Syncing Russian Holidays and Military Glory Days...');
-    const feed = await this.ensureFeed(
-      'russian-holidays',
-      'Русские праздники',
-      'Официальные нерабочие праздничные дни, памятные даты и Дни воинской славы России по 32-ФЗ.',
-    );
-
-    const holidays = this.holidaysEngine.getRussianHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of holidays) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: holidays.length,
-      created,
-      updated,
-    };
+  syncRussianHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['russian-holidays']);
   }
 
-  /**
-   * 3. Sync Christian & Orthodox Holidays
-   */
-  async syncChristianHolidays(): Promise<IngestionResult> {
-    this.logger.log('☦️ Syncing Christian Holidays & Easter Cycle 2026...');
-    const feed = await this.ensureFeed(
-      'christian-holidays',
-      'Христианские праздники',
-      'Двунадесятые праздники, Пасха Христова и ключевые дни православного церковного года 2026.',
-    );
-
-    const feasts = this.holidaysEngine.getChristianHolidays(2026);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of feasts) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: feasts.length,
-      created,
-      updated,
-    };
+  syncChristianHolidays(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['christian-holidays']);
   }
 
-  /**
-   * 4. Sync Political Events 2026
-   */
-  async syncPolitics2026(): Promise<IngestionResult> {
-    this.logger.log('🌐 Syncing Political Events 2026...');
-    const feed = await this.ensureFeed(
-      'politics-2026',
-      'Политика 2026',
-      'Ключевые международные саммиты, парламентские выборы и геополитические события 2026 года.',
-    );
-
-    const events = this.politicalEngine.getPoliticalEvents2026();
-    let created = 0;
-    let updated = 0;
-
-    for (const item of events) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: events.length,
-      created,
-      updated,
-    };
+  syncPolitics2026(): Promise<IngestionResult> {
+    return this.syncPreset(PRESET_FEED_DEFINITIONS['politics-2026']);
   }
 
   /**
    * Syncs historical events from Wikipedia for the specified date (defaults to today)
    */
   async syncWikiEvents(date: Date = new Date()): Promise<IngestionResult> {
+    this.logger.log('📖 Syncing Wiki Events for date...');
     const feed = await this.ensureFeed(
       'wiki',
       'Этот день в истории (Wiki)',
@@ -897,38 +497,6 @@ export class IngestionService {
     );
 
     const events = await this.wikiEngine.getEventsForDate(date);
-    let created = 0;
-    let updated = 0;
-
-    for (const item of events) {
-      const res = await this.upsertCalendarNote({
-        feedId: feed.id,
-        containerId: container.id,
-        title: item.title,
-        description: item.description,
-        type: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        icon: item.icon,
-        sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
-        folders: item.folders,
-        hashtags: item.hashtags,
-        imageUrl: item.imageUrl,
-        imageCaption: item.imageCaption,
-      });
-
-      if (res.isNew) created++;
-      else updated++;
-    }
-
-    return {
-      feedSlug: feed.slug,
-      feedTitle: feed.title,
-      notesCount: events.length,
-      created,
-      updated,
-    };
+    return this.upsertNotesBatch(feed, events, container.id);
   }
 }
-

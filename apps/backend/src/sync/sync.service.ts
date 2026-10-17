@@ -31,7 +31,7 @@ export class SyncService {
           updatedAt: { gte: sinceDate },
         };
 
-    const [feeds, notes, taxonomy, hashtags, folders] = await Promise.all([
+    const [feeds, notes, hashtags, folders] = await Promise.all([
       this.prisma.feed.findMany({
         where: {
           updatedAt: { gte: sinceDate },
@@ -40,7 +40,6 @@ export class SyncService {
       this.prisma.note.findMany({
         where: noteCondition,
         include: {
-          tags: true,
           hashtags: true,
           folders: {
             include: { folder: true },
@@ -52,11 +51,6 @@ export class SyncService {
           links: {
             orderBy: { order: 'asc' },
           },
-        },
-      }),
-      this.prisma.taxonomyNode.findMany({
-        where: {
-          updatedAt: { gte: sinceDate },
         },
       }),
       this.prisma.hashtag.findMany({
@@ -75,13 +69,13 @@ export class SyncService {
       counts: {
         feeds: feeds.length,
         notes: notes.length,
-        taxonomy: taxonomy.length,
+        taxonomy: 0,
         hashtags: hashtags.length,
         folders: folders.length,
       },
       feeds,
       notes,
-      taxonomy,
+      taxonomy: [],
       hashtags,
       folders,
     };

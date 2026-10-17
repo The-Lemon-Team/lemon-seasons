@@ -1,0 +1,52 @@
+import { Prisma } from '@prisma/client';
+
+export const NOTE_INCLUDE_DEFAULT = {
+  feed: true,
+  tags: { where: { deletedAt: null } },
+  hashtags: { where: { deletedAt: null } },
+  folders: {
+    include: { folder: true },
+    orderBy: { order: 'asc' as const },
+  },
+  images: { orderBy: { order: 'asc' as const } },
+  links: { orderBy: { order: 'asc' as const } },
+};
+
+export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
+  id: true,
+  feedId: true,
+  containerId: true,
+  filePath: true,
+  title: true,
+  description: true,
+  type: true,
+  status: true,
+  publishAt: true,
+  folderPath: true,
+  startDate: true,
+  endDate: true,
+  sourceLink: true,
+  sourceType: true,
+  externalId: true,
+  rawContent: true,
+  summary: true,
+  metadata: true,
+  processingStatus: true,
+  icon: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  curator: true,
+  parentNoteId: true,
+  resonanceScore: true,
+  feed: true,
+  tags: { where: { deletedAt: null } },
+  hashtags: { where: { deletedAt: null } },
+  folders: {
+    include: { folder: true },
+    orderBy: { order: 'asc' },
+  },
+  images: { orderBy: { order: 'asc' } },
+  links: { orderBy: { order: 'asc' } },
+};

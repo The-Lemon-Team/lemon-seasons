@@ -64,35 +64,31 @@ export class HashtagsService {
       return [];
     }
 
-    const resolvedIds: string[] = [];
+    // 1. Batch query existing hashtags
+    const existing = await this.prisma.hashtag.findMany({
+      where: { name: { in: normalizedNames }, deletedAt: null },
+    });
+    const existingMap = new Map<string, string>(existing.map((h) => [h.name, h.id]));
+    const missingNames = normalizedNames.filter((name) => !existingMap.has(name));
 
-    for (const name of normalizedNames) {
-      const existing = await this.prisma.hashtag.findFirst({
-        where: { name, deletedAt: null },
+    // 2. Batch-create any missing hashtags
+    if (missingNames.length > 0) {
+      await this.prisma.hashtag.createMany({
+        data: missingNames.map((name) => ({ name })),
+        skipDuplicates: true,
       });
 
-      if (existing) {
-        resolvedIds.push(existing.id);
-      } else {
-        try {
-          const created = await this.prisma.hashtag.create({
-            data: { name },
-          });
-          resolvedIds.push(created.id);
-        } catch (err: any) {
-          const concurrent = await this.prisma.hashtag.findFirst({
-            where: { name },
-          });
-          if (concurrent) {
-            resolvedIds.push(concurrent.id);
-          } else {
-            throw err;
-          }
-        }
+      const newlyCreated = await this.prisma.hashtag.findMany({
+        where: { name: { in: missingNames }, deletedAt: null },
+      });
+      for (const h of newlyCreated) {
+        existingMap.set(h.name, h.id);
       }
     }
 
-    return Array.from(new Set(resolvedIds));
+    return normalizedNames
+      .map((name) => existingMap.get(name))
+      .filter((id): id is string => Boolean(id));
   }
 
   /**

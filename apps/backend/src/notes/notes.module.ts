@@ -10,11 +10,11 @@ import { NotesLinksService } from './notes-links.service';
 import { NotesMediaService } from './notes-media.service';
 import { NotesShareService } from './notes-share.service';
 import { NotesCacheService } from './notes-cache.service';
-import { SyncModule } from '../sync/sync.module';
+import { NotesQueryBuilder } from './notes-query.builder';
 import { KeysModule } from '../keys/keys.module';
 
 @Module({
-  imports: [StorageModule, HashtagsModule, FoldersModule, SyncModule, KeysModule],
+  imports: [StorageModule, HashtagsModule, FoldersModule, KeysModule],
   controllers: [NotesController],
   providers: [
     NotesService,
@@ -24,6 +24,7 @@ import { KeysModule } from '../keys/keys.module';
     NotesMediaService,
     NotesShareService,
     NotesCacheService,
+    NotesQueryBuilder,
   ],
   exports: [
     NotesService,
@@ -33,6 +34,7 @@ import { KeysModule } from '../keys/keys.module';
     NotesMediaService,
     NotesShareService,
     NotesCacheService,
+    NotesQueryBuilder,
   ],
 })
 export class NotesModule {}

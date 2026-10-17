@@ -17,11 +17,9 @@ export class SyncOrchestratorService {
   ) {}
 
   /**
-   * Returns current workstation status: active session, unpushed commits, and cloud status.
+   * Returns current workstation sync and cloud status.
    */
   async getStatus(deviceId = 'default-device'): Promise<SyncStatusResponse> {
-    const activeSession = (await this.sessionService.getActiveSession(deviceId)) as any;
-
     const lastCommit = await this.prisma.syncCommit.findFirst({
       where: { deviceId },
       orderBy: { createdAt: 'desc' },
@@ -33,8 +31,6 @@ export class SyncOrchestratorService {
         isPushed: true,
       },
     });
-
-    const pendingCount = activeSession?._count?.changes ?? 0;
 
     const unpushedCount = await this.prisma.syncCommit.count({
       where: { isPushed: false },
@@ -48,7 +44,7 @@ export class SyncOrchestratorService {
 
     return {
       deviceId,
-      activeSession,
+      activeSession: null,
       lastCommit: lastCommit
         ? {
             id: lastCommit.id,
@@ -58,7 +54,7 @@ export class SyncOrchestratorService {
             isPushed: lastCommit.isPushed,
           }
         : null,
-      pendingChangesCount: pendingCount,
+      pendingChangesCount: 0,
       gdrive: {
         connected: authStatus.authenticated || true, // local relay is always connected
         userEmail: authStatus.userEmail,

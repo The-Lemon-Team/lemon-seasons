@@ -26,7 +26,7 @@ export class ImportNoteDto {
   endDate?: string;
   icon?: string;
   sourceLink?: string;
-  taxonomyPath: string;
+  taxonomyPath?: string;
   folders: string[];
   hashtags: string[];
   imageUrl?: string;
@@ -174,7 +174,7 @@ export class IngestionController {
       endDate: dto.endDate,
       icon: dto.icon,
       sourceLink: dto.sourceLink,
-      taxonomyPath: dto.taxonomyPath || 'general',
+      taxonomyPath: dto.taxonomyPath,
       folders: dto.folders || ['Events'],
       hashtags: dto.hashtags || [],
       imageUrl: dto.imageUrl,

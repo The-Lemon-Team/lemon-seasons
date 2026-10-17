@@ -39,9 +39,6 @@ import { BusModule } from './bus/bus.module';
     ContainersModule,
     StatsModule,
     BusModule,
-    // [DEPRECATED / DECOUPLED]: Moved to Defi Local Hosted project
-    // CurationModule,
-    // ChatsModule,
   ],
 })
 export class AppModule {}

@@ -94,7 +94,7 @@ export class AiQuickAddService {
 ПРАВИЛА РАЗБОРА СПИСКОВ:
 - Если в тексте заголовок вроде "Тренды 22.09.26:" и список пунктов (- пункт 1, - пункт 2), то КАЖДЫЙ ПУНКТ становится ОТДЕЛЬНОЙ карточкой! Дата и фид наследуются из заголовка/контекста.
 - Текущая базовая дата контекста: "${referenceDate}". Год '26' означает 2026. Формат даты DD.MM.YY или DD.MM.YYYY переводи в ISO строку (например, 22.09.26 -> "2026-09-22T12:00:00.000Z").
-- Извлекай теги (#хэштег -> hashtags), иерархические таксономии (Тег: tech.frontend -> taxonomyPath), папки (папка: ... -> folder), ссылки (https://... -> sourceLink), иконки (icon).
+- Извлекай теги (#хэштег -> hashtags), папки (папка: ... -> folder), ссылки (https://... -> sourceLink), иконки (icon).
 
 ПРИМЕР 1 (Вход):
 Тренды 22.09.26:
@@ -114,7 +114,6 @@ export class AiQuickAddService {
       "feedSlug": "my-notes",
       "feedTitle": "My Notes",
       "hashtags": ["тренд", "уборка", "быт"],
-      "taxonomyPath": "lifestyle.home",
       "folder": "Trends/2026-09",
       "icon": "sparkles",
       "description": "",
@@ -130,7 +129,6 @@ export class AiQuickAddService {
       "feedSlug": "my-notes",
       "feedTitle": "My Notes",
       "hashtags": ["тренд", "ремонт"],
-      "taxonomyPath": "lifestyle.home",
       "folder": "Trends/2026-09",
       "icon": "hammer",
       "description": "",
@@ -146,7 +144,6 @@ export class AiQuickAddService {
       "feedSlug": "my-notes",
       "feedTitle": "My Notes",
       "hashtags": ["тренд", "игры", "warcraft"],
-      "taxonomyPath": "gaming.pc",
       "folder": "Trends/2026-09",
       "icon": "gamepad",
       "description": "",
@@ -327,7 +324,13 @@ export class AiQuickAddService {
       if (tagLineMatch) {
         const tagVal = tagLineMatch[1].trim();
         if (cards.length > 0) {
-          cards[cards.length - 1].taxonomyPath = tagVal;
+          const lastCard = cards[cards.length - 1];
+          if (tagVal.includes('/')) {
+            lastCard.folder = tagVal;
+          } else {
+            const cleanTag = tagVal.replace(/^#/, '');
+            lastCard.hashtags = Array.from(new Set([...(lastCard.hashtags || []), cleanTag]));
+          }
         }
         continue;
       }
@@ -347,18 +350,23 @@ export class AiQuickAddService {
         cleanContent = cleanContent.replace(linkMatch![0], '').trim();
       }
 
-      // Extract inline taxonomy: тег:, tag:, таксономия:, tax:, т:
-      const tagMatch = cleanContent.match(/(?:тег|tag|таксономия|tax|т):\s*([a-zA-Z0-9._-]+)/iu);
-      const taxonomyPath = tagMatch ? tagMatch[1] : undefined;
-      if (tagMatch) {
-        cleanContent = cleanContent.replace(tagMatch[0], '').trim();
-      }
-
       // Extract inline folder: папка:, folder:, dir:, п:, ф:
       const folderMatch = cleanContent.match(/(?:папка|folder|dir|п|ф):\s*([a-zA-Z0-9/_-]+)/iu);
-      const folder = folderMatch ? folderMatch[1] : defaultFolder;
+      let folder = folderMatch ? folderMatch[1] : defaultFolder;
       if (folderMatch) {
         cleanContent = cleanContent.replace(folderMatch[0], '').trim();
+      }
+
+      // Extract inline tag: тег:, tag:, таксономия:, tax:, т:
+      const tagMatch = cleanContent.match(/(?:тег|tag|таксономия|tax|т):\s*([a-zA-Z0-9/._-]+)/iu);
+      if (tagMatch) {
+        const tagVal = tagMatch[1].trim();
+        if (tagVal.includes('/') && !folderMatch) {
+          folder = tagVal;
+        } else {
+          itemHashtags.push(tagVal.replace(/^#/, ''));
+        }
+        cleanContent = cleanContent.replace(tagMatch[0], '').trim();
       }
 
       // Extract date overrides or ranges for this specific line
@@ -425,7 +433,6 @@ export class AiQuickAddService {
         feedSlug: defaultFeedSlug,
         feedTitle: defaultFeedSlug === 'my-notes' ? 'My Notes' : defaultFeedSlug,
         folder,
-        taxonomyPath,
         hashtags: itemHashtags,
         sourceLink,
         icon,
