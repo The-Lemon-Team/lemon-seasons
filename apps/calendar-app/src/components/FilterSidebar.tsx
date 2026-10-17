@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
 import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
-import { useFeeds, useTaxonomyTree, useHashtags } from '../api/queries';
-import { useObsidianContainers } from '../context/ObsidianContainersContext';
-import { ObsidianLogo } from './ObsidianLogo';
+import { useFeeds, useHashtags } from '../api/queries';
 import {
   X,
   Filter,
-  Tag,
+  FolderTree,
   Hash,
   Shapes,
   Check,
@@ -29,9 +27,6 @@ interface FilterSidebarProps {
   onSelectOnlyFeed?: (feedSlug: string) => void;
   onClearFeed?: () => void;
   onClearFeeds?: () => void;
-  onToggleContainer?: (containerId: string) => void;
-  onSelectOnlyContainer?: (containerId: string) => void;
-  onClearContainers?: () => void;
   onToggleTag: (tagPath: string) => void;
   onToggleHashtag: (hashtag: string) => void;
   onToggleType: (type: NoteType) => void;
@@ -48,9 +43,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onSelectOnlyFeed,
   onClearFeed,
   onClearFeeds,
-  onToggleContainer,
-  onSelectOnlyContainer,
-  onClearContainers,
   onToggleTag,
   onToggleHashtag,
   onToggleType,
@@ -59,9 +51,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
   const { data: feeds = [] } = useFeeds();
-  const { data: taxonomyNodes = [] } = useTaxonomyTree();
   const { data: hashtags = [] } = useHashtags();
-  const { containers: obsidianContainers = [] } = useObsidianContainers();
 
   const handleSelectFeed = (slug?: string) => {
     if (!slug) {
@@ -151,7 +141,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         <div>
           <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#e5e971] mb-3">
             <div className="flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-[#c9cd58]" />
+              <FolderTree className="w-3.5 h-3.5 text-[#c9cd58]" />
               <span>{t.taxonomyHierarchy}</span>
             </div>
             {filterState.tags.length > 0 && (
@@ -255,36 +245,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Dynamic Backend Taxonomy Nodes */}
-          {taxonomyNodes.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1">
-              {taxonomyNodes
-                .filter(
-                  (n) =>
-                    !['films', 'films.marvel', 'films.fantastic', 'politics', 'politics.usa', 'politics.russia'].includes(
-                      n.path.toLowerCase()
-                    )
-                )
-                .slice(0, 8)
-                .map((node) => {
-                  const isSelected = filterState.tags.includes(node.path);
-                  return (
-                    <button
-                      key={node.id}
-                      onClick={() => onToggleTag(node.path)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all border ${
-                        isSelected
-                          ? 'bg-[#c9cd58]/20 border-[#c9cd58]/60 text-[#e5e971] font-medium'
-                          : 'bg-surface-elevated/40 border-border/60 text-neutral-400 hover:text-white hover:bg-surface-hover'
-                      }`}
-                    >
-                      <span>{node.path}</span>
-                    </button>
-                  );
-                })}
-            </div>
-          )}
         </div>
 
         {/* 2. Note Types */}
@@ -369,94 +329,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* Obsidian Containers */}
-        {obsidianContainers.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#a855f7] mb-3">
-              <div className="flex items-center gap-1.5">
-                <ObsidianLogo size={14} />
-                <span>Obsidian Контейнеры</span>
-              </div>
-              {(filterState.containers?.length || 0) > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-[#d8b4fe] bg-[#a855f7]/20 px-1.5 py-0.5 rounded-full font-bold">
-                    {filterState.containers?.length}
-                  </span>
-                  {onClearContainers && (
-                    <button
-                      onClick={onClearContainers}
-                      className="text-[10px] font-mono text-neutral-400 hover:text-white"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
 
-            <div className="space-y-1.5">
-              {obsidianContainers.map((container) => {
-                const isSelected = (filterState.containers || []).includes(container.id);
-                const isPrivate = container.privacy === 'private';
-
-                return (
-                  <div
-                    key={container.id}
-                    onClick={() => onToggleContainer && onToggleContainer(container.id)}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#1e1a29] border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                        : 'bg-[#161819] border-[#292c2e] hover:border-[#444]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center border shrink-0 ${
-                          isSelected
-                            ? 'bg-[#a855f7]/20 border-[#a855f7]'
-                            : 'bg-[#1f2224] border-[#333]'
-                        }`}
-                      >
-                        <ObsidianLogo size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-xs font-semibold truncate ${isSelected ? 'text-[#f3e8ff]' : 'text-neutral-200'}`}>
-                            {container.name}
-                          </span>
-                          {isPrivate ? (
-                            <Lock className="w-3 h-3 text-[#a855f7] shrink-0" />
-                          ) : (
-                            <Globe className="w-3 h-3 text-[#c9cd58] shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[10px] font-mono text-neutral-400 truncate flex items-center gap-1">
-                          <Folder className="w-2.5 h-2.5 text-neutral-500" />
-                          <span>{container.vaultPath}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono text-[#a855f7] bg-[#a855f7]/10 px-1.5 py-0.5 rounded border border-[#a855f7]/30">
-                        {container.notesCount || 0}
-                      </span>
-                      <div
-                        className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
-                          isSelected
-                            ? 'border-[#a855f7] bg-[#a855f7]'
-                            : 'border-[#383a3a] bg-[#1a1c1c]'
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* 3. Feeds & Channels (Single Stream) */}
         <div>

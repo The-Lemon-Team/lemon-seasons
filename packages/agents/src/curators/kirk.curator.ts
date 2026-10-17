@@ -59,7 +59,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 *Сформировано аналитическим деском Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Politics/Sanctions',
-    taxonomyPath: 'politics.international.sanctions',
     hashtags: ['OFAC', 'Санкции', 'Логистика', 'Танкеры', 'МировыеРынки'],
     curator: 'kirk-kitten',
     sourceLink: mainStory?.url,

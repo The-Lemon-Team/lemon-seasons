@@ -162,7 +162,7 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
           n.title.toLowerCase().includes(q) ||
           n.description?.toLowerCase().includes(q) ||
           n.feed?.title.toLowerCase().includes(q) ||
-          n.tags?.some((tagItem) => tagItem.path.toLowerCase().includes(q)) ||
+          n.folders?.some((f) => f.folder?.path.toLowerCase().includes(q)) ||
           n.hashtags?.some((h) => h.name.toLowerCase().includes(q))
       );
     }
@@ -584,7 +584,7 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                     </p>
                   )}
 
-                  {/* Taxonomy Tags, Hashtags, Folder Footer */}
+                  {/* Hashtags & Folder Footer */}
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#242828]/60 text-[10px] font-mono">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {primaryFolder && (
@@ -594,17 +594,7 @@ export const DaySidebar: React.FC<DaySidebarProps> = ({
                         </span>
                       )}
 
-                      {note.tags?.slice(0, 2).map((tagItem) => (
-                        <span
-                          key={tagItem.id}
-                          className="inline-flex items-center gap-0.5 bg-[#121414] px-1.5 py-0.5 rounded text-[#c9c7b2]"
-                        >
-                          <Tag className="w-2.5 h-2.5 text-[#c9cd58]" />
-                          <span>{tagItem.name}</span>
-                        </span>
-                      ))}
-
-                      {note.hashtags?.slice(0, 2).map((h) => (
+                      {note.hashtags?.slice(0, 3).map((h) => (
                         <span key={h.id} className="text-[#e5e971]">
                           #{h.name.replace(/^#/, '')}
                         </span>

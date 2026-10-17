@@ -164,14 +164,6 @@ export const GeneratorLabPage: React.FC = () => {
         description: generatedMarkdown,
         type: aiType,
         startDate: dateIso,
-        taxonomyPath:
-          aiFeedSlug === 'mcu-radar'
-            ? 'films.marvel'
-            : aiFeedSlug === 'russian-holidays'
-            ? 'holidays.russia.military'
-            : aiFeedSlug === 'christian-holidays'
-            ? 'holidays.christian'
-            : 'politics.international',
         folders: [
           aiFeedSlug === 'mcu-radar'
             ? 'Films/Marvel'
@@ -208,7 +200,6 @@ export const GeneratorLabPage: React.FC = () => {
         endDate: movie.endDate,
         icon: 'movie',
         sourceLink: movie.sourceLink,
-        taxonomyPath: movie.taxonomyPath,
         folders: movie.folders,
         hashtags: movie.hashtags,
         imageUrl: movie.posterUrl,
@@ -236,7 +227,6 @@ export const GeneratorLabPage: React.FC = () => {
         endDate: item.endDate,
         icon: item.icon,
         sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
         folders: item.folders,
         hashtags: item.hashtags,
         imageUrl: item.imageUrl,
@@ -260,7 +250,6 @@ export const GeneratorLabPage: React.FC = () => {
         endDate: item.endDate,
         icon: item.icon,
         sourceLink: item.sourceLink,
-        taxonomyPath: item.taxonomyPath,
         folders: item.folders,
         hashtags: item.hashtags,
         imageUrl: item.imageUrl,
@@ -637,7 +626,7 @@ export const GeneratorLabPage: React.FC = () => {
 
                           <div className="flex items-center justify-between pt-2 border-t border-white/5">
                             <span className="text-[10px] font-mono text-outline">
-                              {m.taxonomyPath}
+                              {m.folders?.[0] || 'Films/Marvel'}
                             </span>
                             <Button
                               size="small"
@@ -736,7 +725,7 @@ export const GeneratorLabPage: React.FC = () => {
                                 {dayjs(h.startDate).format('DD MMMM YYYY')}
                               </Tag>
                               <span className="text-[11px] font-mono text-outline">
-                                {h.taxonomyPath.split('.').pop()}
+                                {h.folders?.[0] || 'Holidays'}
                               </span>
                             </div>
                             <h4 className="font-bold text-sm text-on-surface mt-1">{h.title}</h4>
@@ -811,7 +800,7 @@ export const GeneratorLabPage: React.FC = () => {
                                 {dayjs(p.startDate).format('DD MMMM YYYY')}
                               </Tag>
                               <span className="text-[11px] font-mono text-outline">
-                                {p.taxonomyPath}
+                                {p.folders?.[0] || 'Politics'}
                               </span>
                             </div>
                             <h4 className="font-bold text-sm text-on-surface mt-1">{p.title}</h4>

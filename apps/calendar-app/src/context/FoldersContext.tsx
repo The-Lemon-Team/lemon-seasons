@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { Folder, FolderTreeNode, FolderPrivacy, CreateFolderInput, UpdateFolderInput, Note } from '@lenta/shared';
-import { useObsidianContainers } from './ObsidianContainersContext';
+import { Folder, FolderTreeNode, FolderPrivacy, CreateFolderInput, Note } from '@lenta/shared';
 import { useTimeSliceNotes } from '../api/queries';
 import { calendarApi } from '../api/client';
+import {
+  FOLDERS_STORAGE_KEY,
+  INITIAL_FOLDERS,
+  normalizeFolderPath,
+  getFolderNameFromPath,
+  buildFolderTreeFromList,
+} from '../utils/folders.utils';
 
 export interface PrivacyImpact {
   folderId: string;
@@ -14,7 +20,7 @@ export interface PrivacyImpact {
     id: string;
     name: string;
     privacy: 'private' | 'public';
-    isConflict: boolean; // True if public container with target privacy 'private'
+    isConflict: boolean;
   }>;
   hasConflict: boolean;
   notesCount: number;
@@ -47,185 +53,10 @@ interface FoldersContextType {
   refreshFolders: () => Promise<void>;
 }
 
-const STORAGE_KEY = 'lemon_lenta_folders_v1';
-
-const INITIAL_FOLDERS: Folder[] = [
-  {
-    id: 'fld-bookmarks',
-    name: 'Bookmarks',
-    path: 'Bookmarks',
-    icon: 'book-open',
-    color: '#3b82f6',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-01T09:00:00.000Z',
-    updatedAt: '2026-08-20T09:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 2 },
-  },
-  {
-    id: 'fld-archive',
-    name: '04_Archive',
-    path: '04_Archive',
-    icon: 'archive',
-    color: '#8b5cf6',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-01T11:00:00.000Z',
-    updatedAt: '2026-08-15T11:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 3 },
-  },
-  {
-    id: 'fld-archive-thoughts',
-    name: 'Thoughts',
-    path: '04_Archive/Thoughts',
-    icon: 'sparkles',
-    color: '#a855f7',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-01T11:30:00.000Z',
-    updatedAt: '2026-08-18T11:30:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 8 },
-  },
-  {
-    id: 'fld-projects',
-    name: '02_Projects',
-    path: '02_Projects',
-    icon: 'folder-kanban',
-    color: '#c9cd58',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-05T09:00:00.000Z',
-    updatedAt: '2026-08-22T09:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 6 },
-  },
-  {
-    id: 'fld-research',
-    name: '03_Research',
-    path: '03_Research',
-    icon: 'flask-conical',
-    color: '#3b82f6',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-06T14:00:00.000Z',
-    updatedAt: '2026-08-20T14:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 5 },
-  },
-  {
-    id: 'fld-research-ai',
-    name: 'AI',
-    path: '03_Research/AI',
-    icon: 'bot',
-    color: '#3b82f6',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-06T14:30:00.000Z',
-    updatedAt: '2026-08-22T14:30:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 11 },
-  },
-  {
-    id: 'fld-news',
-    name: 'News',
-    path: 'News',
-    icon: 'newspaper',
-    color: '#f59e0b',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-02T08:00:00.000Z',
-    updatedAt: '2026-08-21T08:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 8 },
-  },
-  {
-    id: 'fld-news-cinema',
-    name: 'Cinema',
-    path: 'News/Cinema',
-    icon: 'film',
-    color: '#f43f5e',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-02T08:30:00.000Z',
-    updatedAt: '2026-08-22T16:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 15 },
-  },
-  {
-    id: 'fld-news-marvel',
-    name: 'Marvel',
-    path: 'News/Marvel',
-    icon: 'shield',
-    color: '#ef4444',
-    privacy: 'public',
-    containerId: null,
-    scope: 'external',
-    createdAt: '2026-08-02T09:00:00.000Z',
-    updatedAt: '2026-08-23T10:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 9 },
-  },
-  {
-    id: 'fld-core-strategy',
-    name: 'Core_Strategy',
-    path: 'Core_Strategy',
-    icon: 'lock',
-    color: '#f43f5e',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-10T09:15:00.000Z',
-    updatedAt: '2026-08-23T11:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 7 },
-  },
-  {
-    id: 'fld-financials',
-    name: 'Financials',
-    path: 'Financials',
-    icon: 'circle-dollar-sign',
-    color: '#10b981',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-10T10:00:00.000Z',
-    updatedAt: '2026-08-22T10:00:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 4 },
-  },
-  {
-    id: 'fld-financials-q3q4',
-    name: 'Q3_Q4',
-    path: 'Financials/Q3_Q4',
-    icon: 'trending-up',
-    color: '#10b981',
-    privacy: 'private',
-    containerId: null,
-    scope: 'internal',
-    createdAt: '2026-08-10T10:30:00.000Z',
-    updatedAt: '2026-08-22T10:30:00.000Z',
-    deletedAt: null,
-    _count: { noteFolders: 6 },
-  },
-];
-
 const FoldersContext = createContext<FoldersContextType | undefined>(undefined);
 
 export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { containers } = useObsidianContainers();
-
-  // Load all notes from active timeline range to match with folders
+  // Load notes to match folder assignments
   const { data: notesData } = useTimeSliceNotes({
     start: '2026-01-01T00:00:00.000Z',
     end: '2026-12-31T23:59:59.000Z',
@@ -234,16 +65,14 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [folders, setFolders] = useState<Folder[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(FOLDERS_STORAGE_KEY);
       if (saved) {
         const parsed: Folder[] = JSON.parse(saved);
         return parsed.map((f) => ({
           ...f,
           scope: f.scope || (f.containerId ? 'internal' : 'external'),
           containerId:
-            f.containerId && f.containerId !== 'cont-personal-vault'
-              ? f.containerId
-              : null,
+            f.containerId && f.containerId !== 'cont-personal-vault' ? f.containerId : null,
         }));
       }
     } catch {
@@ -267,16 +96,14 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [folders]);
 
   const getInternalFoldersForContainer = useCallback(
-    (containerId: string) => {
-      return folders.filter((f) => f.containerId === containerId);
-    },
+    (containerId: string) => folders.filter((f) => f.containerId === containerId),
     [folders]
   );
 
-  // Save to localStorage
+  // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(folders));
+      localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
     } catch (e) {
       console.error('Failed to save folders to localStorage', e);
     }
@@ -286,81 +113,34 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return folders.find((f) => f.id === selectedFolderId) || null;
   }, [folders, selectedFolderId]);
 
-  // Build tree hierarchy
-  const folderTree = useMemo((): FolderTreeNode[] => {
-    const folderMap = new Map<string, FolderTreeNode>();
-    const roots: FolderTreeNode[] = [];
+  // Build tree hierarchy via shared helper
+  const folderTree = useMemo(() => buildFolderTreeFromList(folders), [folders]);
 
-    // 1. Initialize map
-    for (const f of folders) {
-      const directCount = f._count?.noteFolders || 0;
-      const folderScope: 'external' | 'internal' = f.scope || (f.containerId ? 'internal' : 'external');
-      folderMap.set(f.path, {
-        id: f.id,
-        name: f.name,
-        path: f.path,
-        icon: f.icon,
-        color: f.color,
-        privacy: f.privacy || 'public',
-        containerId: f.containerId,
-        scope: folderScope,
-        directNotesCount: directCount,
-        notesCount: directCount,
-        updatedAt: f.updatedAt,
-        deletedAt: f.deletedAt,
-        children: [],
-      });
-    }
-
-    // 2. Build tree hierarchy
-    for (const f of folders) {
-      const node = folderMap.get(f.path)!;
-      const lastSlash = f.path.lastIndexOf('/');
-      if (lastSlash === -1) {
-        roots.push(node);
-      } else {
-        const parentPath = f.path.substring(0, lastSlash);
-        const parentNode = folderMap.get(parentPath);
-        if (parentNode) {
-          parentNode.children.push(node);
-        } else {
-          roots.push(node);
-        }
+  // Refresh folders from backend API
+  const refreshFolders = useCallback(async () => {
+    try {
+      const serverFolders = await calendarApi.getFolders(false, undefined, undefined, 'all');
+      if (Array.isArray(serverFolders) && serverFolders.length > 0) {
+        setFolders(
+          serverFolders.map((sf) => ({
+            ...sf,
+            scope: sf.scope || (sf.containerId ? 'internal' : 'external'),
+          }))
+        );
       }
+    } catch (e) {
+      console.warn('Could not refresh folders from server, using local cache', e);
     }
+  }, []);
 
-    // 3. Compute recursive note counts
-    const computeCounts = (n: FolderTreeNode): number => {
-      let total = n.directNotesCount;
-      for (const child of n.children) {
-        total += computeCounts(child);
-      }
-      n.notesCount = total;
-      return total;
-    };
+  useEffect(() => {
+    refreshFolders();
+  }, [refreshFolders]);
 
-    roots.forEach(computeCounts);
-    return roots;
-  }, [folders]);
-
-  // Normalizer
-  const normalizePath = (rawPath: string): string => {
-    return rawPath
-      .trim()
-      .replace(/\\/g, '/')
-      .replace(/\/+/g, '/')
-      .replace(/^\/|\/$/g, '');
-  };
-
-  const getFolderName = (normalizedPath: string): string => {
-    const parts = normalizedPath.split('/');
-    return parts[parts.length - 1] || 'Folder';
-  };
-
-  // Add folder
+  // Add folder (optimistic update + backend sync)
   const addFolder = useCallback((input: CreateFolderInput): Folder => {
-    const cleanPath = normalizePath(input.path);
-    const name = input.name?.trim() || getFolderName(cleanPath);
+    const cleanPath = normalizeFolderPath(input.path);
+    const name = input.name?.trim() || getFolderNameFromPath(cleanPath);
     const privacy: FolderPrivacy = input.privacy || (input.containerId ? 'obsidian' : 'public');
     const containerId = input.containerId || null;
     const scope = input.scope || (containerId ? 'internal' : 'external');
@@ -381,7 +161,6 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setFolders((prev) => {
-      // If path already exists, update it, otherwise prepend
       const existingIdx = prev.findIndex((f) => f.path.toLowerCase() === cleanPath.toLowerCase());
       if (existingIdx >= 0) {
         const copy = [...prev];
@@ -392,25 +171,58 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     setSelectedFolderId(newFolder.id);
+
+    // Persist to backend
+    calendarApi.createFolder(input).then((saved) => {
+      if (saved?.id) {
+        setFolders((prev) =>
+          prev.map((f) => (f.path.toLowerCase() === cleanPath.toLowerCase() ? { ...f, ...saved } : f))
+        );
+        setSelectedFolderId(saved.id);
+      }
+    }).catch((err) => {
+      console.warn('Backend createFolder sync notice:', err);
+    });
+
     return newFolder;
   }, []);
 
-  // Update folder
+  // Update folder (optimistic update + backend sync)
   const updateFolder = useCallback((id: string, updates: Partial<Folder>) => {
     setFolders((prev) =>
       prev.map((f) => {
         if (f.id !== id) return f;
-        const cleanPath = updates.path ? normalizePath(updates.path) : f.path;
+        const cleanPath = updates.path ? normalizeFolderPath(updates.path) : f.path;
         const cleanName = updates.name !== undefined ? updates.name.trim() : f.name;
         return {
           ...f,
           ...updates,
           path: cleanPath,
-          name: cleanName || getFolderName(cleanPath),
+          name: cleanName || getFolderNameFromPath(cleanPath),
           updatedAt: new Date().toISOString(),
         };
       })
     );
+
+    const payload: {
+      name?: string;
+      path?: string;
+      icon?: string;
+      color?: string;
+      privacy?: FolderPrivacy;
+      containerId?: string | null;
+    } = {
+      name: updates.name,
+      path: updates.path,
+      icon: updates.icon || undefined,
+      color: updates.color || undefined,
+      privacy: updates.privacy,
+      containerId: updates.containerId,
+    };
+
+    calendarApi.updateFolder(id, payload).catch((err) => {
+      console.warn('Backend updateFolder sync notice:', err);
+    });
   }, []);
 
   // Delete folder
@@ -429,68 +241,26 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSelectedFolderId((current) => (current === id ? null : current));
   }, []);
 
-  // Find which Obsidian Containers observe this folder (or parent prefix)
-  const getFolderContainerUsage = useCallback(
-    (folderPath: string) => {
-      const normalized = normalizePath(folderPath).toLowerCase();
-      const usages: Array<{
-        containerId: string;
-        containerName: string;
-        containerPrivacy: 'private' | 'public';
-        boundFolderId: string;
-      }> = [];
-
-      for (const c of containers) {
-        for (const bf of c.boundFolders) {
-          const boundNormalized = normalizePath(bf.path).toLowerCase();
-          // Direct match or parent prefix match
-          if (
-            boundNormalized === normalized ||
-            normalized.startsWith(`${boundNormalized}/`) ||
-            boundNormalized.startsWith(`${normalized}/`)
-          ) {
-            usages.push({
-              containerId: c.id,
-              containerName: c.name,
-              containerPrivacy: c.privacy,
-              boundFolderId: bf.id,
-            });
-          }
-        }
-      }
-      return usages;
-    },
-    [containers]
-  );
+  const getFolderContainerUsage = useCallback((_folderPath: string) => [], []);
 
   // Get notes associated with a folder
   const getNotesForFolder = useCallback(
     (folderPath: string, recursive = true): Note[] => {
-      const normalized = normalizePath(folderPath).toLowerCase();
+      const normalized = normalizeFolderPath(folderPath).toLowerCase();
       const matchedFolder = folders.find((f) => f.path.toLowerCase() === normalized);
 
       return allNotes.filter((n) => {
-        // If folder is scoped to a container, exclude notes that belong to a different container
-        if (matchedFolder?.containerId && n.containerId && n.containerId !== matchedFolder.containerId) {
-          return false;
-        }
-
-        // 1. Match via note.folders assignments
         const hasDirectFolder = n.folders?.some((f) => {
           if (matchedFolder && (f.folderId === matchedFolder.id || f.folder?.id === matchedFolder.id)) {
             return true;
           }
-          const fp = normalizePath(f.folder?.path || '').toLowerCase();
-          if (recursive) {
-            return fp === normalized || fp.startsWith(`${normalized}/`);
-          }
-          return fp === normalized;
+          const fp = normalizeFolderPath(f.folder?.path || '').toLowerCase();
+          return recursive ? fp === normalized || fp.startsWith(`${normalized}/`) : fp === normalized;
         });
         if (hasDirectFolder) return true;
 
-        // 2. Match via note.filePath (if note was synced from a container or has filePath)
         if (n.filePath) {
-          const nfp = normalizePath(n.filePath).toLowerCase();
+          const nfp = normalizeFolderPath(n.filePath).toLowerCase();
           if (recursive) {
             if (nfp === normalized || nfp.startsWith(`${normalized}/`)) return true;
           } else {
@@ -498,35 +268,13 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
             if (dir === normalized) return true;
           }
         }
-
         return false;
       });
     },
     [allNotes, folders]
   );
 
-  // Refresh folders from backend API
-  const refreshFolders = useCallback(async () => {
-    try {
-      const serverFolders = await calendarApi.getFolders(false, undefined, undefined, 'all');
-      if (Array.isArray(serverFolders)) {
-        setFolders(
-          serverFolders.map((sf) => ({
-            ...sf,
-            scope: sf.scope || (sf.containerId ? 'internal' : 'external'),
-          }))
-        );
-      }
-    } catch (e) {
-      console.warn('Could not refresh folders from server, using local cache', e);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshFolders();
-  }, [refreshFolders]);
-
-  // Calculate Privacy Change Impact before changing
+  // Privacy change impact calculation
   const getFolderPrivacyImpact = useCallback(
     (folderId: string, targetPrivacy: FolderPrivacy): PrivacyImpact => {
       const folder = folders.find((f) => f.id === folderId);
@@ -544,25 +292,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       }
 
-      const usages = getFolderContainerUsage(folder.path);
-      const subfolders = folders.filter(
-        (f) => f.id !== folder.id && f.path.startsWith(`${folder.path}/`)
-      );
-
+      const subfolders = folders.filter((f) => f.id !== folder.id && f.path.startsWith(`${folder.path}/`));
       const notes = getNotesForFolder(folder.path, true);
-
-      const affectedContainers = usages.map((u) => {
-        // Conflict occurs if changing to 'private', but container is 'public'
-        const isConflict = targetPrivacy === 'private' && u.containerPrivacy === 'public';
-        return {
-          id: u.containerId,
-          name: u.containerName,
-          privacy: u.containerPrivacy,
-          isConflict,
-        };
-      });
-
-      const hasConflict = affectedContainers.some((c) => c.isConflict);
 
       return {
         folderId: folder.id,
@@ -570,16 +301,16 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         folderPath: folder.path,
         currentPrivacy: folder.privacy || 'public',
         targetPrivacy,
-        affectedContainers,
-        hasConflict,
+        affectedContainers: [],
+        hasConflict: false,
         notesCount: notes.length || folder._count?.noteFolders || 0,
         subfoldersCount: subfolders.length,
       };
     },
-    [folders, getFolderContainerUsage, getNotesForFolder]
+    [folders, getNotesForFolder]
   );
 
-  // Execute privacy change
+  // Execute privacy change with backend sync
   const executePrivacyChange = useCallback(
     (folderId: string, targetPrivacy: FolderPrivacy) => {
       const folder = folders.find((f) => f.id === folderId);
@@ -588,18 +319,21 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const prefix = `${folder.path}/`;
       setFolders((prev) =>
         prev.map((f) => {
-          // Update the folder itself and all its subfolders
           if (f.id === folderId || f.path.startsWith(prefix)) {
             return {
               ...f,
               privacy: targetPrivacy,
-              color: targetPrivacy === 'private' ? '#a855f7' : (f.color === '#a855f7' ? '#c9cd58' : f.color),
+              color: targetPrivacy === 'private' ? '#a855f7' : f.color === '#a855f7' ? '#c9cd58' : f.color,
               updatedAt: new Date().toISOString(),
             };
           }
           return f;
         })
       );
+
+      calendarApi.updateFolder(folderId, { privacy: targetPrivacy }).catch((err) => {
+        console.warn('Backend executePrivacyChange sync notice:', err);
+      });
     },
     [folders]
   );

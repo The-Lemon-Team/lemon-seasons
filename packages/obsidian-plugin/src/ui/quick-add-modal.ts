@@ -24,7 +24,6 @@ export class LentaQuickAddModal extends Modal {
 
   private feeds: LentaFeedDto[] = [];
   private folders: LentaFolderDto[] = [];
-  private taxonomyNodes: LentaTaxonomyNodeDto[] = [];
 
   // Form State
   private title = '';
@@ -111,17 +110,15 @@ export class LentaQuickAddModal extends Modal {
       const isContainer = this.isObsidianContainerMode();
 
       // Parallel data loading tailored for container vs global mode
-      const [feeds, folders, taxonomy] = await Promise.all([
+      const [feeds, folders] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
         isContainer && containerId
           ? this.loadContainerFolders(containerId).catch(() => [])
           : this.apiClient.getFolders().catch(() => []),
-        this.apiClient.getTaxonomyTree().catch(() => []),
       ]);
 
       this.feeds = feeds;
       this.folders = folders;
-      this.taxonomyNodes = taxonomy;
 
       if (this.selectedFolderId) {
         const matched = folders.find((f) => f.id === this.selectedFolderId || f.path === this.selectedFolderId);
@@ -303,7 +300,7 @@ export class LentaQuickAddModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl('h2', { text: '🍋 Lenta Quick Add Note' });
-    contentEl.createEl('p', { text: 'Loading feeds and taxonomy from Lenta server...' });
+    contentEl.createEl('p', { text: 'Loading feeds and folders from Lenta server...' });
   }
 
   private render() {
@@ -494,24 +491,7 @@ export class LentaQuickAddModal extends Modal {
         });
     }
 
-    // 4. Taxonomy Tag
-    if (this.taxonomyNodes.length > 0) {
-      new Setting(contentEl)
-        .setName('Taxonomy Tag')
-        .setDesc('Hierarchical classification node')
-        .addDropdown((dropdown) => {
-          dropdown.addOption('', '(No Taxonomy)');
-          for (const tag of this.taxonomyNodes) {
-            dropdown.addOption(tag.id, `🏷️ ${tag.path}`);
-          }
-          dropdown.setValue(this.selectedTaxonomyId);
-          dropdown.onChange((val) => {
-            this.selectedTaxonomyId = val;
-          });
-        });
-    }
-
-    // 5. Icon & Source Link
+    // 4. Icon & Source Link
     new Setting(contentEl)
       .setName('Icon & Source Link')
       .setDesc('Optional icon name (e.g. "rocket", "calendar") and external URL')
@@ -614,7 +594,6 @@ export class LentaQuickAddModal extends Modal {
               : (this.initialFolderPath || undefined));
         }
 
-        const tagIds = this.selectedTaxonomyId ? [this.selectedTaxonomyId] : [];
         const folderIds = resolvedFolderPath ? [resolvedFolderPath] : [];
         const folders = resolvedFolderPath ? [resolvedFolderPath] : undefined;
         const targetContainerId = this.getTargetContainerId();
@@ -629,7 +608,6 @@ export class LentaQuickAddModal extends Modal {
           sourceLink: this.sourceLink.trim() || undefined,
           icon: this.icon.trim() || undefined,
           description: this.description.trim() || undefined,
-          tagIds,
           folderIds,
           folders,
           folder: resolvedFolderPath,

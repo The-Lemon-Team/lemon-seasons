@@ -144,7 +144,6 @@ ${presijoBullets.map((b) => `- ${b}`).join('\n')}
 *Сформировано технологическим деском Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Tech/Daily',
-    taxonomyPath: 'tech.daily_summary',
     hashtags: ['IT', 'AI', 'Habr', 'HiTech', 'Инструменты', 'Коллегия'],
     curator: 'IT & AI Группа',
   };

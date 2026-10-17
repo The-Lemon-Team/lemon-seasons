@@ -4,7 +4,6 @@ import { message, Popconfirm } from 'antd';
 import {
   useNote,
   useFeeds,
-  useTaxonomyFlat,
   useCreateNote,
   useUpdateNote,
   useDeleteNote,
@@ -28,7 +27,6 @@ export const NoteEditorPage: React.FC = () => {
 
   const { data: note, isLoading: isNoteLoading } = useNote(id || '');
   const { data: feeds = [] } = useFeeds();
-  const { data: taxonomyNodes = [] } = useTaxonomyFlat();
 
   const createNoteMutation = useCreateNote();
   const updateNoteMutation = useUpdateNote();
@@ -45,9 +43,7 @@ export const NoteEditorPage: React.FC = () => {
   const [icon, setIcon] = useState('');
   const [curator, setCurator] = useState('');
   const [assignedFolders, setAssignedFolders] = useState<FolderInputItem[]>([]);
-  const [selectedTagPaths, setSelectedTagPaths] = useState<string[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
-  const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [description, setDescription] = useState('');
 
   // Pending images & links for new note
@@ -67,7 +63,6 @@ export const NoteEditorPage: React.FC = () => {
       setIcon(note.icon || '');
       setCurator(note.curator || '');
       setDescription(note.description || '');
-      setSelectedTagPaths(note.tags?.map((t) => t.path) || []);
       setHashtags(note.hashtags?.map((h) => h.name) || []);
       setAssignedFolders(
         note.folders?.map((nf, idx) => ({
@@ -80,20 +75,6 @@ export const NoteEditorPage: React.FC = () => {
       setFeedId(feeds[0].id);
     }
   }, [note, isNew, feeds, feedId]);
-
-  const filteredTaxonomyNodes = taxonomyNodes.filter((node) => {
-    const query = tagSearchQuery.trim().toLowerCase();
-    if (!query) return true;
-    const matchPath = node.path.toLowerCase().includes(query);
-    const matchName = node.name && node.name.toLowerCase().includes(query);
-    return matchPath || matchName;
-  });
-
-  const handleTagToggle = (path: string) => {
-    setSelectedTagPaths((prev) =>
-      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path],
-    );
-  };
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -117,7 +98,6 @@ export const NoteEditorPage: React.FC = () => {
           icon: icon.trim() || undefined,
           curator: curator.trim() || undefined,
           description: description.trim() || undefined,
-          tagIds: selectedTagPaths,
           hashtags,
           folders: assignedFolders,
           links:
@@ -158,7 +138,6 @@ export const NoteEditorPage: React.FC = () => {
             icon: icon.trim() || undefined,
             curator: curator.trim() || undefined,
             description: description.trim() || undefined,
-            tagIds: selectedTagPaths,
             hashtags,
             folders: assignedFolders,
           },
@@ -292,7 +271,7 @@ export const NoteEditorPage: React.FC = () => {
         {/* Right Column: Metadata & Chronological Details (Span 1) */}
         <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5 h-fit">
           <h3 className="font-sans font-bold text-sm text-on-surface border-b border-white/5 pb-2">
-            {t.taxonomy} & {t.datesCol}
+            {t.datesCol}
           </h3>
 
           {/* Target Feed */}
@@ -401,141 +380,6 @@ export const NoteEditorPage: React.FC = () => {
               onChange={setHashtags}
               placeholder={t.hashtagsPlaceholder}
             />
-          </div>
-
-          {/* Taxonomy Tags Selection */}
-          <div className="space-y-2 pt-2 border-t border-white/5">
-            <div className="flex items-center justify-between">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                {t.tagsInputLabel}
-              </label>
-              {selectedTagPaths.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                    {selectedTagPaths.length}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTagPaths([])}
-                    className="text-[10px] font-mono text-error/80 hover:text-error transition-colors underline cursor-pointer"
-                  >
-                    {t.reset}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Tag Search Input */}
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-2.5 text-on-surface-variant/60 text-[16px] pointer-events-none select-none">
-                search
-              </span>
-              <input
-                type="text"
-                value={tagSearchQuery}
-                onChange={(e) => setTagSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (filteredTaxonomyNodes.length === 1) {
-                      handleTagToggle(filteredTaxonomyNodes[0].path);
-                    }
-                  }
-                }}
-                placeholder={t.selectTagsPlaceholder}
-                className="w-full bg-surface-container-lowest border border-white/10 rounded pl-8 pr-7 py-1.5 text-on-surface font-mono text-xs placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
-              />
-              {tagSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setTagSearchQuery('')}
-                  className="absolute right-2 text-on-surface-variant/60 hover:text-on-surface transition-colors p-0.5 flex items-center justify-center rounded cursor-pointer"
-                  title="Clear search"
-                >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
-                </button>
-              )}
-            </div>
-
-            {/* Selected Tags Tray (Visible when tags are selected) */}
-            {selectedTagPaths.length > 0 && (
-              <div className="space-y-1 p-2 bg-surface-container-lowest/70 border border-primary/20 rounded">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-primary/80">
-                  {t.taxonomy} ({selectedTagPaths.length})
-                </div>
-                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                  {selectedTagPaths.map((path) => {
-                    const tagNode = taxonomyNodes.find((n) => n.path === path);
-                    return (
-                      <span
-                        key={path}
-                        className="inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full font-mono text-[11px] bg-primary/20 text-primary border border-primary/40 font-semibold"
-                      >
-                        <span className="material-symbols-outlined text-[13px] text-primary">
-                          {tagNode?.icon || 'label'}
-                        </span>
-                        <span className="truncate max-w-[180px]" title={path}>
-                          {path}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleTagToggle(path)}
-                          className="p-0.5 hover:bg-primary/30 rounded-full text-primary hover:text-error transition-colors flex items-center justify-center cursor-pointer"
-                          title={`Remove ${path}`}
-                        >
-                          <span className="material-symbols-outlined text-[12px] leading-none">
-                            close
-                          </span>
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Filtered Available Tags List */}
-            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1.5 bg-surface-container-lowest rounded border border-white/5">
-              {filteredTaxonomyNodes.length > 0 ? (
-                filteredTaxonomyNodes.map((node) => {
-                  const isSelected = selectedTagPaths.includes(node.path);
-                  const hasDifferentName =
-                    node.name && node.name.toLowerCase() !== node.path.toLowerCase();
-                  return (
-                    <button
-                      key={node.id}
-                      type="button"
-                      onClick={() => handleTagToggle(node.path)}
-                      title={hasDifferentName ? `${node.name} (${node.path})` : node.path}
-                      className={`group px-2 py-0.5 rounded-full font-mono text-[11px] border transition-all flex items-center gap-1.5 text-left cursor-pointer ${
-                        isSelected
-                          ? 'bg-primary/20 text-primary border-primary/40 font-semibold shadow-sm'
-                          : 'bg-surface-container text-on-surface-variant border-white/5 hover:border-white/20 hover:text-on-surface hover:bg-surface-container-high'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[13px] leading-none text-primary/80 group-hover:text-primary">
-                        {node.icon || 'label'}
-                      </span>
-                      <span>{node.path}</span>
-                      {hasDifferentName && (
-                        <span className="text-[10px] text-on-surface-variant/60 group-hover:text-on-surface-variant font-sans">
-                          ({node.name})
-                        </span>
-                      )}
-                      {isSelected && (
-                        <span className="material-symbols-outlined text-[12px] leading-none text-primary ml-0.5">
-                          check
-                        </span>
-                      )}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="w-full py-4 text-center text-xs text-on-surface-variant font-mono">
-                  <p>—</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   X,
   Files,
   FileQuestion,
+  FilePlus,
 } from 'lucide-react';
 import { useFolderTree, useCreateFolder } from '../api/queries';
 import { FolderTreeNode } from '../types';
@@ -39,6 +41,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
   className = '',
 }) => {
   const { t } = useAdminI18n();
+  const navigate = useNavigate();
   const { data: tree = [], isLoading } = useFolderTree();
   const createFolderMutation = useCreateFolder();
 
@@ -200,7 +203,20 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Quick add note inside this folder */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/notes/new?folder=${encodeURIComponent(node.path)}`);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all cursor-pointer"
+              title={`Create note in ${node.path}`}
+            >
+              <FilePlus className="w-3.5 h-3.5" />
+            </button>
+
             {/* Quick add subfolder button on hover */}
             <button
               type="button"

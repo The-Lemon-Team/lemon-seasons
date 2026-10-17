@@ -17,9 +17,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
-import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { useFoldersContext } from '../context/FoldersContext';
-import { ObsidianLogo } from './ObsidianLogo';
 import { LemonLogo } from './LemonLogo';
 
 interface SideNavBarProps {
@@ -27,7 +25,6 @@ interface SideNavBarProps {
   onSetView: (view: CalendarViewMode) => void;
   onOpenQuickAdd?: () => void;
   onOpenAiQuickAdd?: () => void;
-  onOpenPrivateContainers?: () => void;
   onOpenKeysModal?: () => void;
   onToggleFilters: () => void;
   isFilterOpen: boolean;
@@ -39,16 +36,13 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   onSetView,
   onOpenQuickAdd,
   onOpenAiQuickAdd,
-  onOpenPrivateContainers,
   onOpenKeysModal,
   onToggleFilters,
   isFilterOpen,
   activeFilterCount,
 }) => {
-
   const { t } = useI18n();
   const { user, role, isAdmin, isAuthenticated, logout, switchDemoRole } = useAuth();
-  const { containers } = useObsidianContainers();
   const { folders } = useFoldersContext();
 
 
@@ -173,27 +167,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
           </span>
         </button>
 
-        {/* Obsidian Containers View */}
-        <button
-          onClick={() => onSetView('obsidian')}
-          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${currentView === 'obsidian'
-            ? 'bg-[#a855f7]/20 text-[#d8b4fe] border-l-4 border-[#a855f7] font-semibold shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-            : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
-            }`}
-        >
-          <div className="flex items-center gap-3">
-            <ObsidianLogo size={16} glow={currentView === 'obsidian'} />
-            <span className={currentView === 'obsidian' ? 'text-[#f3e8ff]' : ''}>
-              {t.obsidianHub}
-            </span>
-          </div>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${currentView === 'obsidian'
-            ? 'bg-[#a855f7] text-white'
-            : 'bg-[#a855f7]/15 text-[#d8b4fe]'
-            }`}>
-            {containers.length}
-          </span>
-        </button>
+
 
 
 
@@ -218,7 +192,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         )}
       </nav>
 
-      {/* User Session Profile & Role Switcher */}
+      {/* User Profile & Role Switcher */}
       {isAuthenticated && (
         <div className="mt-auto pt-3 border-t border-[#242828] flex flex-col gap-2">
           <div className="p-2.5 rounded-lg bg-[#141616] border border-[#242828] flex items-center justify-between">

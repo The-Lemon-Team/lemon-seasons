@@ -4,7 +4,6 @@ import { Popconfirm, message } from 'antd';
 import {
   useNotes,
   useFeeds,
-  useTaxonomyFlat,
   useHashtags,
   useFolders,
   useDeleteNote,
@@ -29,7 +28,6 @@ export const NotesListPage: React.FC = () => {
   // Query filters from URL params
   const feedId = searchParams.get('feedId') || undefined;
   const typeParam = (searchParams.get('type') as NoteType) || undefined;
-  const tagPath = searchParams.get('tagPath') || undefined;
   const hashtagParam = searchParams.get('hashtag') || undefined;
   const folderParam = searchParams.get('folder') || undefined;
   const unfiledParam = searchParams.get('unfiled') === 'true';
@@ -43,14 +41,12 @@ export const NotesListPage: React.FC = () => {
   const [showFolderSidebar, setShowFolderSidebar] = useState(true);
 
   const { data: feeds = [] } = useFeeds();
-  const { data: tags = [] } = useTaxonomyFlat();
   const { data: hashtags = [] } = useHashtags();
   const { data: folders = [] } = useFolders();
 
   const { data: notesData, isLoading } = useNotes({
     feedId,
     type: typeParam,
-    tagPath,
     hashtag: hashtagParam,
     folder: folderParam,
     unfiled: unfiledParam || undefined,
@@ -333,20 +329,6 @@ export const NotesListPage: React.FC = () => {
                 ))}
               </select>
 
-              {/* Taxonomy Filter */}
-              <select
-                value={tagPath || ''}
-                onChange={(e) => handleFilterChange('tagPath', e.target.value || undefined)}
-                className="bg-surface-container border border-outline-variant/40 rounded px-2.5 py-1 text-xs text-on-surface font-mono focus:border-primary outline-none"
-              >
-                <option value="">{t.taxonomy}</option>
-                {tags.map((tagItem) => (
-                  <option key={tagItem.id} value={tagItem.path}>
-                    {tagItem.path}
-                  </option>
-                ))}
-              </select>
-
               {/* Hashtag Filter */}
               <select
                 value={hashtagParam || ''}
@@ -408,7 +390,6 @@ export const NotesListPage: React.FC = () => {
                     : `${apiBase}${mainImage.url}`
                   : null;
 
-                const hasTags = note.tags && note.tags.length > 0;
                 const hasHashtags = note.hashtags && note.hashtags.length > 0;
                 const noteFolders = note.folders || [];
                 const primaryFolder = noteFolders.find((nf) => nf.isPrimary) || noteFolders[0];
@@ -540,24 +521,9 @@ export const NotesListPage: React.FC = () => {
                       <span>{dateStr}{endDateStr ? ` - ${endDateStr}` : ''}</span>
                     </div>
 
-                    {/* Taxonomy Tags & Hashtags */}
+                    {/* Hashtags */}
                     <div className="flex flex-wrap gap-1 items-center">
-                      {hasTags &&
-                        note.tags.map((tag) => (
-                          <span
-                            key={tag.id}
-                            onClick={() => handleFilterChange('tagPath', tag.path)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors cursor-pointer"
-                            title={`Filter: ${tag.path}`}
-                          >
-                            <span className="material-symbols-outlined text-[12px] text-primary/80">
-                              {tag.icon || 'label'}
-                            </span>
-                            <span>{tag.path}</span>
-                          </span>
-                        ))}
-
-                      {hasHashtags &&
+                      {hasHashtags ? (
                         note.hashtags?.map((h) => (
                           <HashtagBadge
                             key={h.id}
@@ -565,9 +531,8 @@ export const NotesListPage: React.FC = () => {
                             size="xs"
                             onClick={() => handleFilterChange('hashtag', h.name)}
                           />
-                        ))}
-
-                      {!hasTags && !hasHashtags && (
+                        ))
+                      ) : (
                         <span className="font-mono text-[11px] text-outline/50">—</span>
                       )}
                     </div>
@@ -624,7 +589,7 @@ export const NotesListPage: React.FC = () => {
               <div className="p-12 text-center text-on-surface-variant space-y-2">
                 <span className="material-symbols-outlined text-4xl text-outline mb-2">description</span>
                 <p className="font-sans text-sm">{t.noNotesFound}</p>
-                {(folderParam || unfiledParam || hashtagParam || tagPath || feedId || search) && (
+                {(folderParam || unfiledParam || hashtagParam || feedId || search) && (
                   <button
                     type="button"
                     onClick={() => setSearchParams(new URLSearchParams())}
@@ -671,7 +636,6 @@ export const NotesListPage: React.FC = () => {
         onClose={() => setViewingNoteId(null)}
         onEdit={(id) => navigate(`/notes/${id}`)}
         onSelectFolder={(folderPath) => handleSelectFolder(folderPath)}
-        onSelectTag={(path) => handleFilterChange('tagPath', path)}
         onSelectHashtag={(name) => handleFilterChange('hashtag', name)}
       />
     </div>

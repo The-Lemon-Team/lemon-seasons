@@ -166,8 +166,8 @@ export interface Note {
   summary?: string | null;
   metadata?: Record<string, any> | null;
   processingStatus?: string | null;
-  icon: string | null;
-  tags: TaxonomyNode[];
+  icon?: string | null;
+  tags?: TaxonomyNode[];
   hashtags?: Hashtag[];
   folders?: NoteFolder[];
   images?: NoteImage[];
@@ -340,13 +340,13 @@ export interface SyncChangesResponse {
   counts: {
     feeds: number;
     notes: number;
-    taxonomy: number;
+    taxonomy?: number;
     hashtags?: number;
     folders?: number;
   };
   feeds: Feed[];
   notes: Note[];
-  taxonomy: TaxonomyNode[];
+  taxonomy?: TaxonomyNode[];
   hashtags?: Hashtag[];
   folders?: Folder[];
 }

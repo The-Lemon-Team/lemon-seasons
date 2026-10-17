@@ -31,10 +31,6 @@ export function getPathForView(view: CalendarViewMode): string {
     case 'folders':
       return '/folders';
     case 'obsidian':
-      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/obsidian')) {
-        return window.location.pathname;
-      }
-      return '/obsidian';
     case 'timeline':
     default:
       return '/';
@@ -43,7 +39,6 @@ export function getPathForView(view: CalendarViewMode): string {
 
 export function getViewFromPath(pathname: string = window.location.pathname, viewQueryParam?: string | null): CalendarViewMode {
   const path = (pathname || '/').toLowerCase().replace(/\/+$/, '');
-  if (path.startsWith('/obsidian') || path === '/obsidian' || path.split('/').includes('obsidian')) return 'obsidian';
   if (path.endsWith('/calendar')) return 'month';
   if (path.endsWith('/gantt') || path.endsWith('/gantts') || path.endsWith('/gannts')) return 'gantt';
   if (path.endsWith('/feeds') || path === '/feeds') return 'feeds';
@@ -55,7 +50,6 @@ export function getViewFromPath(pathname: string = window.location.pathname, vie
       viewQueryParam === 'month' ||
       viewQueryParam === 'timeline' ||
       viewQueryParam === 'feeds' ||
-      viewQueryParam === 'obsidian' ||
       viewQueryParam === 'folders'
     ) {
       return viewQueryParam as CalendarViewMode;

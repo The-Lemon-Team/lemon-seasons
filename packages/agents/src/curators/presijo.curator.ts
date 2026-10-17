@@ -74,7 +74,6 @@ export function generatePresijoResponse(ctx: CuratorContext): ChatMessage {
 *Сформировано AI-трендхантером Presijo в Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Tech/AI-Tools',
-    taxonomyPath: 'tech.ai.tools',
     hashtags: ['AI', 'Tools', 'Библиотеки', 'Telegram', 'КонтентМейкинг', 'Релизы'],
     curator: 'Presijo AI & IT',
     sourceLink: mainStory?.url,

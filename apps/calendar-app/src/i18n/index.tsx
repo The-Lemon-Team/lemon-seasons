@@ -271,6 +271,7 @@ export interface Translations {
   folderManager: string;
   folderManagerSubtitle: string;
   createFolder: string;
+  addSubfolder: string;
   newFolder: string;
   folderPath: string;
   folderName: string;
@@ -419,7 +420,7 @@ export const ruTranslations: Translations = {
 
   // Filter Sidebar
   filtersAndChannels: 'Фильтры и каналы',
-  taxonomyHierarchy: 'Иерархия таксономии',
+  taxonomyHierarchy: 'Иерархия папок',
   newsFeeds: 'Новостные ленты',
   entryTypes: 'Типы записей',
   hashtags: 'Хэштеги',
@@ -444,7 +445,7 @@ export const ruTranslations: Translations = {
   updated: 'Обновлено',
   timePeriod: 'Период времени',
   date: 'Дата',
-  taxonomyPath: 'Таксономия',
+  taxonomyPath: 'Папка',
   obsidianFolder: 'Папка Obsidian',
   links: 'Ссылки и источники',
   attachments: 'Вложения',
@@ -456,8 +457,8 @@ export const ruTranslations: Translations = {
   allFeedsLabel: 'Все ленты',
   filterByFeed: 'Фильтр по ленте',
   filterByTypeTitle: 'Фильтр по типу',
-  filterByTaxonomy: 'Фильтр по таксономии',
-  searchTaxonomy: 'Поиск по таксономии...',
+  filterByTaxonomy: 'Фильтр по папкам',
+  searchTaxonomy: 'Поиск по папкам...',
   quickFilters: 'Быстрые фильтры',
   allChannels: 'Все каналы',
   allFolders: 'Все папки (показать всё)',
@@ -596,6 +597,7 @@ export const ruTranslations: Translations = {
   folderManager: 'Менеджер папок',
   folderManagerSubtitle: 'Обозреватель структуры папок, правил приватности и заметок',
   createFolder: 'Создать папку',
+  addSubfolder: 'Создать подпапку',
   newFolder: 'Новая папка',
   folderPath: 'Путь к папке',
   folderName: 'Имя папки',
@@ -744,7 +746,7 @@ export const enTranslations: Translations = {
 
   // Filter Sidebar
   filtersAndChannels: 'Filters & Channels',
-  taxonomyHierarchy: 'Taxonomy Hierarchy',
+  taxonomyHierarchy: 'Folder Hierarchy',
   newsFeeds: 'News Feeds',
   entryTypes: 'Entry Types',
   hashtags: 'Hashtags',
@@ -769,7 +771,7 @@ export const enTranslations: Translations = {
   updated: 'Updated',
   timePeriod: 'Time Period',
   date: 'Date',
-  taxonomyPath: 'Taxonomy Path',
+  taxonomyPath: 'Folder',
   obsidianFolder: 'Obsidian Folder',
   links: 'Links & Sources',
   attachments: 'Attachments',
@@ -781,8 +783,8 @@ export const enTranslations: Translations = {
   allFeedsLabel: 'All Feeds',
   filterByFeed: 'Filter by feed',
   filterByTypeTitle: 'Filter by type',
-  filterByTaxonomy: 'Filter by taxonomy',
-  searchTaxonomy: 'Search taxonomy...',
+  filterByTaxonomy: 'Filter by folder',
+  searchTaxonomy: 'Search folders...',
   quickFilters: 'Quick filters',
   allChannels: 'All Channels',
   allFolders: 'All Folders (Show Everything)',
@@ -921,6 +923,7 @@ export const enTranslations: Translations = {
   folderManager: 'Folder Manager',
   folderManagerSubtitle: 'Explorer of folder hierarchy, privacy rules and notes',
   createFolder: 'Create Folder',
+  addSubfolder: 'Add Subfolder',
   newFolder: 'New Folder',
   folderPath: 'Folder Path',
   folderName: 'Folder Name',

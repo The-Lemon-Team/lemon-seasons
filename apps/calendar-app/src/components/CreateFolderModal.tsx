@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n';
 import { useFoldersContext } from '../context/FoldersContext';
-import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { FolderPrivacy, CreateFolderInput, FolderScope } from '@lenta/shared';
 import {
   FolderPlus,
   Lock,
   Globe,
-  X,
   Check,
   Folder,
   BookOpen,
@@ -16,10 +14,7 @@ import {
   Bot,
   Archive,
   Star,
-  Shield,
   CircleDollarSign,
-  Palette,
-  Box,
 } from 'lucide-react';
 import { Modal } from './Modal';
 
@@ -59,39 +54,16 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
   isOpen,
   onClose,
   parentPath = '',
-  defaultPrivacy,
-  defaultContainerId = null,
-  defaultScope,
+  defaultPrivacy = 'public',
 }) => {
   const { t } = useI18n();
   const { addFolder } = useFoldersContext();
-  const { containers } = useObsidianContainers();
-
-  const isContainerScope = Boolean(defaultContainerId) || defaultScope === 'internal' || defaultPrivacy === 'obsidian';
-  const initialEffectiveScope: FolderScope = isContainerScope ? 'internal' : (defaultScope || 'external');
-  const initialEffectivePrivacy: FolderPrivacy = defaultPrivacy || (isContainerScope ? 'obsidian' : 'public');
 
   const [path, setPath] = useState('');
   const [name, setName] = useState('');
-  const [privacy, setPrivacy] = useState<FolderPrivacy>(initialEffectivePrivacy);
-  const [scope, setScope] = useState<FolderScope>(initialEffectiveScope);
-  const [targetContainerId, setTargetContainerId] = useState<string>(
-    defaultContainerId || containers[0]?.id || ''
-  );
-  const [color, setColor] = useState(
-    initialEffectivePrivacy === 'obsidian'
-      ? '#3b82f6'
-      : initialEffectivePrivacy === 'private'
-      ? '#a855f7'
-      : '#c9cd58'
-  );
-  const [icon, setIcon] = useState(
-    initialEffectivePrivacy === 'obsidian'
-      ? 'box'
-      : initialEffectivePrivacy === 'private'
-      ? 'lock'
-      : 'folder'
-  );
+  const [privacy, setPrivacy] = useState<FolderPrivacy>(defaultPrivacy === 'obsidian' ? 'public' : defaultPrivacy);
+  const [color, setColor] = useState(defaultPrivacy === 'private' ? '#a855f7' : '#c9cd58');
+  const [icon, setIcon] = useState(defaultPrivacy === 'private' ? 'lock' : 'folder');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -99,30 +71,13 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       const initialPath = parentPath ? `${parentPath.replace(/\/+$/, '')}/` : '';
       setPath(initialPath);
       setName('');
-      const inContainer = Boolean(defaultContainerId) || defaultScope === 'internal' || defaultPrivacy === 'obsidian';
-      const effectiveScope: FolderScope = inContainer ? 'internal' : (defaultScope || 'external');
-      const effectivePrivacy: FolderPrivacy = defaultPrivacy || (inContainer ? 'obsidian' : 'public');
-
+      const effectivePrivacy = defaultPrivacy === 'obsidian' ? 'public' : (defaultPrivacy || 'public');
       setPrivacy(effectivePrivacy);
-      setScope(effectiveScope);
-      setTargetContainerId(defaultContainerId || containers[0]?.id || '');
-      setColor(
-        effectivePrivacy === 'obsidian'
-          ? '#3b82f6'
-          : effectivePrivacy === 'private'
-          ? '#a855f7'
-          : '#c9cd58'
-      );
-      setIcon(
-        effectivePrivacy === 'obsidian'
-          ? 'box'
-          : effectivePrivacy === 'private'
-          ? 'lock'
-          : 'folder'
-      );
+      setColor(effectivePrivacy === 'private' ? '#a855f7' : '#c9cd58');
+      setIcon(effectivePrivacy === 'private' ? 'lock' : 'folder');
       setError('');
     }
-  }, [isOpen, parentPath, defaultPrivacy, defaultScope, defaultContainerId, containers]);
+  }, [isOpen, parentPath, defaultPrivacy]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,27 +93,22 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       privacy,
       color,
       icon,
-      scope,
-      containerId: scope === 'internal' ? targetContainerId : null,
+      scope: 'external',
+      containerId: null,
     };
 
     addFolder(input);
     onClose();
   };
 
-  const handlePrivacySelect = (selected: FolderPrivacy) => {
-    setPrivacy(selected);
-    if (selected === 'obsidian') {
-      setColor('#3b82f6');
-      setIcon('box');
-      setScope('internal');
-    } else if (selected === 'private') {
+  const handlePrivacySelect = (p: FolderPrivacy) => {
+    setPrivacy(p);
+    if (p === 'private') {
       setColor('#a855f7');
       setIcon('lock');
-    } else if (selected === 'public') {
+    } else {
       setColor('#c9cd58');
       setIcon('folder');
-      setScope('external');
     }
   };
 
@@ -166,120 +116,18 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      showDefaultHeader={false}
-      maxWidth="max-w-lg"
+      maxWidth="max-w-md"
+      title={t.createFolder}
+      subtitle={parentPath ? `Внутри: ${parentPath}` : 'Создание папки'}
+      icon={<FolderPlus className="w-5 h-5 text-[#c9cd58]" />}
     >
-      <div className="flex flex-col">
-        {/* Modal Header */}
-        <div className="p-4 border-b border-[#242828] flex items-center justify-between bg-[#1f2121]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[#c9cd58]/20 text-[#e5e971]">
-              <FolderPlus className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-sm text-[#e2e2e2]">
-                {t.newFolder}
-              </h3>
-              <p className="text-[11px] font-mono text-[#93927e]">
-                {parentPath ? `Создание подпапки в ${parentPath}` : t.folderManagerSubtitle}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-[#93927e] hover:text-[#e2e2e2] hover:bg-[#282a2a] transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs font-sans text-[#c9c7b2]">
+      <div className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-2.5 rounded bg-[#ef4444]/20 border border-[#ef4444]/40 text-[#fca5a5] text-xs font-mono">
               {error}
             </div>
           )}
-
-          {/* Scope Selector: External vs Internal */}
-          <div className="space-y-2">
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#93927e]">
-              {t.folderScope}
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* External Folder Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setScope('external');
-                  if (privacy === 'obsidian') {
-                    setPrivacy('public');
-                    setColor('#c9cd58');
-                    setIcon('folder');
-                  }
-                }}
-                className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1.5 ${
-                  scope === 'external'
-                    ? 'bg-[#c9cd58]/15 border-[#c9cd58] text-[#e5e971] shadow-glow-lemon'
-                    : 'bg-[#141616] border-[#2d3030] text-[#93927e] hover:bg-[#1a1c1c]'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-mono font-bold text-xs">
-                  <Globe className="w-3.5 h-3.5 text-[#c9cd58]" />
-                  <span>{t.folderScopeExternal}</span>
-                </div>
-                <p className="text-[10px] leading-relaxed opacity-85">
-                  {t.folderScopeExternalDesc}
-                </p>
-              </button>
-
-              {/* Internal Folder Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setScope('internal');
-                  if (privacy !== 'private') {
-                    setPrivacy('obsidian');
-                    setColor('#3b82f6');
-                    setIcon('box');
-                  }
-                }}
-                className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1.5 ${
-                  scope === 'internal'
-                    ? 'bg-[#3b82f6]/15 border-[#3b82f6] text-[#93c5fd] shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                    : 'bg-[#141616] border-[#2d3030] text-[#93927e] hover:bg-[#1a1c1c]'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-mono font-bold text-xs">
-                  <Folder className="w-3.5 h-3.5 text-[#3b82f6]" />
-                  <span>{t.folderScopeInternal}</span>
-                </div>
-                <p className="text-[10px] leading-relaxed opacity-85">
-                  {t.folderScopeInternalDesc}
-                </p>
-              </button>
-            </div>
-
-            {/* Target Container selector when Internal */}
-            {scope === 'internal' && containers.length > 0 && (
-              <div className="pt-2">
-                <label className="block font-mono text-[10px] uppercase text-[#93c5fd] mb-1">
-                  {t.targetContainer}
-                </label>
-                <select
-                  value={targetContainerId}
-                  onChange={(e) => setTargetContainerId(e.target.value)}
-                  className="w-full bg-[#121414] border border-[#3b82f6]/40 focus:border-[#3b82f6] rounded px-3 py-2 text-xs font-mono text-[#e2e2e2] outline-none"
-                >
-                  {containers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      📦 {c.name} ({c.vaultPath})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
 
           {/* Folder Path */}
           <div className="space-y-1.5">
@@ -294,11 +142,11 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
                 setPath(e.target.value);
                 setError('');
               }}
-              placeholder="например: 02_Projects/Lenta или Private/Roadmap"
+              placeholder="например: 02_Projects/Lenta или Notes"
               className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-xs font-mono text-[#e2e2e2] outline-none transition-colors"
             />
             <p className="text-[10px] font-mono text-[#93927e]">
-              Слэш (/) создает вложенную структуру директорий в стиле Obsidian
+              Слэш (/) создает вложенную структуру директорий
             </p>
           </div>
 
@@ -316,31 +164,12 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
             />
           </div>
 
-          {/* Privacy & Folder Category Rule Selector */}
+          {/* Privacy Selector */}
           <div className="space-y-2">
             <label className="block font-mono text-[11px] uppercase tracking-wider text-[#93927e]">
-              Тип и видимость папки
+              {t.privacySetting}
             </label>
-            <div className="grid grid-cols-3 gap-2.5">
-              {/* Obsidian Container Folder Card */}
-              <button
-                type="button"
-                onClick={() => handlePrivacySelect('obsidian')}
-                className={`p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1.5 ${
-                  privacy === 'obsidian'
-                    ? 'bg-[#3b82f6]/15 border-[#3b82f6] text-[#93c5fd] shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                    : 'bg-[#141616] border-[#2d3030] text-[#93927e] hover:bg-[#1a1c1c]'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-mono font-bold text-xs truncate">
-                  <Box className="w-3.5 h-3.5 text-[#3b82f6] shrink-0" />
-                  <span className="truncate">Obsidian</span>
-                </div>
-                <p className="text-[10px] leading-snug opacity-85 line-clamp-2">
-                  Изолирована внутри контейнера. Не видна в общем скоупе.
-                </p>
-              </button>
-
+            <div className="grid grid-cols-2 gap-2.5">
               {/* Public Folder Card */}
               <button
                 type="button"

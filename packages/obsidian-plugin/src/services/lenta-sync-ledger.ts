@@ -79,7 +79,7 @@ export class LentaSyncLedgerManager {
           note.folders?.find((f) => f.isPrimary)?.folder?.path ||
           note.folders?.[0]?.folder?.path,
         folders: note.folders?.map((f) => f.folder?.path).sort().join(','),
-        taxonomy: note.tags?.map((t) => t.path).sort().join(','),
+        taxonomy: '',
         tags: note.hashtags?.map((h) => h.name).sort().join(','),
       },
     };
@@ -130,7 +130,7 @@ export class LentaSyncLedgerManager {
         mergedPrimaryFolder:
           serverNote.folders?.find((f) => f.isPrimary)?.folder?.path ||
           serverNote.folders?.[0]?.folder?.path,
-        mergedTaxonomy: serverNote.tags?.map((t) => t.path) || [],
+        mergedTaxonomy: [],
         mergedTags: serverNote.hashtags?.map((h) => h.name) || [],
         isConflict: false,
         conflicts: [],
@@ -215,10 +215,8 @@ export class LentaSyncLedgerManager {
       mergedPrimaryFolder = localWins ? localPrimary : serverPrimary;
     }
 
-    // 7. Taxonomy
-    const localTaxonomy = local.frontmatter.taxonomy || [];
-    const serverTaxonomy = serverNote.tags?.map((t) => t.path) || [];
-    const mergedTaxonomy = Array.from(new Set([...localTaxonomy, ...serverTaxonomy]));
+    // 7. Taxonomy (Deprecated)
+    const mergedTaxonomy: string[] = [];
 
     // 8. Tags / Hashtags
     const localTags = local.hashtags || [];

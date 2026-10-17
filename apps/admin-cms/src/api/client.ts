@@ -22,9 +22,6 @@ import {
   SyncChangesResponse,
   SystemStats,
   SyncStatusResponse,
-  SyncSession,
-  StartSessionInput,
-  CommitSessionInput,
   GDriveSyncResult,
   IngestionFile,
 } from '../types';
@@ -313,22 +310,6 @@ export const syncApi = {
     const res = await apiClient.get<SyncStatusResponse>('/sync/status', { params: { deviceId } });
     return res.data;
   },
-  getActiveSession: async (deviceId?: string): Promise<SyncSession | null> => {
-    const res = await apiClient.get<SyncSession | null>('/sync/session/active', { params: { deviceId } });
-    return res.data;
-  },
-  startSession: async (data: StartSessionInput): Promise<SyncSession> => {
-    const res = await apiClient.post<SyncSession>('/sync/session/start', data);
-    return res.data;
-  },
-  commitSession: async (id: string, data: CommitSessionInput, deviceId?: string): Promise<any> => {
-    const res = await apiClient.post(`/sync/session/${id}/commit`, data, { params: { deviceId } });
-    return res.data;
-  },
-  cancelSession: async (id: string): Promise<any> => {
-    const res = await apiClient.post(`/sync/session/${id}/cancel`);
-    return res.data;
-  },
   push: async (deviceId?: string): Promise<{ pushedCount: number; commits: string[] }> => {
     const res = await apiClient.post('/sync/push', {}, { params: { deviceId } });
     return res.data;
@@ -378,7 +359,7 @@ export interface MovieReleaseItem {
   backdropUrl?: string;
   trailerUrl?: string;
   sourceLink?: string;
-  taxonomyPath: string;
+  taxonomyPath?: string;
   folders: string[];
   hashtags: string[];
   rating?: number;
@@ -394,7 +375,7 @@ export interface HolidayItem {
   sourceLink?: string;
   imageUrl?: string;
   imageCaption?: string;
-  taxonomyPath: string;
+  taxonomyPath?: string;
   folders: string[];
   hashtags: string[];
 }
@@ -409,7 +390,7 @@ export interface PoliticalEventItem {
   sourceLink?: string;
   imageUrl?: string;
   imageCaption?: string;
-  taxonomyPath: string;
+  taxonomyPath?: string;
   folders: string[];
   hashtags: string[];
 }
@@ -423,7 +404,7 @@ export interface ImportNoteDto {
   endDate?: string;
   icon?: string;
   sourceLink?: string;
-  taxonomyPath: string;
+  taxonomyPath?: string;
   folders: string[];
   hashtags: string[];
   imageUrl?: string;

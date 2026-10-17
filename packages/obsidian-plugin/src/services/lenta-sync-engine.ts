@@ -516,7 +516,7 @@ export class LentaSyncEngine {
         endDate: parsed.frontmatter.end_date || parsed.frontmatter.endDate || null,
         sourceLink: parsed.frontmatter.sourceLink || null,
         icon: parsed.frontmatter.icon || null,
-        tags: (parsed.frontmatter.taxonomy || []).map((p) => ({ id: p, name: p, path: p, icon: null, updatedAt: '', deletedAt: null })),
+        tags: [],
         hashtags: (parsed.hashtags || []).map((h) => ({ id: h, name: h, createdAt: '', updatedAt: '', deletedAt: null })),
         folders: relativeFolder
           ? [{ id: '', noteId: lentaId, folderId: '', isPrimary: true, order: 0, folder: { id: '', name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: '', updatedAt: '', deletedAt: null } }]

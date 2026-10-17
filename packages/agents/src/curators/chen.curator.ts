@@ -59,7 +59,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 *Сформировано аналитическим деском Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Politics/Asia',
-    taxonomyPath: 'politics.international.asia',
     hashtags: ['Китай', 'АТР', 'БРИКС', 'Логистика', 'Клиринг'],
     curator: 'chen-wei',
     sourceLink: mainStory?.url,

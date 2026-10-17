@@ -49,7 +49,6 @@ ${JSON.stringify(ctx.politicalEvents.map((e) => ({ title: e.title, description: 
       "description": "Markdown текст карточки",
       "type": "SINGLE" | "EVENT" | "PERIOD" | "DONE",
       "folder": "Politics/Daily" | "Politics/Russia",
-      "taxonomyPath": "politics.daily_summary" | "politics.russia",
       "hashtags": ["тег1", "тег2"],
       "curator": "Политическая коллегия" | "ivan-bely" | "kirk-kitten"
     }

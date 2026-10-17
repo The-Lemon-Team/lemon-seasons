@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { QuickAddModal } from './QuickAddModal';
 import { LemonLogo } from './LemonLogo';
-import { WorkstationSessionBar } from './WorkstationSessionBar';
+import { WorkstationSyncBar } from './WorkstationSyncBar';
 import { ErrorBoundary } from './common/ErrorBoundary';
 import { useSyncChanges } from '../api/queries';
 import { useAdminI18n } from '../i18n';
@@ -105,20 +105,6 @@ export const AppLayout: React.FC = () => {
           >
             <Rss className="w-5 h-5 shrink-0" />
             <span className="flex-1 truncate">{t.feeds}</span>
-          </NavLink>
-
-          <NavLink
-            to="/taxonomy"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3.5 py-2.5 rounded text-sm transition-all duration-200 ${
-                isActive
-                  ? 'text-primary font-bold bg-white/5 scale-[0.98]'
-                  : 'text-on-surface-variant font-normal hover:bg-white/5 hover:text-on-surface'
-              }`
-            }
-          >
-            <FolderTree className="w-5 h-5 shrink-0" />
-            <span className="flex-1 truncate">{t.taxonomy}</span>
           </NavLink>
 
           <NavLink
@@ -236,8 +222,8 @@ export const AppLayout: React.FC = () => {
               <span>RU</span>
             </button>
 
-            {/* Workstation Live Session & GDrive Sync */}
-            <WorkstationSessionBar />
+            {/* Google Drive Sync Bar */}
+            <WorkstationSyncBar />
 
             {/* Open Calendar App Link */}
             <a

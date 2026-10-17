@@ -28,7 +28,6 @@ export interface NoteDetailModalProps {
   onClose: () => void;
   onEdit?: (id: string) => void;
   onSelectFolder?: (folderPath: string) => void;
-  onSelectTag?: (tagPath: string) => void;
   onSelectHashtag?: (hashtag: string) => void;
 }
 
@@ -38,7 +37,6 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
   onClose,
   onEdit,
   onSelectFolder,
-  onSelectTag,
   onSelectHashtag,
 }) => {
   const { t } = useAdminI18n();
@@ -454,29 +452,6 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                       <FolderIcon className="w-3 h-3" />
                       <span>{sf.folder?.path}</span>
                     </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Taxonomy Tags */}
-              {note.tags && note.tags.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {note.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      onClick={() => {
-                        if (onSelectTag) {
-                          onClose();
-                          onSelectTag(tag.path);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-container-highest text-secondary rounded-full font-mono text-[11px] border border-white/5 hover:border-secondary/40 transition-colors cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[13px] text-primary/80">
-                        {tag.icon || 'label'}
-                      </span>
-                      <span>{tag.path}</span>
-                    </span>
                   ))}
                 </div>
               )}

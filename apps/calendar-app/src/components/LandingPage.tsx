@@ -136,15 +136,7 @@ export const LandingPage: React.FC = () => {
             <span>Участник</span>
           </button>
 
-          {/* Obsidian Connection Quick Link */}
-          <button
-            onClick={() => switchDemoRole('user')}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#241738] border border-[#8b5cf6]/50 hover:border-[#a855f7] text-[#d8b4fe] hover:text-white text-xs font-mono font-medium transition-all shadow-[0_0_10px_rgba(168,85,247,0.2)]"
-            title="Перейти к Obsidian контейнерам"
-          >
-            <ObsidianLogo size={14} glow />
-            <span>Obsidian Hub</span>
-          </button>
+
 
 
           {/* Sign In Button */}
@@ -502,7 +494,7 @@ export const LandingPage: React.FC = () => {
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] hover:from-[#b76eff] hover:to-[#9d6efc] text-white font-sans font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-all flex items-center gap-2"
                 >
                   <ObsidianLogo size={18} />
-                  <span>Открыть контейнеры Obsidian</span>
+                  <span>Открыть календарь</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -617,7 +609,7 @@ export const LandingPage: React.FC = () => {
               {t.landingFeatureObsidianDesc}
             </p>
             <div className="mt-auto pt-3 border-t border-[#242828] text-[11px] font-mono text-[#93927e] flex items-center justify-between">
-              <span>Приватные контейнеры</span>
+              <span>Синхронизация</span>
               <span className="text-[#a855f7] font-bold">Obsidian Connection</span>
             </div>
           </div>

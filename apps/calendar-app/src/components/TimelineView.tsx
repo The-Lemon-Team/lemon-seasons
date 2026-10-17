@@ -23,7 +23,6 @@ import {
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
-import { ObsidianSelector } from './ObsidianSelector';
 import { LemonLogo } from './LemonLogo';
 import { CuratorBadge } from './common/CuratorBadge';
 import { getFeedTheme } from '../utils/feedThemes';
@@ -46,14 +45,6 @@ interface TimelineViewProps {
   onToggleTag?: (tagPath: string) => void;
   onSelectOnlyTag?: (tagPath: string) => void;
   onClearTags?: () => void;
-  onToggleContainer?: (containerId: string) => void;
-  onSelectOnlyContainer?: (containerId: string) => void;
-  onSetAllContainers?: (containers: string[]) => void;
-  onClearContainers?: () => void;
-  onToggleObsidianFolder?: (folderKey: string) => void;
-  onSelectOnlyObsidianFolder?: (folderKey: string) => void;
-  onSetObsidianFolders?: (folders: string[]) => void;
-  onClearObsidianFolders?: () => void;
   onResetFilters?: () => void;
 }
 
@@ -82,14 +73,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onToggleTag,
   onSelectOnlyTag,
   onClearTags,
-  onToggleContainer,
-  onSelectOnlyContainer,
-  onSetAllContainers,
-  onClearContainers,
-  onToggleObsidianFolder,
-  onSelectOnlyObsidianFolder,
-  onSetObsidianFolders,
-  onClearObsidianFolders,
   onResetFilters,
 }) => {
   const { t, getTypeLabel } = useI18n();
@@ -193,18 +176,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               />
             )}
 
-            <ObsidianSelector
-              selectedContainers={filterState.containers}
-              selectedObsidianFolders={filterState.obsidianFolders}
-              onToggleContainer={onToggleContainer}
-              onSelectOnlyContainer={onSelectOnlyContainer}
-              onSetAllContainers={onSetAllContainers}
-              onClearContainers={onClearContainers}
-              onToggleObsidianFolder={onToggleObsidianFolder}
-              onSelectOnlyObsidianFolder={onSelectOnlyObsidianFolder}
-              onSetObsidianFolders={onSetObsidianFolders}
-              onClearObsidianFolders={onClearObsidianFolders}
-            />
+
 
             {/* Active Curator Filter Pill */}
             {filterState.curator && (
@@ -224,7 +196,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
           {onResetFilters &&
             (filterState.feed ||
-              (filterState.containers && filterState.containers.length > 0) ||
               filterState.tags.length > 0 ||
               filterState.types.length > 0 ||
               filterState.curator) && (
@@ -445,17 +416,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     {/* Tags Footer */}
                     <div className="mt-3 pt-2 border-t border-[#242828] flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {/* Taxonomy */}
-                        {note.tags?.map((tagItem) => (
-                          <span
-                            key={tagItem.id}
-                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#282a2a] border border-[#242828] text-[11px] font-mono text-[#c9c7b2]"
-                          >
-                            <Tag className="w-2.5 h-2.5 text-[#c9cd58]" />
-                            <span>{tagItem.path}</span>
-                          </span>
-                        ))}
-
                         {/* Hashtags */}
                         {note.hashtags?.map((h) => (
                           <span

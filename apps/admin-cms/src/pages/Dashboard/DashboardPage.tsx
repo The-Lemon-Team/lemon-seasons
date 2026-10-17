@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   useFeeds,
   useNotes,
-  useTaxonomyFlat,
   useHashtags,
   useFolders,
   useSyncChanges,
@@ -17,7 +16,7 @@ import {
   Plus,
   Rss,
   FileText,
-  FolderTree,
+  Hash,
   FolderGit2,
   Cloud,
   ShieldCheck,
@@ -35,7 +34,6 @@ export const DashboardPage: React.FC = () => {
 
   const { data: feeds = [] } = useFeeds();
   const { data: notesData } = useNotes({ limit: 6 });
-  const { data: tags = [] } = useTaxonomyFlat();
   const { data: hashtags = [] } = useHashtags();
   const { data: folders = [] } = useFolders();
   const { data: syncData, isFetching: isSyncFetching, refetch: refetchSync } = useSyncChanges(
@@ -108,16 +106,16 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         <div
-          onClick={() => navigate('/taxonomy')}
+          onClick={() => navigate('/notes')}
           className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
             <span className="font-mono text-xs uppercase tracking-wider">{t.taxonomyTagsMetric}</span>
-            <FolderTree className="w-5 h-5 text-tertiary group-hover:scale-110 transition-transform" />
+            <Hash className="w-5 h-5 text-tertiary group-hover:scale-110 transition-transform" />
           </div>
           <div className="font-sans font-bold text-3xl text-on-surface flex items-baseline gap-2">
-            <span>{tags.length}</span>
-            <span className="text-xs text-cyan-400 font-mono font-normal">+{hashtags.length} #</span>
+            <span>{hashtags.length}</span>
+            <span className="text-xs text-cyan-400 font-mono font-normal">#</span>
           </div>
           <p className="text-xs text-outline mt-1 font-mono">{t.ltreeSub}</p>
         </div>
@@ -340,7 +338,6 @@ export const DashboardPage: React.FC = () => {
         onClose={() => setViewingNoteId(null)}
         onEdit={(id) => navigate(`/notes/${id}`)}
         onSelectFolder={(folderPath) => navigate(`/notes?folder=${encodeURIComponent(folderPath)}`)}
-        onSelectTag={(path) => navigate(`/notes?tagPath=${encodeURIComponent(path)}`)}
         onSelectHashtag={(name) => navigate(`/notes?hashtag=${encodeURIComponent(name)}`)}
       />
     </div>

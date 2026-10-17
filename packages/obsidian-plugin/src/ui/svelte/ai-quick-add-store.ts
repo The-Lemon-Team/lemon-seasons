@@ -125,7 +125,6 @@ export function createAiQuickAddStore() {
         folders: c.folder ? [c.folder] : undefined,
         feedId: c.feedId,
         hashtags: c.hashtags,
-        tagIds: c.taxonomyPath ? [c.taxonomyPath] : c.tagIds,
         sourceLink: c.sourceLink,
         icon: c.icon,
         description: c.description,

@@ -12,7 +12,6 @@ const DashboardPage = React.lazy(() => import('./pages/Dashboard/DashboardPage')
 const FeedsPage = React.lazy(() => import('./pages/Feeds/FeedsPage').then(m => ({ default: m.FeedsPage })));
 const NotesListPage = React.lazy(() => import('./pages/Notes/NotesListPage').then(m => ({ default: m.NotesListPage })));
 const NoteEditorPage = React.lazy(() => import('./pages/NoteEditor/NoteEditorPage').then(m => ({ default: m.NoteEditorPage })));
-const TaxonomyPage = React.lazy(() => import('./pages/Taxonomy/TaxonomyPage').then(m => ({ default: m.TaxonomyPage })));
 const GeneratorLabPage = React.lazy(() => import('./pages/GeneratorLab/GeneratorLabPage').then(m => ({ default: m.GeneratorLabPage })));
 
 const PageLoadingFallback = () => (
@@ -48,7 +47,7 @@ const AppContent: React.FC = () => {
                 <Route path="/notes" element={<NotesListPage />} />
                 <Route path="/notes/new" element={<NoteEditorPage />} />
                 <Route path="/notes/:id" element={<NoteEditorPage />} />
-                <Route path="/taxonomy" element={<TaxonomyPage />} />
+                <Route path="/taxonomy" element={<Navigate to="/notes" replace />} />
                 <Route path="/generators" element={<GeneratorLabPage />} />
                 <Route path="/sync" element={<Navigate to="/generators?tab=sparks" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

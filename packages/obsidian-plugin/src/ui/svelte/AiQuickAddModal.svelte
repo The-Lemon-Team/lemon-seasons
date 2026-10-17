@@ -271,21 +271,13 @@
                 </div>
               </div>
 
-              <!-- Row 3: Optional Source Link or Taxonomy -->
-              {#if card.sourceLink || card.taxonomyPath}
+              <!-- Row 3: Optional Source Link -->
+              {#if card.sourceLink}
                 <div class="card-row extra-row">
-                  {#if card.sourceLink}
-                    <div class="extra-field">
-                      <span class="extra-label">🔗 Ссылка:</span>
-                      <a href={card.sourceLink} target="_blank" class="source-link">{card.sourceLink}</a>
-                    </div>
-                  {/if}
-                  {#if card.taxonomyPath}
-                    <div class="extra-field">
-                      <span class="extra-label">Категория:</span>
-                      <span class="tax-badge">{card.taxonomyPath}</span>
-                    </div>
-                  {/if}
+                  <div class="extra-field">
+                    <span class="extra-label">🔗 Ссылка:</span>
+                    <a href={card.sourceLink} target="_blank" class="source-link">{card.sourceLink}</a>
+                  </div>
                 </div>
               {/if}
             </div>
@@ -631,12 +623,6 @@
     white-space: nowrap;
   }
 
-  .tax-badge {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    padding: 1px 6px;
-    border-radius: 4px;
-  }
 
   .modal-footer {
     display: flex;

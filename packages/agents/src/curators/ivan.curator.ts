@@ -66,7 +66,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}
 *Сформировано аналитическим деском Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Politics/Russia',
-    taxonomyPath: 'politics.russia.regulations',
     hashtags: ['ПолитикаРФ', 'Госдума', 'ФАС', 'Бюджет', 'Регуляторика'],
     curator: 'ivan-bely',
     sourceLink: mainStory?.url,

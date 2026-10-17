@@ -4787,11 +4787,6 @@ var init_dist = __esm({
             folderPaths.forEach((fp) => lines.push(`  - "${fp}"`));
           }
         }
-        if (note.tags && note.tags.length > 0) {
-          const taxonomyPaths = note.tags.map((t) => t.path);
-          lines.push(`taxonomy:`);
-          taxonomyPaths.forEach((tp) => lines.push(`  - "${tp}"`));
-        }
         if (note.hashtags && note.hashtags.length > 0) {
           const hashtags = note.hashtags.map((h) => h.name.replace(/^#/, ""));
           lines.push(`tags:`);
@@ -5934,7 +5929,7 @@ var LentaSyncLedgerManager = class {
         endDate: note.endDate,
         primaryFolder: note.folders?.find((f) => f.isPrimary)?.folder?.path || note.folders?.[0]?.folder?.path,
         folders: note.folders?.map((f) => f.folder?.path).sort().join(","),
-        taxonomy: note.tags?.map((t) => t.path).sort().join(","),
+        taxonomy: "",
         tags: note.hashtags?.map((h) => h.name).sort().join(",")
       }
     };
@@ -5963,7 +5958,7 @@ var LentaSyncLedgerManager = class {
         mergedStartDate: serverNote.startDate,
         mergedEndDate: serverNote.endDate,
         mergedPrimaryFolder: serverNote.folders?.find((f) => f.isPrimary)?.folder?.path || serverNote.folders?.[0]?.folder?.path,
-        mergedTaxonomy: serverNote.tags?.map((t) => t.path) || [],
+        mergedTaxonomy: [],
         mergedTags: serverNote.hashtags?.map((h) => h.name) || [],
         isConflict: false,
         conflicts: []
@@ -6032,9 +6027,7 @@ var LentaSyncLedgerManager = class {
       conflicts.push("primaryFolder");
       mergedPrimaryFolder = localWins ? localPrimary : serverPrimary;
     }
-    const localTaxonomy = local.frontmatter.taxonomy || [];
-    const serverTaxonomy = serverNote.tags?.map((t) => t.path) || [];
-    const mergedTaxonomy = Array.from(/* @__PURE__ */ new Set([...localTaxonomy, ...serverTaxonomy]));
+    const mergedTaxonomy = [];
     const localTags = local.hashtags || [];
     const serverTags = serverNote.hashtags?.map((h) => h.name.replace(/^#/, "")) || [];
     const mergedTags = Array.from(/* @__PURE__ */ new Set([...localTags, ...serverTags]));
@@ -6427,7 +6420,7 @@ var LentaSyncEngine = class {
         endDate: parsed.frontmatter.end_date || parsed.frontmatter.endDate || null,
         sourceLink: parsed.frontmatter.sourceLink || null,
         icon: parsed.frontmatter.icon || null,
-        tags: (parsed.frontmatter.taxonomy || []).map((p) => ({ id: p, name: p, path: p, icon: null, updatedAt: "", deletedAt: null })),
+        tags: [],
         hashtags: (parsed.hashtags || []).map((h) => ({ id: h, name: h, createdAt: "", updatedAt: "", deletedAt: null })),
         folders: relativeFolder ? [{ id: "", noteId: lentaId, folderId: "", isPrimary: true, order: 0, folder: { id: "", name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: "", updatedAt: "", deletedAt: null } }] : [],
         curator: parsed.frontmatter.curator || null,
@@ -6702,7 +6695,6 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
     this.initialType = initialType;
     this.feeds = [];
     this.folders = [];
-    this.taxonomyNodes = [];
     // Form State
     this.title = "";
     this.feedId = "";
@@ -6759,14 +6751,12 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
     try {
       const containerId = this.getTargetContainerId();
       const isContainer = this.isObsidianContainerMode();
-      const [feeds, folders, taxonomy] = await Promise.all([
+      const [feeds, folders] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
-        isContainer && containerId ? this.loadContainerFolders(containerId).catch(() => []) : this.apiClient.getFolders().catch(() => []),
-        this.apiClient.getTaxonomyTree().catch(() => [])
+        isContainer && containerId ? this.loadContainerFolders(containerId).catch(() => []) : this.apiClient.getFolders().catch(() => [])
       ]);
       this.feeds = feeds;
       this.folders = folders;
-      this.taxonomyNodes = taxonomy;
       if (this.selectedFolderId) {
         const matched = folders.find((f) => f.id === this.selectedFolderId || f.path === this.selectedFolderId);
         if (matched) {
@@ -6922,7 +6912,7 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl("h2", { text: "\u{1F34B} Lenta Quick Add Note" });
-    contentEl.createEl("p", { text: "Loading feeds and taxonomy from Lenta server..." });
+    contentEl.createEl("p", { text: "Loading feeds and folders from Lenta server..." });
   }
   render() {
     const { contentEl } = this;
@@ -7043,18 +7033,6 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
         });
       });
     }
-    if (this.taxonomyNodes.length > 0) {
-      new import_obsidian4.Setting(contentEl).setName("Taxonomy Tag").setDesc("Hierarchical classification node").addDropdown((dropdown) => {
-        dropdown.addOption("", "(No Taxonomy)");
-        for (const tag of this.taxonomyNodes) {
-          dropdown.addOption(tag.id, `\u{1F3F7}\uFE0F ${tag.path}`);
-        }
-        dropdown.setValue(this.selectedTaxonomyId);
-        dropdown.onChange((val) => {
-          this.selectedTaxonomyId = val;
-        });
-      });
-    }
     new import_obsidian4.Setting(contentEl).setName("Icon & Source Link").setDesc('Optional icon name (e.g. "rocket", "calendar") and external URL').addText((text2) => {
       text2.setPlaceholder("Icon (e.g. rocket)").setValue(this.icon).onChange((val) => {
         this.icon = val;
@@ -7126,7 +7104,6 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
           const targetFolder2 = this.folders.find((f) => f.id === this.selectedFolderId);
           resolvedFolderPath = targetFolder2 ? targetFolder2.path : this.selectedFolderId && this.selectedFolderId !== "root" ? this.selectedFolderId : this.initialFolderPath || void 0;
         }
-        const tagIds = this.selectedTaxonomyId ? [this.selectedTaxonomyId] : [];
         const folderIds = resolvedFolderPath ? [resolvedFolderPath] : [];
         const folders = resolvedFolderPath ? [resolvedFolderPath] : void 0;
         const targetContainerId = this.getTargetContainerId();
@@ -7139,7 +7116,6 @@ var _LentaQuickAddModal = class _LentaQuickAddModal extends import_obsidian4.Mod
           sourceLink: this.sourceLink.trim() || void 0,
           icon: this.icon.trim() || void 0,
           description: this.description.trim() || void 0,
-          tagIds,
           folderIds,
           folders,
           folder: resolvedFolderPath,
@@ -8529,7 +8505,6 @@ function createAiQuickAddStore() {
         folders: c.folder ? [c.folder] : void 0,
         feedId: c.feedId,
         hashtags: c.hashtags,
-        tagIds: c.taxonomyPath ? [c.taxonomyPath] : c.tagIds,
         sourceLink: c.sourceLink,
         icon: c.icon,
         description: c.description,
@@ -8615,7 +8590,7 @@ function createAiQuickAddStore() {
 
 // src/ui/svelte/AiQuickAddModal.svelte
 function add_css(target) {
-  append_styles(target, "svelte-1i65i7o", ".ai-quick-add-container.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:16px;padding:8px 4px;max-height:82vh;box-sizing:border-box}.modal-header.svelte-1i65i7o h2.svelte-1i65i7o{margin:4px 0 2px 0;font-size:1.35rem;font-weight:700}.title-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:10px}.sparkle-badge.svelte-1i65i7o.svelte-1i65i7o{background:linear-gradient(135deg, #a855f7 0%, #ec4899 100%);color:#ffffff;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.5px;text-transform:uppercase}.subtitle.svelte-1i65i7o.svelte-1i65i7o{margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.4}.chips-container.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.chips-label.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem;color:var(--text-muted);font-weight:600}.chip-button.svelte-1i65i7o.svelte-1i65i7o{background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:14px;font-size:0.78rem;padding:3px 10px;cursor:pointer;color:var(--text-normal);transition:all 0.15s ease}.chip-button.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){border-color:var(--interactive-accent);color:var(--interactive-accent);background:var(--background-secondary-alt)}.input-section.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:8px}.text-input.svelte-1i65i7o.svelte-1i65i7o{width:100%;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:0.9rem;color:var(--text-normal);resize:vertical;box-sizing:border-box;transition:border-color 0.2s}.text-input.svelte-1i65i7o.svelte-1i65i7o:focus{outline:none;border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(168, 85, 247, 0.2)}.parse-action-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:flex-end}.parse-button.svelte-1i65i7o.svelte-1i65i7o{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);color:white;font-weight:600;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:0.88rem;transition:transform 0.15s, opacity 0.15s}.parse-button.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){transform:translateY(-1px);opacity:0.95}.parse-button.svelte-1i65i7o.svelte-1i65i7o:disabled{opacity:0.5;cursor:not-allowed}.error-banner.svelte-1i65i7o.svelte-1i65i7o{background:rgba(239, 68, 68, 0.15);border:1px solid rgba(239, 68, 68, 0.3);color:#ef4444;padding:8px 12px;border-radius:6px;font-size:0.85rem}.cards-section.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:8px;margin-top:4px}.cards-header.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}.select-all-label.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;cursor:pointer}.add-card-btn.svelte-1i65i7o.svelte-1i65i7o{background:none;border:1px dashed var(--background-modifier-border);color:var(--text-muted);border-radius:6px;padding:3px 10px;font-size:0.8rem;cursor:pointer}.add-card-btn.svelte-1i65i7o.svelte-1i65i7o:hover{color:var(--text-normal);border-color:var(--text-muted)}.cards-scroll-list.svelte-1i65i7o.svelte-1i65i7o{display:flex;flex-direction:column;gap:10px;max-height:42vh;overflow-y:auto;padding-right:4px}.card-item.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:flex-start;gap:10px;background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;transition:border-color 0.15s, background-color 0.15s}.card-item.is-selected.svelte-1i65i7o.svelte-1i65i7o{border-color:rgba(168, 85, 247, 0.4);background:var(--background-secondary-alt)}.card-item.is-trend.svelte-1i65i7o.svelte-1i65i7o{border-left:3px solid #a855f7}.card-select.svelte-1i65i7o.svelte-1i65i7o{padding-top:4px}.card-content.svelte-1i65i7o.svelte-1i65i7o{flex:1;display:flex;flex-direction:column;gap:8px}.card-row.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.type-select.svelte-1i65i7o.svelte-1i65i7o{font-size:0.78rem;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--background-primary);border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer}.badge-trend.svelte-1i65i7o.svelte-1i65i7o{color:#c084fc;border-color:#a855f7}.title-input.svelte-1i65i7o.svelte-1i65i7o{flex:1;font-weight:600;font-size:0.95rem;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 8px;color:var(--text-normal)}.title-input.svelte-1i65i7o.svelte-1i65i7o:focus{outline:none;border-color:var(--interactive-accent)}.delete-card-btn.svelte-1i65i7o.svelte-1i65i7o{background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;padding:4px 8px;border-radius:4px}.delete-card-btn.svelte-1i65i7o.svelte-1i65i7o:hover{color:#ef4444;background:rgba(239, 68, 68, 0.1)}.meta-row.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem}.meta-field.svelte-1i65i7o.svelte-1i65i7o{display:flex;align-items:center;gap:4px;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:2px 6px}.meta-icon.svelte-1i65i7o.svelte-1i65i7o{font-size:0.8rem}.date-input.svelte-1i65i7o.svelte-1i65i7o,.folder-input.svelte-1i65i7o.svelte-1i65i7o,.tags-input.svelte-1i65i7o.svelte-1i65i7o{background:transparent;border:none;font-size:0.8rem;color:var(--text-normal);outline:none;width:100%}.flex-1.svelte-1i65i7o.svelte-1i65i7o{flex:1;min-width:120px}.extra-row.svelte-1i65i7o.svelte-1i65i7o{font-size:0.78rem;color:var(--text-muted)}.source-link.svelte-1i65i7o.svelte-1i65i7o{color:var(--text-accent);text-decoration:none;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tax-badge.svelte-1i65i7o.svelte-1i65i7o{background:rgba(59, 130, 246, 0.15);color:#60a5fa;padding:1px 6px;border-radius:4px}.modal-footer.svelte-1i65i7o.svelte-1i65i7o{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--background-modifier-border)}.btn-cancel.svelte-1i65i7o.svelte-1i65i7o{background:var(--background-secondary);border:1px solid var(--background-modifier-border);color:var(--text-muted);padding:7px 16px;border-radius:6px;cursor:pointer}.btn-cancel.svelte-1i65i7o.svelte-1i65i7o:hover{color:var(--text-normal)}.btn-save.svelte-1i65i7o.svelte-1i65i7o{display:inline-flex;align-items:center;gap:6px;background:var(--interactive-accent);color:var(--text-on-accent);font-weight:600;padding:7px 18px;border-radius:6px;border:none;cursor:pointer;transition:opacity 0.15s}.btn-save.svelte-1i65i7o.svelte-1i65i7o:hover:not(:disabled){opacity:0.9}.btn-save.svelte-1i65i7o.svelte-1i65i7o:disabled{opacity:0.5;cursor:not-allowed}.spinner.svelte-1i65i7o.svelte-1i65i7o{display:inline-block;width:12px;height:12px;border:2px solid rgba(255, 255, 255, 0.3);border-radius:50%;border-top-color:white;animation:svelte-1i65i7o-spin 0.6s linear infinite}@keyframes svelte-1i65i7o-spin{to{transform:rotate(360deg)}}");
+  append_styles(target, "svelte-5gmfbq", ".ai-quick-add-container.svelte-5gmfbq.svelte-5gmfbq{display:flex;flex-direction:column;gap:16px;padding:8px 4px;max-height:82vh;box-sizing:border-box}.modal-header.svelte-5gmfbq h2.svelte-5gmfbq{margin:4px 0 2px 0;font-size:1.35rem;font-weight:700}.title-row.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:center;gap:10px}.sparkle-badge.svelte-5gmfbq.svelte-5gmfbq{background:linear-gradient(135deg, #a855f7 0%, #ec4899 100%);color:#ffffff;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.5px;text-transform:uppercase}.subtitle.svelte-5gmfbq.svelte-5gmfbq{margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.4}.chips-container.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.chips-label.svelte-5gmfbq.svelte-5gmfbq{font-size:0.8rem;color:var(--text-muted);font-weight:600}.chip-button.svelte-5gmfbq.svelte-5gmfbq{background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:14px;font-size:0.78rem;padding:3px 10px;cursor:pointer;color:var(--text-normal);transition:all 0.15s ease}.chip-button.svelte-5gmfbq.svelte-5gmfbq:hover:not(:disabled){border-color:var(--interactive-accent);color:var(--interactive-accent);background:var(--background-secondary-alt)}.input-section.svelte-5gmfbq.svelte-5gmfbq{display:flex;flex-direction:column;gap:8px}.text-input.svelte-5gmfbq.svelte-5gmfbq{width:100%;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:0.9rem;color:var(--text-normal);resize:vertical;box-sizing:border-box;transition:border-color 0.2s}.text-input.svelte-5gmfbq.svelte-5gmfbq:focus{outline:none;border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(168, 85, 247, 0.2)}.parse-action-row.svelte-5gmfbq.svelte-5gmfbq{display:flex;justify-content:flex-end}.parse-button.svelte-5gmfbq.svelte-5gmfbq{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);color:white;font-weight:600;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:0.88rem;transition:transform 0.15s, opacity 0.15s}.parse-button.svelte-5gmfbq.svelte-5gmfbq:hover:not(:disabled){transform:translateY(-1px);opacity:0.95}.parse-button.svelte-5gmfbq.svelte-5gmfbq:disabled{opacity:0.5;cursor:not-allowed}.error-banner.svelte-5gmfbq.svelte-5gmfbq{background:rgba(239, 68, 68, 0.15);border:1px solid rgba(239, 68, 68, 0.3);color:#ef4444;padding:8px 12px;border-radius:6px;font-size:0.85rem}.cards-section.svelte-5gmfbq.svelte-5gmfbq{display:flex;flex-direction:column;gap:8px;margin-top:4px}.cards-header.svelte-5gmfbq.svelte-5gmfbq{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}.select-all-label.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;cursor:pointer}.add-card-btn.svelte-5gmfbq.svelte-5gmfbq{background:none;border:1px dashed var(--background-modifier-border);color:var(--text-muted);border-radius:6px;padding:3px 10px;font-size:0.8rem;cursor:pointer}.add-card-btn.svelte-5gmfbq.svelte-5gmfbq:hover{color:var(--text-normal);border-color:var(--text-muted)}.cards-scroll-list.svelte-5gmfbq.svelte-5gmfbq{display:flex;flex-direction:column;gap:10px;max-height:42vh;overflow-y:auto;padding-right:4px}.card-item.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:flex-start;gap:10px;background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:8px;padding:10px 12px;transition:border-color 0.15s, background-color 0.15s}.card-item.is-selected.svelte-5gmfbq.svelte-5gmfbq{border-color:rgba(168, 85, 247, 0.4);background:var(--background-secondary-alt)}.card-item.is-trend.svelte-5gmfbq.svelte-5gmfbq{border-left:3px solid #a855f7}.card-select.svelte-5gmfbq.svelte-5gmfbq{padding-top:4px}.card-content.svelte-5gmfbq.svelte-5gmfbq{flex:1;display:flex;flex-direction:column;gap:8px}.card-row.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.type-select.svelte-5gmfbq.svelte-5gmfbq{font-size:0.78rem;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--background-primary);border:1px solid var(--background-modifier-border);color:var(--text-normal);cursor:pointer}.badge-trend.svelte-5gmfbq.svelte-5gmfbq{color:#c084fc;border-color:#a855f7}.title-input.svelte-5gmfbq.svelte-5gmfbq{flex:1;font-weight:600;font-size:0.95rem;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 8px;color:var(--text-normal)}.title-input.svelte-5gmfbq.svelte-5gmfbq:focus{outline:none;border-color:var(--interactive-accent)}.delete-card-btn.svelte-5gmfbq.svelte-5gmfbq{background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;padding:4px 8px;border-radius:4px}.delete-card-btn.svelte-5gmfbq.svelte-5gmfbq:hover{color:#ef4444;background:rgba(239, 68, 68, 0.1)}.meta-row.svelte-5gmfbq.svelte-5gmfbq{font-size:0.8rem}.meta-field.svelte-5gmfbq.svelte-5gmfbq{display:flex;align-items:center;gap:4px;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:2px 6px}.meta-icon.svelte-5gmfbq.svelte-5gmfbq{font-size:0.8rem}.date-input.svelte-5gmfbq.svelte-5gmfbq,.folder-input.svelte-5gmfbq.svelte-5gmfbq,.tags-input.svelte-5gmfbq.svelte-5gmfbq{background:transparent;border:none;font-size:0.8rem;color:var(--text-normal);outline:none;width:100%}.flex-1.svelte-5gmfbq.svelte-5gmfbq{flex:1;min-width:120px}.extra-row.svelte-5gmfbq.svelte-5gmfbq{font-size:0.78rem;color:var(--text-muted)}.source-link.svelte-5gmfbq.svelte-5gmfbq{color:var(--text-accent);text-decoration:none;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.modal-footer.svelte-5gmfbq.svelte-5gmfbq{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--background-modifier-border)}.btn-cancel.svelte-5gmfbq.svelte-5gmfbq{background:var(--background-secondary);border:1px solid var(--background-modifier-border);color:var(--text-muted);padding:7px 16px;border-radius:6px;cursor:pointer}.btn-cancel.svelte-5gmfbq.svelte-5gmfbq:hover{color:var(--text-normal)}.btn-save.svelte-5gmfbq.svelte-5gmfbq{display:inline-flex;align-items:center;gap:6px;background:var(--interactive-accent);color:var(--text-on-accent);font-weight:600;padding:7px 18px;border-radius:6px;border:none;cursor:pointer;transition:opacity 0.15s}.btn-save.svelte-5gmfbq.svelte-5gmfbq:hover:not(:disabled){opacity:0.9}.btn-save.svelte-5gmfbq.svelte-5gmfbq:disabled{opacity:0.5;cursor:not-allowed}.spinner.svelte-5gmfbq.svelte-5gmfbq{display:inline-block;width:12px;height:12px;border:2px solid rgba(255, 255, 255, 0.3);border-radius:50%;border-top-color:white;animation:svelte-5gmfbq-spin 0.6s linear infinite}@keyframes svelte-5gmfbq-spin{to{transform:rotate(360deg)}}");
 }
 function get_each_context(ctx, list, i) {
   const child_ctx = ctx.slice();
@@ -8653,7 +8628,7 @@ function create_each_block_1(ctx) {
       t0 = text(t0_value);
       t1 = space();
       attr(button, "type", "button");
-      attr(button, "class", "chip-button svelte-1i65i7o");
+      attr(button, "class", "chip-button svelte-5gmfbq");
       button.disabled = button_disabled_value = /*$isParsing*/
       ctx[3] || /*$isSaving*/
       ctx[4];
@@ -8701,14 +8676,14 @@ function create_else_block_1(ctx) {
     }
   };
 }
-function create_if_block_7(ctx) {
+function create_if_block_5(ctx) {
   let span;
   let t;
   return {
     c() {
       span = element("span");
       t = text(" \u0420\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u0435...");
-      attr(span, "class", "spinner svelte-1i65i7o");
+      attr(span, "class", "spinner svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -8722,7 +8697,7 @@ function create_if_block_7(ctx) {
     }
   };
 }
-function create_if_block_6(ctx) {
+function create_if_block_4(ctx) {
   let div;
   let t0;
   let t1;
@@ -8734,7 +8709,7 @@ function create_if_block_6(ctx) {
         /*$errorMessage*/
         ctx[6]
       );
-      attr(div, "class", "error-banner svelte-1i65i7o");
+      attr(div, "class", "error-banner svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -8825,13 +8800,13 @@ function create_if_block_1(ctx) {
       ctx[8] === /*$totalCount*/
       ctx[9] && /*$totalCount*/
       ctx[9] > 0;
-      attr(label, "class", "select-all-label svelte-1i65i7o");
+      attr(label, "class", "select-all-label svelte-5gmfbq");
       attr(div0, "class", "selection-controls");
       attr(button, "type", "button");
-      attr(button, "class", "add-card-btn svelte-1i65i7o");
-      attr(div1, "class", "cards-header svelte-1i65i7o");
-      attr(div2, "class", "cards-scroll-list svelte-1i65i7o");
-      attr(div3, "class", "cards-section svelte-1i65i7o");
+      attr(button, "class", "add-card-btn svelte-5gmfbq");
+      attr(div1, "class", "cards-header svelte-5gmfbq");
+      attr(div2, "class", "cards-scroll-list svelte-5gmfbq");
+      attr(div3, "class", "cards-section svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, div3, anchor);
@@ -8916,7 +8891,7 @@ function create_if_block_1(ctx) {
     }
   };
 }
-function create_if_block_5(ctx) {
+function create_if_block_3(ctx) {
   let div;
   let span;
   let t1;
@@ -8943,13 +8918,13 @@ function create_if_block_5(ctx) {
       input = element("input");
       attr(span, "class", "meta-label");
       attr(input, "type", "date");
-      attr(input, "class", "date-input svelte-1i65i7o");
+      attr(input, "class", "date-input svelte-5gmfbq");
       input.value = input_value_value = /*card*/
       ctx[50].endDate ? (
         /*card*/
         ctx[50].endDate.split("T")[0]
       ) : "";
-      attr(div, "class", "meta-field svelte-1i65i7o");
+      attr(div, "class", "meta-field svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, div, anchor);
@@ -8982,79 +8957,8 @@ function create_if_block_5(ctx) {
   };
 }
 function create_if_block_2(ctx) {
-  let div;
-  let t;
-  let if_block0 = (
-    /*card*/
-    ctx[50].sourceLink && create_if_block_4(ctx)
-  );
-  let if_block1 = (
-    /*card*/
-    ctx[50].taxonomyPath && create_if_block_3(ctx)
-  );
-  return {
-    c() {
-      div = element("div");
-      if (if_block0)
-        if_block0.c();
-      t = space();
-      if (if_block1)
-        if_block1.c();
-      attr(div, "class", "card-row extra-row svelte-1i65i7o");
-    },
-    m(target, anchor) {
-      insert(target, div, anchor);
-      if (if_block0)
-        if_block0.m(div, null);
-      append(div, t);
-      if (if_block1)
-        if_block1.m(div, null);
-    },
-    p(ctx2, dirty) {
-      if (
-        /*card*/
-        ctx2[50].sourceLink
-      ) {
-        if (if_block0) {
-          if_block0.p(ctx2, dirty);
-        } else {
-          if_block0 = create_if_block_4(ctx2);
-          if_block0.c();
-          if_block0.m(div, t);
-        }
-      } else if (if_block0) {
-        if_block0.d(1);
-        if_block0 = null;
-      }
-      if (
-        /*card*/
-        ctx2[50].taxonomyPath
-      ) {
-        if (if_block1) {
-          if_block1.p(ctx2, dirty);
-        } else {
-          if_block1 = create_if_block_3(ctx2);
-          if_block1.c();
-          if_block1.m(div, null);
-        }
-      } else if (if_block1) {
-        if_block1.d(1);
-        if_block1 = null;
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(div);
-      }
-      if (if_block0)
-        if_block0.d();
-      if (if_block1)
-        if_block1.d();
-    }
-  };
-}
-function create_if_block_4(ctx) {
-  let div;
+  let div1;
+  let div0;
   let span;
   let t1;
   let a;
@@ -9066,7 +8970,8 @@ function create_if_block_4(ctx) {
   let a_href_value;
   return {
     c() {
-      div = element("div");
+      div1 = element("div");
+      div0 = element("div");
       span = element("span");
       span.textContent = "\u{1F517} \u0421\u0441\u044B\u043B\u043A\u0430:";
       t1 = space();
@@ -9076,14 +8981,16 @@ function create_if_block_4(ctx) {
       attr(a, "href", a_href_value = /*card*/
       ctx[50].sourceLink);
       attr(a, "target", "_blank");
-      attr(a, "class", "source-link svelte-1i65i7o");
-      attr(div, "class", "extra-field");
+      attr(a, "class", "source-link svelte-5gmfbq");
+      attr(div0, "class", "extra-field");
+      attr(div1, "class", "card-row extra-row svelte-5gmfbq");
     },
     m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span);
-      append(div, t1);
-      append(div, a);
+      insert(target, div1, anchor);
+      append(div1, div0);
+      append(div0, span);
+      append(div0, t1);
+      append(div0, a);
       append(a, t2);
     },
     p(ctx2, dirty) {
@@ -9099,49 +9006,7 @@ function create_if_block_4(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div);
-      }
-    }
-  };
-}
-function create_if_block_3(ctx) {
-  let div;
-  let span0;
-  let t1;
-  let span1;
-  let t2_value = (
-    /*card*/
-    ctx[50].taxonomyPath + ""
-  );
-  let t2;
-  return {
-    c() {
-      div = element("div");
-      span0 = element("span");
-      span0.textContent = "\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F:";
-      t1 = space();
-      span1 = element("span");
-      t2 = text(t2_value);
-      attr(span0, "class", "extra-label");
-      attr(span1, "class", "tax-badge svelte-1i65i7o");
-      attr(div, "class", "extra-field");
-    },
-    m(target, anchor) {
-      insert(target, div, anchor);
-      append(div, span0);
-      append(div, t1);
-      append(div, span1);
-      append(span1, t2);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*$cards*/
-      128 && t2_value !== (t2_value = /*card*/
-      ctx2[50].taxonomyPath + ""))
-        set_data(t2, t2_value);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(div);
+        detach(div1);
       }
     }
   };
@@ -9242,7 +9107,7 @@ function create_each_block(key_1, ctx) {
   let if_block0 = (
     /*card*/
     (ctx[50].type === "PERIOD" || /*card*/
-    ctx[50].endDate) && create_if_block_5(ctx)
+    ctx[50].endDate) && create_if_block_3(ctx)
   );
   function input_handler_1(...args) {
     return (
@@ -9266,8 +9131,7 @@ function create_each_block(key_1, ctx) {
   }
   let if_block1 = (
     /*card*/
-    (ctx[50].sourceLink || /*card*/
-    ctx[50].taxonomyPath) && create_if_block_2(ctx)
+    ctx[50].sourceLink && create_if_block_2(ctx)
   );
   return {
     key: key_1,
@@ -9326,7 +9190,7 @@ function create_each_block(key_1, ctx) {
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = /*card*/
       ctx[50].selected;
-      attr(div0, "class", "card-select svelte-1i65i7o");
+      attr(div0, "class", "card-select svelte-5gmfbq");
       option0.__value = "Trend";
       set_input_value(option0, option0.__value);
       option1.__value = "SINGLE";
@@ -9339,7 +9203,7 @@ function create_each_block(key_1, ctx) {
       set_input_value(option4, option4.__value);
       option5.__value = "FILM_RELEASE";
       set_input_value(option5, option5.__value);
-      attr(select, "class", "type-select svelte-1i65i7o");
+      attr(select, "class", "type-select svelte-5gmfbq");
       toggle_class(
         select,
         "badge-trend",
@@ -9347,40 +9211,40 @@ function create_each_block(key_1, ctx) {
         ctx[50].displayType === "Trend"
       );
       attr(input1, "type", "text");
-      attr(input1, "class", "title-input svelte-1i65i7o");
+      attr(input1, "class", "title-input svelte-5gmfbq");
       attr(input1, "placeholder", "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438");
       input1.value = input1_value_value = /*card*/
       ctx[50].title;
       attr(button, "type", "button");
-      attr(button, "class", "delete-card-btn svelte-1i65i7o");
+      attr(button, "class", "delete-card-btn svelte-5gmfbq");
       attr(button, "title", "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443");
-      attr(div1, "class", "card-row title-row svelte-1i65i7o");
-      attr(span0, "class", "meta-icon svelte-1i65i7o");
+      attr(div1, "class", "card-row title-row svelte-5gmfbq");
+      attr(span0, "class", "meta-icon svelte-5gmfbq");
       attr(input2, "type", "date");
-      attr(input2, "class", "date-input svelte-1i65i7o");
+      attr(input2, "class", "date-input svelte-5gmfbq");
       input2.value = input2_value_value = /*card*/
       ctx[50].startDate ? (
         /*card*/
         ctx[50].startDate.split("T")[0]
       ) : "";
-      attr(div2, "class", "meta-field svelte-1i65i7o");
-      attr(span1, "class", "meta-icon svelte-1i65i7o");
+      attr(div2, "class", "meta-field svelte-5gmfbq");
+      attr(span1, "class", "meta-icon svelte-5gmfbq");
       attr(input3, "type", "text");
-      attr(input3, "class", "folder-input svelte-1i65i7o");
+      attr(input3, "class", "folder-input svelte-5gmfbq");
       attr(input3, "placeholder", "\u041F\u0430\u043F\u043A\u0430 (Trends, Notes...)");
       input3.value = input3_value_value = /*card*/
       ctx[50].folder || "";
-      attr(div3, "class", "meta-field flex-1 svelte-1i65i7o");
-      attr(span2, "class", "meta-icon svelte-1i65i7o");
+      attr(div3, "class", "meta-field flex-1 svelte-5gmfbq");
+      attr(span2, "class", "meta-icon svelte-5gmfbq");
       attr(input4, "type", "text");
-      attr(input4, "class", "tags-input svelte-1i65i7o");
+      attr(input4, "class", "tags-input svelte-5gmfbq");
       attr(input4, "placeholder", "\u0425\u044D\u0448\u0442\u0435\u0433\u0438 (#\u0442\u0440\u0435\u043D\u0434, #\u0438\u0433\u0440\u044B)");
       input4.value = input4_value_value = /*card*/
       (ctx[50].hashtags || []).map(func).join(" ");
-      attr(div4, "class", "meta-field flex-1 svelte-1i65i7o");
-      attr(div5, "class", "card-row meta-row svelte-1i65i7o");
-      attr(div6, "class", "card-content svelte-1i65i7o");
-      attr(div7, "class", "card-item svelte-1i65i7o");
+      attr(div4, "class", "meta-field flex-1 svelte-5gmfbq");
+      attr(div5, "class", "card-row meta-row svelte-5gmfbq");
+      attr(div6, "class", "card-content svelte-5gmfbq");
+      attr(div7, "class", "card-item svelte-5gmfbq");
       toggle_class(
         div7,
         "is-selected",
@@ -9509,7 +9373,7 @@ function create_each_block(key_1, ctx) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_5(ctx);
+          if_block0 = create_if_block_3(ctx);
           if_block0.c();
           if_block0.m(div5, t14);
         }
@@ -9529,8 +9393,7 @@ function create_each_block(key_1, ctx) {
       }
       if (
         /*card*/
-        ctx[50].sourceLink || /*card*/
-        ctx[50].taxonomyPath
+        ctx[50].sourceLink
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
@@ -9618,7 +9481,7 @@ function create_if_block(ctx) {
     c() {
       span = element("span");
       t = text(" \u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435...");
-      attr(span, "class", "spinner svelte-1i65i7o");
+      attr(span, "class", "spinner svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, span, anchor);
@@ -9673,14 +9536,14 @@ function create_fragment(ctx) {
       /*$isParsing*/
       ctx2[3]
     )
-      return create_if_block_7;
+      return create_if_block_5;
     return create_else_block_1;
   }
   let current_block_type = select_block_type(ctx, [-1, -1]);
   let if_block0 = current_block_type(ctx);
   let if_block1 = (
     /*$errorMessage*/
-    ctx[6] && create_if_block_6(ctx)
+    ctx[6] && create_if_block_4(ctx)
   );
   let if_block2 = (
     /*$cards*/
@@ -9700,7 +9563,7 @@ function create_fragment(ctx) {
     c() {
       div6 = element("div");
       div1 = element("div");
-      div1.innerHTML = `<div class="title-row svelte-1i65i7o"><span class="sparkle-badge svelte-1i65i7o">\u2728 AI \u0427\u0410\u0422</span> <h2 class="svelte-1i65i7o">\u0411\u044B\u0441\u0442\u0440\u043E\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A</h2></div> <p class="subtitle svelte-1i65i7o">\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u043B\u044C\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442, \u0441\u043F\u0438\u0441\u043E\u043A \u0442\u0440\u0435\u043D\u0434\u043E\u0432 \u0438\u043B\u0438 \u0441\u043E\u0431\u044B\u0442\u0438\u044F. AI \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u0443\u0435\u0442 \u0438\u0445 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0441 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0434\u0430\u0442\u043E\u0439, \u0444\u0438\u0434\u043E\u043C \u0438 \u043F\u0430\u043F\u043A\u0430\u043C\u0438.</p>`;
+      div1.innerHTML = `<div class="title-row svelte-5gmfbq"><span class="sparkle-badge svelte-5gmfbq">\u2728 AI \u0427\u0410\u0422</span> <h2 class="svelte-5gmfbq">\u0411\u044B\u0441\u0442\u0440\u043E\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u0435\u043A</h2></div> <p class="subtitle svelte-5gmfbq">\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u043B\u044C\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442, \u0441\u043F\u0438\u0441\u043E\u043A \u0442\u0440\u0435\u043D\u0434\u043E\u0432 \u0438\u043B\u0438 \u0441\u043E\u0431\u044B\u0442\u0438\u044F. AI \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u0443\u0435\u0442 \u0438\u0445 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0441 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0439 \u0434\u0430\u0442\u043E\u0439, \u0444\u0438\u0434\u043E\u043C \u0438 \u043F\u0430\u043F\u043A\u0430\u043C\u0438.</p>`;
       t5 = space();
       div2 = element("div");
       span1 = element("span");
@@ -9729,10 +9592,10 @@ function create_fragment(ctx) {
       t14 = space();
       button2 = element("button");
       if_block3.c();
-      attr(div1, "class", "modal-header svelte-1i65i7o");
-      attr(span1, "class", "chips-label svelte-1i65i7o");
-      attr(div2, "class", "chips-container svelte-1i65i7o");
-      attr(textarea, "class", "text-input svelte-1i65i7o");
+      attr(div1, "class", "modal-header svelte-5gmfbq");
+      attr(span1, "class", "chips-label svelte-5gmfbq");
+      attr(div2, "class", "chips-container svelte-5gmfbq");
+      attr(textarea, "class", "text-input svelte-5gmfbq");
       attr(textarea, "rows", "6");
       attr(textarea, "placeholder", textarea_placeholder_value = `\u041F\u0440\u0438\u043C\u0435\u0440:
 \u0422\u0440\u0435\u043D\u0434\u044B ${/*todayFormatted*/
@@ -9744,24 +9607,24 @@ function create_fragment(ctx) {
       ctx[3] || /*$isSaving*/
       ctx[4];
       attr(button0, "type", "button");
-      attr(button0, "class", "parse-button svelte-1i65i7o");
+      attr(button0, "class", "parse-button svelte-5gmfbq");
       button0.disabled = button0_disabled_value = /*$isParsing*/
       ctx[3] || /*$isSaving*/
       ctx[4] || !/*$inputText*/
       ctx[5].trim();
-      attr(div3, "class", "parse-action-row svelte-1i65i7o");
-      attr(div4, "class", "input-section svelte-1i65i7o");
+      attr(div3, "class", "parse-action-row svelte-5gmfbq");
+      attr(div4, "class", "input-section svelte-5gmfbq");
       attr(button1, "type", "button");
-      attr(button1, "class", "btn-cancel svelte-1i65i7o");
+      attr(button1, "class", "btn-cancel svelte-5gmfbq");
       button1.disabled = /*$isSaving*/
       ctx[4];
       attr(button2, "type", "button");
-      attr(button2, "class", "btn-save svelte-1i65i7o");
+      attr(button2, "class", "btn-save svelte-5gmfbq");
       button2.disabled = button2_disabled_value = /*$isSaving*/
       ctx[4] || /*$selectedCount*/
       ctx[8] === 0;
-      attr(div5, "class", "modal-footer svelte-1i65i7o");
-      attr(div6, "class", "ai-quick-add-container svelte-1i65i7o");
+      attr(div5, "class", "modal-footer svelte-5gmfbq");
+      attr(div6, "class", "ai-quick-add-container svelte-5gmfbq");
     },
     m(target, anchor) {
       insert(target, div6, anchor);
@@ -9891,7 +9754,7 @@ function create_fragment(ctx) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_6(ctx);
+          if_block1 = create_if_block_4(ctx);
           if_block1.c();
           if_block1.m(div6, t11);
         }
@@ -12311,7 +12174,7 @@ function computeVirtualWindow(items, scrollTop, viewportHeight, itemHeight = 30,
 
 // src/ui/svelte/TreeNodeRow.svelte
 var import_obsidian12 = require("obsidian");
-function create_if_block_62(ctx) {
+function create_if_block_6(ctx) {
   let div;
   let span;
   let t1;
@@ -12953,7 +12816,7 @@ function create_fragment2(ctx) {
       /*item*/
       ctx2[0].type === "empty-folder"
     )
-      return create_if_block_62;
+      return create_if_block_6;
   }
   let current_block_type = select_block_type(ctx, -1);
   let if_block = current_block_type && current_block_type(ctx);
@@ -14602,7 +14465,7 @@ function create_else_block_3(ctx) {
       /*activeTab*/
       ctx2[13] === "folders"
     )
-      return create_if_block_63;
+      return create_if_block_62;
     return create_else_block_7;
   }
   let current_block_type = select_block_type_4(ctx, [-1, -1, -1, -1, -1]);
@@ -15109,14 +14972,14 @@ function create_else_block_7(ctx) {
     }
   };
 }
-function create_if_block_63(ctx) {
+function create_if_block_62(ctx) {
   let div;
   function select_block_type_5(ctx2, dirty) {
     if (
       /*displayedFolders*/
       ctx2[17].length === 0
     )
-      return create_if_block_72;
+      return create_if_block_7;
     return create_else_block_5;
   }
   let current_block_type = select_block_type_5(ctx, [-1, -1, -1, -1, -1]);
@@ -15826,7 +15689,7 @@ function create_else_block_5(ctx) {
     }
   };
 }
-function create_if_block_72(ctx) {
+function create_if_block_7(ctx) {
   let div;
   function select_block_type_6(ctx2, dirty) {
     if (
@@ -18405,7 +18268,6 @@ var LentaSidebarView = class extends import_obsidian15.ItemView {
     this.isLoading = false;
     this.feeds = [];
     this.folders = [];
-    this.taxonomy = [];
     this.containers = [];
     // Selected folder for context
     this.selectedFolderId = null;
@@ -18796,16 +18658,14 @@ var LentaSidebarView = class extends import_obsidian15.ItemView {
       this.render();
     }
     try {
-      const [feeds, folders, taxonomy, containers, syncStatus] = await Promise.all([
+      const [feeds, folders, containers, syncStatus] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
         this.apiClient.getFolders({ scope: "all" }).catch(() => []),
-        this.apiClient.getTaxonomyTree().catch(() => []),
         this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
         this.apiClient.getSyncStatus(this.getSettings().deviceId).catch(() => null)
       ]);
       this.feeds = feeds;
       this.folders = folders;
-      this.taxonomy = taxonomy;
       this.containers = containers;
       this.syncStatus = syncStatus;
       this.activeSession = syncStatus?.activeSession || null;

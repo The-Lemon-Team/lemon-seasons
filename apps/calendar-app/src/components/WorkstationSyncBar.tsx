@@ -4,12 +4,8 @@ import {
   Cloud,
   RefreshCw,
   ExternalLink,
-  GitCommit,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Sparkles,
-  Save,
   X,
 } from 'lucide-react';
 import { syncApi } from '../api/client';
@@ -37,9 +33,9 @@ export const WorkstationSyncBar: React.FC = () => {
     mutationFn: () => syncApi.pull(),
     onSuccess: (result) => {
       if (result.pulledCommits && result.pulledCommits.length > 0) {
-        showToast(`Подтянуто ${result.pulledCommits.length} коммитов из Google Drive! Данные обновлены.`, 'success');
+        showToast(`Подтянуты свежие обновления из Google Drive!`, 'success');
       } else {
-        showToast('Все наработки актуальны. Новых коммитов в Google Drive нет.', 'info');
+        showToast('Все наработки актуальны. Данные синхронизированы.', 'info');
       }
       queryClient.invalidateQueries({ queryKey: ['sync-status'] });
       queryClient.invalidateQueries({ queryKey: ['time-slice-notes'] });
@@ -52,17 +48,14 @@ export const WorkstationSyncBar: React.FC = () => {
     },
   });
 
-  const activeSession = syncStatus?.activeSession;
-  const pendingCount = syncStatus?.pendingChangesCount ?? 0;
-  const lastCommit = syncStatus?.lastCommit;
   const unpushedCount = syncStatus?.gdrive?.unpushedCommitsCount ?? 0;
 
   if (isLoading || !syncStatus) {
     return null;
   }
 
-  const formatCommitDate = (dateStr?: string) => {
-    if (!dateStr) return '';
+  const formatSyncDate = (dateStr?: string) => {
+    if (!dateStr) return 'Актуально';
     const d = new Date(dateStr);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -95,14 +88,14 @@ export const WorkstationSyncBar: React.FC = () => {
 
       {/* Main Bar Wrapper */}
       <div className="flex items-center gap-1.5 bg-[#1a1d1d] hover:bg-[#1e2222] border border-[#2e3434] rounded-lg px-2.5 py-1 text-xs transition-colors">
-        {/* Status Indicator & Commit Hash */}
+        {/* Status Indicator & Popover trigger */}
         <button
           onClick={() => setIsDetailsOpen((prev) => !prev)}
           className="flex items-center gap-1.5 text-[#93927e] hover:text-[#e2e2e2] transition-colors cursor-pointer"
-          title="Сведения о синхронизации Google Drive и сессии"
+          title="Сведения о синхронизации Google Drive"
         >
           <span className="relative flex h-2 w-2">
-            {activeSession ? (
+            {pullMutation.isPending ? (
               <>
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9cd58] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9cd58]"></span>
@@ -114,33 +107,19 @@ export const WorkstationSyncBar: React.FC = () => {
 
           <span className="font-mono text-[11px] text-[#e2e2e2]">GDrive</span>
 
-          {lastCommit ? (
-            <span className="font-mono text-[10px] text-[#93927e] hidden sm:inline">
-              #{lastCommit.id.slice(-6)}
+          {unpushedCount > 0 && (
+            <span
+              className="bg-amber-500/20 text-amber-400 font-mono text-[9px] px-1 rounded"
+              title={`Ожидает выгрузки: ${unpushedCount}`}
+            >
+              ↑{unpushedCount}
             </span>
-          ) : (
-            <span className="font-mono text-[10px] text-[#93927e] hidden sm:inline">Relay</span>
           )}
         </button>
 
-        {/* Live Session Badge if work is ongoing in Admin CMS */}
-        {activeSession && (
-          <div
-            className="hidden xl:flex items-center gap-1 bg-[#c9cd58]/15 border border-[#c9cd58]/30 text-[#e5e971] px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer"
-            onClick={() => setIsDetailsOpen(true)}
-            title={`В Admin CMS идет активная сессия: ${activeSession.title}`}
-          >
-            <Sparkles className="w-3 h-3 text-[#c9cd58]" />
-            <span className="truncate max-w-[110px]">В работе: {activeSession.title}</span>
-            {pendingCount > 0 && (
-              <span className="font-bold text-[#c9cd58]">+{pendingCount}</span>
-            )}
-          </div>
-        )}
-
         <div className="h-3 w-[1px] bg-[#2e3434] mx-0.5" />
 
-        {/* Refresh / Pull Button (Primary action for viewer app) */}
+        {/* Refresh / Pull Button */}
         <button
           onClick={() => pullMutation.mutate()}
           disabled={pullMutation.isPending}
@@ -153,11 +132,6 @@ export const WorkstationSyncBar: React.FC = () => {
           <span className="hidden md:inline font-sans text-[11px]">
             {pullMutation.isPending ? 'Обновление...' : 'Обновить'}
           </span>
-          {unpushedCount > 0 && (
-            <span className="bg-amber-500/20 text-amber-400 font-mono text-[9px] px-1 rounded">
-              ↑{unpushedCount}
-            </span>
-          )}
         </button>
       </div>
 
@@ -173,7 +147,7 @@ export const WorkstationSyncBar: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-[#242828]">
               <div className="flex items-center gap-2">
                 <Cloud className="w-4 h-4 text-[#c9cd58]" />
-                <span className="font-semibold text-[#e2e2e2] text-sm">Google Drive Relay</span>
+                <span className="font-semibold text-[#e2e2e2] text-sm">Синхронизация Google Drive</span>
               </div>
               <button
                 onClick={() => setIsDetailsOpen(false)}
@@ -186,7 +160,15 @@ export const WorkstationSyncBar: React.FC = () => {
             {/* Information Grid */}
             <div className="py-3 space-y-2.5 font-mono text-[11px]">
               <div className="flex justify-between items-center text-[#93927e]">
-                <span>Хранилище синхронизации:</span>
+                <span>Статус подключения:</span>
+                <span className="text-[#22c55e] flex items-center gap-1 font-sans font-medium text-[11px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
+                  В сети (Relay)
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center text-[#93927e]">
+                <span>Хранилище:</span>
                 <span className="text-[#e2e2e2] bg-[#1e2020] px-1.5 py-0.5 rounded border border-[#242828] text-[10px]">
                   C:\remote
                 </span>
@@ -197,53 +179,24 @@ export const WorkstationSyncBar: React.FC = () => {
                 <span className="text-[#c9cd58]">{syncStatus.deviceId}</span>
               </div>
 
-              <div className="flex justify-between items-center text-[#93927e]">
-                <span>Последний коммит:</span>
-                <span className="text-[#e2e2e2]">
-                  {lastCommit ? (
-                    <span title={lastCommit.id}>
-                      #{lastCommit.id.slice(0, 10)}... ({lastCommit.entitiesCount} сущн.)
-                    </span>
-                  ) : (
-                    'Нет коммитов'
-                  )}
-                </span>
-              </div>
-
-              {lastCommit?.createdAt && (
+              {syncStatus.lastCommit?.createdAt && (
                 <div className="flex justify-between items-center text-[#93927e]">
-                  <span>Время фиксации:</span>
-                  <span className="text-[#e2e2e2]">{formatCommitDate(lastCommit.createdAt)}</span>
+                  <span>Последнее обновление:</span>
+                  <span className="text-[#e2e2e2]">{formatSyncDate(syncStatus.lastCommit.createdAt)}</span>
                 </div>
               )}
 
-              {/* Workstation Session State */}
-              <div className="pt-2 border-t border-[#242828]">
-                <div className="text-[#93927e] mb-1">Сессия рабочей станции:</div>
-                {activeSession ? (
-                  <div className="bg-[#1e2020] border border-[#c9cd58]/30 rounded p-2 text-[#e2e2e2] space-y-1">
-                    <div className="flex items-center gap-1.5 text-[#c9cd58] font-bold text-[11px]">
-                      <Sparkles className="w-3 h-3" />
-                      <span>{activeSession.title}</span>
-                    </div>
-                    <div className="text-[10px] text-[#93927e]">
-                      Несохраненных дельт: <span className="text-[#e5e971]">{pendingCount}</span>
-                    </div>
-                    <div className="text-[10px] text-[#93927e]">
-                      Автор: {activeSession.author} ({formatCommitDate(activeSession.startedAt)})
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-[#93927e] italic">
-                    Нет активной сессии (запускается при редактировании в Admin CMS)
-                  </div>
-                )}
-              </div>
+              {unpushedCount > 0 && (
+                <div className="flex justify-between items-center text-[#93927e]">
+                  <span>Ожидает выгрузки:</span>
+                  <span className="text-amber-400 font-semibold">{unpushedCount}</span>
+                </div>
+              )}
             </div>
 
             {/* Role Context Explanation */}
             <div className="bg-[#121414] border border-[#242828] rounded-lg p-2.5 mb-3 text-[11px] text-[#93927e] leading-relaxed">
-              💡 <span className="text-[#e2e2e2] font-semibold">Web Calendar App</span> используется для просмотра наработанных заметок. Основная работа с AI-агентами и курацией ведется в <span className="text-[#c9cd58] font-semibold">Admin CMS</span>.
+              💡 <span className="text-[#e2e2e2] font-semibold">Web Calendar App</span> используется для просмотра заметок. Редактирование и работа с AI-агентами ведутся в <span className="text-[#c9cd58] font-semibold">Admin CMS</span>.
             </div>
 
             {/* Action Buttons */}

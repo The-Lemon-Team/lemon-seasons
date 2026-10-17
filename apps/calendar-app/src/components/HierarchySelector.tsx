@@ -137,29 +137,33 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
       const parts = lower.split('/');
       const lastPart = parts[parts.length - 1];
 
-      // Check folders
-      const hasFolder = note.folders?.some((f) => {
-        const fp = (f.folder?.path || '').toLowerCase();
-        const fn = (f.folder?.name || '').toLowerCase();
-        return fp === lower || fp.startsWith(lower + '/') || fn === lastPart;
-      });
+      // Check folders and folderPath
+      const hasFolder =
+        note.folders?.some((f) => {
+          const fp = (f.folder?.path || '').toLowerCase();
+          const fn = (f.folder?.name || '').toLowerCase();
+          return fp === lower || fp.startsWith(lower + '/') || fn === lastPart;
+        }) ||
+        Boolean(
+          note.folderPath &&
+            (note.folderPath.toLowerCase() === lower ||
+              note.folderPath.toLowerCase().startsWith(lower + '/'))
+        );
       if (hasFolder) return true;
 
-      // Check tags
-      const hasTag = note.tags?.some((tagItem) => {
-        const tp = (tagItem.path || '').toLowerCase();
-        const tn = (tagItem.name || '').toLowerCase();
-        const dotPath = lower.replace(/\//g, '.');
-        return tp === dotPath || tp.startsWith(dotPath + '.') || tn === lastPart;
+      // Check hashtags
+      const hasHashtag = note.hashtags?.some((h) => {
+        const hn = (h.name || '').toLowerCase().replace(/^#/, '');
+        return hn === lastPart || hn === lower.replace(/\//g, '_');
       });
-      if (hasTag) return true;
+      if (hasHashtag) return true;
 
       // Check title / description keywords for realistic preview
       if (lastPart === 'marvel') {
         return Boolean(
           note.title.toLowerCase().includes('marvel') ||
           note.title.toLowerCase().includes('avengers') ||
-          note.tags?.some((tagItem) => tagItem.path.includes('marvel')) ||
+          note.hashtags?.some((h) => h.name.toLowerCase().includes('marvel')) ||
           note.feed?.slug?.includes('mcu')
         );
       }
@@ -188,8 +192,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
         return Boolean(
           matchesNode(note, 'Films/Marvel') ||
           matchesNode(note, 'Films/Fantastic') ||
-          note.type === 'FILM_RELEASE' ||
-          note.tags?.some((tagItem) => tagItem.path.startsWith('movies') || tagItem.path.startsWith('films'))
+          note.type === 'FILM_RELEASE'
         );
       }
       if (lower === 'politics') {

@@ -27,7 +27,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
   );
   const [endDate, setEndDate] = useState('');
   const [folders, setFolders] = useState<FolderInputItem[]>([]);
-  const [taxonomyPath, setTaxonomyPath] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
 
@@ -50,13 +49,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
     }
 
     try {
-      const tagIds = taxonomyPath.trim()
-        ? taxonomyPath
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : [];
-
       await createNoteMutation.mutateAsync({
         feedId,
         title: title.trim(),
@@ -64,7 +56,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         description: description.trim() || undefined,
-        tagIds,
         hashtags,
         folders: folders.length > 0 ? folders : undefined,
       });
@@ -74,7 +65,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       setTitle('');
       setDescription('');
       setEndDate('');
-      setTaxonomyPath('');
       setFolders([]);
       setHashtags([]);
       onClose();
@@ -155,40 +145,25 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
             />
           </div>
 
-          {/* Date Range & Taxonomy Path */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                {t.datesCol}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
-                />
-                <span className="text-on-surface-variant">-</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  placeholder={t.endDateLabel}
-                  className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                {t.taxonomy}
-              </label>
+          {/* Date Range */}
+          <div className="space-y-1">
+            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+              {t.datesCol}
+            </label>
+            <div className="flex items-center gap-2 max-w-sm">
               <input
-                type="text"
-                value={taxonomyPath}
-                onChange={(e) => setTaxonomyPath(e.target.value)}
-                placeholder="e.g. movies.marvel.avengers"
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs placeholder:text-outline/60 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
+              />
+              <span className="text-on-surface-variant">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder={t.endDateLabel}
+                className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
               />
             </div>
           </div>

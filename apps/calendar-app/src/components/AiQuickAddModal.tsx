@@ -183,7 +183,6 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         folder: c.folder || 'Notes',
         folders: c.folder ? [c.folder] : undefined,
         hashtags: c.hashtags,
-        tagIds: c.taxonomyPath ? [c.taxonomyPath] : c.tagIds,
         sourceLink: c.sourceLink,
         icon: c.icon,
         description: c.description,

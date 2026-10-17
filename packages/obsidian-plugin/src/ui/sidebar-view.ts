@@ -162,7 +162,6 @@ export class LentaSidebarView extends ItemView {
 
   private feeds: LentaFeedDto[] = [];
   private folders: LentaFolderDto[] = [];
-  private taxonomy: LentaTaxonomyNodeDto[] = [];
   private containers: LentaContainerSummaryDto[] = [];
 
   // Selected folder for context
@@ -633,17 +632,15 @@ export class LentaSidebarView extends ItemView {
     }
 
     try {
-      const [feeds, folders, taxonomy, containers, syncStatus] = await Promise.all([
+      const [feeds, folders, containers, syncStatus] = await Promise.all([
         this.apiClient.getFeeds().catch(() => []),
         this.apiClient.getFolders({ scope: 'all' }).catch(() => []),
-        this.apiClient.getTaxonomyTree().catch(() => []),
         this.apiClient.listContainers({ fetchAll: true }).catch(() => []),
         this.apiClient.getSyncStatus(this.getSettings().deviceId).catch(() => null),
       ]);
 
       this.feeds = feeds;
       this.folders = folders;
-      this.taxonomy = taxonomy;
       this.containers = containers;
       this.syncStatus = syncStatus;
       this.activeSession = syncStatus?.activeSession || null;

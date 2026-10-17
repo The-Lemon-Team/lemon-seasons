@@ -154,7 +154,7 @@ export interface ChatMessage {
     description: string;
     type: NoteType;
     folder: string;
-    taxonomyPath: string;
+    taxonomyPath?: string;
     hashtags: string[];
     curator: string;
     sourceLink?: string;

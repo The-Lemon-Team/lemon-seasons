@@ -35,7 +35,6 @@ export function generateNotebookProducerResponse(ctx: NotebookProducerContext): 
 *Дневник создается в фоне агентом notebook-producer. После завершения сюда будет прикреплен аудиоплеер и стенограмма.*`,
     type: NoteType.DONE,
     folder: 'Podcasts',
-    taxonomyPath: 'media.podcast.notebooklm',
     hashtags: ['NotebookLM', 'Дневник', 'АудиоДайджест', 'Habr', 'Хакер'],
     curator: 'Герман «Кернел»',
   };

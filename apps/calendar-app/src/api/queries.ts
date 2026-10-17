@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { calendarApi } from './client';
-import { containersApi } from './containersApi';
-import { NoteType, QueryNotesParams, ObsidianContainer } from '@lenta/shared';
+import { NoteType, QueryNotesParams } from '@lenta/shared';
 
 export interface TimeSliceFilter {
   start: string;
@@ -9,7 +8,6 @@ export interface TimeSliceFilter {
   feed?: string;
   containers?: string[];
   obsidianFolders?: string[];
-  containersList?: ObsidianContainer[];
   tags?: string[];
   hashtags?: string[];
   types?: NoteType[];
@@ -30,10 +28,6 @@ export const queryKeys = {
   folders: ['folders'] as const,
   folderTree: ['folders', 'tree'] as const,
   folderDetail: (id: string) => ['folders', 'detail', id] as const,
-  obsidianContainers: ['obsidian-containers'] as const,
-  obsidianContainerDetail: (id: string) => ['obsidian-containers', 'detail', id] as const,
-  obsidianContainerTree: (id: string) => ['obsidian-containers', 'tree', id] as const,
-  obsidianContainerCommits: (id: string) => ['obsidian-containers', 'commits', id] as const,
 };
 
 /**
@@ -56,9 +50,9 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         params.feedSlug = filter.feed;
       }
 
-      // If tag path filter active
+      // If folder hierarchy filter active
       if (filter.tags && filter.tags.length === 1) {
-        params.tagPath = filter.tags[0];
+        params.folder = filter.tags[0];
       }
 
       // If hashtag filter active
@@ -83,7 +77,6 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         const lower = filterTag.toLowerCase().trim();
         const parts = lower.split('/');
         const lastPart = parts[parts.length - 1];
-        const dotPath = lower.replace(/\//g, '.');
 
         // 1. Check folder paths and names
         if (
@@ -96,23 +89,30 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
           return true;
         }
 
-        // 2. Check taxonomy tags
+        // 2. Check direct folderPath string property if present
+        if ((note as any).folderPath) {
+          const fp = ((note as any).folderPath as string).toLowerCase();
+          if (fp === lower || fp.startsWith(lower + '/')) {
+            return true;
+          }
+        }
+
+        // 3. Check hashtags
         if (
-          note.tags?.some((t) => {
-            const tp = (t.path || '').toLowerCase();
-            const tn = (t.name || '').toLowerCase();
-            return tp === dotPath || tp.startsWith(dotPath + '.') || tn === lastPart;
+          note.hashtags?.some((h) => {
+            const hn = (h.name || '').toLowerCase();
+            return hn === lastPart || hn === lower;
           })
         ) {
           return true;
         }
 
-        // 3. Preset and semantic aliases
+        // 4. Preset and semantic aliases
         if (lastPart === 'marvel') {
           return Boolean(
             note.title.toLowerCase().includes('marvel') ||
             note.title.toLowerCase().includes('avengers') ||
-            note.tags?.some((t) => t.path.includes('marvel')) ||
+            note.hashtags?.some((h) => h.name.includes('marvel')) ||
             note.feed?.slug?.includes('mcu')
           );
         }
@@ -158,49 +158,9 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         items = items.filter((n) => n.feed?.slug === filter.feed);
       }
 
-      // Container & Bound Folder filter refinement
+      // Container filter refinement
       if (filter.containers && filter.containers.length > 0) {
-        const selectedContainerObjects = (filter.containersList || []).filter((c) => filter.containers!.includes(c.id));
-        const obsFolderSet = new Set(filter.obsidianFolders || []);
-
-        const boundPaths = selectedContainerObjects
-          .flatMap((c) => {
-            const hasExplicitFolderSelection = (filter.obsidianFolders || []).some(
-              (key: string) => key.startsWith(`${c.id}::`) || c.boundFolders.some((bf) => key === bf.path)
-            );
-
-            let activeFolders = c.boundFolders.map((bf) => bf.path);
-            if (hasExplicitFolderSelection) {
-              activeFolders = c.boundFolders
-                .filter((bf) => obsFolderSet.has(`${c.id}::${bf.path}`) || obsFolderSet.has(bf.path))
-                .map((bf) => bf.path);
-            }
-
-            return [c.vaultPath, ...activeFolders];
-          })
-          .filter(Boolean)
-          .map((p) => p.toLowerCase());
-
-        items = items.filter((n) => {
-          if (n.containerId && filter.containers!.includes(n.containerId)) {
-            return true;
-          }
-          if (boundPaths.length > 0) {
-            if (n.folders && n.folders.length > 0) {
-              return n.folders.some((f) => {
-                const fp = (f.folder?.path || f.folder?.name || '').toLowerCase();
-                return boundPaths.some((bp) => fp === bp || fp.startsWith(bp + '/') || bp.startsWith(fp + '/'));
-              });
-            }
-            if (n.tags && n.tags.length > 0) {
-              return n.tags.some((t) => {
-                const tp = (t.path || t.name || '').toLowerCase();
-                return boundPaths.some((bp) => tp === bp || tp.includes(bp) || bp.includes(tp));
-              });
-            }
-          }
-          return false;
-        });
+        items = items.filter((n) => n.containerId && filter.containers!.includes(n.containerId));
       }
 
       if (filter.tags && filter.tags.length > 0) {
@@ -279,41 +239,7 @@ export function useFolderTree() {
   });
 }
 
-export function useObsidianContainersQuery() {
-  return useQuery({
-    queryKey: queryKeys.obsidianContainers,
-    queryFn: () => containersApi.listContainers(),
-    staleTime: 10_000,
-    retry: 1,
-  });
-}
 
-export function useObsidianContainerTreeQuery(containerId: string | null) {
-  return useQuery({
-    queryKey: queryKeys.obsidianContainerTree(containerId || ''),
-    queryFn: () => (containerId ? containersApi.getContainerTree(containerId) : null),
-    enabled: Boolean(containerId),
-    staleTime: 15_000,
-  });
-}
-
-export function useObsidianContainerFilesQuery(containerId: string | null) {
-  return useQuery({
-    queryKey: queryKeys.obsidianContainerTree(containerId || ''),
-    queryFn: () => (containerId ? containersApi.getContainerFiles(containerId) : []),
-    enabled: Boolean(containerId),
-    staleTime: 15_000,
-  });
-}
-
-export function useObsidianContainerCommitsQuery(containerId: string | null) {
-  return useQuery({
-    queryKey: queryKeys.obsidianContainerCommits(containerId || ''),
-    queryFn: () => (containerId ? containersApi.getContainerCommits(containerId) : []),
-    enabled: Boolean(containerId),
-    staleTime: 15_000,
-  });
-}
 
 export function useDailySummaryQuery(date?: string | null) {
   return useQuery({

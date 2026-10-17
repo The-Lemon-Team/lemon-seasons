@@ -40,13 +40,6 @@ export class LentaFrontmatterUtil {
       }
     }
 
-    // Taxonomy tags
-    if (note.tags && note.tags.length > 0) {
-      const taxonomyPaths = note.tags.map((t) => t.path);
-      lines.push(`taxonomy:`);
-      taxonomyPaths.forEach((tp) => lines.push(`  - "${tp}"`));
-    }
-
     // Hashtags
     if (note.hashtags && note.hashtags.length > 0) {
       const hashtags = note.hashtags.map((h) => h.name.replace(/^#/, ''));

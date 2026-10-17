@@ -173,7 +173,6 @@ ${alexBullets.map((b) => `- ${b}`).join('\n')}
 *Сформировано аналитическим деском Project Lenta.*`,
     type: NoteType.EVENT,
     folder: 'Politics/Daily',
-    taxonomyPath: 'politics.daily_summary',
     hashtags: ['Политика', 'Резюме', 'Коллегия', 'Контуры'],
     curator: 'Политическая коллегия',
   };

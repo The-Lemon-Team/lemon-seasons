@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, RefreshCw, Radio } from 'lucide-react';
+import { ExternalLink, RefreshCw, Radio, Columns, Maximize2 } from 'lucide-react';
 
 interface FeedAppMicrofrontendProps {
   initialRoute?: string;
@@ -10,12 +10,26 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
 }) => {
   const [iframeKey, setIframeKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [layoutMode, setLayoutMode] = useState<'split' | 'stream'>('split');
 
   // In local browser, feed-app runs on 5175
-  const feedAppUrl = `http://localhost:5175/${initialRoute === 'spark' ? '' : initialRoute}`;
+  const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
+  const queryParams = new URLSearchParams({
+    embed: 'true',
+    layout: layoutMode,
+  });
+  const pathSegment = initialRoute === 'spark' ? '' : initialRoute;
+  const feedAppUrl = `${feedAppBase}/${pathSegment}?${queryParams.toString()}`;
 
   const handleReload = () => {
     setIsLoading(true);
+    setIframeKey((prev) => prev + 1);
+  };
+
+  const handleSelectLayout = (mode: 'split' | 'stream') => {
+    if (mode === layoutMode) return;
+    setIsLoading(true);
+    setLayoutMode(mode);
     setIframeKey((prev) => prev + 1);
   };
 
@@ -26,10 +40,38 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
         <div className="flex items-center gap-2 text-slate-300">
           <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
           <span className="font-semibold text-white">Микрофронтенд: Lenta Feed App</span>
-          <span className="text-[#8292a2] hidden sm:inline">• standalone на :5175</span>
+          <span className="text-[#8292a2] hidden sm:inline">• :5175</span>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Layout Mode selector: Split with rail vs Stream-only */}
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 text-[11px]">
+            <button
+              onClick={() => handleSelectLayout('split')}
+              className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${
+                layoutMode === 'split'
+                  ? 'bg-[#2481cc]/30 text-[#64b5f6] font-semibold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Лента с боковым сайдбаром (Сетка)"
+            >
+              <Columns className="w-3 h-3" />
+              <span className="hidden sm:inline">Сетка</span>
+            </button>
+            <button
+              onClick={() => handleSelectLayout('stream')}
+              className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${
+                layoutMode === 'stream'
+                  ? 'bg-[#2481cc]/30 text-[#64b5f6] font-semibold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Только лента без сайдбара"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span className="hidden sm:inline">Только лента</span>
+            </button>
+          </div>
+
           <button
             onClick={handleReload}
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-colors flex items-center gap-1 text-[11px]"
@@ -53,7 +95,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
       </div>
 
       {/* Embedded Iframe Container */}
-      <div className="flex-1 w-full h-full relative min-h-[600px]">
+      <div className="flex-1 w-full h-[calc(100vh-180px)] min-h-[780px] relative">
         {isLoading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0e1621] text-slate-400 gap-2">
             <Radio className="w-6 h-6 animate-pulse text-[#2481cc]" />
@@ -64,7 +106,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
           key={iframeKey}
           src={feedAppUrl}
           title="Lenta Feed App Microfrontend"
-          className="w-full h-full border-0 min-h-[650px]"
+          className="w-full h-full border-0 min-h-[780px]"
           onLoad={() => setIsLoading(false)}
         />
       </div>

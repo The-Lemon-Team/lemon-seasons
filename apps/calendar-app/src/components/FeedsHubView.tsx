@@ -136,10 +136,12 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
     }
   };
 
+  const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#121414] dark:bg-[#0e1621] overflow-y-auto transition-colors">
-      {/* Centered, Compact Container for Desktop & Mobile */}
-      <div className="max-w-5xl mx-auto w-full px-3 py-4 sm:px-5 sm:py-5 space-y-4">
+      {/* Responsive Container with fixed stable width to avoid layout reflows and lags when switching modes */}
+      <div className="max-w-6xl mx-auto w-full px-3 py-4 sm:px-5 sm:py-5 space-y-4">
         {/* Top Integration Mode Switcher (Native Reusable Components vs Microfrontend Embed) */}
         <div className="flex items-center justify-between gap-3 bg-[#181a1a] p-2 rounded-xl border border-[#242828] text-xs font-mono">
           <div className="flex items-center gap-1.5">
@@ -170,7 +172,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
           </div>
 
           <a
-            href="http://localhost:5175"
+            href={feedAppBase}
             target="_blank"
             rel="noreferrer"
             className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[#93927e] hover:text-[#e5e971] hover:bg-[#242828] transition-colors"

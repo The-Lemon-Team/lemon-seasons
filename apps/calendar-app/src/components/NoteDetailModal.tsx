@@ -69,37 +69,12 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     }
   }, [current]);
 
-  if (!current) return null;
-
-  const handleNavigateToNote = async (targetNoteId: string) => {
-    if (!targetNoteId || isLoadingRelated) return;
-    try {
-      setIsLoadingRelated(true);
-      const target = await calendarApi.getNoteById(targetNoteId);
-      if (target) {
-        setHistory((prev) => [...prev, current]);
-        setActiveNote(target);
-      }
-    } catch (err) {
-      console.warn('Failed to load related note:', err);
-    } finally {
-      setIsLoadingRelated(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setActiveNote(prev);
-  };
-
   const cleanDescription = useMemo(() => {
-    if (!current.description) return '';
+    if (!current?.description) return '';
     return current.description
       .replace(/(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i, '')
       .trim();
-  }, [current.description]);
+  }, [current?.description]);
 
   const relatedNotes: RelatedNoteItem[] = useMemo(() => {
     if (!current) return [];
@@ -126,6 +101,31 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     }
     return [];
   }, [current]);
+
+  if (!current) return null;
+
+  const handleNavigateToNote = async (targetNoteId: string) => {
+    if (!targetNoteId || isLoadingRelated || !current) return;
+    try {
+      setIsLoadingRelated(true);
+      const target = await calendarApi.getNoteById(targetNoteId);
+      if (target) {
+        setHistory((prev) => [...prev, current]);
+        setActiveNote(target);
+      }
+    } catch (err) {
+      console.warn('Failed to load related note:', err);
+    } finally {
+      setIsLoadingRelated(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory((prev) => prev.slice(0, -1));
+    setActiveNote(prev);
+  };
 
   const handleSaveEdit = async () => {
     if (!editTitle.trim() || isSavingEdit) return;
@@ -401,19 +401,10 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
             )}
           </div>
 
-          {/* Tags & Taxonomy Paths */}
-          {((current.tags && current.tags.length > 0) || (current.hashtags && current.hashtags.length > 0)) && (
+          {/* Hashtags */}
+          {current.hashtags && current.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-[#242828]">
-              {current.tags?.map((tagItem) => (
-                <span
-                  key={tagItem.id}
-                  className="px-2.5 py-1 rounded bg-[#282a2a] border border-[#242828] text-xs font-mono text-[#c9c7b2] flex items-center gap-1.5"
-                >
-                  <Tag className="w-3 h-3 text-[#c9cd58]" />
-                  <span>{tagItem.path}</span>
-                </span>
-              ))}
-              {current.hashtags?.map((h) => (
+              {current.hashtags.map((h) => (
                 <span
                   key={h.id}
                   className="px-2.5 py-1 rounded bg-[#c9cd58]/10 text-[#e5e971] text-xs font-mono font-medium"

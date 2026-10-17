@@ -5,7 +5,6 @@ import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
 import { useFoldersContext } from '../context/FoldersContext';
-import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { Folder as FolderType } from '@lenta/shared';
 import { X, Calendar, Tag, Plus, Check, FileText, Folder, AlertCircle } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -28,23 +27,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const queryClient = useQueryClient();
   const { data: feeds = [] } = useFeeds();
 
-  let externalFolders: FolderType[] = [];
-  let internalFolders: FolderType[] = [];
+  let folders: FolderType[] = [];
   try {
     const foldersCtx = useFoldersContext();
-    externalFolders = foldersCtx.externalFolders || [];
-    internalFolders = foldersCtx.internalFolders || [];
+    folders = foldersCtx.folders || [];
   } catch {
-    externalFolders = [];
-    internalFolders = [];
-  }
-
-  let containers: any[] = [];
-  try {
-    const contCtx = useObsidianContainers();
-    containers = contCtx.containers || [];
-  } catch {
-    containers = [];
+    folders = [];
   }
 
   const [title, setTitle] = useState('');
@@ -90,6 +78,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         .map((h) => h.trim().replace(/^#/, ''))
         .filter(Boolean);
 
+      const cleanFolder = folderPath.trim();
       await calendarApi.createNote({
         title: title.trim(),
         description: description.trim(),
@@ -97,12 +86,16 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         feedId: feedId || undefined,
+        folderPath: cleanFolder || undefined,
+        folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
         curator: curator.trim() || undefined,
       });
 
-      // Invalidate queries so that the newly created note is immediately displayed on the calendar
+      // Invalidate queries so that the newly created note is immediately displayed on the calendar & folder views
       await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.folderTree });
 
       setSavedSuccess(true);
       setTimeout(() => {
@@ -266,57 +259,17 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                         className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
                       >
                         <option value="">{t.noteFolderRoot}</option>
-                        {externalFolders.length > 0 && (
-                          <optgroup label="🌐 Общие проектные папки (External)">
-                            {externalFolders.map((f) => (
-                              <option key={f.id} value={f.path}>
-                                🌐 {f.name} ({f.path})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {internalFolders.length > 0 && (
-                          <optgroup label="📦 Папки контейнеров (Internal)">
-                            {internalFolders.map((f) => {
-                              const cont = containers.find((c) => c.id === f.containerId);
-                              return (
-                                <option key={f.id} value={f.path}>
-                                  📦 [{cont?.name || 'Vault'}] {f.name} ({f.path})
-                                </option>
-                              );
-                            })}
-                          </optgroup>
-                        )}
+                        {folders.map((f) => (
+                          <option key={f.id} value={f.path}>
+                            📁 {f.name} ({f.path})
+                          </option>
+                        ))}
                         {folderPath &&
-                          !externalFolders.some((f) => f.path.toLowerCase() === folderPath.toLowerCase()) &&
-                          !internalFolders.some((f) => f.path.toLowerCase() === folderPath.toLowerCase()) && (
+                          !folders.some((f) => f.path.toLowerCase() === folderPath.toLowerCase()) && (
                             <option value={folderPath}>📁 {folderPath}</option>
                           )}
                         <option value="__custom__">✏️ {t.noteFolderCustom}</option>
                       </select>
-
-                      {/* Scope Information Note */}
-                      {(() => {
-                        const selectedFolderObj = [...externalFolders, ...internalFolders].find(
-                          (f) => f.path.toLowerCase() === folderPath.toLowerCase()
-                        );
-                        if (!selectedFolderObj) return null;
-                        const isExt = selectedFolderObj.scope === 'external' || !selectedFolderObj.containerId;
-                        const cont = containers.find((c) => c.id === selectedFolderObj.containerId);
-                        return (
-                          <p className="mt-1 text-[10px] font-mono leading-tight">
-                            {isExt ? (
-                              <span className="text-[#e5e971]">
-                                🌐 <strong>{t.folderScopeExternal}</strong>: заметка будет транслироваться во все подключённые Obsidian-контейнеры.
-                              </span>
-                            ) : (
-                              <span className="text-[#93c5fd]">
-                                📦 <strong>{t.folderScopeInternal}</strong>: сохранится строго внутри «{cont?.name || selectedFolderObj.containerId}».
-                              </span>
-                            )}
-                          </p>
-                        );
-                      })()}
                     </>
                   ) : (
                     <input

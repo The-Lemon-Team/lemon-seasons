@@ -16,27 +16,14 @@ import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { CreateNoteModal } from './components/CreateNoteModal';
 import { AiQuickAddModal } from './components/AiQuickAddModal';
-import { PrivateContainersModal } from './components/PrivateContainersModal';
-
 import { KeyManagementModal } from './components/KeyManagementModal';
-import { ObsidianContainersView } from './components/ObsidianContainersView';
 import { FolderManagerView } from './components/FolderManagerView';
-import { SyncPushPullModal } from './components/SyncPushPullModal';
-import { useObsidianContainers, ObsidianContainersProvider } from './context/ObsidianContainersContext';
 import { FoldersProvider } from './context/FoldersContext';
 import { UserKeysProvider } from './context/UserKeysContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { parseObsidianRoute, navigateObsidian } from './utils/obsidianRouting';
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const {
-    containers: obsidianContainers = [],
-    isSyncModalOpen,
-    syncModalMode,
-    syncModalContainerId,
-    closeSyncModal,
-  } = useObsidianContainers();
   const {
     filters,
     setStartDate,
@@ -47,24 +34,12 @@ const CalendarAppInner: React.FC = () => {
     toggleFeed,
     selectOnlyFeed,
     clearFeeds,
-    toggleContainer,
-    selectOnlyContainer,
-    clearContainers,
-    toggleObsidianFolder,
-    selectOnlyObsidianFolder,
-    setObsidianFolders,
-    clearObsidianFolders,
     toggleTag,
     selectOnlyTag,
-    setAllTags,
     clearTags,
     toggleHashtag,
-    selectOnlyHashtag,
-    setAllHashtags,
-    clearHashtags,
     toggleType,
     selectOnlyType,
-    setAllTypes,
     clearTypes,
     resetFilters,
     prevMonth,
@@ -78,46 +53,18 @@ const CalendarAppInner: React.FC = () => {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [isAiQuickAddOpen, setIsAiQuickAddOpen] = useState(false);
-  const [isPrivateContainersOpen, setIsPrivateContainersOpen] = useState(false);
   const [isKeysModalOpen, setIsKeysModalOpen] = useState(false);
-
-
-  const [selectedSingleContainerId, setSelectedSingleContainerId] = useState<string | null>(() => {
-    return parseObsidianRoute().containerId;
-  });
-
-  // Sync selected container with URL back/forward navigation
-  React.useEffect(() => {
-    const handlePopState = () => {
-      const parsed = parseObsidianRoute();
-      setSelectedSingleContainerId(parsed.containerId);
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const handleSelectContainer = (containerId: string | null) => {
-    setSelectedSingleContainerId(containerId);
-    if (containerId) {
-      navigateObsidian({ containerId, tab: 'files' });
-    } else {
-      navigateObsidian({ containerId: null });
-    }
-  };
 
   const isCalendarView = ['timeline', 'month', 'gantt'].includes(filters.view);
 
   const handleSetView = (newView: CalendarViewMode) => {
-    if (newView !== 'obsidian') {
-      setSelectedSingleContainerId(null);
-    }
     if (!['timeline', 'month', 'gantt'].includes(newView)) {
       setIsFilterOpen(false);
     }
     setView(newView);
   };
 
-  // Scoped query filters: Calendar filters (tags, hashtags, types, containers) strictly apply to Calendar pages only
+  // Scoped query filters: Calendar filters (tags, hashtags, types) strictly apply to Calendar pages only
   const effectiveQueryFilters = useMemo(() => {
     if (isCalendarView) {
       return filters;
@@ -129,7 +76,6 @@ const CalendarAppInner: React.FC = () => {
         view: filters.view,
         feed: undefined, // Cached full notes in memory: instant 0ms tab switches without network flickering
         search: filters.search,
-        containers: [],
         tags: [],
         hashtags: [],
         types: [],
@@ -141,7 +87,6 @@ const CalendarAppInner: React.FC = () => {
       view: filters.view,
       search: filters.search,
       feed: undefined,
-      containers: [],
       tags: [],
       hashtags: [],
       types: [],
@@ -149,18 +94,13 @@ const CalendarAppInner: React.FC = () => {
   }, [isCalendarView, filters]);
 
   // Queries
-  const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes({
-    ...effectiveQueryFilters,
-    containersList: obsidianContainers,
-  });
+  const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes(effectiveQueryFilters);
 
   const notes = notesData?.items || [];
-  const totalNotes = notesData?.total || 0;
 
   // Active filter count for badge (strictly for Calendar pages)
   const activeFilterCount = isCalendarView
     ? (filters.feed ? 1 : 0) +
-      (filters.containers?.length || 0) +
       filters.tags.length +
       filters.hashtags.length +
       filters.types.length +
@@ -187,13 +127,11 @@ const CalendarAppInner: React.FC = () => {
         onSetView={handleSetView}
         onOpenQuickAdd={() => setIsCreateNoteOpen(true)}
         onOpenAiQuickAdd={() => setIsAiQuickAddOpen(true)}
-        onOpenPrivateContainers={() => setIsPrivateContainersOpen(true)}
         onOpenKeysModal={() => setIsKeysModalOpen(true)}
         onToggleFilters={() => setIsFilterOpen((prev) => !prev)}
         isFilterOpen={isFilterOpen}
         activeFilterCount={activeFilterCount}
       />
-
 
       {/* 2. Main Content Canvas */}
       <div className="flex-1 flex flex-col md:ml-64 h-full relative overflow-hidden min-h-0 bg-[#121414]">
@@ -234,13 +172,6 @@ const CalendarAppInner: React.FC = () => {
                 onToggleTag={toggleTag}
                 onSelectOnlyTag={selectOnlyTag}
                 onClearTags={clearTags}
-                onToggleContainer={toggleContainer}
-                onSelectOnlyContainer={selectOnlyContainer}
-                onClearContainers={clearContainers}
-                onToggleObsidianFolder={toggleObsidianFolder}
-                onSelectOnlyObsidianFolder={selectOnlyObsidianFolder}
-                onSetObsidianFolders={setObsidianFolders}
-                onClearObsidianFolders={clearObsidianFolders}
                 onResetFilters={resetFilters}
               />
             )}
@@ -271,13 +202,6 @@ const CalendarAppInner: React.FC = () => {
                 onSelectOnlyTag={selectOnlyTag}
                 onClearTags={clearTags}
                 onToggleHashtag={toggleHashtag}
-                onToggleContainer={toggleContainer}
-                onSelectOnlyContainer={selectOnlyContainer}
-                onClearContainers={clearContainers}
-                onToggleObsidianFolder={toggleObsidianFolder}
-                onSelectOnlyObsidianFolder={selectOnlyObsidianFolder}
-                onSetObsidianFolders={setObsidianFolders}
-                onClearObsidianFolders={clearObsidianFolders}
                 onResetFilters={resetFilters}
                 onOpenFilterDrawer={() => setIsFilterOpen(true)}
               />
@@ -319,17 +243,6 @@ const CalendarAppInner: React.FC = () => {
             {filters.view === 'folders' && (
               <FolderManagerView />
             )}
-
-            {filters.view === 'obsidian' && (
-              <ObsidianContainersView
-                filterState={filters}
-                onToggleContainer={toggleContainer}
-                onSelectOnlyContainer={selectOnlyContainer}
-                onClearContainers={clearContainers}
-                selectedSingleContainerId={selectedSingleContainerId}
-                onSelectSingleContainer={handleSelectContainer}
-              />
-            )}
           </ErrorBoundary>
         </main>
       </div>
@@ -346,9 +259,6 @@ const CalendarAppInner: React.FC = () => {
           onSelectOnlyFeed={selectOnlyFeed}
           onClearFeed={clearFeeds}
           onClearFeeds={clearFeeds}
-          onToggleContainer={toggleContainer}
-          onSelectOnlyContainer={selectOnlyContainer}
-          onClearContainers={clearContainers}
           onToggleTag={toggleTag}
           onToggleHashtag={toggleHashtag}
           onToggleType={toggleType}
@@ -375,29 +285,14 @@ const CalendarAppInner: React.FC = () => {
         defaultDate={filters.start}
       />
 
-      {/* 6. Private Obsidian Containers Modal for Logged in Users */}
-
-      <PrivateContainersModal
-        isOpen={isPrivateContainersOpen}
-        onClose={() => setIsPrivateContainersOpen(false)}
-      />
-
-      {/* 7. Key Management Modal */}
+      {/* 6. Key Management Modal */}
       <KeyManagementModal
         isOpen={isKeysModalOpen}
         onClose={() => setIsKeysModalOpen(false)}
       />
 
-      {/* 8. Auth Modal */}
+      {/* 7. Auth Modal */}
       <AuthModal />
-
-      {/* 9. Interactive Sync Push & Pull Modal */}
-      <SyncPushPullModal
-        isOpen={isSyncModalOpen}
-        onClose={closeSyncModal}
-        initialMode={syncModalMode}
-        targetContainerId={syncModalContainerId || undefined}
-      />
     </div>
   );
 };
@@ -407,11 +302,9 @@ export const App: React.FC = () => {
     <I18nProvider>
       <AuthProvider>
         <UserKeysProvider>
-          <ObsidianContainersProvider>
-            <FoldersProvider>
-              <CalendarAppInner />
-            </FoldersProvider>
-          </ObsidianContainersProvider>
+          <FoldersProvider>
+            <CalendarAppInner />
+          </FoldersProvider>
         </UserKeysProvider>
       </AuthProvider>
     </I18nProvider>
@@ -419,4 +312,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

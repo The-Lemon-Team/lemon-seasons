@@ -13,15 +13,13 @@ import { DaySidebar } from './DaySidebar';
 import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
-import { ObsidianSelector } from './ObsidianSelector';
-import { ObsidianLogo } from './ObsidianLogo';
-import { useObsidianContainers } from '../context/ObsidianContainersContext';
 import { MiniCalendar } from './MiniCalendar';
 import dayjs from 'dayjs';
 import {
   Tag,
   Hash,
   Shapes,
+  Folder,
   Filter,
   SlidersHorizontal,
   RotateCcw,
@@ -56,14 +54,6 @@ interface MonthGridViewProps {
   onSelectOnlyTag?: (tagPath: string) => void;
   onClearTags?: () => void;
   onToggleHashtag: (hashtag: string) => void;
-  onToggleContainer?: (containerId: string) => void;
-  onSelectOnlyContainer?: (containerId: string) => void;
-  onSetAllContainers?: (containers: string[]) => void;
-  onClearContainers?: () => void;
-  onToggleObsidianFolder?: (folderKey: string) => void;
-  onSelectOnlyObsidianFolder?: (folderKey: string) => void;
-  onSetObsidianFolders?: (folders: string[]) => void;
-  onClearObsidianFolders?: () => void;
   onResetFilters: () => void;
   onOpenFilterDrawer: () => void;
 }
@@ -91,20 +81,11 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   onSelectOnlyTag,
   onClearTags,
   onToggleHashtag,
-  onToggleContainer,
-  onSelectOnlyContainer,
-  onSetAllContainers,
-  onClearContainers,
-  onToggleObsidianFolder,
-  onSelectOnlyObsidianFolder,
-  onSetObsidianFolders,
-  onClearObsidianFolders,
   onResetFilters,
   onOpenFilterDrawer,
 }) => {
   const { t, lang } = useI18n();
   const { data: allFeeds = [] } = useFeeds();
-  const { containers: obsidianContainers = [] } = useObsidianContainers();
   const [hoveredDayKey, setHoveredDayKey] = useState<string | null>(null);
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
   const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false);
@@ -129,7 +110,6 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   // Count active filters
   const activeFilterCount =
     (filterState.feed ? 1 : 0) +
-    (filterState.containers?.length || 0) +
     filterState.tags.length +
     filterState.hashtags.length +
     filterState.types.length +
@@ -364,22 +344,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               notes={notes}
             />
 
-            <div className="h-4 w-px bg-[#242828] hidden sm:block" />
 
-            {/* 4. Obsidian Containers Selector */}
-            <ObsidianSelector
-              selectedContainers={filterState.containers}
-              selectedObsidianFolders={filterState.obsidianFolders}
-              onToggleContainer={onToggleContainer}
-              onSelectOnlyContainer={onSelectOnlyContainer}
-              onSetAllContainers={onSetAllContainers}
-              onClearContainers={onClearContainers}
-              onToggleObsidianFolder={onToggleObsidianFolder}
-              onSelectOnlyObsidianFolder={onSelectOnlyObsidianFolder}
-              onSetObsidianFolders={onSetObsidianFolders}
-              onClearObsidianFolders={onClearObsidianFolders}
-              containers={obsidianContainers}
-            />
           </div>
         </div>
 
@@ -404,7 +369,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                       key={tagPath}
                       className="shrink-0 inline-flex items-center gap-1 px-2 h-6 rounded bg-[#c9cd58]/15 border border-[#c9cd58]/50 text-[#e5e971] text-[11px] font-mono font-medium shadow-sm leading-none"
                     >
-                      <Tag className="w-2.5 h-2.5 text-[#c9cd58] shrink-0" />
+                      <Folder className="w-2.5 h-2.5 text-[#c9cd58] shrink-0" />
                       <span className="truncate max-w-[150px]">Folder: {tagPath}</span>
                       <button
                         onClick={() => onToggleTag(tagPath)}
@@ -442,42 +407,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                     );
                   })()}
 
-                  {/* Obsidian Container Filters */}
-                  {filterState.containers && filterState.containers.length > 0 && filterState.containers.map((containerId) => {
-                    const match = obsidianContainers.find((c) => c.id === containerId);
-                    const name = match ? match.name : containerId;
-                    const boundFolders = match?.boundFolders || [];
-                    const obsFolderSet = new Set(filterState.obsidianFolders || []);
 
-                    const activeFolders = boundFolders.filter(
-                      (bf) => obsFolderSet.has(`${containerId}::${bf.path}`) || obsFolderSet.has(bf.path)
-                    );
-
-                    const hasExplicitFolders = (filterState.obsidianFolders || []).some(
-                      (k) => k.startsWith(`${containerId}::`) || boundFolders.some((bf) => k === bf.path)
-                    );
-
-                    const folderBadge = hasExplicitFolders && boundFolders.length > 0
-                      ? ` (${activeFolders.length}/${boundFolders.length})`
-                      : '';
-
-                    return (
-                      <span
-                        key={containerId}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-2 h-6 rounded bg-[#a855f7]/15 border border-[#a855f7]/50 text-[#d8b4fe] text-[11px] font-mono font-medium shadow-sm leading-none"
-                      >
-                        <ObsidianLogo size={12} />
-                        <span className="truncate max-w-[170px]">Vault: {name}{folderBadge}</span>
-                        <button
-                          onClick={() => onToggleContainer && onToggleContainer(containerId)}
-                          className="hover:text-white p-0.5 transition-colors ml-0.5 shrink-0"
-                          title="Remove container filter"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    );
-                  })}
 
                   {/* Type Filters */}
                   {filterState.types.map((type) => (
