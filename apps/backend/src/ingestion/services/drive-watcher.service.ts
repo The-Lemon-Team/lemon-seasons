@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, OnApplicationBootstrap } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -17,7 +17,7 @@ export interface WatcherStatus {
 }
 
 @Injectable()
-export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
+export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApplicationBootstrap {
   private readonly logger = new Logger(DriveWatcherService.name);
   private watcher: chokidar.FSWatcher | null = null;
   private readonly watchedDir: string;
@@ -35,6 +35,13 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.ensureDirectoryExists(this.watchedDir);
     this.startWatching();
+  }
+
+  async onApplicationBootstrap() {
+    // Run an initial graceful sequential scan once all event listeners are ready
+    this.scanDirectory().catch((err) => {
+      this.logger.warn(`Ошибка при стартовом сканировании Sparks: ${err?.message}`);
+    });
   }
 
   async onModuleDestroy() {
@@ -74,7 +81,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
     this.watcher = chokidar.watch(this.watchedDir, {
       ignored: /(^|[\/\\])\../, // ignore dotfiles
       persistent: true,
-      ignoreInitial: false,
+      ignoreInitial: true,
       awaitWriteFinish: {
         stabilityThreshold: 600,
         pollInterval: 150,
@@ -114,8 +121,23 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
       const content = await fs.promises.readFile(filePath, 'utf-8');
       const fileHash = crypto.createHash('sha256').update(content).digest('hex');
 
-      // 1. Initial IngestionFile tracking (PENDING)
-      const ingestionRecord = await this.prisma.ingestionFile.upsert({
+      // 1. Idempotency: check if file was already completed and unchanged BEFORE setting to PENDING
+      const existingRecord = await this.prisma.ingestionFile.findUnique({
+        where: { filePath },
+      });
+
+      if (
+        existingRecord &&
+        existingRecord.status === 'COMPLETED' &&
+        existingRecord.fileHash === fileHash &&
+        existingRecord.noteId
+      ) {
+        this.logger.debug(`⏩ Файл "${fileName}" без изменений по хэшу и уже завершен, пропускаем.`);
+        return;
+      }
+
+      // 2. Initial IngestionFile tracking (PENDING) for new or changed files
+      await this.prisma.ingestionFile.upsert({
         where: { filePath },
         create: {
           filePath,
@@ -133,17 +155,6 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy {
           errorMessage: null,
         },
       });
-
-      // Idempotency: skip if already processed with identical hash
-      if (
-        event === 'CHANGE' &&
-        ingestionRecord.status === 'COMPLETED' &&
-        ingestionRecord.fileHash === fileHash &&
-        ingestionRecord.noteId
-      ) {
-        this.logger.debug(`⏩ Файл "${fileName}" без изменений по хэшу, пропускаем.`);
-        return;
-      }
 
       // Resolve assigned folder path (e.g. "Spark/AI" or "Spark/Habr")
       const relPath = path.relative(this.watchedDir, filePath);

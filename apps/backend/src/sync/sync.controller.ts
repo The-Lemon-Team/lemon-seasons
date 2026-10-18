@@ -45,6 +45,13 @@ export class SyncController {
     return this.orchestrator.pull(deviceId);
   }
 
+  @Get('updates')
+  @ApiOperation({ summary: 'Get recent files and notes synced from Google Drive' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getUpdates(@Query('limit') limit?: number) {
+    return this.orchestrator.getRecentUpdates(limit ? Number(limit) : 25);
+  }
+
   // ==========================================
   // Workstation Live Sessions (Legacy / Deprecated)
   // Kept for backward compatibility with Obsidian plugin

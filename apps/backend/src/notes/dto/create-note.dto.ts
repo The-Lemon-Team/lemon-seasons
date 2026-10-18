@@ -127,7 +127,7 @@ export class CreateNoteDto {
   @IsOptional()
   icon?: string;
 
-  @ApiPropertyOptional({ description: 'Curator or persona assigned to this note', example: 'Иван Белый' })
+  @ApiPropertyOptional({ description: 'Curator, author, or creator assigned to this note', example: 'User' })
   @IsString()
   @IsOptional()
   curator?: string;

@@ -160,7 +160,7 @@ export class SparksParserService {
       rawContent: fileContent,
       summary,
       icon,
-      curator: (fm.curator as string) || 'auto',
+      curator: (fm.curator as string) || (fm.author as string) || undefined,
       resonanceScore,
       hashtags: tags,
       links,

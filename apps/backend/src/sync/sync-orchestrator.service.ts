@@ -1,9 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
 import { GDriveStorageService } from './gdrive-storage.service';
 import { MergeService } from './merge.service';
-import { SyncStatusResponse, GDriveSyncResult, DeviceRef, CommitPackage } from '@lenta/shared';
+import { DriveWatcherService } from '../ingestion/services/drive-watcher.service';
+import { DriveBusRelayService } from '../bus/services/drive-bus-relay.service';
+import {
+  SyncStatusResponse,
+  GDriveSyncResult,
+  DeviceRef,
+  CommitPackage,
+  GDriveUpdateItem,
+  GDriveRecentUpdatesResponse,
+} from '@lenta/shared';
+import * as path from 'path';
 
 @Injectable()
 export class SyncOrchestratorService {
@@ -14,6 +24,12 @@ export class SyncOrchestratorService {
     private sessionService: SessionService,
     private gdriveStorage: GDriveStorageService,
     private mergeService: MergeService,
+    @Optional()
+    @Inject(forwardRef(() => DriveWatcherService))
+    private driveWatcher?: DriveWatcherService,
+    @Optional()
+    @Inject(forwardRef(() => DriveBusRelayService))
+    private driveBusRelay?: DriveBusRelayService,
   ) {}
 
   /**
@@ -165,12 +181,143 @@ export class SyncOrchestratorService {
       }
     }
 
+    // Also scan incoming GDrive Sparks directory and catch up bus events
+    if (this.driveWatcher) {
+      try {
+        await this.driveWatcher.scanDirectory();
+      } catch (scanErr: any) {
+        this.logger.warn(`DriveWatcher scan during pull failed: ${scanErr.message}`);
+      }
+    }
+
+    if (this.driveBusRelay) {
+      try {
+        await this.driveBusRelay.runCatchUpSync();
+      } catch (busErr: any) {
+        this.logger.warn(`DriveBusRelay catch-up during pull failed: ${busErr.message}`);
+      }
+    }
+
+    const recentUpdates = await this.getRecentUpdates(20);
     const syncedAt = new Date().toISOString();
+
     return {
       pushedCommits: [],
       pulledCommits,
       conflictNotes: Array.from(new Set(conflictNotes)),
       syncedAt,
+      newUpdates: recentUpdates.items,
+    };
+  }
+
+  /**
+   * Retrieves recent files and notes synced from Google Drive (Sparks, Commits, Bus).
+   */
+  async getRecentUpdates(limit = 25): Promise<GDriveRecentUpdatesResponse> {
+    const [ingestionFiles, driveNotes, lastCommit] = await Promise.all([
+      this.prisma.ingestionFile.findMany({
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          note: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              startDate: true,
+              folderPath: true,
+              summary: true,
+              curator: true,
+            },
+          },
+        },
+      }),
+      this.prisma.note.findMany({
+        where: {
+          OR: [
+            { sourceType: 'GOOGLE_DRIVE' },
+            { externalId: { not: null } },
+            { metadata: { path: ['isRemoteSync'], equals: true } },
+          ],
+          deletedAt: null,
+        },
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          startDate: true,
+          folderPath: true,
+          summary: true,
+          curator: true,
+          updatedAt: true,
+          externalId: true,
+        },
+      }),
+      this.prisma.syncCommit.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      }),
+    ]);
+
+    const items: GDriveUpdateItem[] = [];
+    const seenNoteIds = new Set<string>();
+
+    for (const f of ingestionFiles) {
+      if (f.noteId) {
+        seenNoteIds.add(f.noteId);
+      }
+      items.push({
+        id: f.id,
+        fileName: f.fileName,
+        title: f.note?.title || f.fileName.replace(/\.md$/i, ''),
+        noteId: f.noteId,
+        noteType: f.note?.type,
+        status: f.status as any,
+        action: f.note ? 'CREATE' : 'SYNC',
+        updatedAt: f.updatedAt.toISOString(),
+        source: 'SPARKS',
+        summary: f.note?.summary,
+        folderPath: f.note?.folderPath,
+        fileSize: f.fileSize,
+        curator: f.note?.curator,
+      });
+    }
+
+    for (const n of driveNotes) {
+      if (seenNoteIds.has(n.id)) continue;
+      seenNoteIds.add(n.id);
+
+      const fileName = n.externalId ? path.basename(n.externalId) : `${n.title}.md`;
+      items.push({
+        id: n.id,
+        fileName,
+        title: n.title,
+        noteId: n.id,
+        noteType: n.type,
+        status: 'COMPLETED',
+        action: 'UPDATE',
+        updatedAt: n.updatedAt.toISOString(),
+        source: 'BUS',
+        summary: n.summary,
+        folderPath: n.folderPath,
+        curator: n.curator,
+      });
+    }
+
+    // Sort all by updatedAt descending
+    items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const sliced = items.slice(0, limit);
+
+    const lastSyncAt =
+      lastCommit?.createdAt?.toISOString() ||
+      (sliced.length > 0 ? sliced[0].updatedAt : null);
+
+    return {
+      totalCount: sliced.length,
+      lastSyncAt,
+      items: sliced,
     };
   }
 }

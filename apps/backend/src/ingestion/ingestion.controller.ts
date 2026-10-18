@@ -1,7 +1,9 @@
-import { Controller, Post, Get, Param, Query, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { IngestionService, IngestionResult } from './ingestion.service';
 import { GeminiService, GeneratedNoteEnrichment } from './services/gemini.service';
+import { GeminiImageService, ImageAspectRatio } from './services/gemini-image.service';
+import { AiMediaLibraryService } from './services/ai-media-library.service';
 import { TmdbService, MovieReleaseItem } from './services/tmdb.service';
 import { HolidaysEngineService, HolidayItem } from './services/holidays-engine.service';
 import { PoliticalEngineService, PoliticalEventItem } from './services/political-engine.service';
@@ -15,6 +17,29 @@ export class GenerateNoteAiDto {
   category: string;
   dateStr: string;
   context?: string;
+}
+
+export class GenerateImageAiDto {
+  title?: string;
+  prompt: string;
+  style?: string;
+  aspectRatio?: ImageAspectRatio;
+  context?: string;
+  count?: number;
+  noteId?: string;
+}
+
+export class GenerateNoteCoverAiDto {
+  style?: string;
+  aspectRatio?: ImageAspectRatio;
+  customPrompt?: string;
+  setAsMain?: boolean;
+}
+
+export class AttachCoverDto {
+  assetUrl: string;
+  caption?: string;
+  setAsMain?: boolean;
 }
 
 export class ImportNoteDto {
@@ -40,6 +65,8 @@ export class IngestionController {
   constructor(
     private readonly ingestionService: IngestionService,
     private readonly geminiService: GeminiService,
+    private readonly geminiImageService: GeminiImageService,
+    private readonly aiMediaLibrary: AiMediaLibraryService,
     private readonly tmdbService: TmdbService,
     private readonly holidaysEngine: HolidaysEngineService,
     private readonly politicalEngine: PoliticalEngineService,
@@ -86,6 +113,105 @@ export class IngestionController {
   })
   async generateAiContent(@Body() dto: GenerateNoteAiDto): Promise<GeneratedNoteEnrichment> {
     return this.geminiService.generateNoteContent(dto.title, dto.category, dto.dateStr, dto.context);
+  }
+
+  @Post('ai/generate-image')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Сгенерировать изображение через Gemini Flash + Imagen 3',
+    description: 'Синтезирует детальный промпт через Gemini Flash и генерирует визуальный ассет через Imagen 3 с сохранением в WebP.',
+  })
+  async generateAiImage(@Body() dto: GenerateImageAiDto) {
+    return this.geminiImageService.generateImage({
+      prompt: dto.prompt || dto.title || 'Abstract chronological calendar artwork',
+      style: dto.style,
+      aspectRatio: dto.aspectRatio,
+      context: dto.context,
+      count: 1,
+      noteId: dto.noteId,
+    });
+  }
+
+  @Post('ai/generate-batch')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Сгенерировать пакет вариантов (1..4) через Gemini Flash + Imagen 3',
+    description: 'Генерирует несколько вариаций изображения, сохраняет все в AI Media Library и возвращает их для выбора лучшего.',
+  })
+  async generateAiBatch(@Body() dto: GenerateImageAiDto) {
+    return this.geminiImageService.generateBatch({
+      prompt: dto.prompt || dto.title || 'Abstract chronological calendar artwork',
+      style: dto.style,
+      aspectRatio: dto.aspectRatio,
+      context: dto.context,
+      count: dto.count || 2,
+      noteId: dto.noteId,
+    });
+  }
+
+  @Get('ai/assets')
+  @ApiOperation({ summary: 'Получить сохраненные ассеты из AI Media Library' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'style', required: false })
+  @ApiQuery({ name: 'isFavorite', required: false, type: Boolean })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  async getAiAssets(
+    @Query('search') search?: string,
+    @Query('style') style?: string,
+    @Query('isFavorite') isFavorite?: string,
+    @Query('limit') limit = '40',
+    @Query('offset') offset = '0',
+  ) {
+    return this.aiMediaLibrary.getAssets({
+      search,
+      style,
+      isFavorite: isFavorite === undefined ? undefined : isFavorite === 'true',
+      limit: Number(limit) || 40,
+      offset: Number(offset) || 0,
+    });
+  }
+
+  @Patch('ai/assets/:id/favorite')
+  @ApiOperation({ summary: 'Переключить статус "Избранное" у ассета' })
+  async toggleAssetFavorite(@Param('id') id: string) {
+    return this.aiMediaLibrary.toggleFavorite(id);
+  }
+
+  @Delete('ai/assets/:id')
+  @ApiOperation({ summary: 'Удалить ассет из медиатеки и диска' })
+  async deleteAiAsset(@Param('id') id: string) {
+    const success = await this.aiMediaLibrary.deleteAsset(id);
+    return { success };
+  }
+
+  @Post('ai/notes/:noteId/attach-cover')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Прикрепить выбранный URL/ассет как обложку к заметке' })
+  async attachCoverToNote(
+    @Param('noteId') noteId: string,
+    @Body() dto: AttachCoverDto,
+  ) {
+    const image = await this.geminiImageService.attachAssetToNote(
+      noteId,
+      dto.assetUrl,
+      dto.caption,
+      dto.setAsMain ?? true,
+    );
+    return { success: true, image };
+  }
+
+  @Post('ai/notes/:noteId/generate-cover')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Сгенерировать обложку для существующей заметки по её метаданным',
+    description: 'Анализирует заголовок, папки, теги и описание заметки, генерирует обложку в Imagen 3 и прикрепляет к ней.',
+  })
+  async generateNoteCover(
+    @Param('noteId') noteId: string,
+    @Body() dto: GenerateNoteCoverAiDto,
+  ) {
+    return this.geminiImageService.generateCoverForNote(noteId, dto);
   }
 
   @Get('tmdb/search')
@@ -214,9 +340,11 @@ export class IngestionController {
   @Get('status')
   @ApiOperation({ summary: 'Получить статус провайдеров данных и сервисов генерации' })
   getStatus() {
+    const hasGemini = Boolean(process.env.GEMINI_API_KEY);
     return {
       status: 'active',
-      geminiActive: Boolean(process.env.GEMINI_API_KEY),
+      geminiActive: hasGemini,
+      imagenActive: hasGemini,
       tmdbActive: Boolean(process.env.TMDB_API_KEY),
       availableFeeds: [
         { slug: 'russian-holidays', name: 'Российские праздники', provider: 'ТК РФ ст. 112 и 32-ФЗ Дни воинской славы' },

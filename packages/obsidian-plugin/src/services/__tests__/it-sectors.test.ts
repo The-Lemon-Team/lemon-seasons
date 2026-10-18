@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getCuratorPersona,
-  CURATOR_PERSONAS,
   IT_SECTOR_REGISTRY,
   IT_SECTOR_LIST,
   getItSector,
@@ -9,30 +7,7 @@ import {
   detectAllItSectors,
 } from '@lenta/shared';
 
-describe('Curator Okatsiya & IT Sectors Registry', () => {
-  it('resolves Okatsiya curator persona by various names and aliases', () => {
-    const byId = getCuratorPersona('okatsiya');
-    expect(byId).toBeDefined();
-    expect(byId?.id).toBe('okatsiya');
-    expect(byId?.name).toBe('Акация IT');
-    expect(byId?.emoji).toBe('⚡');
-    expect(byId?.iconName).toBe('Cpu');
-
-    // Russian alias
-    const byRu = getCuratorPersona('Окация');
-    expect(byRu?.id).toBe('okatsiya');
-
-    // Phonetic alias
-    const byPhonetic = getCuratorPersona('акация');
-    expect(byPhonetic?.id).toBe('okatsiya');
-
-    // Short keywords
-    const byIt = getCuratorPersona('it');
-    expect(byIt?.id).toBe('okatsiya');
-
-    const byAi = getCuratorPersona('ai');
-    expect(byAi?.id).toBe('okatsiya');
-  });
+describe('IT Sectors Registry', () => {
 
   it('contains comprehensive IT sectors in IT_SECTOR_REGISTRY', () => {
     expect(IT_SECTOR_REGISTRY.ai).toBeDefined();

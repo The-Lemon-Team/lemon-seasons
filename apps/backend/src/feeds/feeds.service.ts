@@ -33,7 +33,10 @@ export class FeedsService {
         title: createFeedDto.title,
         description: createFeedDto.description,
         slug,
+        icon: createFeedDto.icon,
+        color: createFeedDto.color,
         folderPaths: createFeedDto.folderPaths || [],
+        hashtags: createFeedDto.hashtags || [],
       },
       include: {
         _count: {
@@ -127,7 +130,10 @@ export class FeedsService {
         ...(updateFeedDto.title ? { title: updateFeedDto.title } : {}),
         ...(updateFeedDto.description !== undefined ? { description: updateFeedDto.description } : {}),
         ...(slug ? { slug } : {}),
+        ...(updateFeedDto.icon !== undefined ? { icon: updateFeedDto.icon } : {}),
+        ...(updateFeedDto.color !== undefined ? { color: updateFeedDto.color } : {}),
         ...(updateFeedDto.folderPaths !== undefined ? { folderPaths: updateFeedDto.folderPaths } : {}),
+        ...(updateFeedDto.hashtags !== undefined ? { hashtags: updateFeedDto.hashtags } : {}),
       },
       include: {
         _count: {

@@ -17,10 +17,10 @@
   - Express keyword detection via declarative rule tables: `Array<{ match: (text: string) => boolean; target: AgentId }>`.
   - Use functional predicates (`Array.filter`, `Array.some`, declarative dictionaries) for data filtering and story assignment.
 
-### 3. Independent Curators & Modular Agents
-- Each curator / assistant must be an independent module (e.g. `packages/agents/src/curators/<id>.curator.ts`).
-- New curators should be added from scratch by defining their persona, prompt formatting, and dedicated generator function without bloating central engine files.
-- Shared utilities (formatting, story filtering, command resolution) belong in `helpers/`.
+### 3. Modular Ingestion Services & Domain Engines
+- Background ingestion services, parsers, and pipeline handlers must be independent modular units (e.g. `apps/backend/src/ingestion/services/`).
+- Central services must act as orchestrators, delegating specialized extraction, classification, and transformation to dedicated handlers.
+- Shared utilities (formatting, filters, date math) belong in dedicated helper files or `@lenta/shared`.
 
 ### 4. UI Component Decomposition
 - **Separate calculations from rendering**: Extract complex data transformation, history diffing, and filter aggregations into separate `utils/` files (e.g. `obsidianContainers.utils.ts`).

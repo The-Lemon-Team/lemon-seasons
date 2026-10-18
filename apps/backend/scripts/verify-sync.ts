@@ -74,7 +74,6 @@ async function run() {
         description: '## Итоги недели\nЦены выросли на 3.4% в связи с морскими ограничениями.',
         type: 'DONE',
         resonanceScore: 88,
-        curator: 'Иван Белый',
       },
     });
 

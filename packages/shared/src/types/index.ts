@@ -7,7 +7,10 @@ export interface Feed {
   title: string;
   description: string | null;
   slug: string;
+  icon?: string | null;
+  color?: string | null;
   folderPaths?: string[];
+  hashtags?: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -232,6 +235,8 @@ export interface QueryNotesParams {
   curator?: string;
   limit?: number;
   offset?: number;
+  sortBy?: 'startDate' | 'type' | 'folder' | 'title';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface NotesResponse {
@@ -292,14 +297,20 @@ export interface CreateFeedInput {
   title: string;
   description?: string;
   slug?: string;
+  icon?: string;
+  color?: string;
   folderPaths?: string[];
+  hashtags?: string[];
 }
 
 export interface UpdateFeedInput {
   title?: string;
   description?: string;
   slug?: string;
+  icon?: string;
+  color?: string;
   folderPaths?: string[];
+  hashtags?: string[];
 }
 
 export interface CreateFolderInput {
@@ -1086,147 +1097,37 @@ export interface RecordChangeInput {
   payload: any;
 }
 
+export type GDriveUpdateSource = 'SPARKS' | 'COMMIT' | 'BUS';
+export type GDriveUpdateStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'PULLED';
+
+export interface GDriveUpdateItem {
+  id: string;
+  fileName: string;
+  title: string;
+  noteId?: string | null;
+  noteType?: NoteType | string | null;
+  status: GDriveUpdateStatus;
+  action: 'CREATE' | 'UPDATE' | 'SYNC';
+  updatedAt: string;
+  source: GDriveUpdateSource;
+  summary?: string | null;
+  folderPath?: string | null;
+  fileSize?: number | null;
+  curator?: string | null;
+}
+
+export interface GDriveRecentUpdatesResponse {
+  totalCount: number;
+  lastSyncAt: string | null;
+  items: GDriveUpdateItem[];
+}
+
 export interface GDriveSyncResult {
   pushedCommits: string[];
   pulledCommits: string[];
   conflictNotes: string[];
   syncedAt: string;
-}
-
-// ---------------------------------------------------------------------------
-// Curator vs Operational Worker Agent Types (Lenta Architecture)
-// ---------------------------------------------------------------------------
-
-export type CuratorId =
-  | 'ivan-bely'
-  | 'kirk-kitten'
-  | 'okatsiya'
-  | 'german-kernel'
-  | 'simon-habr'
-  | 'presijo-ai'
-  | 'chen-wei'
-  | 'alex-vector'
-  | 'marcus-vane'
-  | 'tariq-said'
-  | 'helena-brandt';
-
-export type WorkerAgentId =
-  | 'harvester-agent'
-  | 'survey-coordinator'
-  | 'sidework-producer'
-  | 'podcast-agent'
-  | 'notebook-producer'
-  | 'dispatcher';
-
-export type AgentRoleType = 'curator' | 'operational_agent' | 'user';
-
-export type SurveyTimeframe = 'today' | 'yesterday' | 'three_days' | 'week' | 'custom';
-
-export interface BranchingContour {
-  contourName: string;
-  curatorId: CuratorId;
-  curatorName: string;
-  emoji: string;
-  impactScore: number; // 0 - 100
-  potentialStory: string;
-}
-
-export interface BranchingAnalysis {
-  sourceCardTitle: string;
-  branchingPotentialScore: number; // 0 - 100 (BPI)
-  statusQuoBreak: string;
-  likelyBranches: BranchingContour[];
-}
-
-export interface CuratorSurveyRequest {
-  targetCurators?: (CuratorId | string)[] | 'all';
-  groupId?: string; // e.g. 'political-group', 'tech-group', 'hot-pulse-group', 'domino-nexus-group', 'mena-security-group'
-  timeframe: SurveyTimeframe;
-  customStartDate?: string; // YYYY-MM-DD
-  customEndDate?: string; // YYYY-MM-DD
-  focusTopic?: string;
-}
-
-export interface CuratorTake {
-  curatorId: string;
-  curatorName: string;
-  emoji: string;
-  domain: string;
-  itemsCount: number;
-  keyTheses: string[];
-  focusPoints?: string[];
-  sourceCitations: string[];
-}
-
-export interface CrossDomainResonance {
-  title: string;
-  score: number;
-  involvedCurators: string[];
-  analysis: string;
-  suggestedFollowupPrompt?: string;
-}
-
-export interface CuratorSurveyResult {
-  id: string;
-  timeframe: SurveyTimeframe;
-  dateRange: { from: string; to: string };
-  requestedCurators: string[];
-  headline: string;
-  executiveSummary: string;
-  curatorTakes: CuratorTake[];
-  crossDomainResonances?: CrossDomainResonance[];
-  branchingAnalyses?: BranchingAnalysis[];
-  generatedAt: string;
-}
-
-export type SideWorkTaskType =
-  | 'content_draft'      // Написание статьи, лонгрида, дайджеста, заметки типа DONE/EVENT/PERIOD
-  | 'media_enrichment'   // Генерация промптов для иллюстраций (DALL-E, Midjourney), подбор визуалов, диаграммы Mermaid
-  | 'expert_commentary'  // Дополнение аналитическим комментарием, фактчеком, историческим бэкграундом
-  | 'digest_synthesis'   // Сводный дайджест по материалам опроса или новостной подборке
-  | 'podcast_script';    // Аудио-сценарий NotebookLM
-
-export interface SideWorkMediaItem {
-  type: 'image_prompt' | 'mermaid_diagram' | 'quote_card' | 'key_stat' | 'external_media';
-  title: string;
-  content: string; // The prompt, Mermaid code, or quote text
-  aspectRatio?: string;
-  suggestedCaption?: string;
-  styleKeywords?: string[];
-}
-
-export interface SideWorkCommentaryItem {
-  curatorId: string;
-  curatorName: string;
-  emoji: string;
-  commentary: string;
-}
-
-export interface SideWorkRequest {
-  taskType: SideWorkTaskType;
-  title?: string;
-  sourceContext: string;
-  sourceNewsIds?: string[];
-  surveyResultId?: string;
-  targetFormat?: 'obsidian_note' | 'telegram_post' | 'longread' | 'quick_brief';
-  requestedCuratorCommentary?: (CuratorId | string)[];
-  mediaPreferences?: {
-    includeImagePrompts?: boolean;
-    includeMermaidDiagrams?: boolean;
-    style?: 'modern_minimal' | 'cyberpunk' | 'editorial_infographic' | 'realistic';
-  };
-}
-
-export interface SideWorkResult {
-  id: string;
-  taskType: SideWorkTaskType;
-  title: string;
-  targetFormat: string;
-  contentMarkdown: string;
-  enrichedMedia: SideWorkMediaItem[];
-  curatorCommentaries: SideWorkCommentaryItem[];
-  suggestedObsidianFrontmatter?: Record<string, any>;
-  createdAt: string;
+  newUpdates?: GDriveUpdateItem[];
 }
 
 export * from './bus';

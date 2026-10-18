@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
@@ -19,7 +19,7 @@ import { NotesQueryBuilder } from './notes-query.builder';
 import { NOTE_INCLUDE_DEFAULT, NOTE_SELECT_FIELDS } from './notes.constants';
 
 @Injectable()
-export class NotesService {
+export class NotesService implements OnModuleInit {
   private readonly logger = new Logger(NotesService.name);
 
   constructor(
@@ -33,6 +33,20 @@ export class NotesService {
     private notesCacheService: NotesCacheService,
     private notesQueryBuilder: NotesQueryBuilder,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE "Note" n
+        SET "folderPath" = f.path
+        FROM "NoteFolder" nf
+        JOIN "Folder" f ON nf."folderId" = f.id
+        WHERE nf."noteId" = n.id AND nf."isPrimary" = true AND (n."folderPath" IS NULL OR n."folderPath" = '');
+      `);
+    } catch (e: any) {
+      this.logger.warn(`Folder path backfill skipped: ${e.message}`);
+    }
+  }
 
   /**
    * @deprecated Taxonomy tags are retired in favor of Folders and Hashtags.
@@ -113,6 +127,23 @@ export class NotesService {
       createNoteDto.links?.find((l) => l.isSource)?.url ||
       createNoteDto.links?.[0]?.url;
 
+    let initialFolderPath =
+      createNoteDto.folderPath ||
+      (createNoteDto.folder as string) ||
+      (Array.isArray(createNoteDto.folders) && typeof createNoteDto.folders[0] === 'string'
+        ? (createNoteDto.folders[0] as string)
+        : undefined);
+
+    if (!initialFolderPath && folderAssignments.length > 0) {
+      const primaryFolder = await this.prisma.folder.findUnique({
+        where: { id: folderAssignments[0].folderId },
+        select: { path: true },
+      });
+      if (primaryFolder?.path) {
+        initialFolderPath = primaryFolder.path;
+      }
+    }
+
     const note = await this.prisma.note.create({
       data: {
         title: createNoteDto.title,
@@ -120,12 +151,7 @@ export class NotesService {
         type: (createNoteDto.type as any) || 'SINGLE',
         status: (createNoteDto.status as any) || 'PUBLISHED',
         publishAt: createNoteDto.publishAt ? new Date(createNoteDto.publishAt) : null,
-        folderPath:
-          createNoteDto.folderPath ||
-          (createNoteDto.folder as string) ||
-          (Array.isArray(createNoteDto.folders) && typeof createNoteDto.folders[0] === 'string'
-            ? (createNoteDto.folders[0] as string)
-            : undefined),
+        folderPath: initialFolderPath,
         startDate: createNoteDto.startDate ? new Date(createNoteDto.startDate) : new Date(),
         endDate: createNoteDto.endDate ? new Date(createNoteDto.endDate) : null,
         sourceLink: initialSourceLink,
@@ -195,6 +221,7 @@ export class NotesService {
 
     const { limit = 50, offset = 0 } = query;
     const where = await this.notesQueryBuilder.buildWhereClause(query);
+    const orderBy = this.notesQueryBuilder.buildOrderBy(query);
 
     const queryStartTime = Date.now();
     const [total, items] = await Promise.all([
@@ -203,7 +230,7 @@ export class NotesService {
         where,
         take: Number(limit),
         skip: Number(offset),
-        orderBy: { startDate: 'desc' },
+        orderBy,
         select: NOTE_SELECT_FIELDS,
       }),
     ]);
@@ -276,6 +303,7 @@ export class NotesService {
       };
     }
 
+    let resolvedFolderPath = updateNoteDto.folderPath;
     // Handle folders update if provided
     if (
       updateNoteDto.folders !== undefined ||
@@ -308,6 +336,19 @@ export class NotesService {
             order: fa.order,
           })),
         });
+
+        if (resolvedFolderPath === undefined) {
+          const primaryFa = folderAssignments.find((fa) => fa.isPrimary) || folderAssignments[0];
+          const primaryFolder = await this.prisma.folder.findUnique({
+            where: { id: primaryFa.folderId },
+            select: { path: true },
+          });
+          if (primaryFolder?.path) {
+            resolvedFolderPath = primaryFolder.path;
+          }
+        }
+      } else if (resolvedFolderPath === undefined) {
+        resolvedFolderPath = null;
       }
     }
 
@@ -321,7 +362,7 @@ export class NotesService {
         ...(updateNoteDto.publishAt !== undefined
           ? { publishAt: updateNoteDto.publishAt ? new Date(updateNoteDto.publishAt) : null }
           : {}),
-        ...(updateNoteDto.folderPath !== undefined ? { folderPath: updateNoteDto.folderPath } : {}),
+        ...(resolvedFolderPath !== undefined ? { folderPath: resolvedFolderPath } : {}),
         ...(updateNoteDto.startDate ? { startDate: new Date(updateNoteDto.startDate) } : {}),
         ...(updateNoteDto.endDate !== undefined
           ? { endDate: updateNoteDto.endDate ? new Date(updateNoteDto.endDate) : null }

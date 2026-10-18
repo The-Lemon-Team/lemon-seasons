@@ -67,7 +67,7 @@ export class LentaFrontmatterUtil {
       lines.push(`icon: "${note.icon}"`);
     }
 
-    if (note.curator) {
+    if (note.curator && note.curator !== 'auto') {
       lines.push(`curator: "${note.curator}"`);
     }
 

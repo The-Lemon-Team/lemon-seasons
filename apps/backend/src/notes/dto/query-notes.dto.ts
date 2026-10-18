@@ -152,4 +152,21 @@ export class QueryNotesDto {
   @IsNumber()
   @IsOptional()
   offset?: number;
+
+  @ApiPropertyOptional({
+    description: 'Sort field: startDate, type, folder, title',
+    enum: ['startDate', 'type', 'folder', 'title'],
+  })
+  @IsString()
+  @IsOptional()
+  sortBy?: 'startDate' | 'type' | 'folder' | 'title';
+
+  @ApiPropertyOptional({
+    description: 'Sort order: asc or desc',
+    enum: ['asc', 'desc'],
+    default: 'desc',
+  })
+  @IsString()
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
 }

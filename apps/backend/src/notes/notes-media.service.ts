@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
+import { StorageService, ProcessedImageResult } from '../storage/storage.service';
 import { UpdateNoteImageDto, ImageOrderItemDto } from './dto/image.dto';
 
 @Injectable()
@@ -177,4 +177,59 @@ export class NotesMediaService {
     }
     return this.storageService.processAndSaveMedia(file);
   }
+
+  /**
+   * Attach a generated/processed image to a note (e.g. from Gemini Imagen)
+   */
+  async attachGeneratedImage(
+    noteId: string,
+    processed: ProcessedImageResult,
+    isMain = true,
+    caption?: string,
+    alt?: string,
+  ) {
+    const note = await this.prisma.note.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note) {
+      throw new NotFoundException(`Note '${noteId}' not found`);
+    }
+
+    const existingImages = await this.prisma.noteImage.findMany({
+      where: { noteId },
+      orderBy: { order: 'desc' },
+    });
+
+    const hasMain = existingImages.some((img) => img.isMain);
+    const shouldBeMain = isMain || !hasMain;
+    const nextOrder = existingImages.length > 0 ? existingImages[0].order + 1 : 0;
+
+    if (shouldBeMain && hasMain) {
+      await this.prisma.noteImage.updateMany({
+        where: { noteId },
+        data: { isMain: false },
+      });
+    }
+
+    const noteImage = await this.prisma.noteImage.create({
+      data: {
+        noteId,
+        url: processed.url,
+        thumbnailUrl: processed.thumbnailUrl,
+        filename: processed.filename,
+        mimeType: processed.mimeType,
+        sizeBytes: processed.sizeBytes,
+        width: processed.width,
+        height: processed.height,
+        isMain: shouldBeMain,
+        caption,
+        alt: alt || caption,
+        order: nextOrder,
+      },
+    });
+
+    return noteImage;
+  }
 }
+

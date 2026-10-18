@@ -45,6 +45,15 @@ export class SparksIngestListener {
     const alreadyInBus = await this.driveBusRelay.isFileAlreadyInBus(filePath, fileHash);
     if (alreadyInBus) {
       this.logger.log(`⏩ [DRV-03:SKIP] Файл "${fileName}" уже обработан другой машиной в шине. Пропускаем.`);
+      await this.prisma.ingestionFile
+        .update({
+          where: { filePath },
+          data: {
+            status: 'COMPLETED',
+            errorMessage: null,
+          },
+        })
+        .catch(() => {});
       return;
     }
 
@@ -78,6 +87,10 @@ export class SparksIngestListener {
       // 3. Folder assignment
       parsed.noteDto.folders = [folderPath];
       parsed.noteDto.folderPath = folderPath;
+      parsed.noteDto.metadata = {
+        ...(parsed.noteDto.metadata || {}),
+        fileHash,
+      };
 
       // 4. Resolve Target Feed (or auto-provision feed for folder)
       const targetFeed = await this.resolveFeedForFolder(folderPath, filePath, parsed.noteDto.metadata?.feedSlug);

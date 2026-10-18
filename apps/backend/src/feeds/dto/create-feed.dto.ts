@@ -22,4 +22,20 @@ export class CreateFeedDto {
   @IsString({ each: true })
   @IsOptional()
   folderPaths?: string[];
+
+  @ApiPropertyOptional({ description: 'Visual icon: Material symbol name, emoji or icon id', example: 'dynamic_feed' })
+  @IsString()
+  @IsOptional()
+  icon?: string;
+
+  @ApiPropertyOptional({ description: 'Accent HEX color for badges and tree styling', example: '#c9cd58' })
+  @IsString()
+  @IsOptional()
+  color?: string;
+
+  @ApiPropertyOptional({ description: 'Saved hashtags for automatic content inclusion', example: ['ai', 'neuro'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  hashtags?: string[];
 }

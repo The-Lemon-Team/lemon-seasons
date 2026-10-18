@@ -203,7 +203,16 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 15 Feeds (including Orthodox, Catholic, Islamic, World Religions, Russian Official & Military, World Holidays)');
+  const feedNotebooklmAi = await prisma.feed.create({
+    data: {
+      title: 'NotebookLM AI Daily Briefing',
+      description: 'Ежедневный подкаст и структурированные сводки ключевых событий в мире искусственного интеллекта.',
+      slug: 'notebooklm-ai',
+      folderPaths: ['Seasons/NotebookLM-AI', 'Podcasts/AI'],
+    },
+  });
+
+  console.log('✅ Created 16 Feeds (including NotebookLM AI Daily Briefing, Orthodox, Catholic, Islamic, World Religions, Russian Official & Military, World Holidays)');
 
   // 1.5 Seed Initial Vault Containers (Public & Private)
   await prisma.container.upsert({
@@ -409,7 +418,7 @@ async function main() {
     endDate?: string | Date;
     icon?: string;
     sourceLink?: string;
-    taxonomyPath: string;
+    taxonomyPath?: string;
     folders: string[];
     hashtags: string[];
     imageUrl?: string;
@@ -418,8 +427,10 @@ async function main() {
     curator?: string;
     parentNoteId?: string;
     resonanceScore?: number;
+    metadata?: any;
+    status?: any;
   }) {
-    const tagId = await getOrCreateTaxonomy(item.taxonomyPath);
+    const tagId = item.taxonomyPath ? await getOrCreateTaxonomy(item.taxonomyPath) : null;
     const sDate = new Date(item.startDate);
     const eDate = item.endDate ? new Date(item.endDate) : null;
 
@@ -430,6 +441,7 @@ async function main() {
         title: item.title,
         description: item.description,
         type: item.type,
+        status: item.status || 'PUBLISHED',
         startDate: sDate,
         endDate: eDate,
         icon: item.icon,
@@ -437,9 +449,12 @@ async function main() {
         resonanceScore: item.resonanceScore,
         parentNoteId: item.parentNoteId,
         sourceLink: item.sourceLink,
-        tags: {
-          connect: [{ id: tagId }],
-        },
+        metadata: item.metadata || undefined,
+        tags: tagId
+          ? {
+              connect: [{ id: tagId }],
+            }
+          : undefined,
       },
     });
 
@@ -576,7 +591,6 @@ async function main() {
       hashtags: h.hashtags,
       imageUrl: h.imageUrl,
       imageCaption: h.imageCaption,
-      curator: 'Иван Белый',
     });
   }
   console.log(`✅ Seeded ${russianOfficialHolidays.length} Russian Official Holidays (cont-russian-official)`);
@@ -600,7 +614,6 @@ async function main() {
       hashtags: h.hashtags,
       imageUrl: h.imageUrl,
       imageCaption: h.imageCaption,
-      curator: 'Иван Белый',
     });
   }
   console.log(`✅ Seeded ${russianMilitaryHolidays.length} Russian Military Glory & Army Days (cont-russian-military)`);
@@ -718,7 +731,6 @@ async function main() {
       hashtags: w.hashtags,
       imageUrl: w.imageUrl,
       imageCaption: w.imageCaption,
-      curator: 'Kirk Kitten',
     });
   }
   console.log(`✅ Seeded ${worldHolidays.length} World Countries Holidays (cont-world-holidays)`);
@@ -750,6 +762,23 @@ async function main() {
   // 7. Seed Engineering & Design System Notes
   console.log('⚡ Seeding Tech, Design, & DevOps Notes...');
   const techNotes = [
+    {
+      feedId: feedNotebooklmAi.id,
+      containerId: 'main-vault',
+      title: 'NotebookLM AI Daily #42 • Прорыв в reasoning-моделях и новые автономные агенты',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-17T08:00:00.000Z',
+      icon: 'sparkles',
+      folders: ['Seasons/NotebookLM-AI', 'Podcasts/AI'],
+      hashtags: ['AI', 'NotebookLM', 'Podcast', 'Reasoning'],
+      metadata: {
+        audioUrl: 'https://cdn.lemon-seasons.org/podcasts/notebooklm-ai-ep42.mp3',
+        audioDuration: 480,
+        podcastEpisode: 42,
+        host: 'NotebookLM Virtual Co-Hosts',
+      },
+      description: `### 🎙️ NotebookLM AI Daily Briefing • Выпуск #42\n\n- ⚡ **Gemini 2.5 Flash**: Новые возможности глубоких рассуждений и расширенное контекстное окно 1M токенов для масштабного кодинга.\n- 🤖 **Claude 3.7 Hybrid**: Динамическое переключение между мгновенным ответом и расширенной цепочкой мыслей (Chain-of-Thought).\n- 🎧 **NotebookLM Audio Podcast**: 8-минутный синтезированный подкаст от виртуальных ведущих с разбором ключевых релизов недели.\n- 🚀 **Open Source Agents**: Новые библиотеки локальной оркестрации и автономного выполнения сложных инженерных пайплайнов.`,
+    },
     {
       feedId: feedTech.id,
       containerId: 'main-vault',

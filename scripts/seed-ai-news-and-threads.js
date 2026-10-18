@@ -404,7 +404,6 @@ async function main() {
           type: 'EVENT',
           title: 'Регулирование и скепсис инвесторов: Расследование FTC, AUTOWARCOM и $88 млрд ИИ-долга',
           folder: '03_Research/AI',
-          curator: 'Kirk Kitten',
           hashtags: ['ftc', 'autowarcom', 'пентагон', 'иидолг', 'уоллстрит', 'регуляторика'],
           description: `## Институциональные вызовы автономного ИИ
 
@@ -576,7 +575,6 @@ Google представила новое поколение ИИ-систем:
       title: 'Регулирование и сомнения инвесторов: Расследование FTC, AUTOWARCOM Пентагона и $88 млрд ИИ-долга',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T12:30:00.000Z'),
-      curator: 'Kirk Kitten',
       resonanceScore: 94,
       hashtags: ['ftc', 'autowarcom', 'пентагон', 'иидолг', 'уоллстрит', 'риски'],
       description: `## Институциональные вызовы ИИ: Расследования, военное ведомство и финансовый долг

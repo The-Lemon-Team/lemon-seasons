@@ -54,34 +54,64 @@ export class NotesQueryBuilder {
     if (feedId) {
       const targetFeed = await this.prisma.feed.findUnique({
         where: { id: feedId },
-        select: { id: true, folderPaths: true },
+        select: { id: true, folderPaths: true, hashtags: true },
       });
-      if (targetFeed && targetFeed.folderPaths && targetFeed.folderPaths.length > 0) {
-        feedFilter = {
-          OR: [
-            { feedId: targetFeed.id },
+      const hasFolders = targetFeed?.folderPaths && targetFeed.folderPaths.length > 0;
+      const hasHashtags = targetFeed?.hashtags && targetFeed.hashtags.length > 0;
+
+      if (targetFeed && (hasFolders || hasHashtags)) {
+        const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
+        if (hasFolders) {
+          orClauses.push(
             ...targetFeed.folderPaths.map((fp) => ({
               folderPath: { startsWith: fp, mode: 'insensitive' as const },
-            })),
-          ],
-        };
+            }))
+          );
+        }
+        if (hasHashtags) {
+          const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
+          orClauses.push({
+            hashtags: {
+              some: {
+                name: { in: cleanTags },
+                deletedAt: null,
+              },
+            },
+          });
+        }
+        feedFilter = { OR: orClauses };
       } else {
         feedFilter = { feedId };
       }
     } else if (feedSlug) {
       const targetFeed = await this.prisma.feed.findFirst({
         where: { slug: feedSlug, deletedAt: null },
-        select: { id: true, folderPaths: true },
+        select: { id: true, folderPaths: true, hashtags: true },
       });
-      if (targetFeed && targetFeed.folderPaths && targetFeed.folderPaths.length > 0) {
-        feedFilter = {
-          OR: [
-            { feedId: targetFeed.id },
+      const hasFolders = targetFeed?.folderPaths && targetFeed.folderPaths.length > 0;
+      const hasHashtags = targetFeed?.hashtags && targetFeed.hashtags.length > 0;
+
+      if (targetFeed && (hasFolders || hasHashtags)) {
+        const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
+        if (hasFolders) {
+          orClauses.push(
             ...targetFeed.folderPaths.map((fp) => ({
               folderPath: { startsWith: fp, mode: 'insensitive' as const },
-            })),
-          ],
-        };
+            }))
+          );
+        }
+        if (hasHashtags) {
+          const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
+          orClauses.push({
+            hashtags: {
+              some: {
+                name: { in: cleanTags },
+                deletedAt: null,
+              },
+            },
+          });
+        }
+        feedFilter = { OR: orClauses };
       } else {
         feedFilter =
           feedSlug === 'russian-holidays'
@@ -303,4 +333,25 @@ export class NotesQueryBuilder {
 
     return where;
   }
+
+  buildOrderBy(query: QueryNotesDto): Prisma.NoteOrderByWithRelationInput[] {
+    const { sortBy, sortOrder = 'desc' } = query;
+    const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    if (sortBy === 'title') {
+      return [{ title: direction }, { startDate: 'desc' }];
+    }
+    if (sortBy === 'type') {
+      return [{ type: direction }, { startDate: 'desc' }];
+    }
+    if (sortBy === 'folder') {
+      return [{ folderPath: { sort: direction, nulls: 'last' } }, { startDate: 'desc' }];
+    }
+    if (sortBy === 'startDate') {
+      return [{ startDate: direction }, { id: 'desc' }];
+    }
+
+    return [{ startDate: 'desc' }];
+  }
 }
+

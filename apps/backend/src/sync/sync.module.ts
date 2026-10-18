@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { SyncController } from './sync.controller';
 import { SessionService } from './session.service';
@@ -6,9 +6,15 @@ import { GDriveStorageService } from './gdrive-storage.service';
 import { MergeService } from './merge.service';
 import { SyncOrchestratorService } from './sync-orchestrator.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { IngestionModule } from '../ingestion/ingestion.module';
+import { BusModule } from '../bus/bus.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    forwardRef(() => IngestionModule),
+    forwardRef(() => BusModule),
+  ],
   controllers: [SyncController],
   providers: [
     SyncService,
