@@ -223,6 +223,101 @@ export function useDeleteNoteImage() {
   });
 }
 
+export function useGenerateNoteCover() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      options,
+    }: {
+      noteId: string;
+      options?: {
+        style?: string;
+        aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+        customPrompt?: string;
+        setAsMain?: boolean;
+      };
+    }) => notesApi.generateCover(noteId, options),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
+export function useGenerateAiBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      prompt: string;
+      style?: string;
+      aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+      context?: string;
+      count?: number;
+      noteId?: string;
+    }) => ingestionApi.generateAiBatch(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
+export function useAiAssets(params?: {
+  search?: string;
+  style?: string;
+  isFavorite?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
+  return useQuery({
+    queryKey: ['ai-assets', params],
+    queryFn: () => ingestionApi.getAiAssets(params),
+  });
+}
+
+export function useToggleAssetFavorite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ingestionApi.toggleAssetFavorite(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
+export function useDeleteAiAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ingestionApi.deleteAiAsset(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
+export function useAttachCoverToNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      assetUrl,
+      caption,
+      setAsMain = true,
+    }: {
+      noteId: string;
+      assetUrl: string;
+      caption?: string;
+      setAsMain?: boolean;
+    }) => ingestionApi.attachCoverToNote(noteId, { assetUrl, caption, setAsMain }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
 // Note Links Hooks
 export function useAddNoteLinks() {
   const queryClient = useQueryClient();
@@ -487,6 +582,14 @@ export function useSyncChanges(since?: string) {
     queryKey: ['sync', since],
     queryFn: () => syncApi.getChanges(since),
     refetchInterval: 30000, // Background sync poll every 30s
+  });
+}
+
+export function useGDriveUpdates(limit = 25, refetchInterval = 10000) {
+  return useQuery({
+    queryKey: ['sync-updates', limit],
+    queryFn: () => syncApi.getUpdates(limit),
+    refetchInterval,
   });
 }
 

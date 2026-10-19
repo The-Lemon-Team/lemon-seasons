@@ -1,0 +1,481 @@
+import React, { useState, useEffect } from 'react';
+import { Note, NoteType, Feed, Folder } from '../../../types';
+import { NoteTypeSelect } from '../../../components/NoteTypeSelect';
+import { NoteTableRow } from './NoteTableRow';
+import { useAdminI18n } from '../../../i18n';
+import { X, ChevronDown } from 'lucide-react';
+
+export interface NotesTableWithFiltersProps {
+  notes: Note[];
+  total: number;
+  limit: number;
+  offset: number;
+  isLoading?: boolean;
+  search: string;
+  feedId?: string;
+  type?: NoteType;
+  folder?: string;
+  unfiled?: boolean;
+  curator?: string;
+  hashtag?: string;
+  includeDeleted?: boolean;
+  feeds: Feed[];
+  folders: Folder[];
+  hashtags: Array<{ id: string; name: string; _count?: { notes?: number } }>;
+  availableCurators?: string[];
+  sortBy?: 'startDate' | 'type' | 'folder' | 'title';
+  sortOrder?: 'asc' | 'desc';
+  onSortChange?: (sortBy?: 'startDate' | 'type' | 'folder' | 'title', sortOrder?: 'asc' | 'desc') => void;
+  onFilterChange: (key: string, value?: string) => void;
+  onSelectFolder: (folderPath?: string) => void;
+  onSelectUnfiled: () => void;
+  onResetFilters: () => void;
+  onViewNote: (id: string) => void;
+  onEditNote: (id: string) => void;
+  onDeleteNote: (id: string) => void;
+  onRestoreNote: (id: string) => void;
+  onPageChange: (newOffset: number) => void;
+  className?: string;
+}
+
+export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
+  notes,
+  total,
+  limit,
+  offset,
+  isLoading = false,
+  search,
+  feedId,
+  type,
+  folder,
+  unfiled,
+  curator,
+  hashtag,
+  includeDeleted,
+  sortBy,
+  sortOrder,
+  onSortChange,
+  feeds,
+  folders,
+  hashtags,
+  onFilterChange,
+  onSelectFolder,
+  onSelectUnfiled,
+  onResetFilters,
+  onViewNote,
+  onEditNote,
+  onDeleteNote,
+  onRestoreNote,
+  onPageChange,
+  className = '',
+}) => {
+  const { t } = useAdminI18n();
+  const [localSearch, setLocalSearch] = useState(search);
+
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onFilterChange('search', localSearch.trim() || undefined);
+  };
+
+  const handleClearSearch = () => {
+    setLocalSearch('');
+    onFilterChange('search', undefined);
+  };
+
+  const hasAnyFilter = Boolean(
+    folder || unfiled || hashtag || feedId || type || curator || search || includeDeleted || sortBy
+  );
+
+  const handleSortClick = (field: 'startDate' | 'type' | 'folder' | 'title') => {
+    if (!onSortChange) return;
+
+    if (sortBy === field) {
+      const firstDir = field === 'startDate' ? 'desc' : 'asc';
+      const secondDir = field === 'startDate' ? 'asc' : 'desc';
+
+      if (sortOrder === firstDir) {
+        onSortChange(field, secondDir);
+      } else {
+        onSortChange(undefined, undefined);
+      }
+    } else {
+      const firstDir = field === 'startDate' ? 'desc' : 'asc';
+      onSortChange(field, firstDir);
+    }
+  };
+
+  const renderSortableHeader = (
+    field: 'startDate' | 'type' | 'folder' | 'title',
+    label: React.ReactNode,
+    className = ''
+  ) => {
+    const isActive = sortBy === field;
+    return (
+      <div className={`flex items-center min-w-0 ${className}`}>
+        <button
+          type="button"
+          onClick={() => handleSortClick(field)}
+          className={`group/col inline-flex items-center gap-1 cursor-pointer transition-colors text-left uppercase tracking-wider font-semibold font-mono text-[10px] select-none hover:text-on-surface ${
+            isActive ? 'text-primary font-bold' : 'text-on-surface-variant'
+          }`}
+          title={
+            isActive
+              ? `${label}: ${sortOrder === 'asc' ? '↑ (A-Z)' : '↓ (Z-A)'}`
+              : `Sort by ${label}`
+          }
+        >
+          <span className="truncate">{label}</span>
+          <span
+            className={`material-symbols-outlined text-[13px] leading-none transition-all flex-shrink-0 ${
+              isActive
+                ? 'text-primary opacity-100 scale-100'
+                : 'text-outline/40 opacity-0 group-hover/col:opacity-100'
+            }`}
+          >
+            {isActive
+              ? sortOrder === 'asc'
+                ? 'arrow_upward'
+                : 'arrow_downward'
+              : 'unfold_more'}
+          </span>
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={`bg-surface-container-low border border-white/5 rounded-lg flex flex-col h-full overflow-hidden ${className}`}
+    >
+      {/* Top Header: Toolbar & Filters (Pinned) */}
+      <div className="p-3.5 space-y-2.5 bg-surface-container-high/30 border-b border-white/5 flex-shrink-0">
+        {/* Row 1: Search Form + Active Filter Chips + Total Count */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[240px] max-w-md relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder={t.searchNotesPlaceholder}
+              className="w-full bg-surface-container border border-outline-variant/40 rounded pl-9 pr-8 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary outline-none transition-colors"
+            />
+            {localSearch && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors cursor-pointer"
+                title={t.reset}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </form>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Active Folder Filter Chip */}
+            {folder && (
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/20 text-primary border border-primary/40 rounded-full font-mono text-[11px] shadow-xs">
+                <span className="material-symbols-outlined text-[12px] leading-none shrink-0">folder</span>
+                <span className="font-semibold leading-none truncate max-w-[200px]" title={folder}>
+                  {folder}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('folder', undefined)}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-primary/80 hover:text-error hover:bg-primary/30 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  title={t.reset}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Active Unfiled Filter Chip */}
+            {unfiled && (
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary border border-white/20 rounded-full font-mono text-[11px] shadow-xs">
+                <span className="material-symbols-outlined text-[12px] leading-none shrink-0">draft</span>
+                <span className="leading-none">Unfiled (Root)</span>
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('unfiled', undefined)}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  title={t.reset}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Active Hashtag Filter Chip */}
+            {hashtag && (
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-950/60 text-cyan-300 border border-cyan-700/50 rounded-full font-mono text-[11px] shadow-xs">
+                <span className="text-cyan-500 font-bold leading-none shrink-0">#</span>
+                <span className="leading-none truncate max-w-[200px]" title={hashtag}>
+                  {hashtag}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('hashtag', undefined)}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-800/60 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  title={t.reset}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Active Curator Filter Chip */}
+            {curator && (
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-950/60 text-sky-300 border border-sky-600/50 rounded-full font-mono text-[11px] shadow-xs">
+                <span className="text-[11px] leading-none shrink-0">👤</span>
+                <span className="leading-none truncate max-w-[200px]" title={curator}>
+                  {curator}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('curator', undefined)}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-sky-300 hover:text-white hover:bg-sky-800/60 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  title={t.reset}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Active Sort Chip */}
+            {sortBy && (
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/20 text-primary border border-primary/40 rounded-full font-mono text-[11px] shadow-xs">
+                <span className="material-symbols-outlined text-[13px] leading-none">
+                  {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                </span>
+                <span className="leading-none">
+                  {sortBy === 'startDate'
+                    ? t.datesCol
+                    : sortBy === 'title'
+                    ? t.titleCol
+                    : sortBy === 'type'
+                    ? t.typeCol
+                    : t.folderCol}
+                  : {sortOrder === 'asc' ? '↑ (A-Z)' : '↓ (Z-A)'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onSortChange?.(undefined, undefined)}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-primary hover:text-white hover:bg-primary/40 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  title={t.reset}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Reset All Filters Button */}
+            {hasAnyFilter && (
+              <button
+                type="button"
+                onClick={onResetFilters}
+                className="px-2 py-1 text-xs font-mono text-outline hover:text-primary transition-colors cursor-pointer"
+                title={t.reset}
+              >
+                {t.reset}
+              </button>
+            )}
+
+            {/* Total Count Badge */}
+            <span className="px-2.5 py-1 bg-surface-container-highest rounded font-mono text-xs text-on-surface-variant border border-white/5">
+              {t.totalNotesCountBadge(total)}
+            </span>
+          </div>
+        </div>
+
+        {/* Row 2: Filter Dropdowns Row */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+          {/* Feed Filter */}
+          <div className="relative inline-flex items-center">
+            <select
+              value={feedId || ''}
+              onChange={(e) => onFilterChange('feedId', e.target.value || undefined)}
+              className="h-7 appearance-none bg-surface-container border border-outline-variant/40 rounded pl-2.5 pr-7 text-xs text-on-surface font-sans focus:border-primary outline-none cursor-pointer"
+            >
+              <option value="">{t.filterFeedPlaceholder}</option>
+              {feeds.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.title}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant pointer-events-none" />
+          </div>
+
+          {/* Type Filter */}
+          <div className="min-w-[130px]">
+            <NoteTypeSelect
+              value={type}
+              onChange={(val) => onFilterChange('type', val || undefined)}
+              allowAll
+              allLabel={t.filterTypePlaceholder}
+              size="sm"
+            />
+          </div>
+
+          {/* Folder Filter Dropdown */}
+          <div className="relative inline-flex items-center">
+            <select
+              value={folder || (unfiled ? '__unfiled__' : '')}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '__unfiled__') {
+                  onSelectUnfiled();
+                } else {
+                  onSelectFolder(val || undefined);
+                }
+              }}
+              className="h-7 appearance-none bg-surface-container border border-primary/30 text-primary font-mono rounded pl-2.5 pr-7 text-xs focus:border-primary outline-none cursor-pointer"
+            >
+              <option value="" className="text-on-surface">{t.filterFolderPlaceholder}</option>
+              <option value="__unfiled__" className="text-on-surface">📥 Unfiled (Root)</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.path} className="text-on-surface">
+                  📁 {f.path}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary pointer-events-none" />
+          </div>
+
+          {/* Hashtag Filter */}
+          <div className="relative inline-flex items-center">
+            <select
+              value={hashtag || ''}
+              onChange={(e) => onFilterChange('hashtag', e.target.value || undefined)}
+              className="h-7 appearance-none bg-surface-container border border-cyan-800/40 text-cyan-300 rounded pl-2.5 pr-7 text-xs font-mono focus:border-cyan-400 outline-none cursor-pointer"
+            >
+              <option value="" className="text-on-surface">{t.hashtagsPlaceholder}</option>
+              {hashtags.map((h) => (
+                <option key={h.id} value={h.name} className="text-on-surface">
+                  #{h.name} {h._count?.notes ? `(${h._count.notes})` : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-cyan-400 pointer-events-none" />
+          </div>
+
+          {/* Include Deleted Checkbox */}
+          <label className="ml-auto flex items-center gap-1.5 text-xs font-mono text-on-surface-variant cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={Boolean(includeDeleted)}
+              onChange={(e) => onFilterChange('includeDeleted', e.target.checked ? 'true' : undefined)}
+              className="rounded bg-surface-container border-white/20 text-primary focus:ring-0 cursor-pointer"
+            />
+            {t.status}: Deleted
+          </label>
+        </div>
+      </div>
+
+      {/* Scrollable Container for Table Content */}
+      <div className="flex-1 overflow-auto min-h-0 relative">
+        <div className="min-w-[760px] flex flex-col min-h-full">
+          {/* Table Header (Sticky at top of scrollable container) */}
+          <div className="sticky top-0 z-10 grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-2 border-b border-white/5 bg-surface-container-high font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold select-none shadow-xs">
+            {renderSortableHeader('title', `${t.titleCol} & ${t.feedCol}`)}
+            {renderSortableHeader('folder', t.folderCol)}
+            {renderSortableHeader('type', t.typeCol)}
+            {renderSortableHeader('startDate', t.datesCol)}
+            <div>{t.tagsCol}</div>
+            <div className="text-right">{t.actionsCol || t.actions}</div>
+          </div>
+
+          {/* Table Rows */}
+          <div className="divide-y divide-white/5 flex-1">
+            {notes.map((note) => (
+              <NoteTableRow
+                key={note.id}
+                note={note}
+                onView={onViewNote}
+                onEdit={onEditNote}
+                onDelete={onDeleteNote}
+                onRestore={onRestoreNote}
+                onSelectFolder={onSelectFolder}
+                onSelectUnfiled={onSelectUnfiled}
+                onSelectHashtag={(tag) => onFilterChange('hashtag', tag)}
+              />
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {notes.length === 0 && !isLoading && (
+            <div className="p-12 text-center text-on-surface-variant space-y-2 my-auto">
+              <span className="material-symbols-outlined text-4xl text-outline mb-2">
+                description
+              </span>
+              <p className="font-sans text-sm">{t.noNotesFound}</p>
+              {hasAnyFilter && (
+                <button
+                  type="button"
+                  onClick={onResetFilters}
+                  className="text-primary hover:underline text-xs font-mono cursor-pointer"
+                >
+                  {t.reset}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Loading Indicator Overlay */}
+          {isLoading && notes.length === 0 && (
+            <div className="p-12 text-center text-on-surface-variant space-y-2 my-auto">
+              <span className="material-symbols-outlined text-3xl text-primary animate-spin mb-2">
+                progress_activity
+              </span>
+              <p className="font-sans text-xs text-on-surface-variant">Загрузка записей...</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Status & Pagination Bar (Pinned) */}
+      <div className="p-2.5 px-4 border-t border-white/5 bg-surface-container-high/20 flex items-center justify-between text-xs font-mono text-on-surface-variant flex-shrink-0">
+        <div>
+          {total > 0 ? (
+            <span>
+              {offset + 1} - {Math.min(offset + limit, total)} / {total}
+            </span>
+          ) : (
+            <span>0 записей</span>
+          )}
+        </div>
+
+        {total > limit && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(0, offset - limit))}
+              disabled={offset === 0}
+              className="px-2.5 py-0.5 bg-surface-container border border-outline-variant/40 rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-outline-variant/40 transition-colors cursor-pointer text-xs"
+              title="Предыдущая страница"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(offset + limit)}
+              disabled={offset + limit >= total}
+              className="px-2.5 py-0.5 bg-surface-container border border-outline-variant/40 rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-outline-variant/40 transition-colors cursor-pointer text-xs"
+              title="Следующая страница"
+            >
+              →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

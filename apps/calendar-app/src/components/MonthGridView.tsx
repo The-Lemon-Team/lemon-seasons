@@ -373,7 +373,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                       <span className="truncate max-w-[150px]">Folder: {tagPath}</span>
                       <button
                         onClick={() => onToggleTag(tagPath)}
-                        className="hover:text-white p-0.5 transition-colors ml-0.5 shrink-0"
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/30 hover:text-white transition-colors ml-0.5 shrink-0"
                         title="Remove folder filter"
                       >
                         <X className="w-2.5 h-2.5" />
@@ -398,7 +398,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                         <span className="truncate max-w-[160px]">Feed: {theme.shortTitle}</span>
                         <button
                           onClick={() => (onClearFeeds ? onClearFeeds() : onToggleFeed(filterState.feed!))}
-                          className="hover:opacity-100 opacity-70 p-0.5 transition-colors ml-0.5 shrink-0"
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/20 hover:opacity-100 opacity-70 transition-colors ml-0.5 shrink-0"
                           title="Remove feed filter"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -419,7 +419,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                       <span>Type: {getNoteTypeLabel(type, lang)}</span>
                       <button
                         onClick={() => onToggleType(type)}
-                        className="hover:text-white p-0.5 transition-colors shrink-0"
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/30 hover:text-white transition-colors shrink-0"
                         title="Remove type filter"
                       >
                         <X className="w-2.5 h-2.5" />
@@ -437,7 +437,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                       <span>#{hashtag}</span>
                       <button
                         onClick={() => onToggleHashtag(hashtag)}
-                        className="hover:text-white p-0.5 transition-colors shrink-0"
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/30 hover:text-white transition-colors shrink-0"
                         title="Remove hashtag filter"
                       >
                         <X className="w-2.5 h-2.5" />
@@ -445,15 +445,15 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                     </span>
                   ))}
 
-                  {/* Curator Filter */}
+                  {/* Author / Source Filter */}
                   {filterState.curator && (
                     <span className="shrink-0 inline-flex items-center gap-1.5 px-2 h-6 rounded bg-sky-950/60 border border-sky-500/40 text-sky-300 text-[11px] font-mono leading-none">
-                      <span>Куратор: {filterState.curator}</span>
+                      <span>Автор: {filterState.curator}</span>
                       {onSelectCurator && (
                         <button
                           onClick={() => onSelectCurator(undefined)}
-                          className="hover:text-white p-0.5 transition-colors ml-0.5 shrink-0"
-                          title="Remove curator filter"
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/30 hover:text-white transition-colors ml-0.5 shrink-0"
+                          title="Remove author filter"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>

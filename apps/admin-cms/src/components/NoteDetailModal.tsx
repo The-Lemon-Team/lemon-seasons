@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal, Popconfirm, message, Image, Spin } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -20,6 +21,7 @@ import {
 import { useNote, useDeleteNote } from '../api/queries';
 import { NoteTypeBadge } from './NoteTypeBadge';
 import { HashtagBadge } from './HashtagBadge';
+import { EditNoteModal } from './EditNoteModal';
 import { useAdminI18n } from '../i18n';
 
 export interface NoteDetailModalProps {
@@ -40,6 +42,8 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
   onSelectHashtag,
 }) => {
   const { t } = useAdminI18n();
+  const navigate = useNavigate();
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const { data: note, isLoading } = useNote(noteId || '');
   const deleteNoteMutation = useDeleteNote();
 
@@ -212,7 +216,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                     {note.feed.title}
                   </span>
                 )}
-                {note.curator && (
+                {note.curator && note.curator !== 'auto' && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
                     <span>👤</span>
                     <span>{note.curator}</span>
@@ -253,20 +257,15 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 <Copy className="w-4 h-4" />
               </button>
 
-              {onEdit && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onEdit(note.id);
-                  }}
-                  className="px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-all text-xs font-mono font-medium flex items-center gap-1.5"
-                  title={t.editInEditor}
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t.edit}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-all text-xs font-mono font-medium flex items-center gap-1.5"
+                title={t.edit}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.edit}</span>
+              </button>
 
               <button
                 type="button"
@@ -518,23 +517,47 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 {t.close}
               </button>
 
-              {onEdit && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onEdit(note.id);
-                  }}
-                  className="px-4 py-1.5 rounded-lg bg-primary text-on-primary hover:brightness-110 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm transition-all"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>{t.editInEditor}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onEdit) onEdit(note.id);
+                  else navigate(`/notes/${note.id}`);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface text-xs font-mono border border-white/10 transition-colors flex items-center gap-1.5"
+                title="Перейти на отдельную страницу редактора"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Полная страница</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="px-4 py-1.5 rounded-lg bg-primary text-on-primary hover:brightness-110 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{t.edit}</span>
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      <EditNoteModal
+        noteId={note?.id || null}
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSuccess={() => {
+          setIsEditOpen(false);
+        }}
+        onOpenFullPage={(id) => {
+          setIsEditOpen(false);
+          onClose();
+          if (onEdit) onEdit(id);
+          else navigate(`/notes/${id}`);
+        }}
+      />
     </Modal>
   );
 };

@@ -6,6 +6,8 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
+import { AppSelect } from './common/AppSelect';
+import { Radio } from 'lucide-react';
 import { useAdminI18n } from '../i18n';
 import { LemonLogo } from './LemonLogo';
 
@@ -110,17 +112,16 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
                 {t.feedInputLabel}
               </label>
-              <select
+              <AppSelect
                 value={feedId}
-                onChange={(e) => setFeedId(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-              >
-                {feeds.map((f) => (
-                  <option key={f.id} value={f.id} className="bg-surface-container">
-                    {f.title}
-                  </option>
-                ))}
-              </select>
+                onChange={setFeedId}
+                placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
+                options={feeds.map((f) => ({
+                  value: f.id,
+                  label: f.title,
+                  icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+                }))}
+              />
             </div>
 
             <div className="space-y-1">

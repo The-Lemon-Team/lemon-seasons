@@ -18,6 +18,8 @@ import {
   BatchCreateNotesResponse,
   SyncStatusResponse,
   GDriveSyncResult,
+  GDriveRecentUpdatesResponse,
+  GDriveUpdateItem,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -168,6 +170,10 @@ export const syncApi = {
   },
   pull: async (deviceId?: string): Promise<GDriveSyncResult> => {
     const res = await apiClient.post('/sync/pull', {}, { params: { deviceId } });
+    return res.data;
+  },
+  getUpdates: async (limit = 25): Promise<GDriveRecentUpdatesResponse> => {
+    const res = await apiClient.get<GDriveRecentUpdatesResponse>('/sync/updates', { params: { limit } });
     return res.data;
   },
 };

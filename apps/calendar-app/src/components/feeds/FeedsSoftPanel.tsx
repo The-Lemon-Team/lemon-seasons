@@ -85,7 +85,7 @@ export const FeedsSoftPanel: React.FC<FeedsSoftPanelProps> = ({
   }, [isMiniCalendarOpen]);
 
   return (
-    <div className="shrink-0 w-full rounded-2xl bg-white/95 dark:bg-[#18222d]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.08] p-3 sm:p-4.5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-3 transition-colors">
+    <div className="relative z-20 shrink-0 w-full rounded-2xl bg-white/95 dark:bg-[#18222d]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.08] p-3 sm:p-4.5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-3 transition-colors">
       {/* 1. Top Bar: Title, Source Switcher (Spark vs Classic vs Telegram) & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
         {/* Left: Branding & Segmented Mode Switcher */}

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Star, X, Folder, FolderPlus } from 'lucide-react';
 import { useFolders } from '../api/queries';
 import { FolderInputItem, NoteFolder } from '../types';
+import { useDropdownPlacement } from '../hooks/useDropdownPlacement';
 
 interface FolderSelectProps {
   // Value can be array of FolderInputItem or NoteFolder
@@ -22,6 +23,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
   const [inputVal, setInputVal] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
 
   // Normalize input values to FolderInputItem
   const activeItems: FolderInputItem[] = value
@@ -117,6 +119,21 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
     (f) => f.path.toLowerCase() === inputVal.trim().toLowerCase(),
   );
 
+  const hasDropdownContent =
+    isOpen &&
+    (filteredSuggestions.length > 0 || Boolean(inputVal.trim() && !exactMatchExists));
+
+  const { openUpward, maxHeight, updatePosition } = useDropdownPlacement(
+    inputContainerRef,
+    hasDropdownContent,
+    { dependencies: [filteredSuggestions.length, inputVal, exactMatchExists] },
+  );
+
+  const handleOpen = () => {
+    updatePosition();
+    setIsOpen(true);
+  };
+
   return (
     <div ref={containerRef} className={`space-y-2.5 ${className}`}>
       {/* Active Folder Badges Tray */}
@@ -133,7 +150,7 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
             {activeItems.map((item) => (
               <div
                 key={item.path}
-                className={`inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-full text-xs font-mono border transition-all ${
+                className={`inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-full text-[11px] font-mono border transition-all ${
                   item.isPrimary
                     ? 'bg-primary/20 text-primary border-primary/50 shadow-sm font-semibold'
                     : 'bg-surface-container-high text-on-surface border-white/10'
@@ -175,10 +192,10 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRemove(item.path)}
-                  className="p-0.5 hover:bg-white/10 rounded-full text-on-surface-variant hover:text-error transition-colors flex items-center justify-center cursor-pointer ml-0.5"
+                  className="w-3.5 h-3.5 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-error transition-colors flex items-center justify-center cursor-pointer ml-0.5 shrink-0"
                   title="Remove from folder"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2.5 h-2.5" />
                 </button>
               </div>
             ))}
@@ -188,16 +205,16 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
 
       {/* Input / Combobox */}
       <div className="relative">
-        <div className="flex items-center relative">
+        <div ref={inputContainerRef} className="flex items-center relative">
           <Folder className="absolute left-2.5 text-on-surface-variant/60 w-4 h-4 pointer-events-none select-none" />
           <input
             type="text"
             value={inputVal}
             onChange={(e) => {
               setInputVal(e.target.value);
-              setIsOpen(true);
+              handleOpen();
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={handleOpen}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -222,8 +239,13 @@ export const FolderSelect: React.FC<FolderSelectProps> = ({
         </div>
 
         {/* Autocomplete Dropdown */}
-        {isOpen && (
-          <div className="absolute z-50 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-surface-container-high border border-white/10 rounded-lg shadow-xl divide-y divide-white/5 py-1">
+        {hasDropdownContent && (
+          <div
+            style={{ maxHeight: `${maxHeight}px` }}
+            className={`absolute z-50 left-0 right-0 overflow-y-auto bg-surface-container-high border border-white/10 rounded-lg shadow-xl divide-y divide-white/5 py-1 ${
+              openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+            }`}
+          >
             {inputVal.trim() && !exactMatchExists && (
               <button
                 type="button"

@@ -15,7 +15,7 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
 
 interface NoteTypeBadgeProps {
   type: NoteType | string;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
   showIcon?: boolean;
 }
 
@@ -34,11 +34,18 @@ export const NoteTypeBadge: React.FC<NoteTypeBadgeProps> = ({
   };
 
   const sizeClasses =
-    size === 'sm'
+    size === 'xs'
+      ? 'px-1.5 py-0.2 text-[9px] gap-1'
+      : size === 'sm'
       ? 'px-1.5 py-0.5 text-[10px] gap-1'
       : 'px-2 py-0.5 text-[11px] gap-1.5';
 
-  const iconClass = size === 'sm' ? 'w-3 h-3 shrink-0' : 'w-3.5 h-3.5 shrink-0';
+  const iconClass =
+    size === 'xs'
+      ? 'w-2.5 h-2.5 shrink-0'
+      : size === 'sm'
+      ? 'w-3 h-3 shrink-0'
+      : 'w-3.5 h-3.5 shrink-0';
   const label = typeof type === 'string' && (NOTE_TYPE_CONFIGS as any)[type] ? getTypeLabel(type as NoteType) : config.label;
   const IconComp = TYPE_ICONS[type] || Tag;
 

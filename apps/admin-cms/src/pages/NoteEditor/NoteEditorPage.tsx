@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { message, Popconfirm } from 'antd';
 import {
   useNote,
@@ -17,6 +17,8 @@ import { ImageManager } from '../../components/ImageManager';
 import { LinkManager } from '../../components/LinkManager';
 import { HashtagInput } from '../../components/HashtagInput';
 import { FolderSelect } from '../../components/FolderSelect';
+import { AppSelect } from '../../components/common/AppSelect';
+import { Radio } from 'lucide-react';
 import { useAdminI18n } from '../../i18n';
 
 export const NoteEditorPage: React.FC = () => {
@@ -31,6 +33,9 @@ export const NoteEditorPage: React.FC = () => {
   const createNoteMutation = useCreateNote();
   const updateNoteMutation = useUpdateNote();
   const deleteNoteMutation = useDeleteNote();
+
+  const [searchParams] = useSearchParams();
+  const folderParam = searchParams.get('folder') || undefined;
 
   // Form State
   const [title, setTitle] = useState('');
@@ -71,10 +76,15 @@ export const NoteEditorPage: React.FC = () => {
           order: nf.order ?? idx,
         })).filter((item) => Boolean(item.path)) || [],
       );
-    } else if (isNew && feeds.length > 0 && !feedId) {
-      setFeedId(feeds[0].id);
+    } else if (isNew) {
+      if (feeds.length > 0 && !feedId) {
+        setFeedId(feeds[0].id);
+      }
+      if (folderParam && assignedFolders.length === 0) {
+        setAssignedFolders([{ path: folderParam, isPrimary: true, order: 0 }]);
+      }
     }
-  }, [note, isNew, feeds, feedId]);
+  }, [note, isNew, feeds, feedId, folderParam]);
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -256,6 +266,7 @@ export const NoteEditorPage: React.FC = () => {
           <div className="bg-surface-container rounded-lg border border-white/5 p-5">
             <ImageManager
               noteId={id}
+              noteTitle={title}
               images={note?.images || []}
               pendingFiles={pendingFiles}
               pendingMainIndex={pendingMainIndex}
@@ -279,17 +290,16 @@ export const NoteEditorPage: React.FC = () => {
             <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
               {t.feedInputLabel}
             </label>
-            <select
+            <AppSelect
               value={feedId}
-              onChange={(e) => setFeedId(e.target.value)}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-xs focus:border-primary outline-none"
-            >
-              {feeds.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.title} (/{f.slug})
-                </option>
-              ))}
-            </select>
+              onChange={setFeedId}
+              placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
+              options={feeds.map((f) => ({
+                value: f.id,
+                label: `${f.title} (/${f.slug})`,
+                icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+              }))}
+            />
           </div>
 
           {/* Note Type */}
@@ -298,23 +308,6 @@ export const NoteEditorPage: React.FC = () => {
               {t.typeInputLabel}
             </label>
             <NoteTypeSelect value={type} onChange={setType} />
-          </div>
-
-          {/* Curator / Source */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-                Куратор / Источник
-              </label>
-              {curator && <span className="text-[10px] font-mono text-primary">{curator}</span>}
-            </div>
-            <input
-              type="text"
-              value={curator}
-              onChange={(e) => setCurator(e.target.value)}
-              placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-xs focus:border-primary outline-none"
-            />
           </div>
 
           {/* Start Date */}

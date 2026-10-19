@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { message, Popconfirm, Modal, Tooltip, Spin } from 'antd';
+import { Sparkles } from 'lucide-react';
 import { NoteImage } from '../types';
 import {
   useUploadNoteImages,
@@ -8,9 +9,11 @@ import {
   useDeleteNoteImage,
 } from '../api/queries';
 import { useAdminI18n } from '../i18n';
+import { AiCoverStudioModal } from './AiCoverStudioModal';
 
 interface ImageManagerProps {
   noteId?: string;
+  noteTitle?: string;
   images?: NoteImage[];
   pendingFiles?: File[];
   pendingMainIndex?: number;
@@ -21,6 +24,7 @@ interface ImageManagerProps {
 
 export const ImageManager: React.FC<ImageManagerProps> = ({
   noteId,
+  noteTitle,
   images = [],
   pendingFiles = [],
   pendingMainIndex = 0,
@@ -35,6 +39,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isAiStudioOpen, setIsAiStudioOpen] = useState(false);
 
   const uploadMutation = useUploadNoteImages();
   const setMainMutation = useSetMainNoteImage();
@@ -180,17 +185,29 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
         </div>
 
         {!readOnly && (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isMutating}
-            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-white/10 hover:border-primary/40 text-on-surface rounded text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-[16px] text-primary">
-              add_photo_alternate
-            </span>
-            {t.uploadImagesBtn}
-          </button>
+          <div className="flex items-center gap-2">
+            {isExistingNote && (
+              <button
+                type="button"
+                onClick={() => setIsAiStudioOpen(true)}
+                className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Studio</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isMutating}
+              className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-white/10 hover:border-primary/40 text-on-surface rounded text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px] text-primary">
+                add_photo_alternate
+              </span>
+              {t.uploadImagesBtn}
+            </button>
+          </div>
         )}
 
         <input
@@ -464,6 +481,13 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
           </div>
         )}
       </Modal>
+
+      <AiCoverStudioModal
+        open={isAiStudioOpen}
+        onClose={() => setIsAiStudioOpen(false)}
+        noteId={noteId}
+        initialTitle={noteTitle}
+      />
     </div>
   );
 };

@@ -75,7 +75,7 @@ export const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
         }`}
       >
         {/* Left: Chevron + Folder Icon + Folder Name */}
-        <div className="flex items-center gap-1.5 overflow-hidden flex-1 min-w-0 pr-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {hasChildren ? (
             <button
               type="button"
@@ -83,7 +83,7 @@ export const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
                 e.stopPropagation();
                 onToggleExpand(node.path);
               }}
-              className="p-0.5 rounded hover:bg-[#333535] text-[#93927e] hover:text-white transition-colors shrink-0 cursor-pointer"
+              className="w-4 h-4 flex items-center justify-center rounded hover:bg-white/10 text-[#93927e] hover:text-white transition-colors shrink-0 cursor-pointer"
             >
               {isExpanded ? (
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -107,18 +107,17 @@ export const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
           </span>
         </div>
 
-        {/* Center / Right: Micro-Dock Action Toolbar (Option 1) */}
-        <FolderNodeActionDock
-          node={node}
-          isSelected={isSelected}
-          onAddSubfolder={onAddSubfolder}
-          onAddNote={onAddNote}
-          onTogglePrivacyRequest={onTogglePrivacyRequest}
-          onDeleteRequest={onDeleteRequest}
-        />
-
-        {/* Far Right: Privacy indicator & Note count badge */}
+        {/* Right: Actions on hover + Privacy indicator + Note count badge */}
         <div className="flex items-center gap-1 shrink-0">
+          <FolderNodeActionDock
+            node={node}
+            isSelected={isSelected}
+            onAddSubfolder={onAddSubfolder}
+            onAddNote={onAddNote}
+            onTogglePrivacyRequest={onTogglePrivacyRequest}
+            onDeleteRequest={onDeleteRequest}
+          />
+
           <span
             className={`text-[9px] font-mono px-1 py-0.5 rounded flex items-center gap-0.5 ${
               isPrivate ? 'bg-[#a855f7]/20 text-[#d8b4fe]' : 'bg-[#c9cd58]/15 text-[#e5e971]'
@@ -128,7 +127,13 @@ export const FolderTreeNodeItem: React.FC<FolderTreeNodeItemProps> = ({
             {isPrivate ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
           </span>
 
-          <span className="text-[10px] font-mono bg-[#141616] text-[#93927e] px-1.5 py-0.5 rounded border border-[#2d3030]">
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
+              isSelected
+                ? 'bg-[#c9cd58]/25 text-[#e5e971] font-bold border-[#c9cd58]/40'
+                : 'bg-[#141616] text-[#93927e] border-[#2d3030]'
+            }`}
+          >
             {node.notesCount}
           </span>
         </div>

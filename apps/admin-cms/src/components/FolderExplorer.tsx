@@ -26,6 +26,7 @@ interface FolderExplorerProps {
   isUnfiledSelected?: boolean;
   onSelectFolder: (folderPath?: string) => void;
   onSelectUnfiled: () => void;
+  onCreateNote?: (folderPath: string) => void;
   totalNotesCount?: number;
   unfiledNotesCount?: number;
   className?: string;
@@ -36,6 +37,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
   isUnfiledSelected = false,
   onSelectFolder,
   onSelectUnfiled,
+  onCreateNote,
   totalNotesCount = 0,
   unfiledNotesCount = 0,
   className = '',
@@ -209,7 +211,11 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/notes/new?folder=${encodeURIComponent(node.path)}`);
+                if (onCreateNote) {
+                  onCreateNote(node.path);
+                } else {
+                  navigate(`/notes/new?folder=${encodeURIComponent(node.path)}`);
+                }
               }}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all cursor-pointer"
               title={`Create note in ${node.path}`}

@@ -6,9 +6,25 @@ import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
 import { useFoldersContext } from '../context/FoldersContext';
 import { Folder as FolderType } from '@lenta/shared';
-import { X, Calendar, Tag, Plus, Check, FileText, Folder, AlertCircle } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Tag,
+  Plus,
+  Check,
+  FileText,
+  Folder,
+  AlertCircle,
+  Pin,
+  CalendarRange,
+  CheckCircle2,
+  AtSign,
+  Film,
+  Radio,
+} from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
+import { AppSelect } from './common/AppSelect';
 
 interface CreateNoteModalProps {
   isOpen: boolean;
@@ -182,43 +198,42 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
                     {t.noteType}
                   </label>
-                  <select
+                  <AppSelect<NoteType>
                     value={type}
-                    onChange={(e) => setType(e.target.value as NoteType)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                  >
-                    <option value="SINGLE">Точечная заметка (SINGLE)</option>
-                    <option value="EVENT">Событие календаря (EVENT)</option>
-                    <option value="PERIOD">Временной отрезок (PERIOD)</option>
-                    <option value="FILM_RELEASE">Релиз / Премьера (FILM_RELEASE)</option>
-                    <option value="MENTION">Упоминание (MENTION)</option>
-                    <option value="DONE">Выполненная цель (DONE)</option>
-                  </select>
+                    onChange={setType}
+                    options={[
+                      { value: 'SINGLE', label: 'Точечная заметка (SINGLE)', icon: <Pin className="w-3.5 h-3.5 text-blue-400" /> },
+                      { value: 'EVENT', label: 'Событие календаря (EVENT)', icon: <Calendar className="w-3.5 h-3.5 text-[#c9cd58]" /> },
+                      { value: 'PERIOD', label: 'Временной отрезок (PERIOD)', icon: <CalendarRange className="w-3.5 h-3.5 text-amber-400" /> },
+                      { value: 'FILM_RELEASE', label: 'Релиз / Премьера (FILM_RELEASE)', icon: <Film className="w-3.5 h-3.5 text-rose-400" /> },
+                      { value: 'MENTION', label: 'Упоминание (MENTION)', icon: <AtSign className="w-3.5 h-3.5 text-purple-400" /> },
+                      { value: 'DONE', label: 'Выполненная цель (DONE)', icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> },
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
                     {t.noteFeed}
                   </label>
-                  <select
+                  <AppSelect
                     value={feedId}
-                    onChange={(e) => setFeedId(e.target.value)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                  >
-                    {feeds.length > 0 ? (
-                      feeds.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.title}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="feed-tech">Technical Strategy</option>
-                        <option value="feed-mcu">Marvel Cinematic Universe</option>
-                        <option value="feed-personal">Личный приватный журнал</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={setFeedId}
+                    placeholder="Выберите ленту..."
+                    options={
+                      feeds.length > 0
+                        ? feeds.map((f) => ({
+                            value: f.id,
+                            label: f.title,
+                            icon: <Radio className="w-3.5 h-3.5 text-[#c9cd58]" />,
+                          }))
+                        : [
+                            { value: 'feed-tech', label: 'Technical Strategy', icon: <Radio className="w-3.5 h-3.5 text-[#c9cd58]" /> },
+                            { value: 'feed-mcu', label: 'Marvel Cinematic Universe', icon: <Radio className="w-3.5 h-3.5 text-[#c9cd58]" /> },
+                            { value: 'feed-personal', label: 'Личный приватный журнал', icon: <Radio className="w-3.5 h-3.5 text-[#c9cd58]" /> },
+                          ]
+                    }
+                  />
                 </div>
               </div>
 
@@ -296,20 +311,6 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                     className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
                   />
                 </div>
-              </div>
-
-              {/* Curator / Source */}
-              <div className="p-3 rounded-xl bg-[#141717] border border-[#242828]">
-                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                  Куратор / Источник
-                </label>
-                <input
-                  type="text"
-                  value={curator}
-                  onChange={(e) => setCurator(e.target.value)}
-                  placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
-                  className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
-                />
               </div>
 
               {/* Grid 3: Start & End Date */}

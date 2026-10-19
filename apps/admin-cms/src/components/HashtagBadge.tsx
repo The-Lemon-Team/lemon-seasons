@@ -69,10 +69,10 @@ export const HashtagBadge: React.FC<HashtagBadgeProps> = ({
             e.stopPropagation();
             onRemove(cleanName, e);
           }}
-          className="p-0.5 -mr-0.5 hover:bg-cyan-800/60 rounded-full text-cyan-400 hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
+          className="w-3.5 h-3.5 -mr-0.5 hover:bg-cyan-800/60 rounded-full text-cyan-400 hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer shrink-0"
           title={`Remove #${cleanName}`}
         >
-          <X className="w-3 h-3" />
+          <X className="w-2.5 h-2.5" />
         </button>
       )}
     </span>

@@ -23,22 +23,40 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
   const isDeleted = Boolean(feed.deletedAt);
   const noteCount = feed._count?.notes ?? 0;
   const folderPaths = feed.folderPaths || [];
+  const hashtags = feed.hashtags || [];
+  const icon = feed.icon || 'dynamic_feed';
+  const accentColor = feed.color || '#cacd58';
 
   return (
     <article
-      className={`bg-surface-container-highest rounded-lg border border-white/5 p-5 flex flex-col justify-between hover:bg-white/5 transition-all duration-200 relative hover-actions-group group ${
+      className={`bg-surface-container-high/60 rounded-xl border border-white/5 p-5 flex flex-col justify-between hover:bg-white/5 transition-all duration-200 relative hover-actions-group group hover:border-white/10 ${
         isDeleted ? 'opacity-50 border-error/30' : ''
       }`}
+      style={{
+        borderLeftColor: accentColor,
+        borderLeftWidth: '3px',
+      }}
     >
       <div>
-        {/* Top Row: Slug badge & Hover Actions */}
+        {/* Top Row: Icon + Slug badge & Hover Actions */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-primary/15 text-primary px-2 py-0.5 rounded-sm font-mono text-[11px] font-semibold border border-primary/20">
+            <div
+              className="w-7 h-7 rounded flex items-center justify-center shrink-0 border border-white/10"
+              style={{
+                backgroundColor: `${accentColor}18`,
+                color: accentColor,
+              }}
+            >
+              <span className="material-symbols-outlined text-[16px]">{icon}</span>
+            </div>
+
+            <span className="bg-primary/15 text-primary px-2 py-0.5 rounded font-mono text-[11px] font-semibold border border-primary/20">
               /{feed.slug}
             </span>
+
             {isDeleted && (
-              <span className="bg-error/20 text-error px-1.5 py-0.5 rounded-sm font-mono text-[10px]">
+              <span className="bg-error/20 text-error px-1.5 py-0.5 rounded font-mono text-[10px]">
                 DELETED
               </span>
             )}
@@ -86,7 +104,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
         <div className="mb-3">
           <h3
             onClick={() => onNavigateNotes(feed.id)}
-            className="font-sans font-bold text-lg text-on-surface hover:text-primary transition-colors cursor-pointer mb-1.5"
+            className="font-sans font-bold text-base text-on-surface hover:text-primary transition-colors cursor-pointer mb-1.5 leading-snug"
           >
             {feed.title}
           </h3>
@@ -97,8 +115,8 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
 
         {/* Linked Folders (Folder Projections) */}
         {folderPaths.length > 0 && (
-          <div className="mb-4">
-            <span className="text-[10px] uppercase font-mono text-on-surface-variant block mb-1.5 tracking-wider">
+          <div className="mb-3">
+            <span className="text-[10px] uppercase font-mono text-on-surface-variant/70 block mb-1 tracking-wider">
               {t.feedFolderPathsLabel}
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -114,6 +132,29 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
             </div>
           </div>
         )}
+
+        {/* Saved Tag Filters (Hashtags) */}
+        {hashtags.length > 0 && (
+          <div className="mb-3">
+            <span className="text-[10px] uppercase font-mono text-on-surface-variant/70 block mb-1 tracking-wider">
+              {t.feedHashtagsLabel}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {hashtags.map((h) => {
+                const cleanTag = h.replace(/^#/, '');
+                return (
+                  <span
+                    key={cleanTag}
+                    className="inline-flex items-center gap-0.5 bg-tertiary/10 text-tertiary px-2 py-0.5 rounded text-[11px] font-mono border border-tertiary/20"
+                  >
+                    <span>#</span>
+                    {cleanTag}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Metadata & Notes Link */}
@@ -123,7 +164,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
           className="inline-flex items-center gap-1.5 text-secondary hover:text-primary transition-colors"
         >
           <span className="material-symbols-outlined text-[14px]">description</span>
-          {noteCount} {t.notesCountBadge(noteCount)}
+          {t.notesCountBadge(noteCount)}
         </button>
 
         <span className="text-[11px] text-outline">

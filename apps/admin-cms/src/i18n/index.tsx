@@ -87,6 +87,15 @@ export interface AdminTranslations {
   feedFolderPathsHelp: string;
   feedFolderAddPlaceholder: string;
   addFolderBtn: string;
+  feedHashtagsLabel: string;
+  feedHashtagsHelp: string;
+  feedHashtagsPlaceholder: string;
+  viewTreeBtn: string;
+  viewCardsBtn: string;
+  expandAll: string;
+  collapseAll: string;
+  searchFeedsPlaceholder: string;
+  feedsTotalCount: (count: number) => string;
   confirmDeleteFeed: string;
   feedDeletedSuccess: string;
   feedSavedSuccess: string;
@@ -267,6 +276,15 @@ export const ruAdminTranslations: AdminTranslations = {
   feedFolderPathsHelp: 'Заметки из выбранных папок автоматически проецируются в эту ленту.',
   feedFolderAddPlaceholder: 'Путь к папке (например, Spark/AI)...',
   addFolderBtn: 'Добавить папку',
+  feedHashtagsLabel: 'Фильтр по тегам (Hashtags)',
+  feedHashtagsHelp: 'Заметки с указанными хэштегами автоматически проецируются в эту ленту.',
+  feedHashtagsPlaceholder: 'Введите тег (например, #ai, wow) и нажмите Enter...',
+  viewTreeBtn: 'Дерево',
+  viewCardsBtn: 'Карточки',
+  expandAll: 'Развернуть всё',
+  collapseAll: 'Свернуть всё',
+  searchFeedsPlaceholder: 'Поиск по лентам, слагам, папкам и тегам...',
+  feedsTotalCount: (count: number) => pluralizeRu(count, 'лента', 'ленты', 'лент'),
   confirmDeleteFeed: 'Вы уверены, что хотите удалить эту ленту?',
   feedDeletedSuccess: 'Лента успешно удалена',
   feedSavedSuccess: 'Лента успешно сохранена',
@@ -281,7 +299,7 @@ export const ruAdminTranslations: AdminTranslations = {
   filterTypePlaceholder: 'Все типы',
   filterFolderPlaceholder: 'Все папки',
   searchNotesPlaceholder: 'Поиск по заголовку, содержанию, тегам...',
-  totalNotesCountBadge: (count: number) => `${count} ${pluralizeRu(count, 'запись', 'записи', 'записей')}`,
+  totalNotesCountBadge: (count: number) => pluralizeRu(count, 'запись', 'записи', 'записей'),
   titleCol: 'Заголовок',
   typeCol: 'Тип',
   feedCol: 'Лента',
@@ -447,6 +465,15 @@ export const enAdminTranslations: AdminTranslations = {
   feedFolderPathsHelp: 'Notes from these folders are automatically projected into this feed.',
   feedFolderAddPlaceholder: 'Folder path (e.g. Spark/AI)...',
   addFolderBtn: 'Add Folder',
+  feedHashtagsLabel: 'Tag Filter (Hashtags)',
+  feedHashtagsHelp: 'Notes with these hashtags are automatically projected into this feed.',
+  feedHashtagsPlaceholder: 'Type a tag (e.g. #ai, wow) and press Enter...',
+  viewTreeBtn: 'Tree View',
+  viewCardsBtn: 'Cards View',
+  expandAll: 'Expand All',
+  collapseAll: 'Collapse All',
+  searchFeedsPlaceholder: 'Search feeds, slugs, folders, hashtags...',
+  feedsTotalCount: (count: number) => `${count} ${count === 1 ? 'feed' : 'feeds'}`,
   confirmDeleteFeed: 'Are you sure you want to delete this feed?',
   feedDeletedSuccess: 'Feed deleted successfully',
   feedSavedSuccess: 'Feed saved successfully',

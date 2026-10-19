@@ -24,9 +24,11 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({ file, open, 
       open={open}
       onCancel={onClose}
       title={
-        <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          <span className="font-sans font-bold truncate">{file.fileName}</span>
+        <div className="flex items-center gap-2 min-w-0 pr-6">
+          <FileText className="w-5 h-5 text-primary shrink-0" />
+          <span className="font-sans font-bold truncate block min-w-0 flex-1" title={file.fileName}>
+            {file.fileName}
+          </span>
         </div>
       }
       footer={[

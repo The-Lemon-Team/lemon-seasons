@@ -608,7 +608,7 @@ export const ruTranslations: Translations = {
   folderPrivacyPublicDesc: 'Может использоваться как в публичных, так и в приватных контейнерах Obsidian',
   observedInContainers: 'В контейнерах Obsidian',
   noNotesInFolder: 'В этой папке пока нет заметок',
-  folderNotesCount: (count: number) => `${count} ${pluralizeRu(count, 'заметка', 'заметки', 'заметок')}`,
+  folderNotesCount: (count: number) => pluralizeRu(count, 'заметка', 'заметки', 'заметок'),
   folderTreeTitle: 'Дерево папок',
   folderDetailsTitle: 'Свойства и заметки папки',
   changePrivacy: 'Сменить приватность',
@@ -628,7 +628,7 @@ export const ruTranslations: Translations = {
   deleteFolderTitle: 'Удалить папку',
   deleteFolderConfirm: 'Вы уверены, что хотите удалить эту папку и все её подпапки?',
   selectFolder: 'Выберите папку слева для просмотра содержимого',
-  activeFoldersCount: (count: number) => `${count} ${pluralizeRu(count, 'папка', 'папки', 'папок')}`,
+  activeFoldersCount: (count: number) => pluralizeRu(count, 'папка', 'папки', 'папок'),
   allFolderTypes: 'Все типы папок',
   privacyRuleHeading: 'Правило приватности контейнеров',
   containerPrivacyConstraintNote: 'Публичные контейнеры могут содержать только публичные папки. Приватные контейнеры могут содержать любые папки (приватные и публичные).',
@@ -641,7 +641,7 @@ export const ruTranslations: Translations = {
   filterExternal: 'Проектные (External)',
   filterInternal: 'Контейнерные (Internal)',
   targetContainer: 'Целевой контейнер Obsidian',
-  pushesToContainers: (count: number) => `Транслируется в ${count} ${pluralizeRu(count, 'контейнер', 'контейнера', 'контейнеров')}`,
+  pushesToContainers: (count: number) => `Транслируется в ${pluralizeRu(count, 'контейнер', 'контейнера', 'контейнеров')}`,
 
   // Transparent Sync Controls & Feedback
   pullFromVault: 'Получить (Pull)',

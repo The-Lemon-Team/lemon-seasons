@@ -3,6 +3,7 @@ import { ChevronDown, Check, Layers, Pin, CalendarRange, Calendar, Film, AtSign,
 import { NoteType } from '../types';
 import { NOTE_TYPE_CONFIGS, NOTE_TYPE_LIST } from '../constants/noteTypes';
 import { useAdminI18n } from '../i18n';
+import { useDropdownPlacement } from '../hooks/useDropdownPlacement';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   SINGLE: Pin,
@@ -37,6 +38,19 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedConfig = value ? NOTE_TYPE_CONFIGS[value] : undefined;
+  const isSmall = size === 'sm';
+
+  const { openUpward, maxHeight, updatePosition } = useDropdownPlacement(
+    containerRef,
+    isOpen,
+    { dependencies: [NOTE_TYPE_LIST.length], maxHeight: 260 },
+  );
+
+  const toggleOpen = () => {
+    if (disabled) return;
+    updatePosition();
+    setIsOpen((prev) => !prev);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,22 +75,27 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      setIsOpen((prev) => !prev);
+      toggleOpen();
     } else if (e.key === 'Escape') {
       setIsOpen(false);
-    } else if (e.key === 'ArrowDown' && !isOpen) {
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setIsOpen(true);
-    } else if (e.key === 'ArrowDown' && isOpen) {
-      e.preventDefault();
+      if (!isOpen) {
+        toggleOpen();
+        return;
+      }
       const currentIndex = NOTE_TYPE_LIST.findIndex((item) => item.value === value);
       const nextIndex =
         currentIndex === -1 || currentIndex === NOTE_TYPE_LIST.length - 1
           ? 0
           : currentIndex + 1;
       onChange(NOTE_TYPE_LIST[nextIndex].value);
-    } else if (e.key === 'ArrowUp' && isOpen) {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      if (!isOpen) {
+        toggleOpen();
+        return;
+      }
       const currentIndex = NOTE_TYPE_LIST.findIndex((item) => item.value === value);
       const prevIndex =
         currentIndex <= 0
@@ -85,8 +104,6 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
       onChange(NOTE_TYPE_LIST[prevIndex].value);
     }
   };
-
-  const isSmall = size === 'sm';
 
   return (
     <div
@@ -97,24 +114,30 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggleOpen}
         onKeyDown={handleKeyDown}
-        className={`w-full flex items-center justify-between gap-2 bg-surface-container-lowest border transition-colors outline-none font-mono text-left cursor-pointer rounded ${
+        className={`w-full flex items-center justify-between gap-1.5 bg-surface-container-lowest border transition-colors outline-none font-mono text-left cursor-pointer ${
           isOpen
-            ? 'border-primary ring-1 ring-primary/40 shadow-sm'
+            ? 'border-primary ring-1 ring-primary/40 shadow-xs'
             : 'border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary/40'
         } ${
           isSmall
-            ? 'px-2.5 py-1 text-xs'
-            : 'px-3 py-2 text-xs sm:text-sm'
+            ? 'h-7 pl-2.5 pr-2 text-[11px] rounded'
+            : 'h-9 pl-3 pr-2.5 text-xs rounded-md'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {selectedConfig ? (
             <>
               {(() => {
                 const Icon = TYPE_ICONS[selectedConfig.value] || Tag;
-                return <Icon className={`shrink-0 ${isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'} ${selectedConfig.text}`} />;
+                return (
+                  <Icon
+                    className={`shrink-0 ${
+                      isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+                    } ${selectedConfig.text}`}
+                  />
+                );
               })()}
               <span className="font-semibold text-on-surface truncate">
                 {getTypeLabel(selectedConfig.value)}
@@ -122,7 +145,11 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
             </>
           ) : allowAll ? (
             <>
-              <Layers className={`shrink-0 ${isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'} text-on-surface-variant`} />
+              <Layers
+                className={`shrink-0 ${
+                  isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+                } text-on-surface-variant`}
+              />
               <span className="text-on-surface font-semibold truncate">
                 {allLabel}
               </span>
@@ -135,34 +162,54 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
         </div>
 
         <ChevronDown
-          className={`shrink-0 text-on-surface-variant transition-transform duration-200 ${
-            isSmall ? 'w-4 h-4' : 'w-4.5 h-4.5'
-          } ${isOpen ? 'rotate-180 text-primary' : ''}`}
+          className={`shrink-0 transition-transform duration-200 ${
+            isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+          } ${
+            isOpen ? 'rotate-180 text-primary' : 'text-on-surface-variant'
+          }`}
         />
       </button>
 
       {/* Options Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 bg-[#1f2020] border border-white/15 rounded-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 min-w-[280px]">
-          <div className="max-h-72 overflow-y-auto py-1">
+        <div
+          style={{ maxHeight: `${maxHeight}px` }}
+          className={`absolute z-50 left-0 bg-[#1a1b1b] border border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${
+            isSmall
+              ? 'min-w-[190px] p-0.5 rounded-md text-[11px]'
+              : 'min-w-[210px] p-1 rounded-lg text-xs'
+          } ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}
+        >
+          <div className="overflow-y-auto max-h-[inherit] space-y-0.5">
             {allowAll && (
               <div
                 onClick={() => {
                   onChange(undefined as any);
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2.5 px-3 py-2 text-xs font-mono cursor-pointer transition-colors ${
+                className={`flex items-center cursor-pointer transition-colors ${
+                  isSmall
+                    ? 'gap-2 px-2 py-1 rounded text-[11px]'
+                    : 'gap-2.5 px-2.5 py-1.5 rounded-md text-xs'
+                } font-mono ${
                   !value
                     ? 'bg-primary text-on-primary font-semibold'
                     : 'text-on-surface hover:bg-white/5'
                 }`}
               >
                 <Layers
-                  className={`w-4 h-4 shrink-0 ${
-                    !value ? 'text-on-primary' : 'text-on-surface-variant'
-                  }`}
+                  className={`shrink-0 ${
+                    isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+                  } ${!value ? 'text-on-primary' : 'text-on-surface-variant'}`}
                 />
                 <span className="flex-1 truncate">{allLabel}</span>
+                {!value && (
+                  <Check
+                    className={`shrink-0 text-on-primary ${
+                      isSmall ? 'w-3 h-3' : 'w-3.5 h-3.5'
+                    }`}
+                  />
+                )}
               </div>
             )}
 
@@ -176,7 +223,11 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                     onChange(item.value);
                     setIsOpen(false);
                   }}
-                  className={`flex items-center gap-2.5 px-3 py-2 text-xs font-mono cursor-pointer transition-colors ${
+                  className={`flex items-center cursor-pointer transition-colors ${
+                    isSmall
+                      ? 'gap-2 px-2 py-1 rounded text-[11px]'
+                      : 'gap-2.5 px-2.5 py-1.5 rounded-md text-xs'
+                  } font-mono ${
                     isSelected
                       ? 'bg-primary text-on-primary font-semibold'
                       : 'text-on-surface hover:bg-white/5'
@@ -184,15 +235,15 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                 >
                   {/* Icon */}
                   <Icon
-                    className={`w-4 h-4 shrink-0 ${
-                      isSelected ? 'text-on-primary' : item.text
-                    }`}
+                    className={`shrink-0 ${
+                      isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+                    } ${isSelected ? 'text-on-primary' : item.text}`}
                   />
 
                   {/* Title */}
                   <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
                     <span
-                      className={`font-semibold uppercase tracking-wider shrink-0 ${
+                      className={`font-semibold uppercase tracking-wide truncate ${
                         isSelected ? 'text-on-primary' : 'text-on-surface'
                       }`}
                     >
@@ -201,7 +252,11 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
                   </div>
 
                   {isSelected && (
-                    <Check className="w-4 h-4 text-on-primary shrink-0" />
+                    <Check
+                      className={`shrink-0 text-on-primary ${
+                        isSmall ? 'w-3 h-3' : 'w-3.5 h-3.5'
+                      }`}
+                    />
                   )}
                 </div>
               );
@@ -212,4 +267,5 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
     </div>
   );
 };
+
 

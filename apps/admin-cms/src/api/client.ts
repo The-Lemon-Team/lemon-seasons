@@ -24,6 +24,8 @@ import {
   SyncStatusResponse,
   GDriveSyncResult,
   IngestionFile,
+  GDriveRecentUpdatesResponse,
+  GDriveUpdateItem,
 } from '../types';
 
 
@@ -196,6 +198,17 @@ export const notesApi = {
     );
     return res.data;
   },
+  generateCover: async (
+    noteId: string,
+    data?: {
+      style?: string;
+      aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+      customPrompt?: string;
+      setAsMain?: boolean;
+    },
+  ): Promise<GenerateCoverForNoteResult> => {
+    return ingestionApi.generateNoteCover(noteId, data);
+  },
 };
 
 // Taxonomy API
@@ -318,6 +331,10 @@ export const syncApi = {
     const res = await apiClient.post('/sync/pull', {}, { params: { deviceId } });
     return res.data;
   },
+  getUpdates: async (limit = 25): Promise<GDriveRecentUpdatesResponse> => {
+    const res = await apiClient.get<GDriveRecentUpdatesResponse>('/sync/updates', { params: { limit } });
+    return res.data;
+  },
   getGDriveAuthUrl: async (): Promise<{ url: string }> => {
     const res = await apiClient.get<{ url: string }>('/sync/gdrive/auth-url');
     return res.data;
@@ -329,8 +346,55 @@ export const syncApi = {
 export interface IngestionStatus {
   status: string;
   geminiActive: boolean;
+  imagenActive?: boolean;
   tmdbActive: boolean;
   availableFeeds: Array<{ slug: string; name: string; provider: string }>;
+}
+
+export interface GeneratedImageResult {
+  url: string;
+  thumbnailUrl?: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  synthesizedPrompt: string;
+  model: string;
+  isFallback: boolean;
+}
+
+export interface AiMediaAsset {
+  id: string;
+  url: string;
+  thumbnailUrl: string;
+  filename: string;
+  prompt: string;
+  userPrompt?: string;
+  style?: string;
+  aspectRatio: string;
+  model: string;
+  width: number | null;
+  height: number | null;
+  sizeBytes: number;
+  mimeType: string;
+  tags: string[];
+  sourceNoteId?: string;
+  isFavorite: boolean;
+  usageCount: number;
+  createdAt: string;
+}
+
+export interface GeneratedBatchResult {
+  synthesizedPrompt: string;
+  model: string;
+  isFallback: boolean;
+  candidates: AiMediaAsset[];
+}
+
+export interface GenerateCoverForNoteResult {
+  image: NoteImage;
+  meta: GeneratedImageResult;
 }
 
 export interface IngestionResult {
@@ -461,6 +525,71 @@ export const ingestionApi = {
   },
   generateAiContent: async (data: { title: string; category: string; dateStr: string; context?: string }): Promise<GeneratedNoteEnrichment> => {
     const res = await apiClient.post<GeneratedNoteEnrichment>('/ingestion/ai/generate-content', data);
+    return res.data;
+  },
+  generateAiImage: async (data: {
+    prompt: string;
+    style?: string;
+    aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+    context?: string;
+  }): Promise<GeneratedImageResult> => {
+    const res = await apiClient.post<GeneratedImageResult>('/ingestion/ai/generate-image', data);
+    return res.data;
+  },
+  generateAiBatch: async (data: {
+    prompt: string;
+    style?: string;
+    aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+    context?: string;
+    count?: number;
+    noteId?: string;
+  }): Promise<GeneratedBatchResult> => {
+    const res = await apiClient.post<GeneratedBatchResult>('/ingestion/ai/generate-batch', data);
+    return res.data;
+  },
+  getAiAssets: async (params?: {
+    search?: string;
+    style?: string;
+    isFavorite?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: AiMediaAsset[]; total: number }> => {
+    const res = await apiClient.get<{ items: AiMediaAsset[]; total: number }>('/ingestion/ai/assets', {
+      params,
+    });
+    return res.data;
+  },
+  toggleAssetFavorite: async (id: string): Promise<AiMediaAsset> => {
+    const res = await apiClient.patch<AiMediaAsset>(`/ingestion/ai/assets/${id}/favorite`);
+    return res.data;
+  },
+  deleteAiAsset: async (id: string): Promise<{ success: boolean }> => {
+    const res = await apiClient.delete<{ success: boolean }>(`/ingestion/ai/assets/${id}`);
+    return res.data;
+  },
+  attachCoverToNote: async (
+    noteId: string,
+    data: { assetUrl: string; caption?: string; setAsMain?: boolean },
+  ): Promise<{ success: boolean; image: NoteImage }> => {
+    const res = await apiClient.post<{ success: boolean; image: NoteImage }>(
+      `/ingestion/ai/notes/${noteId}/attach-cover`,
+      data,
+    );
+    return res.data;
+  },
+  generateNoteCover: async (
+    noteId: string,
+    data?: {
+      style?: string;
+      aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+      customPrompt?: string;
+      setAsMain?: boolean;
+    },
+  ): Promise<GenerateCoverForNoteResult> => {
+    const res = await apiClient.post<GenerateCoverForNoteResult>(
+      `/ingestion/ai/notes/${noteId}/generate-cover`,
+      data || {},
+    );
     return res.data;
   },
   searchMovies: async (query?: string): Promise<MovieReleaseItem[]> => {

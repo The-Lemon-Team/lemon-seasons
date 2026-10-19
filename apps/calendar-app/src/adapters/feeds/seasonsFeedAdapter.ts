@@ -72,6 +72,19 @@ export const SEASONS_FEED_PRESETS: Array<{
     badgeTextDark: '#c4b5fd',
     description: 'Docker-окружения, базы данных PostgreSQL и надежность сервисов',
   },
+  {
+    slug: 'notebooklm-ai',
+    title: 'NotebookLM AI Daily Briefing',
+    shortTitle: 'NotebookLM AI',
+    emoji: '🎙️',
+    category: 'ИИ & Аудио',
+    accentColor: '#a855f7',
+    badgeBgLight: 'rgba(168, 85, 247, 0.1)',
+    badgeTextLight: '#7e22ce',
+    badgeBgDark: 'rgba(168, 85, 247, 0.25)',
+    badgeTextDark: '#d8b4fe',
+    description: 'Ежедневный дайджест новостей искусственного интеллекта и подкаст от NotebookLM',
+  },
 ];
 
 const SEASONS_SLUGS = new Set(SEASONS_FEED_PRESETS.map((p) => p.slug));

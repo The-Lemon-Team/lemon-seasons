@@ -178,10 +178,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
 
 
-            {/* Active Curator Filter Pill */}
+            {/* Active Author / Source Filter Pill */}
             {filterState.curator && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-950/60 border border-sky-500/40 text-[11px] font-mono text-sky-300">
-                <span>Куратор: {filterState.curator}</span>
+                <span>Автор: {filterState.curator}</span>
                 {onSelectCurator && (
                   <button
                     onClick={() => onSelectCurator(undefined)}

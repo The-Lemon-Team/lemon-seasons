@@ -179,7 +179,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
               href="http://localhost:5173"
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-2.5 flex items-center justify-between bg-[#ef4444]/15 border border-[#ef4444]/40 hover:bg-[#ef4444]/25 text-[#fca5a5] transition-all font-mono text-xs rounded"
+              className="px-3 py-2 flex items-center justify-between bg-[#ef4444]/15 border border-[#ef4444]/40 hover:bg-[#ef4444]/25 text-[#fca5a5] transition-all font-mono text-xs rounded"
               title="Перейти в систему управления контентом Admin CMS"
             >
               <div className="flex items-center gap-2.5">

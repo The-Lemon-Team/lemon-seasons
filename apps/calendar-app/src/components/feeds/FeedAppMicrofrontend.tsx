@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ExternalLink, RefreshCw, Radio, Columns, Maximize2 } from 'lucide-react';
 
 interface FeedAppMicrofrontendProps {
@@ -14,12 +14,20 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
 
   // In local browser, feed-app runs on 5175
   const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
-  const queryParams = new URLSearchParams({
-    embed: 'true',
-    layout: layoutMode,
-  });
-  const pathSegment = initialRoute === 'spark' ? '' : initialRoute;
-  const feedAppUrl = `${feedAppBase}/${pathSegment}?${queryParams.toString()}`;
+
+  const feedAppUrl = useMemo(() => {
+    try {
+      const cleanRoute = initialRoute.startsWith('/') ? initialRoute.slice(1) : initialRoute;
+      const url = new URL(cleanRoute === 'spark' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
+      url.searchParams.set('embed', 'true');
+      url.searchParams.set('layout', layoutMode);
+      return url.toString();
+    } catch {
+      const cleanPath = initialRoute === 'spark' ? '' : initialRoute;
+      const separator = cleanPath.includes('?') ? '&' : '?';
+      return `${feedAppBase}/${cleanPath}${separator}embed=true&layout=${layoutMode}`;
+    }
+  }, [feedAppBase, initialRoute, layoutMode]);
 
   const handleReload = () => {
     setIsLoading(true);

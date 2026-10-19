@@ -15,7 +15,7 @@ export const CuratorBadge: React.FC<CuratorBadgeProps> = ({
   className = '',
   onClick,
 }) => {
-  if (!curator) {
+  if (!curator || curator.toLowerCase() === 'auto') {
     return null;
   }
 

@@ -280,12 +280,12 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* 3. Curators / Sources */}
+        {/* 3. Authors / Sources */}
         <div>
           <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3">
             <div className="flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5 text-sky-400" />
-              <span>{lang === 'ru' ? 'Куратор / Источник' : 'Curator / Source'}</span>
+              <span>{lang === 'ru' ? 'Автор / Источник' : 'Author / Source'}</span>
             </div>
             {filterState.curator && (
               <button
@@ -302,7 +302,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               type="text"
               value={filterState.curator || ''}
               onChange={(e) => onSelectCurator?.(e.target.value.trim() || undefined)}
-              placeholder={lang === 'ru' ? 'Имя куратора или источника...' : 'Curator or source name...'}
+              placeholder={lang === 'ru' ? 'Имя автора или источника...' : 'Author or source name...'}
               className="w-full bg-[#121414] border border-[#242828] rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:border-sky-500/50 transition-colors"
             />
             <div className="flex flex-wrap gap-1.5">

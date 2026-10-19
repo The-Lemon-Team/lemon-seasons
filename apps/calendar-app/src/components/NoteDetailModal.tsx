@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { Modal } from './Modal';
+import { EditNoteModal } from './EditNoteModal';
 import { CuratorBadge } from './common/CuratorBadge';
 import { RelatedNotesSection } from './common/RelatedNotesSection';
 import { calendarApi } from '../api/client';
@@ -44,6 +45,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const [activeNote, setActiveNote] = useState<Note | null>(note);
   const [history, setHistory] = useState<Note[]>([]);
   const [isLoadingRelated, setIsLoadingRelated] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
@@ -240,7 +242,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                 <button
                   type="button"
                   data-testid="edit-note-btn"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => setIsEditModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#484837] hover:border-[#c9cd58] text-xs font-mono text-[#c9c7b2] hover:text-[#e5e971] transition-colors"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
@@ -307,21 +309,6 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                     onChange={(e) => setEditTitle(e.target.value)}
                     className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-base font-bold font-sans px-3 py-2 text-white outline-none"
                   />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
-                      Куратор / Источник
-                    </label>
-                    <input
-                      type="text"
-                      value={editCurator || ''}
-                      onChange={(e) => setEditCurator(e.target.value || undefined)}
-                      placeholder="Например: Gemini Sparks, RSS Ingestion, Пользователь..."
-                      className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-white outline-none"
-                    />
-                  </div>
                 </div>
               </div>
             ) : (
@@ -483,6 +470,16 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           <span>ID: {current.id}</span>
           <span>{t.updated}: {dayjs(current.updatedAt).format('YYYY-MM-DD HH:mm')}</span>
         </div>
+
+        <EditNoteModal
+          note={current}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={(updated) => {
+            setActiveNote(updated);
+            setIsEditModalOpen(false);
+          }}
+        />
     </Modal>
   );
 };

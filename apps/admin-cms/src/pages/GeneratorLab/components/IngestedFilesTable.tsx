@@ -48,19 +48,20 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
       title: 'Файл',
       key: 'fileName',
       render: (_: any, record: IngestionFile) => (
-        <div className="flex items-center gap-2 max-w-[280px]">
-          <span className="p-1.5 rounded bg-primary/10 text-primary">
-            <FileText className="w-4 h-4 shrink-0" />
+        <div className="flex items-center gap-2.5 min-w-0 w-full overflow-hidden">
+          <span className="p-1.5 rounded bg-primary/10 text-primary shrink-0">
+            <FileText className="w-4 h-4" />
           </span>
-          <div className="min-w-0">
-            <button
-              onClick={() => onSelectFile(record)}
-              className="text-left font-mono text-xs font-semibold text-on-surface hover:text-primary truncate block transition-colors cursor-pointer"
-              title={record.fileName}
-            >
-              {record.fileName}
-            </button>
-            <span className="text-[11px] font-mono text-outline block">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <Tooltip title={record.fileName} placement="topLeft" mouseEnterDelay={0.3}>
+              <button
+                onClick={() => onSelectFile(record)}
+                className="w-full text-left font-mono text-xs font-semibold text-on-surface hover:text-primary truncate block transition-colors cursor-pointer"
+              >
+                {record.fileName}
+              </button>
+            </Tooltip>
+            <span className="text-[11px] font-mono text-outline block truncate">
               {formatBytes(record.fileSize)}
             </span>
           </div>
@@ -70,20 +71,20 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
     {
       title: 'Этап обработки',
       key: 'status',
-      width: 150,
+      width: 135,
       render: (_: any, record: IngestionFile) => {
         const config = getStatusConfig(record.status);
         return (
-          <Tooltip title={record.errorMessage || `Статус: ${record.status}`}>
+          <Tooltip title={record.errorMessage || `Статус: ${record.status}`} placement="top">
             <Tag
               color={config.color}
-              className="font-mono text-xs font-medium px-2 py-0.5 inline-flex items-center gap-1.5"
+              className="font-mono text-xs font-medium px-2 py-0.5 inline-flex items-center gap-1.5 max-w-full m-0"
             >
-              {record.status === 'PROCESSING' && <RefreshCw className="w-3 h-3 animate-spin" />}
-              {record.status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3" />}
-              {record.status === 'PENDING' && <Clock className="w-3 h-3" />}
-              {record.status === 'FAILED' && <AlertCircle className="w-3 h-3" />}
-              <span>{config.label}</span>
+              {record.status === 'PROCESSING' && <RefreshCw className="w-3 h-3 animate-spin shrink-0" />}
+              {record.status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+              {record.status === 'PENDING' && <Clock className="w-3 h-3 shrink-0" />}
+              {record.status === 'FAILED' && <AlertCircle className="w-3 h-3 shrink-0" />}
+              <span className="truncate">{config.label}</span>
             </Tag>
           </Tooltip>
         );
@@ -95,31 +96,34 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
       render: (_: any, record: IngestionFile) => {
         if (!record.note) {
           return (
-            <span className="text-xs font-mono text-outline italic">
+            <span className="text-xs font-mono text-outline italic truncate block">
               {record.status === 'FAILED' ? '— (ошибка)' : 'В процессе...'}
             </span>
           );
         }
 
         return (
-          <div className="flex items-center justify-between gap-2 max-w-[360px]">
-            <div className="truncate">
-              <span className="font-sans font-semibold text-xs text-on-surface truncate block">
-                {record.note.title}
-              </span>
-              <span className="font-mono text-[10px] text-on-surface-variant/70">
+          <div className="flex items-center justify-between gap-2 min-w-0 w-full overflow-hidden">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <Tooltip title={record.note.title} placement="topLeft" mouseEnterDelay={0.3}>
+                <span className="font-sans font-semibold text-xs text-on-surface truncate block">
+                  {record.note.title}
+                </span>
+              </Tooltip>
+              <span className="font-mono text-[10px] text-on-surface-variant/70 truncate block">
                 {dayjs(record.note.startDate).format('DD.MM.YYYY')} • {record.note.type}
               </span>
             </div>
 
-            <Button
-              size="small"
-              type="text"
-              icon={<ExternalLink className="w-3.5 h-3.5 text-primary" />}
-              onClick={() => navigate(`/notes/${record.note?.id}`)}
-              title="Перейти к редактированию заметки"
-              className="shrink-0"
-            />
+            <Tooltip title="Перейти к редактированию заметки">
+              <Button
+                size="small"
+                type="text"
+                icon={<ExternalLink className="w-3.5 h-3.5 text-primary" />}
+                onClick={() => navigate(`/notes/${record.note?.id}`)}
+                className="shrink-0 hover:bg-white/5"
+              />
+            </Tooltip>
           </div>
         );
       },
@@ -127,9 +131,9 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
     {
       title: 'Изменен',
       key: 'mtime',
-      width: 140,
+      width: 110,
       render: (_: any, record: IngestionFile) => (
-        <span className="font-mono text-xs text-on-surface-variant block">
+        <span className="font-mono text-xs text-on-surface-variant block whitespace-nowrap">
           {dayjs(record.mtime).format('DD.MM HH:mm')}
         </span>
       ),
@@ -137,15 +141,18 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
     {
       title: '',
       key: 'actions',
-      width: 60,
+      width: 48,
+      align: 'center' as const,
       render: (_: any, record: IngestionFile) => (
-        <Button
-          size="small"
-          type="text"
-          icon={<Info className="w-4 h-4 text-on-surface-variant" />}
-          onClick={() => onSelectFile(record)}
-          title="Подробные свойства"
-        />
+        <Tooltip title="Подробные свойства">
+          <Button
+            size="small"
+            type="text"
+            icon={<Info className="w-4 h-4 text-on-surface-variant" />}
+            onClick={() => onSelectFile(record)}
+            className="hover:bg-white/5"
+          />
+        </Tooltip>
       ),
     },
   ];
@@ -200,6 +207,9 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
           columns={columns}
           rowKey="id"
           loading={isLoading}
+          tableLayout="fixed"
+          size="small"
+          scroll={{ x: 760 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
