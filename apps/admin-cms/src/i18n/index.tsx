@@ -109,6 +109,7 @@ export interface AdminTranslations {
   filterFeedPlaceholder: string;
   filterTypePlaceholder: string;
   filterFolderPlaceholder: string;
+  unfiledOnly: string;
   searchNotesPlaceholder: string;
   totalNotesCountBadge: (count: number) => string;
   titleCol: string;
@@ -298,6 +299,7 @@ export const ruAdminTranslations: AdminTranslations = {
   filterFeedPlaceholder: 'Все ленты',
   filterTypePlaceholder: 'Все типы',
   filterFolderPlaceholder: 'Все папки',
+  unfiledOnly: 'Без папки (Корень)',
   searchNotesPlaceholder: 'Поиск по заголовку, содержанию, тегам...',
   totalNotesCountBadge: (count: number) => pluralizeRu(count, 'запись', 'записи', 'записей'),
   titleCol: 'Заголовок',
@@ -487,6 +489,7 @@ export const enAdminTranslations: AdminTranslations = {
   filterFeedPlaceholder: 'All Feeds',
   filterTypePlaceholder: 'All Types',
   filterFolderPlaceholder: 'All Folders',
+  unfiledOnly: 'Unfiled (Root)',
   searchNotesPlaceholder: 'Search by title, content, tags...',
   totalNotesCountBadge: (count: number) => `${count} ${count === 1 ? 'note' : 'notes'}`,
   titleCol: 'Title',

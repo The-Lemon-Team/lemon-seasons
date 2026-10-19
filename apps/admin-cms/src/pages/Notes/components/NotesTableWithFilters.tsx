@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Note, NoteType, Feed, Folder } from '../../../types';
 import { NoteTypeSelect } from '../../../components/NoteTypeSelect';
+import { AppSelect } from '../../../components/common/AppSelect';
 import { NoteTableRow } from './NoteTableRow';
 import { useAdminI18n } from '../../../i18n';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Rss, Folder as FolderIcon, Hash } from 'lucide-react';
 
 export interface NotesTableWithFiltersProps {
   notes: Note[];
@@ -152,11 +153,11 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
       className={`bg-surface-container-low border border-white/5 rounded-lg flex flex-col h-full overflow-hidden ${className}`}
     >
       {/* Top Header: Toolbar & Filters (Pinned) */}
-      <div className="p-3.5 space-y-2.5 bg-surface-container-high/30 border-b border-white/5 flex-shrink-0">
+      <div className="p-2.5 space-y-2 bg-[#14161a]/85 border-b border-white/[0.06] flex-shrink-0">
         {/* Row 1: Search Form + Active Filter Chips + Total Count */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[240px] max-w-md relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-sm relative">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[16px] pointer-events-none">
               search
             </span>
             <input
@@ -164,16 +165,16 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder={t.searchNotesPlaceholder}
-              className="w-full bg-surface-container border border-outline-variant/40 rounded pl-9 pr-8 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary outline-none transition-colors"
+              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg pl-7 pr-7 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary/60 outline-none transition-all"
             />
             {localSearch && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors cursor-pointer"
                 title={t.reset}
               >
-                <X className="w-3 h-3" />
+                <X className="w-2.5 h-2.5" />
               </button>
             )}
           </form>
@@ -295,27 +296,28 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Filter Dropdowns Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+        {/* Row 2: Unified Filter Dropdowns Row */}
+        <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-white/[0.05]">
           {/* Feed Filter */}
-          <div className="relative inline-flex items-center">
-            <select
+          <div className="w-36 sm:w-40">
+            <AppSelect
               value={feedId || ''}
-              onChange={(e) => onFilterChange('feedId', e.target.value || undefined)}
-              className="h-7 appearance-none bg-surface-container border border-outline-variant/40 rounded pl-2.5 pr-7 text-xs text-on-surface font-sans focus:border-primary outline-none cursor-pointer"
-            >
-              <option value="">{t.filterFeedPlaceholder}</option>
-              {feeds.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant pointer-events-none" />
+              onChange={(val) => onFilterChange('feedId', val || undefined)}
+              options={[
+                { value: '', label: t.filterFeedPlaceholder, icon: <Rss className="w-3.5 h-3.5 text-on-surface-variant/60" /> },
+                ...feeds.map((f) => ({
+                  value: f.id,
+                  label: f.title,
+                  icon: <Rss className="w-3.5 h-3.5 text-primary/70" />,
+                })),
+              ]}
+              size="sm"
+              placeholder={t.filterFeedPlaceholder}
+            />
           </div>
 
           {/* Type Filter */}
-          <div className="min-w-[130px]">
+          <div className="w-36 sm:w-40">
             <NoteTypeSelect
               value={type}
               onChange={(val) => onFilterChange('type', val || undefined)}
@@ -326,54 +328,58 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
           </div>
 
           {/* Folder Filter Dropdown */}
-          <div className="relative inline-flex items-center">
-            <select
+          <div className="w-36 sm:w-44">
+            <AppSelect
               value={folder || (unfiled ? '__unfiled__' : '')}
-              onChange={(e) => {
-                const val = e.target.value;
+              onChange={(val) => {
                 if (val === '__unfiled__') {
                   onSelectUnfiled();
                 } else {
                   onSelectFolder(val || undefined);
                 }
               }}
-              className="h-7 appearance-none bg-surface-container border border-primary/30 text-primary font-mono rounded pl-2.5 pr-7 text-xs focus:border-primary outline-none cursor-pointer"
-            >
-              <option value="" className="text-on-surface">{t.filterFolderPlaceholder}</option>
-              <option value="__unfiled__" className="text-on-surface">📥 Unfiled (Root)</option>
-              {folders.map((f) => (
-                <option key={f.id} value={f.path} className="text-on-surface">
-                  📁 {f.path}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary pointer-events-none" />
+              options={[
+                { value: '', label: t.filterFolderPlaceholder, icon: <FolderIcon className="w-3.5 h-3.5 text-on-surface-variant/60" /> },
+                { value: '__unfiled__', label: '📥 ' + (t.unfiledOnly || 'Unfiled (Root)') },
+                ...folders.map((f) => ({
+                  value: f.path,
+                  label: '📁 ' + f.path,
+                })),
+              ]}
+              size="sm"
+              placeholder={t.filterFolderPlaceholder}
+            />
           </div>
 
           {/* Hashtag Filter */}
-          <div className="relative inline-flex items-center">
-            <select
+          <div className="w-36 sm:w-48">
+            <AppSelect
               value={hashtag || ''}
-              onChange={(e) => onFilterChange('hashtag', e.target.value || undefined)}
-              className="h-7 appearance-none bg-surface-container border border-cyan-800/40 text-cyan-300 rounded pl-2.5 pr-7 text-xs font-mono focus:border-cyan-400 outline-none cursor-pointer"
-            >
-              <option value="" className="text-on-surface">{t.hashtagsPlaceholder}</option>
-              {hashtags.map((h) => (
-                <option key={h.id} value={h.name} className="text-on-surface">
-                  #{h.name} {h._count?.notes ? `(${h._count.notes})` : ''}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-cyan-400 pointer-events-none" />
+              onChange={(val) => onFilterChange('hashtag', val || undefined)}
+              options={[
+                { value: '', label: t.hashtagsPlaceholder, icon: <Hash className="w-3.5 h-3.5 text-on-surface-variant/60" /> },
+                ...hashtags.map((h) => ({
+                  value: h.name,
+                  label: `#${h.name}`,
+                  badge: h._count?.notes ? (
+                    <span className="text-[10px] px-1 py-0.2 rounded bg-white/5 text-on-surface-variant font-mono">
+                      {h._count.notes}
+                    </span>
+                  ) : undefined,
+                })),
+              ]}
+              size="sm"
+              placeholder={t.hashtagsPlaceholder}
+            />
           </div>
 
           {/* Include Deleted Checkbox */}
-          <label className="ml-auto flex items-center gap-1.5 text-xs font-mono text-on-surface-variant cursor-pointer select-none">
+          <label className="ml-auto flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant hover:text-on-surface cursor-pointer select-none">
             <input
               type="checkbox"
               checked={Boolean(includeDeleted)}
               onChange={(e) => onFilterChange('includeDeleted', e.target.checked ? 'true' : undefined)}
-              className="rounded bg-surface-container border-white/20 text-primary focus:ring-0 cursor-pointer"
+              className="rounded bg-[#0c0e12] border-white/20 text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5"
             />
             {t.status}: Deleted
           </label>

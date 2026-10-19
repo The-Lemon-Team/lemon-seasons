@@ -292,37 +292,37 @@ export const GeneratorLabPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner / Hero */}
-      <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-surface-container via-surface-container-high to-surface-container p-6 shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar pr-1 space-y-3">
+      {/* Top Banner / Hero HUD */}
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-surface-container via-surface-container-high to-surface-container p-3 sm:p-3.5 shadow-md">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-primary text-[28px] animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[20px]">
                 auto_awesome
               </span>
-              <h1 className="text-2xl font-bold font-sans text-primary tracking-tight">
+              <h1 className="text-sm font-bold font-sans text-primary tracking-tight">
                 AI & Generation Lab
               </h1>
-              <Tag color="gold" className="ml-2 font-mono text-[11px]">
+              <Tag color="gold" className="m-0 font-mono text-[10px] px-1.5 py-0 border-none">
                 PLAYGROUND
               </Tag>
             </div>
-            <p className="text-xs text-on-surface-variant font-mono">
-              Интерактивная лаборатория для тестирования генераций через Gemini AI, TMDB кинорадар и алгоритмические календари.
+            <p className="text-[11px] text-on-surface-variant font-mono mt-0.5 hidden sm:block">
+              Интерактивная лаборатория тестирования Gemini AI, TMDB кинорадара и календарных алгоритмов.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Status pills */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <div className="flex items-center gap-1.5 px-2 py-0.5 h-7 rounded-lg bg-black/40 border border-white/10 text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-on-surface-variant">Gemini 2.5:</span>
               <span className="text-primary font-bold">ACTIVE</span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-sky-400" />
+            <div className="flex items-center gap-1.5 px-2 py-0.5 h-7 rounded-lg bg-black/40 border border-white/10 text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
               <span className="text-on-surface-variant">TMDB v3:</span>
               <span className="text-sky-300 font-bold">READY</span>
             </div>
@@ -331,21 +331,21 @@ export const GeneratorLabPage: React.FC = () => {
               type="primary"
               loading={isSyncingAll}
               onClick={handleSyncAllFeeds}
-              className="bg-primary hover:bg-primary-hover text-on-primary font-semibold font-sans flex items-center gap-1.5"
+              className="h-7 bg-primary hover:bg-primary-hover text-on-primary font-sans text-xs font-semibold flex items-center gap-1.5 px-2.5 rounded-lg shadow-sm"
             >
-              <span className="material-symbols-outlined text-[16px]">sync</span>
-              Синхронизировать все фиды
+              <span className="material-symbols-outlined text-[15px]">sync</span>
+              Синхронизировать фиды
             </Button>
           </div>
         </div>
       </div>
 
       {/* Main Tabs Container */}
-      <div className="bg-surface-container rounded-xl border border-white/5 p-6 shadow-md">
+      <div className="bg-surface-container rounded-xl border border-white/5 p-3 sm:p-4 shadow-sm">
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setSearchParams({ tab: key })}
-          tabBarStyle={{ marginBottom: 24 }}
+          tabBarStyle={{ marginBottom: 12 }}
           items={[
             // TAB 0: Gemini Sparks & Google Drive Ingestion Hub
             {

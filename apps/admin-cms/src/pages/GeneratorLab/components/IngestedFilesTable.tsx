@@ -166,19 +166,19 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {/* Filters & Search Header */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         {/* Status Pill Filters */}
         <div className="flex flex-wrap items-center gap-1.5">
           {statusFilters.map((f) => (
             <button
               key={f.key}
               onClick={() => onStatusChange(f.key)}
-              className={`px-3 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
+              className={`h-7 px-2.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer flex items-center border ${
                 selectedStatus === f.key
-                  ? 'bg-primary text-on-primary font-bold shadow-sm'
-                  : 'bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-on-surface'
+                  ? 'bg-primary text-on-primary font-bold border-primary shadow-xs'
+                  : 'bg-[#0c0e12]/80 text-on-surface-variant border-white/[0.08] hover:bg-white/10 hover:text-on-surface'
               }`}
             >
               {f.label}
@@ -187,16 +187,17 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
         </div>
 
         {/* Search input */}
-        <div className="w-full sm:w-64">
-          <Input
-            prefix={<Search className="w-3.5 h-3.5 text-outline" />}
-            placeholder="Поиск по имени или Note..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            allowClear
-            size="small"
-            className="font-sans text-xs"
-          />
+        <div className="w-full sm:w-60">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-on-surface-variant/60 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Поиск по имени или Note..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-7 pl-8 pr-2.5 rounded-lg bg-[#0c0e12]/80 border border-white/[0.08] text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+            />
+          </div>
         </div>
       </div>
 

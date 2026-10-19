@@ -115,21 +115,21 @@ export function AppSelect<T extends string = string>({
     switch (variant) {
       case 'emerald':
         return isOpen
-          ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-emerald-950/30 text-emerald-300'
-          : 'border-emerald-500/40 hover:border-emerald-500/70 bg-emerald-950/20 text-emerald-400 font-semibold';
+          ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-[#0c0e12] text-emerald-300'
+          : 'border-emerald-500/30 hover:border-emerald-500/60 bg-[#0c0e12]/80 text-emerald-400 font-semibold';
       case 'amber':
         return isOpen
-          ? 'border-amber-400 ring-1 ring-amber-400/40 bg-amber-950/30 text-amber-300'
-          : 'border-amber-500/40 hover:border-amber-500/70 bg-amber-950/20 text-amber-400 font-semibold';
+          ? 'border-amber-400 ring-1 ring-amber-400/40 bg-[#0c0e12] text-amber-300'
+          : 'border-amber-500/30 hover:border-amber-500/60 bg-[#0c0e12]/80 text-amber-400 font-semibold';
       case 'muted':
         return isOpen
-          ? 'border-white/30 ring-1 ring-white/20 bg-white/10 text-neutral-300'
-          : 'border-white/10 hover:border-white/20 bg-white/5 text-neutral-400';
+          ? 'border-white/30 ring-1 ring-white/20 bg-[#0c0e12] text-neutral-300'
+          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-neutral-400';
       case 'default':
       default:
         return isOpen
-          ? 'border-primary ring-1 ring-primary/40 bg-surface-container-lowest text-on-surface'
-          : 'border-white/10 hover:border-white/20 bg-surface-container-lowest text-on-surface';
+          ? 'border-primary/60 ring-1 ring-primary/40 bg-[#0c0e12] text-on-surface shadow-xs'
+          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-on-surface';
     }
   };
 
@@ -137,7 +137,7 @@ export function AppSelect<T extends string = string>({
     if (variant === 'emerald') return 'text-emerald-400';
     if (variant === 'amber') return 'text-amber-400';
     if (variant === 'muted') return 'text-neutral-400';
-    return isOpen ? 'text-primary' : 'text-on-surface-variant';
+    return isOpen ? 'text-primary' : 'text-on-surface-variant/70';
   };
 
   const isSmall = size === 'sm';
@@ -154,8 +154,8 @@ export function AppSelect<T extends string = string>({
         aria-expanded={isOpen}
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
-        className={`w-full flex items-center justify-between gap-1.5 border font-mono text-left cursor-pointer outline-none transition-colors ${
-          isSmall ? 'h-7 px-2 text-[11px] rounded' : 'h-9 px-2.5 text-xs rounded-md'
+        className={`w-full flex items-center justify-between gap-1.5 border font-mono text-left cursor-pointer outline-none transition-all ${
+          isSmall ? 'h-7 px-2.5 text-[11px] rounded-lg' : 'h-8 px-3 text-xs rounded-lg'
         } ${getVariantStyles()} ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${triggerClassName}`}
@@ -188,9 +188,9 @@ export function AppSelect<T extends string = string>({
       {isOpen && (
         <div
           style={{ maxHeight: `${maxHeight}px` }}
-          className={`absolute z-50 left-0 bg-[#1a1b1b] border border-white/15 shadow-2xl overflow-hidden overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${
+          className={`absolute z-50 left-0 bg-[#14161a] border border-white/10 shadow-2xl overflow-hidden overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${
             isSmall
-              ? 'min-w-[190px] p-0.5 rounded-md text-[11px]'
+              ? 'min-w-[190px] p-1 rounded-lg text-[11px]'
               : 'min-w-[200px] p-1 rounded-lg text-xs'
           } ${
             openUpward ? 'bottom-full mb-1' : 'top-full mt-1'

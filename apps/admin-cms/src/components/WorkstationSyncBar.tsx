@@ -117,7 +117,7 @@ export const WorkstationSyncBar: React.FC = () => {
   return (
     <div className="relative flex items-center">
       {/* Control Pill */}
-      <div className="flex items-center gap-1.5 bg-[#1a1d1d] hover:bg-[#1e2222] border border-[#2e3434] rounded-lg p-1 text-xs transition-colors">
+      <div className="h-7 flex items-center gap-1 bg-[#0c0e12]/80 hover:bg-[#0c0e12] border border-white/[0.08] rounded-lg p-0.5 text-xs transition-colors">
         {/* GDrive Connection & Popover Trigger */}
         <Tooltip
           title={
@@ -130,7 +130,7 @@ export const WorkstationSyncBar: React.FC = () => {
         >
           <button
             onClick={handleOpenPopover}
-            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/5 transition-colors cursor-pointer text-left"
+            className="h-6 flex items-center gap-1.5 px-2 rounded hover:bg-white/5 transition-colors cursor-pointer text-left"
           >
             <span className="relative flex h-2 w-2">
               {isPending ? (
@@ -158,7 +158,7 @@ export const WorkstationSyncBar: React.FC = () => {
             {/* Unpushed commits badge */}
             {unpushedCount > 0 && (
               <span
-                className="bg-amber-500/20 text-amber-400 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                className="bg-amber-500/20 text-amber-400 font-mono text-[10px] px-1.5 py-0.2 rounded font-semibold"
                 title={`Ожидает выгрузки: ${unpushedCount}`}
               >
                 ↑{unpushedCount}
@@ -167,17 +167,17 @@ export const WorkstationSyncBar: React.FC = () => {
           </button>
         </Tooltip>
 
-        <div className="h-3.5 w-[1px] bg-[#2e3434] mx-0.5" />
+        <div className="h-3.5 w-[1px] bg-white/[0.08] mx-0.5" />
 
         {/* Sync Button (matches yellow button in screenshot) */}
         <button
           onClick={() => syncMutation.mutate()}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] transition-all font-sans font-semibold text-[11px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shadow-xs"
+          className="h-6 flex items-center gap-1.5 px-2.5 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] transition-all font-mono font-semibold text-[11px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shadow-xs"
           title="Синхронизировать данные с Google Drive"
         >
           <RefreshCw
-            className={`w-3.5 h-3.5 shrink-0 ${isPending ? 'animate-spin' : ''}`}
+            className={`w-3 h-3 shrink-0 ${isPending ? 'animate-spin' : ''}`}
           />
           <span>{isPending ? 'Синхронизация...' : 'Синхронизировать'}</span>
         </button>

@@ -53,7 +53,7 @@ export const SparksIngestionTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3.5">
       {/* 1. Header & Live Watcher Status */}
       <WatcherStatusCard
         status={status}
@@ -64,13 +64,13 @@ export const SparksIngestionTab: React.FC = () => {
       />
 
       {/* 2. Pipeline Ingestion Files Table */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-sans font-bold text-base text-on-surface">
+            <h3 className="font-sans font-bold text-sm text-on-surface">
               Журнал файлов конвейера Ingestion
             </h3>
-            <p className="text-xs font-mono text-on-surface-variant">
+            <p className="text-[11px] font-mono text-on-surface-variant">
               Статусы этапов: <span className="text-blue-400">PENDING</span> (детекция) ➔{' '}
               <span className="text-amber-400">PROCESSING</span> (парсинг) ➔{' '}
               <span className="text-emerald-400">COMPLETED</span> (Note в БД)

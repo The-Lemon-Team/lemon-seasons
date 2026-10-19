@@ -141,35 +141,30 @@ export const NotesListPage: React.FC = () => {
   const total = notesData?.total || 0;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 h-full space-y-3.5">
+    <div className="flex-1 flex flex-col min-h-0 h-full space-y-2.5">
       {/* Header */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
-              {t.notesListPageTitle}
-            </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-              Admin & Obsidian Sync
-            </span>
-          </div>
-          <p className="text-on-surface-variant font-sans text-sm">
-            {t.notesListPageSubtitle}
-          </p>
+      <div className="flex-shrink-0 flex items-center justify-between gap-3 h-8">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <h1 className="font-sans font-bold text-base text-on-surface truncate">
+            {t.notesListPageTitle}
+          </h1>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 hidden sm:inline-block shrink-0">
+            Obsidian Sync
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Toggle Folder Explorer */}
           <button
             onClick={() => setShowFolderSidebar(!showFolderSidebar)}
-            className={`px-3 py-2 rounded font-mono text-xs transition-all flex items-center gap-1.5 border cursor-pointer ${
+            className={`h-7 px-2.5 rounded-lg font-mono text-[11px] transition-all flex items-center gap-1.5 border cursor-pointer ${
               showFolderSidebar
                 ? 'bg-primary/20 text-primary border-primary/40 font-semibold'
-                : 'bg-surface-container-high text-on-surface-variant border-white/10 hover:text-on-surface'
+                : 'bg-[#0c0e12]/80 text-on-surface-variant border-white/[0.08] hover:text-on-surface'
             }`}
             title="Toggle Folder Explorer"
           >
-            <span className="material-symbols-outlined text-[17px]">
+            <span className="material-symbols-outlined text-[15px]">
               {showFolderSidebar ? 'folder_open' : 'folder'}
             </span>
             <span>Папки</span>
@@ -180,16 +175,16 @@ export const NotesListPage: React.FC = () => {
               setCreateNoteFolder(folderParam || undefined);
               setCreateNoteModalOpen(true);
             }}
-            className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow cursor-pointer"
+            className="h-7 px-3 bg-primary text-on-primary hover:bg-primary-fixed rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 shadow cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            {t.newNoteBtn}
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>{t.newNoteBtn}</span>
           </button>
         </div>
       </div>
 
       {/* Main Layout: Synchronized Dual Scroll Containers */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
         {/* Left: Obsidian Folder Explorer Sidebar (Span 3 if visible) */}
         {showFolderSidebar && (
           <div className="lg:col-span-3 h-[420px] lg:h-full min-h-0">

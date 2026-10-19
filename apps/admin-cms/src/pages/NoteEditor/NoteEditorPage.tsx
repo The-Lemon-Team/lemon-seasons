@@ -175,25 +175,25 @@ export const NoteEditorPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar pr-1 space-y-3.5 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between h-8">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => navigate('/notes')}
-            className="p-1.5 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-lg hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-sans font-bold text-2xl text-on-surface">
+              <h1 className="font-sans font-bold text-base text-on-surface">
                 {isNew ? t.editorTitleNew : t.editorTitleEdit}
               </h1>
-              {!isNew && <NoteTypeBadge type={type} />}
+              {!isNew && <NoteTypeBadge type={type} size="sm" />}
             </div>
-            <p className="text-xs font-mono text-on-surface-variant">
+            <p className="text-[10px] font-mono text-on-surface-variant">
               {isNew ? t.editorSubtitle : `ID: ${id}`}
             </p>
           </div>
@@ -210,7 +210,7 @@ export const NoteEditorPage: React.FC = () => {
             >
               <button
                 type="button"
-                className="px-3 py-1.5 border border-error/40 text-error hover:bg-error/10 rounded text-xs font-mono transition-colors cursor-pointer"
+                className="h-7.5 px-3 border border-error/40 text-error hover:bg-error/10 rounded-lg text-xs font-mono transition-colors cursor-pointer"
               >
                 {t.delete}
               </button>
@@ -219,7 +219,7 @@ export const NoteEditorPage: React.FC = () => {
           <button
             onClick={handleSave}
             disabled={createNoteMutation.isPending || updateNoteMutation.isPending}
-            className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all shadow hover:shadow-lg disabled:opacity-50 cursor-pointer"
+            className="h-7.5 px-4 bg-primary text-on-primary hover:bg-primary-fixed rounded-lg font-semibold text-xs transition-all shadow disabled:opacity-50 cursor-pointer"
           >
             {createNoteMutation.isPending || updateNoteMutation.isPending
               ? t.loading
@@ -229,14 +229,14 @@ export const NoteEditorPage: React.FC = () => {
       </div>
 
       {/* Main Editor Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         {/* Left Column: Title, Markdown Content, Links & Image Gallery (Span 2) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-3.5">
           {/* Main Content Box */}
-          <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5">
+          <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 shadow-sm">
             {/* Note Title */}
-            <div className="space-y-1.5">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+            <div className="space-y-1">
+              <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
                 {t.titleInputLabel}
               </label>
               <input
@@ -244,7 +244,7 @@ export const NoteEditorPage: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t.titleInputPlaceholder}
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-sans text-base focus:border-primary outline-none"
+                className="w-full bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-3 py-1.5 text-on-surface font-sans text-sm focus:border-primary outline-none"
               />
             </div>
 
@@ -263,7 +263,7 @@ export const NoteEditorPage: React.FC = () => {
           </div>
 
           {/* Image Manager Section */}
-          <div className="bg-surface-container rounded-lg border border-white/5 p-5">
+          <div className="bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 shadow-sm">
             <ImageManager
               noteId={id}
               noteTitle={title}
@@ -280,14 +280,14 @@ export const NoteEditorPage: React.FC = () => {
         </div>
 
         {/* Right Column: Metadata & Chronological Details (Span 1) */}
-        <div className="space-y-5 bg-surface-container rounded-lg border border-white/5 p-5 h-fit">
-          <h3 className="font-sans font-bold text-sm text-on-surface border-b border-white/5 pb-2">
+        <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 h-fit shadow-sm">
+          <h3 className="font-sans font-bold text-xs text-on-surface border-b border-white/5 pb-1.5">
             {t.datesCol}
           </h3>
 
           {/* Target Feed */}
           <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
               {t.feedInputLabel}
             </label>
             <AppSelect
@@ -304,7 +304,7 @@ export const NoteEditorPage: React.FC = () => {
 
           {/* Note Type */}
           <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
               {t.typeInputLabel}
             </label>
             <NoteTypeSelect value={type} onChange={setType} />
@@ -312,27 +312,27 @@ export const NoteEditorPage: React.FC = () => {
 
           {/* Start Date */}
           <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
               {t.startDateLabel}
             </label>
             <input
               type="datetime-local"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
+              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
             />
           </div>
 
           {/* End Date */}
           <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
               {t.endDateLabel}
             </label>
             <input
               type="datetime-local"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
+              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
             />
           </div>
 

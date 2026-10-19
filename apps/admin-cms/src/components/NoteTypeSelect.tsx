@@ -116,14 +116,14 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
         disabled={disabled}
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
-        className={`w-full flex items-center justify-between gap-1.5 bg-surface-container-lowest border transition-colors outline-none font-mono text-left cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-1.5 border transition-all outline-none font-mono text-left cursor-pointer ${
           isOpen
-            ? 'border-primary ring-1 ring-primary/40 shadow-xs'
-            : 'border-white/10 hover:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary/40'
+            ? 'border-primary/60 ring-1 ring-primary/40 bg-[#0c0e12] text-on-surface shadow-xs'
+            : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-on-surface'
         } ${
           isSmall
-            ? 'h-7 pl-2.5 pr-2 text-[11px] rounded'
-            : 'h-9 pl-3 pr-2.5 text-xs rounded-md'
+            ? 'h-7 px-2.5 text-[11px] rounded-lg'
+            : 'h-8 px-3 text-xs rounded-lg'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -148,9 +148,9 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
               <Layers
                 className={`shrink-0 ${
                   isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
-                } text-on-surface-variant`}
+                } text-on-surface-variant/70`}
               />
-              <span className="text-on-surface font-semibold truncate">
+              <span className="text-on-surface truncate">
                 {allLabel}
               </span>
             </>
@@ -165,7 +165,7 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
           className={`shrink-0 transition-transform duration-200 ${
             isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
           } ${
-            isOpen ? 'rotate-180 text-primary' : 'text-on-surface-variant'
+            isOpen ? 'rotate-180 text-primary' : 'text-on-surface-variant/70'
           }`}
         />
       </button>
@@ -174,9 +174,9 @@ export const NoteTypeSelect: React.FC<NoteTypeSelectProps> = ({
       {isOpen && (
         <div
           style={{ maxHeight: `${maxHeight}px` }}
-          className={`absolute z-50 left-0 bg-[#1a1b1b] border border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${
+          className={`absolute z-50 left-0 bg-[#14161a] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${
             isSmall
-              ? 'min-w-[190px] p-0.5 rounded-md text-[11px]'
+              ? 'min-w-[190px] p-1 rounded-lg text-[11px]'
               : 'min-w-[210px] p-1 rounded-lg text-xs'
           } ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}
         >

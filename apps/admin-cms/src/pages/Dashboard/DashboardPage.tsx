@@ -46,97 +46,97 @@ export const DashboardPage: React.FC = () => {
   const { data: watcherStatus } = useWatcherStatus(5000);
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar pr-1 space-y-3.5">
       {/* Welcome Banner */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-center h-8">
         <div>
-          <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
+          <h1 className="font-sans font-bold text-base text-on-surface">
             {t.dashboardTitle}
           </h1>
-          <p className="text-on-surface-variant text-sm">
+          <p className="text-on-surface-variant text-[11px] font-mono hidden sm:block">
             {t.dashboardSubtitle}
           </p>
         </div>
 
         <button
           onClick={() => navigate('/notes/new')}
-          className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow cursor-pointer"
+          className="h-7.5 px-3 bg-primary text-on-primary hover:bg-primary-fixed rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 shadow cursor-pointer"
         >
-          <Plus className="w-[18px] h-[18px]" />
-          {t.addNoteBtn}
+          <Plus className="w-4 h-4" />
+          <span>{t.addNoteBtn}</span>
         </button>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         <div
           onClick={() => navigate('/feeds')}
-          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
         >
-          <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">{t.activeFeedsMetric}</span>
-            <Rss className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between text-on-surface-variant mb-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider">{t.activeFeedsMetric}</span>
+            <Rss className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-3xl text-on-surface">{feeds.length}</div>
-          <p className="text-xs text-outline mt-1 font-mono">{t.dataStreamsSub}</p>
+          <div className="font-sans font-bold text-2xl text-on-surface">{feeds.length}</div>
+          <p className="text-[10px] text-outline mt-0.5 font-mono">{t.dataStreamsSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
         >
-          <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">{t.totalNotesMetric}</span>
-            <FileText className="w-5 h-5 text-secondary group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between text-on-surface-variant mb-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider">{t.totalNotesMetric}</span>
+            <FileText className="w-4 h-4 text-secondary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-3xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
-          <p className="text-xs text-outline mt-1 font-mono">{t.singleTruthSub}</p>
+          <div className="font-sans font-bold text-2xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
+          <p className="text-[10px] text-outline mt-0.5 font-mono">{t.singleTruthSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
         >
-          <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">{t.vaultFoldersMetric}</span>
-            <FolderGit2 className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between text-on-surface-variant mb-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider">{t.vaultFoldersMetric}</span>
+            <FolderGit2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-3xl text-primary">{folders.length}</div>
-          <p className="text-xs text-outline mt-1 font-mono">{t.obsidianPathsSub}</p>
+          <div className="font-sans font-bold text-2xl text-primary">{folders.length}</div>
+          <p className="text-[10px] text-outline mt-0.5 font-mono">{t.obsidianPathsSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
         >
-          <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">{t.taxonomyTagsMetric}</span>
-            <Hash className="w-5 h-5 text-tertiary group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between text-on-surface-variant mb-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider">{t.taxonomyTagsMetric}</span>
+            <Hash className="w-4 h-4 text-tertiary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-3xl text-on-surface flex items-baseline gap-2">
+          <div className="font-sans font-bold text-2xl text-on-surface flex items-baseline gap-1.5">
             <span>{hashtags.length}</span>
             <span className="text-xs text-cyan-400 font-mono font-normal">#</span>
           </div>
-          <p className="text-xs text-outline mt-1 font-mono">{t.ltreeSub}</p>
+          <p className="text-[10px] text-outline mt-0.5 font-mono">{t.ltreeSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/generators?tab=sparks')}
-          className="bg-surface-container rounded-lg border border-white/5 p-5 hover:border-primary/40 transition-all cursor-pointer group"
+          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
         >
-          <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-mono text-xs uppercase tracking-wider">Файловый конвейер</span>
-            <Cloud className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between text-on-surface-variant mb-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider">Файловый конвейер</span>
+            <Cloud className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-xl text-on-surface flex items-center gap-2">
+          <div className="font-sans font-bold text-lg text-on-surface flex items-center gap-1.5">
             <span
-              className={`w-2.5 h-2.5 rounded-full ${
+              className={`w-2 h-2 rounded-full ${
                 watcherStatus?.isWatching ? 'bg-primary animate-pulse' : 'bg-rose-400'
               }`}
             />
             {watcherStatus?.isWatching ? t.activeStatus : 'Остановлен'}
           </div>
-          <p className="text-xs text-outline mt-1 font-mono">
+          <p className="text-[10px] text-outline mt-0.5 font-mono">
             {watcherStatus ? `${watcherStatus.filesProcessed} готово • ${watcherStatus.filesPending} в очереди` : t.syncReady}
           </p>
         </div>
@@ -144,36 +144,36 @@ export const DashboardPage: React.FC = () => {
 
       {/* System Health & Note Types Breakdown */}
       {stats && (
-        <div className="bg-surface-container rounded-lg border border-white/5 p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-[22px] h-[22px] text-primary shrink-0" />
+        <div className="bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 space-y-2.5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-white/5 pb-2">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <h3 className="font-sans font-bold text-sm text-on-surface">Состояние системы и хранилища</h3>
-                <p className="text-xs text-on-surface-variant font-mono">
+                <h3 className="font-sans font-bold text-xs text-on-surface">Состояние системы и хранилища</h3>
+                <p className="text-[10px] text-on-surface-variant font-mono">
                   БД: <span className="text-primary font-bold">{stats.system.database}</span> • Аптайм: {Math.floor(stats.system.uptime / 60)} мин • Пользователей: {stats.usersCount} • Активных ключей: {stats.activeKeysCount}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs font-mono text-on-surface-variant">
-              <span>Хранилища: <strong className="text-on-surface">{stats.containersCount.total}</strong> ({stats.containersCount.public} публ. / {stats.containersCount.private} прив.)</span>
+            <div className="flex items-center gap-3 text-[11px] font-mono text-on-surface-variant">
+              <span>Хранилища: <strong className="text-on-surface">{stats.containersCount.total}</strong> ({stats.containersCount.public} / {stats.containersCount.private})</span>
               <span>Медиа: <strong className="text-on-surface">{stats.storage.imagesCount}</strong> ({(stats.storage.totalBytes / (1024 * 1024)).toFixed(1)} МБ)</span>
               {stats.system.lastActivityAt && (
-                <span>Посл. активность: <strong className="text-secondary">{new Date(stats.system.lastActivityAt).toLocaleTimeString()}</strong></span>
+                <span>Посл.: <strong className="text-secondary">{new Date(stats.system.lastActivityAt).toLocaleTimeString()}</strong></span>
               )}
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-mono text-on-surface-variant uppercase tracking-wider mb-2 flex items-center justify-between">
+            <div className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1.5 flex items-center justify-between">
               <span>Распределение заметок по типам</span>
-              <span className="text-[11px] text-primary">Всего: {stats.notesTotal} заметок</span>
+              <span className="text-[10px] text-primary">Всего: {stats.notesTotal}</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
               {Object.entries(stats.notesByType).map(([type, count]) => (
-                <div key={type} className="bg-surface-container-high border border-white/5 rounded px-3 py-2 flex items-center justify-between">
-                  <NoteTypeBadge type={type} />
-                  <span className="font-mono font-bold text-sm text-on-surface">{Number(count)}</span>
+                <div key={type} className="bg-[#0c0e12]/60 border border-white/5 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                  <NoteTypeBadge type={type} size="sm" />
+                  <span className="font-mono font-bold text-xs text-on-surface">{Number(count)}</span>
                 </div>
               ))}
             </div>
@@ -182,16 +182,16 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* Two Columns: Recent Notes & Obsidian Sync Hub */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Recent Notes (Span 2) */}
-        <div className="lg:col-span-2 space-y-3 bg-surface-container rounded-lg border border-white/5 p-5">
-          <div className="flex justify-between items-center pb-2 border-b border-white/5">
-            <h2 className="font-sans font-bold text-base text-on-surface">
+        <div className="lg:col-span-2 space-y-2 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 shadow-sm">
+          <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
+            <h2 className="font-sans font-bold text-xs text-on-surface">
               {t.recentNotesTitle}
             </h2>
             <button
               onClick={() => navigate('/notes')}
-              className="text-xs font-mono text-secondary hover:text-primary transition-colors"
+              className="text-[11px] font-mono text-secondary hover:text-primary transition-colors cursor-pointer"
             >
               {t.viewAll} →
             </button>
@@ -199,7 +199,7 @@ export const DashboardPage: React.FC = () => {
 
           <div className="divide-y divide-white/5">
             {notes.length === 0 ? (
-              <div className="py-8 text-center text-on-surface-variant text-sm font-mono">
+              <div className="py-6 text-center text-on-surface-variant text-xs font-mono">
                 {t.noRecentNotes}
               </div>
             ) : (
@@ -223,11 +223,11 @@ export const DashboardPage: React.FC = () => {
                   <div
                     key={note.id}
                     onClick={() => setViewingNoteId(note.id)}
-                    className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded transition-colors cursor-pointer"
+                    className="py-1.5 flex items-center justify-between hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center gap-3 min-w-0 pr-4">
+                    <div className="flex items-center gap-2.5 min-w-0 pr-3">
                       {thumbUrl && (
-                        <div className="relative w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-black/40 border border-white/10 shadow-xs">
+                        <div className="relative w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-black/40 border border-white/10 shadow-xs">
                           <img
                             src={thumbUrl}
                             alt={mainImage?.alt || note.title}
@@ -241,14 +241,14 @@ export const DashboardPage: React.FC = () => {
                           )}
                         </div>
                       )}
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
                           <NoteTypeBadge type={note.type} size="sm" />
-                          <span className="font-sans font-semibold text-sm text-on-surface truncate">
+                          <span className="font-sans font-semibold text-xs text-on-surface truncate">
                             {note.title}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant flex-wrap">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-on-surface-variant flex-wrap mt-0.5">
                           <span>{new Date(note.startDate).toLocaleDateString()}</span>
                           {note.feed && <span>• {note.feed.title}</span>}
                           {note.hashtags && note.hashtags.length > 0 && (
@@ -263,22 +263,11 @@ export const DashboardPage: React.FC = () => {
                               )}
                             </span>
                           )}
-                          {note.sourceLink && (
-                            <span className="inline-flex items-center gap-1 text-primary/80">
-                              • <Link2 className="w-3 h-3" />
-                              source
-                              {note.links && note.links.length > 1 && (
-                                <span className="text-[10px] text-on-surface-variant font-mono">
-                                  (+{note.links.length - 1})
-                                </span>
-                              )}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-outline" />
+                    <ChevronRight className="w-3.5 h-3.5 text-outline shrink-0" />
                   </div>
                 );
               })
@@ -287,43 +276,43 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Obsidian Sync Hub (Span 1) */}
-        <div className="space-y-4 bg-surface-container rounded-lg border border-white/5 p-5">
-          <h2 className="font-sans font-bold text-base text-on-surface flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 text-primary" />
+        <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 shadow-sm">
+          <h2 className="font-sans font-bold text-xs text-on-surface flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
             {t.deltaInspectorTitle}
           </h2>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
+          <p className="text-[11px] text-on-surface-variant leading-relaxed font-mono">
             {t.deltaInspectorSub}
           </p>
 
           <div className="space-y-2 pt-2 border-t border-white/5">
-            <label className="block font-mono text-[11px] text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] text-on-surface-variant uppercase">
               {t.syncChangesTitle || t.syncStateMetric}
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <input
                 type="datetime-local"
                 value={sinceTime}
                 onChange={(e) => setSinceTime(e.target.value)}
                 placeholder={t.sinceTimestampPlaceholder}
-                className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-2 py-1 text-xs text-on-surface font-mono outline-none [color-scheme:dark]"
+                className="flex-1 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2 h-7 text-[11px] text-on-surface font-mono outline-none [color-scheme:dark]"
               />
               <button
                 onClick={() => refetchSync()}
                 disabled={isSyncFetching}
-                className="px-3 py-1 bg-surface-container-highest hover:bg-white/10 text-on-surface rounded text-xs font-mono transition-colors"
+                className="h-7 px-2.5 bg-surface-container-highest hover:bg-white/10 text-on-surface rounded-lg text-xs font-mono transition-colors cursor-pointer border border-white/10"
               >
                 {isSyncFetching ? t.loading : t.fetchDeltaBtn}
               </button>
             </div>
 
             {syncData && (
-              <div className="mt-3 bg-surface-container-lowest rounded p-3 border border-white/5 font-mono text-[11px] space-y-1">
+              <div className="mt-2 bg-[#0c0e12]/80 rounded-lg p-2.5 border border-white/[0.08] font-mono text-[10px] space-y-1">
                 <div className="text-primary font-semibold">
                   ✓ {t.notesSynced(syncData.counts.notes)}
                 </div>
-                <div className="text-outline text-[10px]">
-                  Server Timestamp: {syncData.syncedAt}
+                <div className="text-outline text-[9px]">
+                  Server: {syncData.syncedAt}
                 </div>
               </div>
             )}

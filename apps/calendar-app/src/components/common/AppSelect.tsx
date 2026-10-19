@@ -103,21 +103,21 @@ export function AppSelect<T extends string = string>({
     switch (variant) {
       case 'emerald':
         return isOpen
-          ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-emerald-950/30 text-emerald-300'
-          : 'border-emerald-500/40 hover:border-emerald-500/70 bg-emerald-950/20 text-emerald-400 font-semibold';
+          ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-[#0c0e12] text-emerald-300'
+          : 'border-emerald-500/30 hover:border-emerald-500/60 bg-[#0c0e12]/80 text-emerald-400 font-semibold';
       case 'amber':
         return isOpen
-          ? 'border-amber-400 ring-1 ring-amber-400/40 bg-amber-950/30 text-amber-300'
-          : 'border-amber-500/40 hover:border-amber-500/70 bg-amber-950/20 text-amber-400 font-semibold';
+          ? 'border-amber-400 ring-1 ring-amber-400/40 bg-[#0c0e12] text-amber-300'
+          : 'border-amber-500/30 hover:border-amber-500/60 bg-[#0c0e12]/80 text-amber-400 font-semibold';
       case 'muted':
         return isOpen
-          ? 'border-white/30 ring-1 ring-white/20 bg-white/10 text-neutral-300'
-          : 'border-[#2d3030] hover:border-white/20 bg-white/5 text-neutral-400';
+          ? 'border-white/30 ring-1 ring-white/20 bg-[#0c0e12] text-neutral-300'
+          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-neutral-400';
       case 'default':
       default:
         return isOpen
-          ? 'border-[#c9cd58] ring-1 ring-[#c9cd58]/40 bg-[#121414] text-[#e2e2e2]'
-          : 'border-[#2d3030] hover:border-[#484837] bg-[#121414] text-[#e2e2e2]';
+          ? 'border-[#c9cd58]/70 ring-1 ring-[#c9cd58]/40 bg-[#0c0e12] text-[#e2e2e2] shadow-xs'
+          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-[#e2e2e2]';
     }
   };
 
@@ -125,7 +125,7 @@ export function AppSelect<T extends string = string>({
     if (variant === 'emerald') return 'text-emerald-400';
     if (variant === 'amber') return 'text-amber-400';
     if (variant === 'muted') return 'text-neutral-400';
-    return isOpen ? 'text-[#c9cd58]' : 'text-[#93927e]';
+    return isOpen ? 'text-[#c9cd58]' : 'text-neutral-400';
   };
 
   const isSmall = size === 'sm';
@@ -142,8 +142,8 @@ export function AppSelect<T extends string = string>({
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleKeyDown}
-        className={`w-full flex items-center justify-between gap-2 border rounded-lg font-mono text-left cursor-pointer outline-none transition-colors ${
-          isSmall ? 'h-8 px-2.5 text-xs' : 'h-10 px-3 text-xs'
+        className={`w-full flex items-center justify-between gap-1.5 border rounded-lg font-mono text-left cursor-pointer outline-none transition-all ${
+          isSmall ? 'h-7 px-2.5 text-[11px]' : 'h-8 px-3 text-xs'
         } ${getVariantStyles()} ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${triggerClassName}`}
