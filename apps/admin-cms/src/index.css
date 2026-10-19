@@ -39,6 +39,7 @@
 
     /* Brand Accents */
     --primary: #707600;
+    --primary-rgb: 112 118 0;
     --primary-hover: #595d00;
     --primary-bg: rgba(112, 118, 0, 0.08);
     --primary-border: rgba(112, 118, 0, 0.25);
@@ -56,48 +57,52 @@
 
     /* Floating master containers */
     --panel-bg: #242830;
-    --panel-border: rgba(255, 255, 255, 0.08);
+    --panel-border: rgba(255, 255, 255, 0.05);
     --panel-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
 
     /* Inner tiles / "плашки" (One Dark editor canvas) */
     --tile-bg: #282c34;
     --tile-bg-subtle: #242830;
     --tile-bg-muted: #1e2227;
-    --tile-border: rgba(255, 255, 255, 0.09);
-    --tile-border-hover: rgba(255, 255, 255, 0.18);
+    --tile-border: rgba(255, 255, 255, 0.06);
+    --tile-border-hover: rgba(255, 255, 255, 0.12);
     --tile-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.15);
-    --tile-shadow-hover: 0 6px 18px -2px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.18);
+    --tile-shadow-hover: 0 4px 14px -2px rgba(0, 0, 0, 0.28), 0 2px 4px rgba(0, 0, 0, 0.15);
 
     /* Controls (One Dark recessed wells/inputs) */
     --control-bg: #1e2227;
     --control-bg-hover: #252931;
-    --control-border: rgba(255, 255, 255, 0.11);
-    --control-border-hover: rgba(255, 255, 255, 0.24);
-    --control-text: #abb2bf;
+    --control-border: rgba(255, 255, 255, 0.08);
+    --control-border-hover: rgba(255, 255, 255, 0.16);
+    --control-text: #9da5b4;
     --control-placeholder: #5c6370;
 
-    /* Typography */
-    --text-main: #abb2bf;
-    --text-secondary: #828997;
+    /* Typography (Calm, low-glare slate) */
+    --text-main: #9da5b4;
+    --text-secondary: #7e8796;
     --text-muted: #5c6370;
-    --text-dim: #4b5263;
+    --text-dim: #444b58;
 
     /* Brand Accents (Atom warm gold / lemon) */
     --primary: #e5c07b;
+    --primary-rgb: 229 192 123;
     --primary-hover: #f0d38d;
     --primary-bg: rgba(229, 192, 123, 0.12);
-    --primary-border: rgba(229, 192, 123, 0.28);
+    --primary-border: rgba(229, 192, 123, 0.25);
     --on-primary: #1e2227;
 
     /* Scrollbars */
-    --scrollbar-thumb: rgba(255, 255, 255, 0.14);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.26);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.10);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.20);
   }
 
   body {
     background-color: var(--platform-bg);
     color: var(--text-main);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* Prevent FOUT and layout shifts for Material Symbols */
@@ -159,7 +164,6 @@
 .platform-tile-hover:hover {
   box-shadow: var(--tile-shadow-hover);
   border-color: var(--tile-border-hover);
-  transform: translateY(-1px);
 }
 
 /* Ant Design integration with Platform Look */

@@ -28,7 +28,7 @@ export const FeedGroupItem: React.FC<FeedGroupItemProps> = ({
   t,
 }) => {
   return (
-    <div className="platform-tile platform-tile-hover p-3 mb-2.5">
+    <div className="platform-tile p-3 mb-2.5">
       {/* Group Header Row */}
       <div className="flex items-center justify-between gap-3 select-none">
         <div

@@ -30,7 +30,7 @@ export const FeedTreeNodeItem: React.FC<FeedTreeNodeItemProps> = ({
   return (
     <div className="pl-7 relative tree-line">
       <div
-        className={`group relative flex items-center justify-between py-1.5 px-2.5 rounded-lg hover:bg-tile-subtle transition-all duration-200 border border-transparent hover:border-tile-border tree-line-horizontal ${
+        className={`group relative flex items-center justify-between py-1.5 px-2.5 rounded-lg hover:bg-tile-subtle/50 transition-colors border border-transparent hover:border-tile-border tree-line-horizontal ${
           isDeleted ? 'opacity-50' : ''
         }`}
       >
@@ -38,7 +38,7 @@ export const FeedTreeNodeItem: React.FC<FeedTreeNodeItemProps> = ({
         <div className="flex items-center gap-2.5 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
           {/* Feed Icon / Avatar with Accent Color */}
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border border-tile-border transition-transform group-hover:scale-105"
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border border-tile-border"
             style={{
               backgroundColor: `${accentColor}18`,
               borderColor: `${accentColor}40`,
@@ -77,7 +77,7 @@ export const FeedTreeNodeItem: React.FC<FeedTreeNodeItemProps> = ({
             </div>
 
             {feed.description && (
-              <p className="text-on-surface-variant/80 text-[11px] truncate max-w-xl mt-0.5 font-mono">
+              <p className="text-on-surface-variant/80 text-[11px] truncate max-w-xl mt-0.5 font-sans leading-relaxed">
                 {feed.description}
               </p>
             )}

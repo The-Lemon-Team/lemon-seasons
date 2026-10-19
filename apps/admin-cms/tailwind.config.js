@@ -21,7 +21,8 @@ export default {
         "text-secondary": "var(--text-secondary)",
         "text-muted": "var(--text-muted)",
 
-        "primary": "var(--primary)",
+        "primary": "rgb(var(--primary-rgb, 112 118 0) / <alpha-value>)",
+        "primary-border": "var(--primary-border)",
         "primary-container": "var(--primary-bg)",
         "on-primary": "var(--on-primary)",
         "on-primary-container": "var(--primary)",

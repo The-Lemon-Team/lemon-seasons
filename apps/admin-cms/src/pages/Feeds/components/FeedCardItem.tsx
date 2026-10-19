@@ -29,7 +29,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
 
   return (
     <article
-      className={`platform-tile platform-tile-hover p-3 flex flex-col justify-between relative hover-actions-group group ${
+      className={`platform-tile p-3 flex flex-col justify-between relative hover-actions-group group ${
         isDeleted ? 'opacity-50 border-error/30' : ''
       }`}
       style={{
@@ -108,7 +108,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
           >
             {feed.title}
           </h3>
-          <p className="text-on-surface-variant text-[11px] line-clamp-2 leading-relaxed font-mono">
+          <p className="text-on-surface-variant text-[11px] line-clamp-2 leading-relaxed font-sans">
             {feed.description || '—'}
           </p>
         </div>
