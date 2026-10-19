@@ -147,7 +147,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={780}
+      width={720}
       zIndex={1100}
       centered
       destroyOnClose
@@ -155,23 +155,23 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       styles={{
         content: {
           padding: 0,
-          backgroundColor: '#292a2a',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0px 10px 40px rgba(0,0,0,0.6)',
+          backgroundColor: 'var(--panel-bg)',
+          border: '1px solid var(--tile-border)',
+          boxShadow: 'var(--tile-shadow)',
           overflow: 'hidden',
-          borderRadius: 16,
+          borderRadius: 12,
         },
       }}
     >
       <form onSubmit={handleSubmit} className="flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/5 bg-surface-container-highest/60 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-sm font-bold shrink-0">
-              <FilePlus className="w-4 h-4" />
+        <div className="px-5 py-3 border-b border-tile-border bg-tile-subtle flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+              <FilePlus className="w-3.5 h-3.5" />
             </span>
             <div className="min-w-0">
-              <h2 className="font-sans font-bold text-lg text-on-surface leading-tight truncate">
+              <h2 className="font-sans font-bold text-sm text-text-main leading-tight truncate">
                 {t.editorTitleNew}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
@@ -390,18 +390,18 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-white/5 bg-surface-container-highest/60 flex items-center justify-end gap-2">
+        <div className="px-5 py-2.5 border-t border-tile-border bg-tile-subtle flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-surface-container-high border border-white/10 text-on-surface text-xs font-mono hover:border-white/20 transition-colors cursor-pointer"
+            className="h-7 px-3 rounded bg-tile-subtle border border-tile-border text-text-muted hover:text-text-main hover:bg-tile-muted text-xs font-mono transition-colors cursor-pointer"
           >
             {t.cancel}
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !title.trim() || !feedId}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer shadow"
+            className="flex items-center gap-1.5 h-7 px-4 rounded bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary-fixed-dim transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>{isSubmitting ? t.loading : t.save}</span>

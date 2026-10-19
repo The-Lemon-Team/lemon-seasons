@@ -110,15 +110,15 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Popover Card */}
-      <div className="absolute right-0 top-11 z-50 w-96 max-w-[calc(100vw-2rem)] bg-[#161818] border border-white/10 rounded-xl shadow-2xl p-4 text-xs font-sans animate-in fade-in slide-in-from-top-2">
+      <div className="absolute right-0 top-10 z-50 w-96 max-w-[calc(100vw-2rem)] bg-panel border border-panel rounded-2xl shadow-2xl p-3.5 text-xs font-sans animate-in fade-in slide-in-from-top-2">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="flex items-center justify-between pb-2.5 border-b border-tile-border">
           <div className="flex items-center gap-2">
-            <div className="p-1 rounded bg-[#c9cd58]/20 text-[#c9cd58]">
+            <div className="p-1 rounded bg-primary-container text-primary">
               <Cloud className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-semibold text-on-surface text-sm leading-tight">
+              <h4 className="font-semibold text-on-surface text-xs leading-tight">
                 Google Drive обновления
               </h4>
               <p className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1.5 mt-0.5">
@@ -129,16 +129,16 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+            className="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-tile-subtle transition-colors cursor-pointer"
             title="Закрыть"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Status Meta summary */}
         {syncStatus && (
-          <div className="py-2.5 px-3 my-2 rounded-lg bg-surface-container border border-white/5 flex items-center justify-between text-[11px] font-mono">
+          <div className="py-2 px-2.5 my-2 rounded-lg bg-tile-subtle border border-tile-border flex items-center justify-between text-[10px] font-mono">
             <span className="text-on-surface-variant">Последняя синхронизация:</span>
             <span className="text-on-surface font-semibold">
               {syncStatus.lastCommit?.createdAt
@@ -151,30 +151,30 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
         {/* Section Title */}
         <div className="flex items-center justify-between mb-2 mt-1">
           <span className="font-semibold text-xs text-on-surface flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#c9cd58]" />
+            <FileText className="w-3.5 h-3.5 text-primary" />
             Недавние файлы и заметки ({updates.length})
           </span>
-          {isLoading && <RefreshCw className="w-3 h-3 text-[#c9cd58] animate-spin" />}
+          {isLoading && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
         </div>
 
         {/* Updates Scrollable List */}
         <div className="max-h-72 overflow-y-auto space-y-1.5 pr-0.5 custom-scrollbar">
           {updates.length === 0 ? (
             <div className="py-8 text-center text-on-surface-variant space-y-1.5">
-              <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-400/80 mb-2" />
+              <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 mb-2" />
               <p className="font-semibold text-xs text-on-surface">Новых файлов пока нет</p>
-              <p className="text-[11px] font-mono">Все заметки с Google Drive синхронизированы</p>
+              <p className="text-[10px] font-mono">Все заметки с Google Drive синхронизированы</p>
             </div>
           ) : (
             updates.map((item) => (
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="p-2.5 rounded-lg bg-surface-container/60 hover:bg-surface-container border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
+                className="p-2 rounded-lg bg-tile-subtle/80 hover:bg-tile-subtle border border-tile-border transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 min-w-0">
-                    <span className="p-1 rounded bg-[#c9cd58]/10 text-[#c9cd58] mt-0.5 shrink-0">
+                    <span className="p-1 rounded bg-primary-container text-primary mt-0.5 shrink-0">
                       {item.source === 'SPARKS' ? (
                         <Sparkles className="w-3 h-3" />
                       ) : (
@@ -194,7 +194,7 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
                 </div>
 
                 {/* Meta Row: Folder, Type, Time */}
-                <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-on-surface-variant/80 border-t border-white/5 pt-1.5">
+                <div className="mt-1.5 flex items-center justify-between text-[9px] font-mono text-on-surface-variant/80 border-t border-tile-border pt-1">
                   <div className="flex items-center gap-2 truncate">
                     {item.folderPath && (
                       <span className="inline-flex items-center gap-1 text-on-surface-variant">
@@ -203,7 +203,7 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
                       </span>
                     )}
                     {item.noteType && (
-                      <span className="px-1 rounded bg-white/5 text-primary">
+                      <span className="px-1 rounded bg-tile-muted text-primary">
                         {item.noteType}
                       </span>
                     )}
@@ -219,13 +219,13 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-white/10">
+        <div className="flex items-center gap-2 pt-2.5 mt-2.5 border-t border-tile-border">
           <button
             onClick={onSyncNow}
             disabled={isSyncing}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-sans font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary hover:bg-primary-hover font-mono font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Синхронизация...' : 'Синхронизировать сейчас'}</span>
           </button>
 
@@ -234,7 +234,7 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
               navigate('/generators');
               onClose();
             }}
-            className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-on-surface border border-white/10 text-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-control hover:bg-tile-subtle text-on-surface border border-control-border text-xs font-mono transition-colors cursor-pointer"
             title="Открыть панель Ingestion Lab"
           >
             <span>Lab</span>

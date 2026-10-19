@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider } from 'antd';
 import { Spin } from 'antd';
-import { lentaThemeConfig } from './theme/themeConfig';
+import { lentaDarkThemeConfig, lentaLightThemeConfig } from './theme/themeConfig';
+import { ThemeProvider, useAppTheme } from './theme/ThemeContext';
 import { AppLayout } from './components/AppLayout';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -32,9 +33,11 @@ const queryClient = new QueryClient({
 
 const AppContent: React.FC = () => {
   const { antdLocale } = useAdminI18n();
+  const { themeMode } = useAppTheme();
+  const currentAntdTheme = themeMode === 'dark' ? lentaDarkThemeConfig : lentaLightThemeConfig;
 
   return (
-    <ConfigProvider theme={lentaThemeConfig} locale={antdLocale}>
+    <ConfigProvider theme={currentAntdTheme} locale={antdLocale}>
       <ErrorBoundary fallbackTitle="Критическая ошибка Project Lenta Admin">
         <BrowserRouter>
           <React.Suspense fallback={<PageLoadingFallback />}>
@@ -63,9 +66,11 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AdminI18nProvider>
-        <AppContent />
-      </AdminI18nProvider>
+      <ThemeProvider>
+        <AdminI18nProvider>
+          <AppContent />
+        </AdminI18nProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

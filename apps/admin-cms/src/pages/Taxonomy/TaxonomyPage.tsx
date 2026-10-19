@@ -142,11 +142,11 @@ export const TaxonomyPage: React.FC = () => {
     return (
       <div key={node.id} className={depth > 0 ? 'pl-7 relative tree-line' : 'mt-1'}>
         <div
-          className={`group relative flex items-center justify-between py-2 px-3 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 ${
+          className={`group relative flex items-center justify-between py-1.5 px-2.5 rounded-lg hover:bg-tile-subtle transition-colors border border-transparent hover:border-tile-border ${
             depth > 0 ? 'tree-line-horizontal' : ''
           } ${isDeleted ? 'opacity-50' : ''}`}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             {hasChildren ? (
               <button
                 onClick={() => toggleExpand(node.path)}
@@ -165,9 +165,9 @@ export const TaxonomyPage: React.FC = () => {
             {/* Node Icon Badge */}
             <span
               title={node.icon ? `Icon: ${node.icon}` : 'Default tag icon'}
-              className="w-6 h-6 rounded flex items-center justify-center bg-surface-container border border-white/10 text-primary flex-shrink-0 shadow-xs"
+              className="w-5.5 h-5.5 rounded flex items-center justify-center bg-tile-subtle border border-tile-border text-primary flex-shrink-0 shadow-xs"
             >
-              <span className="material-symbols-outlined text-[15px]">
+              <span className="material-symbols-outlined text-[14px]">
                 {node.icon || 'label'}
               </span>
             </span>
@@ -175,48 +175,48 @@ export const TaxonomyPage: React.FC = () => {
             {/* Path Chip */}
             <span
               onClick={() => navigate(`/notes?tagPath=${encodeURIComponent(node.path)}`)}
-              className="font-mono text-xs text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant/30 hover:border-primary/50 hover:text-primary transition-colors cursor-pointer truncate"
+              className="font-mono text-[11px] text-on-surface bg-tile px-1.5 py-0.2 rounded border border-tile-border hover:border-primary/50 hover:text-primary transition-colors cursor-pointer truncate"
             >
               {node.path}
             </span>
 
             {/* Node Display Name */}
-            <span className="font-sans text-xs text-on-surface-variant font-medium truncate">
+            <span className="font-sans text-[11px] text-on-surface-variant font-medium truncate">
               ({node.name})
             </span>
 
             {/* Note Count Pill */}
             <span
               onClick={() => navigate(`/notes?tagPath=${encodeURIComponent(node.path)}`)}
-              className="font-mono text-[11px] text-on-surface-variant/80 bg-white/5 px-2 py-0.5 rounded-full hover:bg-white/10 hover:text-secondary transition-colors cursor-pointer flex-shrink-0"
+              className="font-mono text-[10px] text-on-surface-variant bg-tile-subtle border border-tile-border px-1.5 py-0.2 rounded-full hover:bg-tile-muted hover:text-secondary transition-colors cursor-pointer flex-shrink-0"
             >
               {node.notesCount}
             </span>
 
             {isDeleted && (
-              <span className="font-mono text-[10px] text-error bg-error/15 px-1.5 py-0.5 rounded flex-shrink-0">
+              <span className="font-mono text-[9px] text-error bg-error/15 px-1.5 py-0.2 rounded flex-shrink-0">
                 DELETED
               </span>
             )}
           </div>
 
           {/* Hover Actions */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
             {!isDeleted ? (
               <>
                 <button
                   onClick={() => openAddChildModal(node)}
-                  className="p-1 text-on-surface-variant hover:text-secondary rounded hover:bg-white/5"
+                  className="p-1 text-on-surface-variant hover:text-secondary rounded hover:bg-tile-subtle cursor-pointer"
                   title={t.add}
                 >
-                  <span className="material-symbols-outlined text-[16px]">add</span>
+                  <span className="material-symbols-outlined text-[15px]">add</span>
                 </button>
                 <button
                   onClick={() => openEditModal(node)}
-                  className="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-white/5"
+                  className="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-tile-subtle cursor-pointer"
                   title={t.edit}
                 >
-                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  <span className="material-symbols-outlined text-[15px]">edit</span>
                 </button>
                 <Popconfirm
                   title={t.confirmDeleteTag}
@@ -226,20 +226,20 @@ export const TaxonomyPage: React.FC = () => {
                   okButtonProps={{ danger: true }}
                 >
                   <button
-                    className="p-1 text-on-surface-variant hover:text-error rounded hover:bg-white/5"
+                    className="p-1 text-on-surface-variant hover:text-error rounded hover:bg-tile-subtle cursor-pointer"
                     title={t.delete}
                   >
-                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                    <span className="material-symbols-outlined text-[15px]">delete</span>
                   </button>
                 </Popconfirm>
               </>
             ) : (
               <button
                 onClick={() => handleRestore(node.id)}
-                className="p-1 text-tertiary hover:text-primary rounded hover:bg-white/5"
+                className="p-1 text-tertiary hover:text-primary rounded hover:bg-tile-subtle cursor-pointer"
                 title="Restore"
               >
-                <span className="material-symbols-outlined text-[16px]">restore</span>
+                <span className="material-symbols-outlined text-[15px]">restore</span>
               </button>
             )}
           </div>
@@ -256,53 +256,53 @@ export const TaxonomyPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3.5">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-sans font-bold text-2xl text-on-surface mb-1">
+          <h1 className="font-sans font-bold text-lg text-text-main leading-tight">
             {t.taxonomyPageTitle}
           </h1>
-          <p className="text-on-surface-variant font-sans text-sm">
+          <p className="text-text-muted font-sans text-xs">
             {t.taxonomyPageSubtitle}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs font-mono text-on-surface-variant cursor-pointer">
+        <div className="flex items-center gap-2.5">
+          <label className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted cursor-pointer hover:text-text-main transition-colors">
             <input
               type="checkbox"
               checked={includeDeleted}
               onChange={(e) => setIncludeDeleted(e.target.checked)}
-              className="rounded bg-surface-container border-white/20 text-primary focus:ring-0"
+              className="rounded bg-control border-tile-border text-primary focus:ring-0 w-3.5 h-3.5"
             />
             {t.status}: Deleted
           </label>
           <button
             onClick={openAddRootModal}
-            className="px-4 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm transition-all flex items-center gap-2 shadow"
+            className="h-6.5 px-2.5 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded text-[11px] font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span className="material-symbols-outlined text-[15px]">add_circle</span>
             {t.createTagBtn}
           </button>
         </div>
       </div>
 
       {/* Tree View Container */}
-      <div className="bg-surface-container-high/40 border border-white/5 rounded-xl p-6 backdrop-blur-sm">
-        <div className="space-y-2">
+      <div className="platform-tile p-3 sm:p-4">
+        <div className="space-y-1.5">
           {treeData.map((rootNode) => renderTreeNode(rootNode, 0))}
         </div>
 
         {treeData.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-4xl text-outline mb-2">
+          <div className="p-8 text-center text-text-muted">
+            <span className="material-symbols-outlined text-3xl text-text-muted/60 mb-2">
               account_tree
             </span>
-            <p className="font-sans text-sm">{t.taxonomyPageSubtitle}</p>
+            <p className="font-sans text-xs">{t.taxonomyPageSubtitle}</p>
             <button
               onClick={openAddRootModal}
-              className="mt-3 px-4 py-1.5 bg-primary text-on-primary rounded text-xs font-semibold"
+              className="mt-2.5 h-6.5 px-3 bg-primary text-on-primary rounded text-[11px] font-semibold cursor-pointer shadow-xs"
             >
               {t.createTagBtn}
             </button>
@@ -315,18 +315,19 @@ export const TaxonomyPage: React.FC = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
-        width={520}
+        width={480}
         centered
         destroyOnClose
         styles={{
           content: {
-            backgroundColor: '#292a2a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'var(--panel-bg)',
+            border: '1px solid var(--tile-border)',
+            boxShadow: 'var(--tile-shadow)',
           },
         }}
       >
-        <div className="p-2 space-y-4">
-          <h2 className="font-sans font-bold text-lg text-on-surface">
+        <div className="p-1 space-y-3.5">
+          <h2 className="font-sans font-bold text-base text-text-main">
             {modalMode === 'root'
               ? t.createTagTitle
               : modalMode === 'child'
@@ -334,9 +335,9 @@ export const TaxonomyPage: React.FC = () => {
               : t.editTagTitle}
           </h2>
 
-          <form onSubmit={handleSave} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-3">
             <div className="space-y-1">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.tagNameLabel}
               </label>
               <input
@@ -344,17 +345,17 @@ export const TaxonomyPage: React.FC = () => {
                 value={nodeName}
                 onChange={(e) => setNodeName(e.target.value)}
                 placeholder="e.g. React"
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-sm focus:border-primary outline-none"
+                className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main text-xs focus:border-primary outline-none transition-colors"
               />
             </div>
 
             {modalMode === 'child' ? (
               <div className="space-y-1">
-                <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+                <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                   {t.tagSlugLabel}
                 </label>
                 <div className="flex items-center gap-1 font-mono text-xs">
-                  <span className="text-secondary bg-surface-container-low px-2 py-1.5 rounded border border-white/5">
+                  <span className="text-text-muted bg-tile-subtle px-2 py-1.5 rounded border border-tile-border text-[11px]">
                     {targetNode?.path}.
                   </span>
                   <input
@@ -362,13 +363,13 @@ export const TaxonomyPage: React.FC = () => {
                     value={childSegment}
                     onChange={(e) => setChildSegment(e.target.value)}
                     placeholder="react"
-                    className="flex-1 bg-surface-container-lowest border border-white/10 rounded px-3 py-1.5 text-on-surface text-xs focus:border-primary outline-none"
+                    className="flex-1 bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main text-xs focus:border-primary outline-none transition-colors"
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
-                <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+                <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                   {t.tagSlugLabel}
                 </label>
                 <input
@@ -376,7 +377,7 @@ export const TaxonomyPage: React.FC = () => {
                   value={fullPath}
                   onChange={(e) => setFullPath(e.target.value)}
                   placeholder="e.g. technology.frontend.react"
-                  className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
+                  className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
                 />
               </div>
             )}
@@ -388,18 +389,18 @@ export const TaxonomyPage: React.FC = () => {
               label="Icon (Material Symbol)"
             />
 
-            <div className="pt-3 border-t border-white/5 flex justify-end gap-2">
+            <div className="pt-2.5 border-t border-tile-border flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded text-sm text-on-surface-variant hover:text-on-surface"
+                className="h-7 px-3 rounded text-xs text-text-muted hover:text-text-main cursor-pointer transition-colors"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm shadow"
+                className="h-7 px-4 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-xs shadow-xs cursor-pointer transition-colors"
               >
                 {t.save}
               </button>

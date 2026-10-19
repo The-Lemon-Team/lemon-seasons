@@ -159,8 +159,8 @@ export const NotesListPage: React.FC = () => {
             onClick={() => setShowFolderSidebar(!showFolderSidebar)}
             className={`h-7 px-2.5 rounded-lg font-mono text-[11px] transition-all flex items-center gap-1.5 border cursor-pointer ${
               showFolderSidebar
-                ? 'bg-primary/20 text-primary border-primary/40 font-semibold'
-                : 'bg-[#0c0e12]/80 text-on-surface-variant border-white/[0.08] hover:text-on-surface'
+                ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
+                : 'bg-control text-on-surface-variant border-control-border hover:text-on-surface hover:bg-tile-subtle'
             }`}
             title="Toggle Folder Explorer"
           >

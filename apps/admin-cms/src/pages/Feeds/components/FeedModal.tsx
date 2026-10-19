@@ -196,34 +196,35 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       destroyOnClose
       styles={{
         content: {
-          backgroundColor: '#202121',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'var(--panel-bg)',
+          border: '1px solid var(--tile-border)',
+          boxShadow: 'var(--tile-shadow)',
         },
       }}
     >
-      <div className="p-2 space-y-4 max-h-[85vh] overflow-y-auto pr-1">
-        <div className="flex items-center gap-3">
+      <div className="p-1 space-y-3 max-h-[85vh] overflow-y-auto pr-1 custom-scrollbar">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-tile-border shadow-xs"
             style={{ backgroundColor: `${color}25`, color }}
           >
-            <span className="material-symbols-outlined text-[22px]">{icon}</span>
+            <span className="material-symbols-outlined text-[18px]">{icon}</span>
           </div>
           <div>
-            <h2 className="font-sans font-bold text-lg text-on-surface">
+            <h2 className="font-sans font-bold text-base text-text-main leading-tight">
               {editingFeed ? t.editFeedTitle : t.createFeedTitle}
             </h2>
-            <p className="text-on-surface-variant text-xs">
+            <p className="text-text-muted text-xs">
               {t.feedsPageSubtitle}
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Title & Slug */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div className="space-y-1">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.feedTitleLabel} *
               </label>
               <input
@@ -231,12 +232,12 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. World of Warcraft"
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-sm focus:border-primary outline-none"
+                className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main text-xs focus:border-primary outline-none transition-colors"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.feedSlugLabel}
               </label>
               <input
@@ -244,14 +245,14 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="e.g. spark-wow"
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
+                className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Description */}
           <div className="space-y-1">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+            <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
               {t.feedDescriptionLabel}
             </label>
             <textarea
@@ -259,21 +260,21 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Краткое назначение и фокус ленты..."
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface text-sm focus:border-primary outline-none resize-none"
+              className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main text-xs focus:border-primary outline-none resize-none transition-colors"
             />
           </div>
 
           {/* Visual Identity: Icon & Accent Color */}
-          <div className="p-3 bg-surface-container-lowest rounded-lg border border-white/10 space-y-3">
+          <div className="p-2.5 bg-tile-subtle rounded-lg border border-tile-border space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <span className="font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 Айдентика ленты (Иконка & Цвет)
               </span>
             </div>
 
             {/* Quick Icon Selector */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] text-on-surface-variant block font-mono">
+            <div className="space-y-1">
+              <span className="text-[10px] text-text-muted block font-mono">
                 {t.feedIconLabel}:
               </span>
               <div className="flex flex-wrap gap-1.5 items-center">
@@ -282,13 +283,13 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                     key={ic}
                     type="button"
                     onClick={() => setIcon(ic)}
-                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
+                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${
                       icon === ic
-                        ? 'bg-primary/20 text-primary border border-primary/40 scale-105'
-                        : 'bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+                        ? 'bg-primary/20 text-primary border border-primary/40 scale-105 shadow-xs'
+                        : 'bg-control text-text-muted hover:text-text-main border border-tile-border'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">{ic}</span>
+                    <span className="material-symbols-outlined text-[16px]">{ic}</span>
                   </button>
                 ))}
                 <input
@@ -296,24 +297,24 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                   value={icon}
                   onChange={(e) => setIcon(e.target.value)}
                   placeholder="Material Symbol"
-                  className="w-28 bg-surface-container border border-white/10 rounded px-2 py-1 text-on-surface font-mono text-xs outline-none focus:border-primary"
+                  className="w-28 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs outline-none focus:border-primary"
                 />
               </div>
             </div>
 
             {/* Accent Color Palette */}
-            <div className="space-y-1.5 pt-1">
-              <span className="text-[11px] text-on-surface-variant block font-mono">
+            <div className="space-y-1 pt-0.5">
+              <span className="text-[10px] text-text-muted block font-mono">
                 {t.feedAccentColorLabel}:
               </span>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {PRESET_COLORS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`w-6 h-6 rounded-full transition-transform border ${
-                      color === c ? 'scale-125 border-white shadow' : 'border-transparent hover:scale-110'
+                    className={`w-5.5 h-5.5 rounded-full transition-transform border cursor-pointer ${
+                      color === c ? 'scale-125 border-primary shadow-xs' : 'border-tile-border hover:scale-110'
                     }`}
                     style={{ backgroundColor: c }}
                   />
@@ -323,39 +324,39 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
                   placeholder="#hex"
-                  className="w-24 bg-surface-container border border-white/10 rounded px-2 py-1 text-on-surface font-mono text-xs outline-none focus:border-primary ml-1"
+                  className="w-20 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs outline-none focus:border-primary ml-1"
                 />
               </div>
             </div>
           </div>
 
           {/* Folder Projections Configuration */}
-          <div className="p-3 bg-surface-container-lowest rounded-lg border border-white/10 space-y-2">
+          <div className="p-2.5 bg-tile-subtle rounded-lg border border-tile-border space-y-2">
             <div>
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.feedFolderPathsLabel}
               </label>
-              <p className="text-xs text-on-surface-variant/80 mt-0.5">
+              <p className="text-[11px] text-text-muted mt-0.5">
                 {t.feedFolderPathsHelp}
               </p>
             </div>
 
             {/* Selected Folder Chips */}
             {folderPaths.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 p-2 bg-surface-container rounded border border-white/5">
+              <div className="flex flex-wrap gap-1.5 p-2 bg-control rounded border border-tile-border">
                 {folderPaths.map((fp) => (
                   <span
                     key={fp}
-                    className="inline-flex items-center gap-1.5 bg-primary/15 text-primary px-2.5 py-1 rounded text-xs font-mono font-medium border border-primary/25"
+                    className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-2 py-0.5 rounded text-[11px] font-mono font-medium border border-primary/20"
                   >
-                    <span className="material-symbols-outlined text-[14px]">folder</span>
+                    <span className="material-symbols-outlined text-[13px]">folder</span>
                     {fp}
                     <button
                       type="button"
                       onClick={() => handleRemoveFolder(fp)}
-                      className="hover:text-error text-primary/70 transition-colors ml-0.5"
+                      className="hover:text-error text-primary/70 transition-colors ml-0.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[13px]">close</span>
+                      <span className="material-symbols-outlined text-[12px]">close</span>
                     </button>
                   </span>
                 ))}
@@ -363,32 +364,32 @@ export const FeedModal: React.FC<FeedModalProps> = ({
             )}
 
             {/* Folder Checkboxes List with Quick Filter */}
-            <div className="bg-surface-container rounded border border-white/5 p-2 space-y-2">
+            <div className="bg-control/50 rounded border border-tile-border p-2 space-y-1.5">
               <input
                 type="text"
                 value={folderFilterText}
                 onChange={(e) => setFolderFilterText(e.target.value)}
                 placeholder="Фильтр папок..."
-                className="w-full bg-surface-container-lowest border border-white/10 rounded px-2.5 py-1 text-on-surface text-xs outline-none focus:border-primary"
+                className="w-full bg-control border border-tile-border rounded px-2.5 py-1 text-text-main text-xs outline-none focus:border-primary transition-colors"
               />
 
-              <div className="max-h-28 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+              <div className="max-h-28 overflow-y-auto space-y-0.5 pr-1 custom-scrollbar">
                 {filteredFolders.map((path) => {
                   const isChecked = folderPaths.includes(path);
                   return (
                     <label
                       key={path}
-                      className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition-colors text-xs font-mono select-none ${
+                      className={`flex items-center gap-2 px-2 py-0.5 rounded cursor-pointer transition-colors text-xs font-mono select-none ${
                         isChecked
                           ? 'bg-primary/10 text-primary font-medium'
-                          : 'hover:bg-white/5 text-on-surface-variant'
+                          : 'hover:bg-tile-subtle text-text-muted hover:text-text-main'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleToggleFolder(path)}
-                        className="rounded bg-surface-container-lowest border-white/20 text-primary focus:ring-0"
+                        className="rounded bg-control border-tile-border text-primary focus:ring-0 w-3.5 h-3.5"
                       />
                       <span className="material-symbols-outlined text-[14px]">
                         {isChecked ? 'folder_open' : 'folder'}
@@ -413,12 +414,12 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                   }
                 }}
                 placeholder={t.feedFolderAddPlaceholder}
-                className="flex-1 bg-surface-container border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none"
+                className="flex-1 bg-control border border-tile-border rounded px-2.5 py-1 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
               />
               <button
                 type="button"
                 onClick={handleAddCustomPath}
-                className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded text-xs font-semibold border border-white/10 transition-colors"
+                className="h-7 px-3 bg-tile-subtle hover:bg-tile-muted text-text-main rounded text-xs font-semibold border border-tile-border transition-colors cursor-pointer"
               >
                 {t.addFolderBtn}
               </button>
@@ -426,32 +427,32 @@ export const FeedModal: React.FC<FeedModalProps> = ({
           </div>
 
           {/* Hashtags Filter Configuration (Smart View) */}
-          <div className="p-3 bg-surface-container-lowest rounded-lg border border-white/10 space-y-2">
+          <div className="p-2.5 bg-tile-subtle rounded-lg border border-tile-border space-y-2">
             <div>
-              <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
+              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.feedHashtagsLabel}
               </label>
-              <p className="text-xs text-on-surface-variant/80 mt-0.5">
+              <p className="text-[11px] text-text-muted mt-0.5">
                 {t.feedHashtagsHelp}
               </p>
             </div>
 
             {/* Selected Hashtag Chips */}
             {hashtags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 p-2 bg-surface-container rounded border border-white/5">
+              <div className="flex flex-wrap gap-1.5 p-2 bg-control rounded border border-tile-border">
                 {hashtags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 bg-tertiary/15 text-tertiary px-2.5 py-1 rounded text-xs font-mono font-medium border border-tertiary/25"
+                    className="inline-flex items-center gap-1 bg-tertiary/15 text-tertiary px-2 py-0.5 rounded text-[11px] font-mono font-medium border border-tertiary/25"
                   >
                     <span>#</span>
                     {tag}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-error text-tertiary/70 transition-colors ml-0.5"
+                      className="hover:text-error text-tertiary/70 transition-colors ml-0.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[13px]">close</span>
+                      <span className="material-symbols-outlined text-[12px]">close</span>
                     </button>
                   </span>
                 ))}
@@ -471,12 +472,12 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                   }
                 }}
                 placeholder={t.feedHashtagsPlaceholder}
-                className="flex-1 bg-surface-container border border-white/10 rounded px-3 py-1.5 text-on-surface font-mono text-xs focus:border-primary outline-none"
+                className="flex-1 bg-control border border-tile-border rounded px-2.5 py-1 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded text-xs font-semibold border border-white/10 transition-colors"
+                className="h-7 px-3 bg-tile-subtle hover:bg-tile-muted text-text-main rounded text-xs font-semibold border border-tile-border transition-colors cursor-pointer"
               >
                 + Тег
               </button>
@@ -484,8 +485,8 @@ export const FeedModal: React.FC<FeedModalProps> = ({
 
             {/* Suggestions from existing tags */}
             {existingHashtags.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                <span className="text-[10px] text-outline font-mono">Частые:</span>
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[10px] text-text-muted font-mono">Частые:</span>
                 {existingHashtags.slice(0, 6).map((h) => {
                   const isChecked = hashtags.includes(h.name.toLowerCase());
                   if (isChecked) return null;
@@ -494,7 +495,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
                       key={h.id}
                       type="button"
                       onClick={() => setHashtags((prev) => [...prev, h.name.toLowerCase()])}
-                      className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container hover:bg-white/10 text-on-surface-variant transition-colors"
+                      className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-control hover:bg-tile-muted text-text-muted hover:text-text-main border border-tile-border transition-colors cursor-pointer"
                     >
                       +{h.name}
                     </button>
@@ -505,18 +506,18 @@ export const FeedModal: React.FC<FeedModalProps> = ({
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="pt-3 border-t border-white/5 flex justify-end gap-2">
+          <div className="pt-2.5 border-t border-tile-border flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded text-sm text-on-surface-variant hover:text-on-surface"
+              className="h-7 px-3 rounded text-xs text-text-muted hover:text-text-main cursor-pointer transition-colors"
             >
               {t.cancel}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-sm shadow transition-all"
+              className="h-7 px-4 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-xs shadow-xs transition-all cursor-pointer"
             >
               {editingFeed ? t.save : t.createFeedBtn}
             </button>

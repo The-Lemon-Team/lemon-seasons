@@ -145,7 +145,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={780}
+      width={720}
       zIndex={1100}
       centered
       destroyOnClose
@@ -153,27 +153,27 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       styles={{
         content: {
           padding: 0,
-          backgroundColor: '#292a2a',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0px 10px 40px rgba(0,0,0,0.6)',
+          backgroundColor: 'var(--panel-bg)',
+          border: '1px solid var(--tile-border)',
+          boxShadow: 'var(--tile-shadow)',
           overflow: 'hidden',
-          borderRadius: 16,
+          borderRadius: 12,
         },
       }}
     >
       {isLoading ? (
-        <div className="py-24 flex flex-col items-center justify-center gap-3">
+        <div className="py-20 flex flex-col items-center justify-center gap-2.5">
           <Spin size="large" />
-          <span className="font-mono text-xs text-on-surface-variant">
+          <span className="font-mono text-xs text-text-muted">
             {t.loading}...
           </span>
         </div>
       ) : !note ? (
-        <div className="p-8 text-center space-y-3">
-          <p className="text-on-surface-variant font-mono text-sm">{t.noteNotFound}</p>
+        <div className="p-6 text-center space-y-2.5">
+          <p className="text-text-muted font-mono text-sm">{t.noteNotFound}</p>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded bg-surface-container-high text-on-surface text-xs font-mono border border-white/10"
+            className="h-7 px-3 rounded bg-tile-subtle text-text-main text-xs font-mono border border-tile-border hover:bg-tile-muted cursor-pointer"
           >
             {t.close}
           </button>
@@ -181,8 +181,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col max-h-[85vh]">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-white/5 bg-surface-container-highest/60 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
+          <div className="px-5 py-3 border-b border-tile-border bg-tile-subtle flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <span className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-sm font-bold">
                 ✏️
               </span>
@@ -402,8 +402,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 py-4 border-t border-white/5 bg-surface-container-highest/60 flex items-center justify-between">
-            <span className="text-[11px] font-mono text-on-surface-variant">
+          <div className="px-5 py-2.5 border-t border-tile-border bg-tile-subtle flex items-center justify-between">
+            <span className="text-[11px] font-mono text-text-muted">
               ID: {note.id}
             </span>
 
@@ -411,14 +411,14 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-surface-container-high border border-white/10 text-on-surface text-xs font-mono hover:border-white/20 transition-colors"
+                className="h-7 px-3 rounded bg-tile-subtle border border-tile-border text-text-muted hover:text-text-main hover:bg-tile-muted text-xs font-mono transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !title.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 h-7 px-4 rounded bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary-fixed-dim transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <Check className="w-4 h-4" />
                 <span>{isSubmitting ? t.loading : t.save}</span>

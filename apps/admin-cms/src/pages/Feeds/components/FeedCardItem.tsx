@@ -29,7 +29,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
 
   return (
     <article
-      className={`bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3.5 flex flex-col justify-between hover:bg-white/5 transition-all duration-200 relative hover-actions-group group hover:border-white/10 shadow-xs ${
+      className={`platform-tile platform-tile-hover p-3 flex flex-col justify-between relative hover-actions-group group ${
         isDeleted ? 'opacity-50 border-error/30' : ''
       }`}
       style={{
@@ -42,7 +42,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             <div
-              className="w-6 h-6 rounded flex items-center justify-center shrink-0 border border-white/10"
+              className="w-6 h-6 rounded flex items-center justify-center shrink-0 border border-tile-border"
               style={{
                 backgroundColor: `${accentColor}18`,
                 color: accentColor,
@@ -63,12 +63,12 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
           </div>
 
           {/* Hover Actions Bar */}
-          <div className="actions-container flex gap-1 bg-surface-container-high rounded border border-white/10 p-0.5 shadow-lg">
+          <div className="actions-container flex gap-1 bg-panel rounded-lg border border-tile-border p-0.5 shadow-md">
             {!isDeleted ? (
               <>
                 <button
                   onClick={() => onEdit(feed)}
-                  className="p-1 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-white/5"
+                  className="p-1 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-tile-subtle cursor-pointer"
                   title={t.edit}
                 >
                   <span className="material-symbols-outlined text-[15px]">edit</span>
@@ -81,7 +81,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
                   okButtonProps={{ danger: true }}
                 >
                   <button
-                    className="p-1 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-white/5"
+                    className="p-1 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-tile-subtle cursor-pointer"
                     title={t.delete}
                   >
                     <span className="material-symbols-outlined text-[15px]">delete</span>
@@ -91,7 +91,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
             ) : (
               <button
                 onClick={() => onRestore(feed.id)}
-                className="p-1 text-tertiary hover:text-primary transition-colors rounded hover:bg-white/5"
+                className="p-1 text-tertiary hover:text-primary transition-colors rounded hover:bg-tile-subtle cursor-pointer"
                 title="Restore"
               >
                 <span className="material-symbols-outlined text-[15px]">restore</span>
@@ -104,7 +104,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
         <div className="mb-2">
           <h3
             onClick={() => onNavigateNotes(feed.id)}
-            className="font-sans font-bold text-sm text-on-surface hover:text-primary transition-colors cursor-pointer mb-1 leading-snug"
+            className="font-sans font-bold text-xs text-on-surface hover:text-primary transition-colors cursor-pointer mb-1 leading-snug"
           >
             {feed.title}
           </h3>
@@ -123,7 +123,7 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
               {folderPaths.map((fp) => (
                 <span
                   key={fp}
-                  className="inline-flex items-center gap-1 bg-[#0c0e12]/60 px-1.5 py-0.5 rounded text-[10px] font-mono text-secondary border border-secondary/20"
+                  className="inline-flex items-center gap-1 bg-tile-subtle px-1.5 py-0.5 rounded text-[10px] font-mono text-secondary border border-secondary/20"
                 >
                   <span className="material-symbols-outlined text-[12px]">folder_open</span>
                   {fp}
@@ -158,16 +158,16 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
       </div>
 
       {/* Bottom Metadata & Notes Link */}
-      <div className="pt-2 border-t border-white/5 flex items-center justify-between font-mono text-[11px] text-on-surface-variant mt-1.5">
+      <div className="pt-2 border-t border-tile-border flex items-center justify-between font-mono text-[10px] text-on-surface-variant mt-1.5">
         <button
           onClick={() => onNavigateNotes(feed.id)}
-          className="inline-flex items-center gap-1.5 text-secondary hover:text-primary transition-colors"
+          className="inline-flex items-center gap-1.5 text-secondary hover:text-primary transition-colors cursor-pointer"
         >
           <span className="material-symbols-outlined text-[14px]">description</span>
           {t.notesCountBadge(noteCount)}
         </button>
 
-        <span className="text-[11px] text-outline">
+        <span className="text-[10px] text-outline">
           {new Date(feed.createdAt).toLocaleDateString()}
         </span>
       </div>

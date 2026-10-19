@@ -148,52 +148,52 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={780}
+      width={720}
       centered
       destroyOnClose
       closable={false}
       styles={{
         content: {
           padding: 0,
-          backgroundColor: '#292a2a',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0px 10px 40px rgba(0,0,0,0.6)',
+          backgroundColor: 'var(--panel-bg)',
+          border: '1px solid var(--tile-border)',
+          boxShadow: 'var(--tile-shadow)',
           overflow: 'hidden',
-          borderRadius: 16,
+          borderRadius: 12,
         },
       }}
     >
       {isLoading ? (
-        <div className="relative py-24 flex flex-col items-center justify-center gap-3">
+        <div className="relative py-20 flex flex-col items-center justify-center gap-2.5">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+            className="absolute top-3 right-3 p-1 rounded text-text-muted hover:text-text-main hover:bg-tile-subtle transition-colors cursor-pointer"
             title={t.close}
             aria-label={t.close}
           >
             <X className="w-4 h-4" />
           </button>
           <Spin size="large" />
-          <span className="font-mono text-xs text-on-surface-variant">
+          <span className="font-mono text-xs text-text-muted">
             {t.loading}...
           </span>
         </div>
       ) : !note ? (
-        <div className="relative p-8 text-center space-y-3">
+        <div className="relative p-6 text-center space-y-2.5">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+            className="absolute top-3 right-3 p-1 rounded text-text-muted hover:text-text-main hover:bg-tile-subtle transition-colors cursor-pointer"
             title={t.close}
             aria-label={t.close}
           >
             <X className="w-4 h-4" />
           </button>
-          <p className="text-on-surface-variant font-mono text-sm">{t.noteNotFound}</p>
+          <p className="text-text-muted font-mono text-sm">{t.noteNotFound}</p>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded bg-surface-container-high text-on-surface text-xs font-mono border border-white/10 hover:border-white/20"
+            className="h-7 px-3 rounded bg-tile-subtle text-text-main text-xs font-mono border border-tile-border hover:bg-tile-muted cursor-pointer"
           >
             {t.close}
           </button>
@@ -201,12 +201,12 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
       ) : (
         <div className="flex flex-col max-h-[85vh]">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-white/5 bg-surface-container-highest/60 flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-2">
+          <div className="px-5 py-3 border-b border-tile-border bg-tile-subtle flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <NoteTypeBadge type={note.type} size="sm" />
                 {note.status && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-white/5 border border-white/10 text-on-surface-variant font-medium">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-control border border-tile-border text-text-muted font-medium">
                     {note.status}
                   </span>
                 )}
@@ -217,7 +217,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                   </span>
                 )}
                 {note.curator && note.curator !== 'auto' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-sky-500/10 border border-sky-500/30 text-sky-500 dark:text-sky-300">
                     <span>👤</span>
                     <span>{note.curator}</span>
                   </span>
@@ -270,7 +270,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+                className="p-1 rounded text-text-muted hover:text-text-main hover:bg-tile-subtle transition-colors cursor-pointer"
                 title={t.close}
                 aria-label={t.close}
               >
@@ -280,14 +280,14 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           </div>
 
           {/* Metadata Sub-Bar */}
-          <div className="px-6 py-2.5 border-b border-white/5 bg-surface-container-high/40 flex items-center gap-4 text-xs font-mono text-on-surface-variant flex-wrap">
+          <div className="px-5 py-2 border-b border-tile-border bg-control/40 flex items-center gap-3 text-xs font-mono text-text-muted flex-wrap">
             {/* Dates */}
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-primary" />
               <span>{formattedStartDate}</span>
               {formattedEndDate && (
                 <>
-                  <span className="text-white/30">→</span>
+                  <span className="text-text-muted/50">→</span>
                   <span>{formattedEndDate}</span>
                 </>
               )}
@@ -303,14 +303,14 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                     onSelectFolder(primaryFolder.folder!.path);
                   }
                 }}
-                className="inline-flex items-center gap-1 text-primary hover:underline"
+                className="inline-flex items-center gap-1 text-primary hover:underline cursor-pointer"
                 title={primaryFolder.folder.path}
               >
                 <FolderIcon className="w-3.5 h-3.5" />
                 <span className="truncate max-w-[200px]">{primaryFolder.folder.path}</span>
               </button>
             ) : (
-              <span className="inline-flex items-center gap-1 text-outline/60">
+              <span className="inline-flex items-center gap-1 text-text-muted/60">
                 <FolderIcon className="w-3.5 h-3.5" />
                 <span>Unfiled (Root)</span>
               </span>
@@ -332,7 +332,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 custom-scrollbar">
             {/* Summary Callout (if available) */}
             {note.summary && (
               <div className="bg-primary/10 border-l-4 border-primary rounded-r-lg p-3.5 space-y-1">
@@ -480,18 +480,18 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 
             {/* Obsidian File Path / Technical Meta */}
             {note.filePath && (
-              <div className="p-2.5 rounded bg-surface-container-lowest border border-white/5 text-[11px] font-mono text-on-surface-variant flex items-center justify-between gap-2">
+              <div className="p-2 rounded bg-control border border-tile-border text-[11px] font-mono text-text-muted flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 truncate">
                   <FileCode className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span className="truncate">{note.filePath}</span>
                 </span>
-                <span className="text-[10px] text-outline shrink-0">Obsidian Vault</span>
+                <span className="text-[10px] text-text-muted/60 shrink-0">Obsidian Vault</span>
               </div>
             )}
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 py-3 border-t border-white/5 bg-surface-container-highest/50 flex items-center justify-between gap-3">
+          <div className="px-5 py-2.5 border-t border-tile-border bg-tile-subtle flex items-center justify-between gap-2.5">
             <Popconfirm
               title={t.confirmDeleteNote}
               onConfirm={handleDelete}
@@ -501,7 +501,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
             >
               <button
                 type="button"
-                className="px-3 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/40 font-mono text-xs flex items-center gap-1.5 transition-colors"
+                className="h-7 px-2.5 rounded text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{t.delete}</span>
@@ -512,7 +512,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface text-xs font-mono border border-white/10 transition-colors"
+                className="h-7 px-3 rounded bg-tile-subtle hover:bg-tile-muted text-text-muted hover:text-text-main text-xs font-mono border border-tile-border transition-colors cursor-pointer"
               >
                 {t.close}
               </button>
@@ -524,7 +524,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                   if (onEdit) onEdit(note.id);
                   else navigate(`/notes/${note.id}`);
                 }}
-                className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface text-xs font-mono border border-white/10 transition-colors flex items-center gap-1.5"
+                className="h-7 px-2.5 rounded bg-tile-subtle hover:bg-tile-muted text-text-muted hover:text-text-main text-xs font-mono border border-tile-border transition-colors flex items-center gap-1 cursor-pointer"
                 title="Перейти на отдельную страницу редактора"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -534,7 +534,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditOpen(true)}
-                className="px-4 py-1.5 rounded-lg bg-primary text-on-primary hover:brightness-110 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                className="h-7 px-3 rounded bg-primary text-on-primary hover:bg-primary-fixed-dim text-xs font-mono font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>{t.edit}</span>

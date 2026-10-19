@@ -124,27 +124,27 @@ export const FeedsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <label className="flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant cursor-pointer">
+          <label className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted hover:text-text-main cursor-pointer transition-colors">
             <input
               type="checkbox"
               checked={includeDeleted}
               onChange={(e) => setIncludeDeleted(e.target.checked)}
-              className="rounded bg-surface-container border-white/20 text-primary focus:ring-0"
+              className="rounded bg-control border-tile-border text-primary focus:ring-0 w-3.5 h-3.5"
             />
             <span>{t.status}: Deleted</span>
           </label>
           <button
             onClick={() => openCreateModal()}
-            className="h-7.5 px-3 bg-primary text-on-primary hover:bg-primary-fixed rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 shadow cursor-pointer"
+            className="h-6.5 px-2.5 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded text-[11px] font-semibold transition-all flex items-center gap-1 shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span className="material-symbols-outlined text-[15px]">add</span>
             <span>{t.createFeedBtn}</span>
           </button>
         </div>
       </div>
 
       {/* Toolbar: Search & View Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-surface-container-high/40 p-2 rounded-xl border border-white/[0.08]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 platform-tile p-2">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[16px] pointer-events-none">
@@ -155,12 +155,12 @@ export const FeedsPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchFeedsPlaceholder}
-            className="w-full bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg pl-8 pr-7 h-7 text-on-surface text-[11px] font-mono placeholder:text-on-surface-variant/50 outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+            className="w-full bg-control border border-control-border rounded-lg pl-8 pr-7 h-7 text-on-surface text-[11px] font-mono placeholder:text-on-surface-variant/50 outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-on-surface"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-on-surface cursor-pointer"
             >
               <span className="material-symbols-outlined text-[13px]">close</span>
             </button>
@@ -168,14 +168,14 @@ export const FeedsPage: React.FC = () => {
         </div>
 
         {/* View Mode Toggle: Tree vs Cards */}
-        <div className="flex items-center gap-1 bg-[#0c0e12]/80 p-0.5 rounded-lg border border-white/[0.08] self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-control p-0.5 rounded-lg border border-control-border self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setViewMode('tree')}
             className={`flex items-center gap-1.5 px-2.5 h-6 rounded-md text-[11px] font-mono font-medium transition-colors cursor-pointer ${
               viewMode === 'tree'
-                ? 'bg-primary/20 text-primary border border-primary/30 font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+                ? 'bg-primary text-on-primary font-semibold shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-tile-subtle'
             }`}
           >
             <span className="material-symbols-outlined text-[15px]">account_tree</span>
@@ -186,8 +186,8 @@ export const FeedsPage: React.FC = () => {
             onClick={() => setViewMode('cards')}
             className={`flex items-center gap-1.5 px-2.5 h-6 rounded-md text-[11px] font-mono font-medium transition-colors cursor-pointer ${
               viewMode === 'cards'
-                ? 'bg-primary/20 text-primary border border-primary/30 font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+                ? 'bg-primary text-on-primary font-semibold shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-tile-subtle'
             }`}
           >
             <span className="material-symbols-outlined text-[15px]">grid_view</span>
@@ -225,19 +225,19 @@ export const FeedsPage: React.FC = () => {
 
       {/* Empty State */}
       {hasNoResults && !isLoading && (
-        <div className="bg-surface-container rounded-xl border border-white/5 p-12 text-center">
-          <span className="material-symbols-outlined text-4xl text-outline mb-2">
+        <div className="platform-tile p-8 text-center">
+          <span className="material-symbols-outlined text-3xl text-text-muted/60 mb-2">
             dynamic_feed
           </span>
-          <h3 className="font-semibold text-on-surface text-base">{t.noFeedsFound}</h3>
-          <p className="text-on-surface-variant text-xs mt-1 mb-4">
+          <h3 className="font-semibold text-text-main text-sm">{t.noFeedsFound}</h3>
+          <p className="text-text-muted text-xs mt-1 mb-3">
             {searchQuery
               ? `По запросу «${searchQuery}» ничего не найдено`
               : t.feedsPageSubtitle}
           </p>
           <button
             onClick={() => openCreateModal()}
-            className="px-4 py-2 bg-primary text-on-primary rounded font-semibold text-sm shadow hover:bg-primary-fixed-dim transition-all"
+            className="h-6.5 px-3 bg-primary text-on-primary rounded font-semibold text-[11px] shadow-xs hover:bg-primary-fixed-dim transition-all cursor-pointer"
           >
             {t.createFeedBtn}
           </button>

@@ -123,28 +123,28 @@ export const AiCoverStudioModal: React.FC<AiCoverStudioModalProps> = ({
         styles={{
           content: {
             padding: 0,
-            backgroundColor: '#1e2022',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0px 20px 60px rgba(0,0,0,0.7)',
+            backgroundColor: 'var(--panel-bg)',
+            border: '1px solid var(--tile-border)',
+            boxShadow: 'var(--tile-shadow)',
             overflow: 'hidden',
-            borderRadius: 16,
+            borderRadius: 12,
           },
         }}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/5 bg-surface-container-highest/60 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center border border-primary/30">
-              <Sparkles className="w-4 h-4" />
+        <div className="px-5 py-3 border-b border-tile-border bg-tile-subtle flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center border border-primary/25">
+              <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <h2 className="text-sm font-bold text-text-main flex items-center gap-1.5">
                 AI Cover Studio
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
                   Gemini + Imagen 3
                 </span>
               </h2>
-              <p className="text-[11px] font-mono text-on-surface-variant">
+              <p className="text-[11px] font-mono text-text-muted">
                 Генерация нескольких вариантов обложки для выбора лучшего
               </p>
             </div>

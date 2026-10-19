@@ -261,13 +261,13 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
 
   return (
     <div
-      className={`bg-surface-container-low border border-white/5 rounded-lg flex flex-col h-full overflow-hidden ${className}`}
+      className={`platform-tile flex flex-col h-full overflow-hidden ${className}`}
     >
       {/* Header */}
-      <div className="p-3 border-b border-white/5 bg-surface-container-high/40">
+      <div className="p-2.5 border-b border-tile-border bg-tile">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <FolderGit2 className="w-[18px] h-[18px] text-primary shrink-0" />
+          <div className="flex items-center gap-1.5">
+            <FolderGit2 className="w-4 h-4 text-primary shrink-0" />
             <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
               {t.vaultFoldersMetric}
             </span>
@@ -277,7 +277,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <button
               type="button"
               onClick={expandAll}
-              className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-tile-subtle text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
               title="Expand all"
             >
               <ChevronsUpDown className="w-3.5 h-3.5" />
@@ -285,7 +285,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <button
               type="button"
               onClick={collapseAll}
-              className="p-1 rounded hover:bg-white/5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-tile-subtle text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
               title="Collapse all"
             >
               <ChevronsDownUp className="w-3.5 h-3.5" />
@@ -309,7 +309,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.selectFolderPlaceholder}
-            className="w-full bg-surface-container-lowest border border-white/10 rounded pl-7 pr-6 py-1 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary outline-none"
+            className="w-full bg-control border border-control-border rounded pl-7 pr-6 py-1 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary outline-none"
           />
           {searchQuery && (
             <button
@@ -324,21 +324,21 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       </div>
 
       {/* Root Standard Views (All Notes & Unfiled) */}
-      <div className="p-2 border-b border-white/5 space-y-0.5 bg-surface-container/30">
+      <div className="p-2 border-b border-tile-border space-y-0.5 bg-tile-subtle">
         {/* All Notes Entry */}
         <div
           onClick={() => onSelectFolder(undefined)}
           className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-all cursor-pointer ${
             !selectedFolder && !isUnfiledSelected
-              ? 'bg-primary/20 text-primary font-semibold border-l-2 border-primary'
-              : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+              ? 'bg-primary text-on-primary font-semibold shadow-xs'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-tile'
           }`}
         >
           <div className="flex items-center gap-2">
-            <Files className="w-4 h-4 shrink-0" />
-            <span className="font-sans text-[12px]">{t.allNotes}</span>
+            <Files className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-sans text-[11px]">{t.allNotes}</span>
           </div>
-          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant/80">
+          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-tile text-on-surface-variant/80 border border-tile-border">
             {totalNotesCount}
           </span>
         </div>
@@ -348,22 +348,22 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           onClick={onSelectUnfiled}
           className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-all cursor-pointer ${
             isUnfiledSelected
-              ? 'bg-primary/20 text-primary font-semibold border-l-2 border-primary'
-              : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+              ? 'bg-primary text-on-primary font-semibold shadow-xs'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-tile'
           }`}
         >
           <div className="flex items-center gap-2">
-            <FileQuestion className="w-4 h-4 text-outline/70 shrink-0" />
-            <span className="font-sans text-[12px]">Unfiled (Root)</span>
+            <FileQuestion className="w-3.5 h-3.5 text-outline/70 shrink-0" />
+            <span className="font-sans text-[11px]">Unfiled (Root)</span>
           </div>
-          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant/80">
+          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-tile text-on-surface-variant/80 border border-tile-border">
             {unfiledNotesCount}
           </span>
         </div>
       </div>
 
       {/* Folders Tree List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
         {isLoading ? (
           <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60">
             {t.loading}
@@ -378,12 +378,12 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       </div>
 
       {/* Obsidian Vault Status in Explorer Footer */}
-      <div className="p-2.5 border-t border-white/5 bg-surface-container-high/30 flex items-center justify-between text-[11px] font-mono text-on-surface-variant/70">
+      <div className="p-2 border-t border-tile-border bg-tile-subtle flex items-center justify-between text-[10px] font-mono text-on-surface-variant/70">
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Obsidian Vault
         </span>
-        <span>{tree.length}</span>
+        <span>{tree.length} папок</span>
       </div>
 
       {/* Create Folder Modal */}

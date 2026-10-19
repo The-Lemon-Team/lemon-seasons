@@ -115,28 +115,28 @@ export function AppSelect<T extends string = string>({
     switch (variant) {
       case 'emerald':
         return isOpen
-          ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-[#0c0e12] text-emerald-300'
-          : 'border-emerald-500/30 hover:border-emerald-500/60 bg-[#0c0e12]/80 text-emerald-400 font-semibold';
+          ? 'border-emerald-500 ring-1 ring-emerald-500/30 bg-control text-emerald-600 dark:text-emerald-300'
+          : 'border-emerald-500/30 hover:border-emerald-500/60 bg-control text-emerald-600 dark:text-emerald-400 font-semibold';
       case 'amber':
         return isOpen
-          ? 'border-amber-400 ring-1 ring-amber-400/40 bg-[#0c0e12] text-amber-300'
-          : 'border-amber-500/30 hover:border-amber-500/60 bg-[#0c0e12]/80 text-amber-400 font-semibold';
+          ? 'border-amber-500 ring-1 ring-amber-500/30 bg-control text-amber-600 dark:text-amber-300'
+          : 'border-amber-500/30 hover:border-amber-500/60 bg-control text-amber-600 dark:text-amber-400 font-semibold';
       case 'muted':
         return isOpen
-          ? 'border-white/30 ring-1 ring-white/20 bg-[#0c0e12] text-neutral-300'
-          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-neutral-400';
+          ? 'border-tile-border ring-1 ring-primary/20 bg-control text-on-surface'
+          : 'border-control-border hover:border-tile-border bg-control text-on-surface-variant';
       case 'default':
       default:
         return isOpen
-          ? 'border-primary/60 ring-1 ring-primary/40 bg-[#0c0e12] text-on-surface shadow-xs'
-          : 'border-white/[0.08] hover:border-white/20 bg-[#0c0e12]/80 text-on-surface';
+          ? 'border-primary ring-1 ring-primary/30 bg-control text-on-surface shadow-xs'
+          : 'border-control-border hover:border-tile-border bg-control text-on-surface';
     }
   };
 
   const getChevronColor = () => {
-    if (variant === 'emerald') return 'text-emerald-400';
-    if (variant === 'amber') return 'text-amber-400';
-    if (variant === 'muted') return 'text-neutral-400';
+    if (variant === 'emerald') return 'text-emerald-500 dark:text-emerald-400';
+    if (variant === 'amber') return 'text-amber-500 dark:text-amber-400';
+    if (variant === 'muted') return 'text-on-surface-variant';
     return isOpen ? 'text-primary' : 'text-on-surface-variant/70';
   };
 
@@ -155,7 +155,7 @@ export function AppSelect<T extends string = string>({
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
         className={`w-full flex items-center justify-between gap-1.5 border font-mono text-left cursor-pointer outline-none transition-all ${
-          isSmall ? 'h-7 px-2.5 text-[11px] rounded-lg' : 'h-8 px-3 text-xs rounded-lg'
+          isSmall ? 'h-6.5 px-2 text-[11px] rounded-lg' : 'h-7.5 px-2.5 text-xs rounded-lg'
         } ${getVariantStyles()} ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${triggerClassName}`}
@@ -178,7 +178,7 @@ export function AppSelect<T extends string = string>({
 
         <ChevronDown
           className={`shrink-0 transition-transform duration-200 ${
-            isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'
+            isSmall ? 'w-3 h-3' : 'w-3.5 h-3.5'
           } ${getChevronColor()} ${
             isOpen ? 'rotate-180' : ''
           }`}
@@ -188,9 +188,9 @@ export function AppSelect<T extends string = string>({
       {isOpen && (
         <div
           style={{ maxHeight: `${maxHeight}px` }}
-          className={`absolute z-50 left-0 bg-[#14161a] border border-white/10 shadow-2xl overflow-hidden overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${
+          className={`absolute z-50 left-0 bg-panel border border-tile-border shadow-tile-hover overflow-hidden overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${
             isSmall
-              ? 'min-w-[190px] p-1 rounded-lg text-[11px]'
+              ? 'min-w-[180px] p-1 rounded-lg text-[11px]'
               : 'min-w-[200px] p-1 rounded-lg text-xs'
           } ${
             openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
@@ -209,14 +209,14 @@ export function AppSelect<T extends string = string>({
                   }}
                   className={`flex items-center justify-between transition-colors ${
                     isSmall
-                      ? 'gap-1.5 px-2 py-1 rounded text-[11px]'
-                      : 'gap-2 px-2.5 py-1.5 rounded-md text-xs'
+                      ? 'gap-1 px-1.5 py-1 rounded text-[11px]'
+                      : 'gap-2 px-2 py-1.5 rounded-md text-xs'
                   } font-mono ${
                     opt.disabled
                       ? 'opacity-40 cursor-not-allowed text-on-surface-variant'
                       : isSelected
-                      ? 'bg-primary/15 text-primary font-semibold cursor-pointer'
-                      : 'text-on-surface hover:bg-white/5 cursor-pointer'
+                      ? 'bg-primary/10 text-primary font-semibold cursor-pointer'
+                      : 'text-on-surface hover:bg-tile-subtle cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">

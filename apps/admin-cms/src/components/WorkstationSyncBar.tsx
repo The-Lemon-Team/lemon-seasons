@@ -117,7 +117,7 @@ export const WorkstationSyncBar: React.FC = () => {
   return (
     <div className="relative flex items-center">
       {/* Control Pill */}
-      <div className="h-7 flex items-center gap-1 bg-[#0c0e12]/80 hover:bg-[#0c0e12] border border-white/[0.08] rounded-lg p-0.5 text-xs transition-colors">
+      <div className="h-6.5 flex items-center gap-1 bg-control border border-control-border rounded-lg p-0.5 text-[10px] font-mono transition-colors shadow-xs">
         {/* GDrive Connection & Popover Trigger */}
         <Tooltip
           title={
@@ -130,25 +130,25 @@ export const WorkstationSyncBar: React.FC = () => {
         >
           <button
             onClick={handleOpenPopover}
-            className="h-6 flex items-center gap-1.5 px-2 rounded hover:bg-white/5 transition-colors cursor-pointer text-left"
+            className="h-5.5 flex items-center gap-1.5 px-2 rounded hover:bg-tile-subtle transition-colors cursor-pointer text-left"
           >
             <span className="relative flex h-2 w-2">
               {isPending ? (
                 <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9cd58] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9cd58]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </>
               ) : (
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22c55e]"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               )}
             </span>
 
-            <span className="font-mono text-[11px] text-[#e2e2e2] font-semibold">GDrive</span>
+            <span className="font-mono text-[10px] text-on-surface font-semibold">GDrive</span>
 
             {/* Unread / Incoming updates badge */}
             {unreadCount > 0 && (
               <span
-                className="bg-[#22c55e]/20 text-[#86efac] border border-[#22c55e]/40 font-mono text-[9px] px-1.5 py-0.2 rounded-full font-bold animate-pulse"
+                className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono text-[9px] px-1.5 py-0.2 rounded-full font-bold animate-pulse"
                 title={`Новых файлов с Google Drive: ${unreadCount}`}
               >
                 +{unreadCount}
@@ -158,7 +158,7 @@ export const WorkstationSyncBar: React.FC = () => {
             {/* Unpushed commits badge */}
             {unpushedCount > 0 && (
               <span
-                className="bg-amber-500/20 text-amber-400 font-mono text-[10px] px-1.5 py-0.2 rounded font-semibold"
+                className="bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono text-[9px] px-1.5 py-0.2 rounded font-semibold"
                 title={`Ожидает выгрузки: ${unpushedCount}`}
               >
                 ↑{unpushedCount}
@@ -167,13 +167,13 @@ export const WorkstationSyncBar: React.FC = () => {
           </button>
         </Tooltip>
 
-        <div className="h-3.5 w-[1px] bg-white/[0.08] mx-0.5" />
+        <div className="h-3.5 w-[1px] bg-control-border mx-0.5" />
 
-        {/* Sync Button (matches yellow button in screenshot) */}
+        {/* Sync Button */}
         <button
           onClick={() => syncMutation.mutate()}
           disabled={isPending}
-          className="h-6 flex items-center gap-1.5 px-2.5 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] transition-all font-mono font-semibold text-[11px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shadow-xs"
+          className="h-5.5 flex items-center gap-1 px-2 rounded bg-primary text-on-primary hover:bg-primary-hover transition-all font-mono font-semibold text-[10px] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed shadow-xs"
           title="Синхронизировать данные с Google Drive"
         >
           <RefreshCw

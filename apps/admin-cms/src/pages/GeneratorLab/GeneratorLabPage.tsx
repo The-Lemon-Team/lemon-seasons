@@ -315,23 +315,23 @@ export const GeneratorLabPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Status pills */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5 h-7 rounded-lg bg-black/40 border border-white/10 text-[11px] font-mono">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 h-6.5 rounded-lg bg-control border border-tile-border text-[11px] font-mono shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-on-surface-variant">Gemini 2.5:</span>
+              <span className="text-text-muted">Gemini 2.5:</span>
               <span className="text-primary font-bold">ACTIVE</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-2 py-0.5 h-7 rounded-lg bg-black/40 border border-white/10 text-[11px] font-mono">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 h-6.5 rounded-lg bg-control border border-tile-border text-[11px] font-mono shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              <span className="text-on-surface-variant">TMDB v3:</span>
-              <span className="text-sky-300 font-bold">READY</span>
+              <span className="text-text-muted">TMDB v3:</span>
+              <span className="text-sky-500 dark:text-sky-300 font-bold">READY</span>
             </div>
 
             <Button
               type="primary"
               loading={isSyncingAll}
               onClick={handleSyncAllFeeds}
-              className="h-7 bg-primary hover:bg-primary-hover text-on-primary font-sans text-xs font-semibold flex items-center gap-1.5 px-2.5 rounded-lg shadow-sm"
+              className="h-6.5 bg-primary hover:bg-primary-hover text-on-primary font-sans text-xs font-semibold flex items-center gap-1.5 px-2.5 rounded-lg shadow-xs"
             >
               <span className="material-symbols-outlined text-[15px]">sync</span>
               Синхронизировать фиды
@@ -341,7 +341,7 @@ export const GeneratorLabPage: React.FC = () => {
       </div>
 
       {/* Main Tabs Container */}
-      <div className="bg-surface-container rounded-xl border border-white/5 p-3 sm:p-4 shadow-sm">
+      <div className="platform-tile p-3 sm:p-4">
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setSearchParams({ tab: key })}
@@ -585,30 +585,30 @@ export const GeneratorLabPage: React.FC = () => {
                       <Spin size="large" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {moviesList.map((m, idx) => (
                         <div
                           key={idx}
-                          className="rounded-lg border border-white/10 bg-surface-container-low hover:border-primary/50 transition-all p-4 flex flex-col justify-between space-y-3 group"
+                          className="platform-tile platform-tile-hover p-3 flex flex-col justify-between space-y-2.5 group"
                         >
-                          <div className="flex gap-3">
+                          <div className="flex gap-2.5">
                             <img
                               src={m.posterUrl}
                               alt={m.title}
-                              className="w-20 h-28 object-cover rounded shadow border border-white/10 flex-shrink-0"
+                              className="w-16 h-24 object-cover rounded shadow-xs border border-tile-border flex-shrink-0"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-1">
-                                <h3 className="font-bold text-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                                <h3 className="font-bold text-xs text-text-main truncate group-hover:text-primary transition-colors">
                                   {m.title}
                                 </h3>
                               </div>
                               {m.originalTitle && (
-                                <p className="text-[11px] text-on-surface-variant font-mono truncate">
+                                <p className="text-[10px] text-text-muted font-mono truncate">
                                   {m.originalTitle}
                                 </p>
                               )}
-                              <div className="mt-2 flex items-center gap-2 text-xs font-mono">
+                              <div className="mt-1.5 flex items-center gap-2 text-xs font-mono">
                                 <Tag color="red" className="text-[10px] m-0">
                                   {dayjs(m.releaseDate).format('DD.MM.YYYY')}
                                 </Tag>
@@ -618,14 +618,14 @@ export const GeneratorLabPage: React.FC = () => {
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="mt-2 text-xs text-on-surface-variant line-clamp-2 leading-tight">
+                              <p className="mt-1.5 text-[11px] text-text-muted line-clamp-2 leading-tight">
                                 {m.description.replace(/^###.*\n+/, '').slice(0, 100)}...
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                            <span className="text-[10px] font-mono text-outline">
+                          <div className="flex items-center justify-between pt-2 border-t border-tile-border">
+                            <span className="text-[10px] font-mono text-text-muted">
                               {m.folders?.[0] || 'Films/Marvel'}
                             </span>
                             <Button
@@ -633,9 +633,9 @@ export const GeneratorLabPage: React.FC = () => {
                               type="primary"
                               loading={importingMovieTitle === m.title}
                               onClick={() => handleImportMovie(m)}
-                              className="bg-primary/20 hover:bg-primary text-primary hover:text-on-primary font-semibold text-xs border border-primary/40 flex items-center gap-1"
+                              className="h-6 px-2 bg-primary/10 hover:bg-primary text-primary hover:text-on-primary font-semibold text-[11px] border border-primary/25 rounded flex items-center gap-1 shadow-xs cursor-pointer"
                             >
-                              <span className="material-symbols-outlined text-[14px]">
+                              <span className="material-symbols-outlined text-[13px]">
                                 library_add
                               </span>
                               Импортировать в радар
@@ -713,28 +713,28 @@ export const GeneratorLabPage: React.FC = () => {
                       <Spin size="large" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {holidaysList.map((h, idx) => (
                         <div
                           key={idx}
-                          className="rounded-lg border border-white/10 bg-surface-container-low p-4 flex flex-col justify-between space-y-3"
+                          className="platform-tile platform-tile-hover p-3 flex flex-col justify-between space-y-2.5"
                         >
                           <div>
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <Tag color="blue" className="font-mono text-[11px] m-0">
+                              <Tag color="blue" className="font-mono text-[10px] m-0">
                                 {dayjs(h.startDate).format('DD MMMM YYYY')}
                               </Tag>
-                              <span className="text-[11px] font-mono text-outline">
+                              <span className="text-[10px] font-mono text-text-muted">
                                 {h.folders?.[0] || 'Holidays'}
                               </span>
                             </div>
-                            <h4 className="font-bold text-sm text-on-surface mt-1">{h.title}</h4>
-                            <p className="text-xs text-on-surface-variant line-clamp-2 mt-2 leading-relaxed">
+                            <h4 className="font-bold text-xs text-text-main mt-1">{h.title}</h4>
+                            <p className="text-[11px] text-text-muted line-clamp-2 mt-1.5 leading-relaxed">
                               {h.description.replace(/^###.*\n+/, '').slice(0, 120)}...
                             </p>
                           </div>
 
-                          <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                          <div className="pt-2 border-t border-tile-border flex items-center justify-between">
                             <div className="flex gap-1">
                               {h.hashtags.slice(0, 2).map((tag) => (
                                 <span key={tag} className="text-[10px] font-mono text-primary/80">
@@ -745,7 +745,7 @@ export const GeneratorLabPage: React.FC = () => {
                             <Button
                               size="small"
                               onClick={() => handleImportHoliday(h)}
-                              className="text-xs bg-white/5 border-white/10 hover:border-primary text-primary"
+                              className="h-6 px-2 text-[11px] bg-tile-subtle border-tile-border hover:border-primary text-primary rounded shadow-xs cursor-pointer"
                             >
                               Добавить в базу
                             </Button>
@@ -788,31 +788,31 @@ export const GeneratorLabPage: React.FC = () => {
                       <Spin size="large" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {politicsList.map((p, idx) => (
                         <div
                           key={idx}
-                          className="rounded-lg border border-white/10 bg-surface-container-low p-4 flex flex-col justify-between space-y-3"
+                          className="platform-tile platform-tile-hover p-3 flex flex-col justify-between space-y-2.5"
                         >
                           <div>
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <Tag color="magenta" className="font-mono text-[11px] m-0">
+                              <Tag color="magenta" className="font-mono text-[10px] m-0">
                                 {dayjs(p.startDate).format('DD MMMM YYYY')}
                               </Tag>
-                              <span className="text-[11px] font-mono text-outline">
+                              <span className="text-[10px] font-mono text-text-muted">
                                 {p.folders?.[0] || 'Politics'}
                               </span>
                             </div>
-                            <h4 className="font-bold text-sm text-on-surface mt-1">{p.title}</h4>
-                            <p className="text-xs text-on-surface-variant line-clamp-3 mt-2 leading-relaxed">
+                            <h4 className="font-bold text-xs text-text-main mt-1">{p.title}</h4>
+                            <p className="text-[11px] text-text-muted line-clamp-3 mt-1.5 leading-relaxed">
                               {p.description.replace(/^###.*\n+/, '').slice(0, 140)}...
                             </p>
                           </div>
 
-                          <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                          <div className="pt-2 border-t border-tile-border flex items-center justify-between">
                             <div className="flex gap-1">
                               {p.hashtags.slice(0, 2).map((tag) => (
-                                <span key={tag} className="text-[10px] font-mono text-rose-300">
+                                <span key={tag} className="text-[10px] font-mono text-rose-400">
                                   #{tag}
                                 </span>
                               ))}
@@ -820,7 +820,7 @@ export const GeneratorLabPage: React.FC = () => {
                             <Button
                               size="small"
                               onClick={() => handleImportPolitics(p)}
-                              className="text-xs bg-white/5 border-white/10 hover:border-primary text-primary"
+                              className="h-6 px-2 text-[11px] bg-tile-subtle border-tile-border hover:border-primary text-primary rounded shadow-xs cursor-pointer"
                             >
                               Добавить в базу
                             </Button>
@@ -845,50 +845,50 @@ export const GeneratorLabPage: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     {[
                       {
                         slug: 'mcu-radar',
                         title: 'Marvel Cinematic Universe',
                         icon: 'movie',
-                        color: 'border-red-500/40 bg-red-500/5',
+                        color: 'border-l-red-500',
                         tagline: 'TMDB API & Фазы 5/6',
                       },
                       {
                         slug: 'russian-holidays',
                         title: 'Русские праздники',
                         icon: 'flag',
-                        color: 'border-blue-500/40 bg-blue-500/5',
+                        color: 'border-l-blue-500',
                         tagline: '32-ФЗ & ТК РФ 2026',
                       },
                       {
                         slug: 'christian-holidays',
                         title: 'Христианские праздники',
                         icon: 'sparkles',
-                        color: 'border-amber-500/40 bg-amber-500/5',
+                        color: 'border-l-amber-500',
                         tagline: 'Пасхалия Computus 2026',
                       },
                       {
                         slug: 'politics-2026',
                         title: 'Политика 2026',
                         icon: 'public',
-                        color: 'border-rose-500/40 bg-rose-500/5',
+                        color: 'border-l-rose-500',
                         tagline: 'Саммиты & Выборы 2026',
                       },
                     ].map((feed) => (
                       <div
                         key={feed.slug}
-                        className={`rounded-xl border p-4 flex flex-col justify-between space-y-4 ${feed.color}`}
+                        className={`platform-tile platform-tile-hover p-3 flex flex-col justify-between space-y-3 border-l-3 ${feed.color}`}
                       >
                         <div>
-                          <div className="flex items-center gap-2 text-primary mb-2">
-                            <span className="material-symbols-outlined text-[24px]">
+                          <div className="flex items-center gap-2 text-primary mb-1.5">
+                            <span className="material-symbols-outlined text-[20px]">
                               {feed.icon}
                             </span>
-                            <h3 className="font-bold text-sm text-on-surface">{feed.title}</h3>
+                            <h3 className="font-bold text-xs text-text-main">{feed.title}</h3>
                           </div>
-                          <p className="text-xs font-mono text-on-surface-variant">
+                          <p className="text-[11px] font-mono text-text-muted">
                             {feed.tagline}
                           </p>
                         </div>
@@ -896,9 +896,9 @@ export const GeneratorLabPage: React.FC = () => {
                         <Button
                           type="primary"
                           onClick={() => handleSyncSingleFeed(feed.slug)}
-                          className="w-full bg-primary/20 hover:bg-primary text-primary hover:text-on-primary font-semibold text-xs border border-primary/40 flex items-center justify-center gap-1"
+                          className="w-full h-6.5 bg-primary/10 hover:bg-primary text-primary hover:text-on-primary font-semibold text-xs border border-primary/25 rounded flex items-center justify-center gap-1 shadow-xs cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-[16px]">sync</span>
+                          <span className="material-symbols-outlined text-[15px]">sync</span>
                           Синхронизировать
                         </Button>
                       </div>
@@ -906,22 +906,22 @@ export const GeneratorLabPage: React.FC = () => {
                   </div>
 
                   {syncResults.length > 0 && (
-                    <div className="rounded-xl border border-white/10 bg-surface-container-low p-4 space-y-3">
-                      <h4 className="font-mono text-xs font-bold text-primary flex items-center gap-2">
+                    <div className="platform-tile p-3 space-y-2.5">
+                      <h4 className="font-mono text-xs font-bold text-primary flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
                         Результаты последней синхронизации
                       </h4>
-                      <div className="divide-y divide-white/5">
+                      <div className="divide-y divide-tile-border">
                         {syncResults.map((r) => (
                           <div
                             key={r.feedSlug}
-                            className="py-2.5 flex items-center justify-between text-xs font-mono"
+                            className="py-2 flex items-center justify-between text-xs font-mono"
                           >
-                            <span className="text-on-surface font-semibold">{r.feedTitle}</span>
-                            <div className="flex gap-3 text-on-surface-variant">
+                            <span className="text-text-main font-semibold">{r.feedTitle}</span>
+                            <div className="flex gap-3 text-text-muted">
                               <span>Всего: <strong className="text-primary">{r.notesCount}</strong></span>
-                              <span>Создано: <strong className="text-emerald-400">{r.created}</strong></span>
-                              <span>Обновлено: <strong className="text-sky-400">{r.updated}</strong></span>
+                              <span>Создано: <strong className="text-emerald-500 dark:text-emerald-400">{r.created}</strong></span>
+                              <span>Обновлено: <strong className="text-sky-500 dark:text-sky-400">{r.updated}</strong></span>
                             </div>
                           </div>
                         ))}

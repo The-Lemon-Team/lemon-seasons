@@ -71,64 +71,64 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         <div
           onClick={() => navigate('/feeds')}
-          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
+          className="platform-tile platform-tile-hover p-2.5 sm:p-3 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-mono text-[10px] uppercase tracking-wider">{t.activeFeedsMetric}</span>
-            <Rss className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <Rss className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-2xl text-on-surface">{feeds.length}</div>
+          <div className="font-sans font-bold text-xl sm:text-2xl text-on-surface">{feeds.length}</div>
           <p className="text-[10px] text-outline mt-0.5 font-mono">{t.dataStreamsSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
+          className="platform-tile platform-tile-hover p-2.5 sm:p-3 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-mono text-[10px] uppercase tracking-wider">{t.totalNotesMetric}</span>
-            <FileText className="w-4 h-4 text-secondary group-hover:scale-110 transition-transform" />
+            <FileText className="w-3.5 h-3.5 text-secondary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-2xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
+          <div className="font-sans font-bold text-xl sm:text-2xl text-on-surface">{stats?.notesTotal ?? totalNotes}</div>
           <p className="text-[10px] text-outline mt-0.5 font-mono">{t.singleTruthSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
+          className="platform-tile platform-tile-hover p-2.5 sm:p-3 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-mono text-[10px] uppercase tracking-wider">{t.vaultFoldersMetric}</span>
-            <FolderGit2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <FolderGit2 className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-2xl text-primary">{folders.length}</div>
+          <div className="font-sans font-bold text-xl sm:text-2xl text-primary">{folders.length}</div>
           <p className="text-[10px] text-outline mt-0.5 font-mono">{t.obsidianPathsSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/notes')}
-          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
+          className="platform-tile platform-tile-hover p-2.5 sm:p-3 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-mono text-[10px] uppercase tracking-wider">{t.taxonomyTagsMetric}</span>
-            <Hash className="w-4 h-4 text-tertiary group-hover:scale-110 transition-transform" />
+            <Hash className="w-3.5 h-3.5 text-tertiary group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-2xl text-on-surface flex items-baseline gap-1.5">
+          <div className="font-sans font-bold text-xl sm:text-2xl text-on-surface flex items-baseline gap-1.5">
             <span>{hashtags.length}</span>
-            <span className="text-xs text-cyan-400 font-mono font-normal">#</span>
+            <span className="text-xs text-cyan-500 font-mono font-normal">#</span>
           </div>
           <p className="text-[10px] text-outline mt-0.5 font-mono">{t.ltreeSub}</p>
         </div>
 
         <div
           onClick={() => navigate('/generators?tab=sparks')}
-          className="bg-surface-container-high/50 rounded-xl border border-white/[0.08] p-3 hover:border-primary/40 transition-all cursor-pointer group shadow-sm"
+          className="platform-tile platform-tile-hover p-2.5 sm:p-3 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-mono text-[10px] uppercase tracking-wider">Файловый конвейер</span>
-            <Cloud className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+            <Cloud className="w-3.5 h-3.5 text-cyan-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="font-sans font-bold text-lg text-on-surface flex items-center gap-1.5">
+          <div className="font-sans font-bold text-base sm:text-lg text-on-surface flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
                 watcherStatus?.isWatching ? 'bg-primary animate-pulse' : 'bg-rose-400'
@@ -144,8 +144,8 @@ export const DashboardPage: React.FC = () => {
 
       {/* System Health & Note Types Breakdown */}
       {stats && (
-        <div className="bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 space-y-2.5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-white/5 pb-2">
+        <div className="platform-tile p-3 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-tile-border pb-2">
             <div className="flex items-center gap-2.5">
               <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
               <div>
@@ -171,7 +171,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
               {Object.entries(stats.notesByType).map(([type, count]) => (
-                <div key={type} className="bg-[#0c0e12]/60 border border-white/5 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                <div key={type} className="bg-tile-subtle border border-tile-border rounded-lg px-2.5 py-1.5 flex items-center justify-between">
                   <NoteTypeBadge type={type} size="sm" />
                   <span className="font-mono font-bold text-xs text-on-surface">{Number(count)}</span>
                 </div>
@@ -184,8 +184,8 @@ export const DashboardPage: React.FC = () => {
       {/* Two Columns: Recent Notes & Obsidian Sync Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Recent Notes (Span 2) */}
-        <div className="lg:col-span-2 space-y-2 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 shadow-sm">
-          <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
+        <div className="lg:col-span-2 space-y-2 platform-tile p-3">
+          <div className="flex justify-between items-center pb-1.5 border-b border-tile-border">
             <h2 className="font-sans font-bold text-xs text-on-surface">
               {t.recentNotesTitle}
             </h2>
@@ -197,7 +197,7 @@ export const DashboardPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-tile-border">
             {notes.length === 0 ? (
               <div className="py-6 text-center text-on-surface-variant text-xs font-mono">
                 {t.noRecentNotes}
@@ -223,11 +223,11 @@ export const DashboardPage: React.FC = () => {
                   <div
                     key={note.id}
                     onClick={() => setViewingNoteId(note.id)}
-                    className="py-1.5 flex items-center justify-between hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer"
+                    className="py-1.5 flex items-center justify-between hover:bg-tile-subtle px-2 rounded-lg transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-3">
                       {thumbUrl && (
-                        <div className="relative w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-black/40 border border-white/10 shadow-xs">
+                        <div className="relative w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-tile-subtle border border-tile-border shadow-xs">
                           <img
                             src={thumbUrl}
                             alt={mainImage?.alt || note.title}
@@ -258,7 +258,7 @@ export const DashboardPage: React.FC = () => {
                               ))}
                               {note.hashtags.length > 2 && (
                                 <span className="text-[10px] text-cyan-500/70">
-                                  +{note.hashtags.length - 2}
+                                   +{note.hashtags.length - 2}
                                 </span>
                               )}
                             </span>
@@ -276,7 +276,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Obsidian Sync Hub (Span 1) */}
-        <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3 shadow-sm">
+        <div className="space-y-3 platform-tile p-3">
           <h2 className="font-sans font-bold text-xs text-on-surface flex items-center gap-1.5">
             <RefreshCw className="w-3.5 h-3.5 text-primary" />
             {t.deltaInspectorTitle}
@@ -285,7 +285,7 @@ export const DashboardPage: React.FC = () => {
             {t.deltaInspectorSub}
           </p>
 
-          <div className="space-y-2 pt-2 border-t border-white/5">
+          <div className="space-y-2 pt-2 border-t border-tile-border">
             <label className="block font-mono text-[10px] text-on-surface-variant uppercase">
               {t.syncChangesTitle || t.syncStateMetric}
             </label>
@@ -295,19 +295,19 @@ export const DashboardPage: React.FC = () => {
                 value={sinceTime}
                 onChange={(e) => setSinceTime(e.target.value)}
                 placeholder={t.sinceTimestampPlaceholder}
-                className="flex-1 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2 h-7 text-[11px] text-on-surface font-mono outline-none [color-scheme:dark]"
+                className="flex-1 bg-control border border-control-border rounded-lg px-2 h-7 text-[11px] text-on-surface font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 [color-scheme:light] dark:[color-scheme:dark]"
               />
               <button
                 onClick={() => refetchSync()}
                 disabled={isSyncFetching}
-                className="h-7 px-2.5 bg-surface-container-highest hover:bg-white/10 text-on-surface rounded-lg text-xs font-mono transition-colors cursor-pointer border border-white/10"
+                className="h-7 px-2.5 bg-tile-subtle hover:bg-tile-muted text-on-surface rounded-lg text-xs font-mono transition-colors cursor-pointer border border-tile-border"
               >
                 {isSyncFetching ? t.loading : t.fetchDeltaBtn}
               </button>
             </div>
 
             {syncData && (
-              <div className="mt-2 bg-[#0c0e12]/80 rounded-lg p-2.5 border border-white/[0.08] font-mono text-[10px] space-y-1">
+              <div className="mt-2 bg-tile-subtle rounded-lg p-2.5 border border-tile-border font-mono text-[10px] space-y-1">
                 <div className="text-primary font-semibold">
                   ✓ {t.notesSynced(syncData.counts.notes)}
                 </div>

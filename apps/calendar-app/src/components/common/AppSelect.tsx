@@ -143,12 +143,12 @@ export function AppSelect<T extends string = string>({
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleKeyDown}
         className={`w-full flex items-center justify-between gap-1.5 border rounded-lg font-mono text-left cursor-pointer outline-none transition-all ${
-          isSmall ? 'h-7 px-2.5 text-[11px]' : 'h-8 px-3 text-xs'
+          isSmall ? 'h-6.5 px-2 text-[11px]' : 'h-7.5 px-2.5 text-xs'
         } ${getVariantStyles()} ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${triggerClassName}`}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {selectedOption?.icon && (
             <span className="shrink-0 flex items-center justify-center">
               {selectedOption.icon}
@@ -165,7 +165,7 @@ export function AppSelect<T extends string = string>({
         </div>
 
         <ChevronDown
-          className={`shrink-0 w-4 h-4 transition-transform duration-200 ${getChevronColor()} ${
+          className={`shrink-0 w-3 h-3 transition-transform duration-200 ${getChevronColor()} ${
             isOpen ? 'rotate-180' : ''
           }`}
         />

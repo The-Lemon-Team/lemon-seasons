@@ -233,7 +233,7 @@ export const NoteEditorPage: React.FC = () => {
         {/* Left Column: Title, Markdown Content, Links & Image Gallery (Span 2) */}
         <div className="lg:col-span-2 space-y-3.5">
           {/* Main Content Box */}
-          <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 shadow-sm">
+          <div className="space-y-3 platform-tile p-3 sm:p-3.5">
             {/* Note Title */}
             <div className="space-y-1">
               <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
@@ -244,7 +244,7 @@ export const NoteEditorPage: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t.titleInputPlaceholder}
-                className="w-full bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-3 py-1.5 text-on-surface font-sans text-sm focus:border-primary outline-none"
+                className="w-full bg-control border border-control-border rounded-lg px-2.5 py-1 text-on-surface font-sans text-xs focus:border-primary outline-none"
               />
             </div>
 
@@ -263,7 +263,7 @@ export const NoteEditorPage: React.FC = () => {
           </div>
 
           {/* Image Manager Section */}
-          <div className="bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 shadow-sm">
+          <div className="platform-tile p-3 sm:p-3.5">
             <ImageManager
               noteId={id}
               noteTitle={title}
@@ -280,8 +280,8 @@ export const NoteEditorPage: React.FC = () => {
         </div>
 
         {/* Right Column: Metadata & Chronological Details (Span 1) */}
-        <div className="space-y-3 bg-surface-container-high/40 rounded-xl border border-white/[0.08] p-3.5 h-fit shadow-sm">
-          <h3 className="font-sans font-bold text-xs text-on-surface border-b border-white/5 pb-1.5">
+        <div className="space-y-3 platform-tile p-3 sm:p-3.5 h-fit">
+          <h3 className="font-sans font-bold text-xs text-on-surface border-b border-tile-border pb-1.5">
             {t.datesCol}
           </h3>
 
@@ -319,7 +319,7 @@ export const NoteEditorPage: React.FC = () => {
               type="datetime-local"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
+              className="w-full h-7 bg-control border border-control-border rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
             />
           </div>
 
@@ -332,12 +332,12 @@ export const NoteEditorPage: React.FC = () => {
               type="datetime-local"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:dark]"
+              className="w-full h-7 bg-control border border-control-border rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
             />
           </div>
 
           {/* Vault Folders Section */}
-          <div className="pt-2 border-t border-white/5 space-y-2">
+          <div className="pt-2 border-t border-tile-border space-y-2">
             <div className="flex items-center justify-between">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
                 {t.folderInputLabel}
@@ -367,7 +367,7 @@ export const NoteEditorPage: React.FC = () => {
           />
 
           {/* Hashtags / Global Mentions */}
-          <div className="pt-2 border-t border-white/5">
+          <div className="pt-2 border-t border-tile-border">
             <HashtagInput
               value={hashtags}
               onChange={setHashtags}

@@ -121,7 +121,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
                 type="text"
                 icon={<ExternalLink className="w-3.5 h-3.5 text-primary" />}
                 onClick={() => navigate(`/notes/${record.note?.id}`)}
-                className="shrink-0 hover:bg-white/5"
+                className="shrink-0 hover:bg-tile-subtle"
               />
             </Tooltip>
           </div>
@@ -150,7 +150,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
             type="text"
             icon={<Info className="w-4 h-4 text-on-surface-variant" />}
             onClick={() => onSelectFile(record)}
-            className="hover:bg-white/5"
+            className="hover:bg-tile-subtle"
           />
         </Tooltip>
       ),
@@ -175,10 +175,10 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
             <button
               key={f.key}
               onClick={() => onStatusChange(f.key)}
-              className={`h-7 px-2.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer flex items-center border ${
+              className={`h-6.5 px-2.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer flex items-center border ${
                 selectedStatus === f.key
                   ? 'bg-primary text-on-primary font-bold border-primary shadow-xs'
-                  : 'bg-[#0c0e12]/80 text-on-surface-variant border-white/[0.08] hover:bg-white/10 hover:text-on-surface'
+                  : 'bg-control text-on-surface-variant border-control-border hover:bg-tile-subtle hover:text-on-surface'
               }`}
             >
               {f.label}
@@ -195,14 +195,14 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
               placeholder="Поиск по имени или Note..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-7 pl-8 pr-2.5 rounded-lg bg-[#0c0e12]/80 border border-white/[0.08] text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+              className="w-full h-6.5 pl-8 pr-2.5 rounded-lg bg-control border border-control-border text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
             />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-white/5 bg-surface-container overflow-hidden shadow-sm">
+      <div className="platform-tile overflow-hidden">
         <Table
           dataSource={filteredFiles}
           columns={columns}

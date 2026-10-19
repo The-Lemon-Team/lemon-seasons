@@ -54,7 +54,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
 
   return (
     <div
-      className={`group grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-1.5 items-center hover:bg-white/5 transition-colors ${
+      className={`group grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-1.5 items-center hover:bg-tile-subtle transition-colors ${
         isDeleted ? 'opacity-50' : ''
       }`}
     >
@@ -63,7 +63,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
         {thumbUrl && (
           <div
             onClick={() => onView(note.id)}
-            className="relative w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-black/40 border border-white/10 cursor-pointer group-hover:border-primary/50 transition-all shadow-xs"
+            className="relative w-7 h-7 flex-shrink-0 rounded overflow-hidden bg-tile-subtle border border-tile-border cursor-pointer group-hover:border-primary/50 transition-all shadow-xs"
           >
             <img
               src={thumbUrl}
@@ -81,7 +81,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
         <div className="min-w-0">
           <div
             onClick={() => onView(note.id)}
-            className="font-sans font-semibold text-[13px] leading-tight text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
+            className="font-sans font-semibold text-xs leading-tight text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
           >
             {note.title}
           </div>
@@ -92,7 +92,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
               </span>
             )}
             {note.curator && (
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-sky-950/60 border border-sky-500/40 text-sky-300">
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400">
                 <span>👤</span>
                 <span>{note.curator}</span>
               </span>
@@ -143,7 +143,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
                     key={sf.id}
                     type="button"
                     onClick={() => onSelectFolder(sf.folder!.path)}
-                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-surface-container-highest text-on-surface-variant/80 border border-white/5 hover:border-white/20 hover:text-on-surface transition-all cursor-pointer"
+                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-tile-subtle text-on-surface-variant/80 border border-tile-border hover:border-primary/40 hover:text-on-surface transition-all cursor-pointer"
                     title={`Linked Folder: ${sf.folder?.path}`}
                   >
                     <span className="material-symbols-outlined text-[10px]">
@@ -200,14 +200,14 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
           <>
             <button
               onClick={() => onView(note.id)}
-              className="p-0.5 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-white/5 cursor-pointer"
+              className="p-0.5 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-tile-subtle cursor-pointer"
               title={t.quickPreview}
             >
               <span className="material-symbols-outlined text-[16px]">visibility</span>
             </button>
             <button
               onClick={() => onEdit(note.id)}
-              className="p-0.5 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-white/5 cursor-pointer"
+              className="p-0.5 text-on-surface-variant hover:text-secondary transition-colors rounded hover:bg-tile-subtle cursor-pointer"
               title={t.edit}
             >
               <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -220,7 +220,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
               okButtonProps={{ danger: true }}
             >
               <button
-                className="p-0.5 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-white/5 cursor-pointer"
+                className="p-0.5 text-on-surface-variant hover:text-error transition-colors rounded hover:bg-tile-subtle cursor-pointer"
                 title={t.delete}
               >
                 <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -230,7 +230,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
         ) : (
           <button
             onClick={() => onRestore(note.id)}
-            className="p-0.5 text-tertiary hover:text-primary transition-colors rounded hover:bg-white/5 cursor-pointer"
+            className="p-0.5 text-tertiary hover:text-primary transition-colors rounded hover:bg-tile-subtle cursor-pointer"
             title="Restore"
           >
             <span className="material-symbols-outlined text-[16px]">restore</span>

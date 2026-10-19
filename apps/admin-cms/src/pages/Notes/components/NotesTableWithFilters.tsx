@@ -150,10 +150,10 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
 
   return (
     <div
-      className={`bg-surface-container-low border border-white/5 rounded-lg flex flex-col h-full overflow-hidden ${className}`}
+      className={`platform-tile flex flex-col h-full overflow-hidden ${className}`}
     >
       {/* Top Header: Toolbar & Filters (Pinned) */}
-      <div className="p-2.5 space-y-2 bg-[#14161a]/85 border-b border-white/[0.06] flex-shrink-0">
+      <div className="p-2.5 space-y-2 bg-tile border-b border-tile-border flex-shrink-0">
         {/* Row 1: Search Form + Active Filter Chips + Total Count */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-sm relative">
@@ -165,13 +165,13 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder={t.searchNotesPlaceholder}
-              className="w-full h-7 bg-[#0c0e12]/80 border border-white/[0.08] rounded-lg pl-7 pr-7 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary/60 outline-none transition-all"
+              className="w-full h-7 bg-control border border-control-border rounded-lg pl-7 pr-7 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary/60 outline-none transition-all"
             />
             {localSearch && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-tile-subtle transition-colors cursor-pointer"
                 title={t.reset}
               >
                 <X className="w-2.5 h-2.5" />
@@ -200,13 +200,13 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
 
             {/* Active Unfiled Filter Chip */}
             {unfiled && (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-highest text-secondary border border-white/20 rounded-full font-mono text-[11px] shadow-xs">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-tile-subtle text-secondary border border-tile-border rounded-full font-mono text-[11px] shadow-xs">
                 <span className="material-symbols-outlined text-[12px] leading-none shrink-0">draft</span>
                 <span className="leading-none">Unfiled (Root)</span>
                 <button
                   type="button"
                   onClick={() => onFilterChange('unfiled', undefined)}
-                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0 -mr-0.5"
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-tile-muted transition-colors cursor-pointer shrink-0 -mr-0.5"
                   title={t.reset}
                 >
                   <X className="w-2.5 h-2.5" />
@@ -290,14 +290,14 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
             )}
 
             {/* Total Count Badge */}
-            <span className="px-2.5 py-1 bg-surface-container-highest rounded font-mono text-xs text-on-surface-variant border border-white/5">
+            <span className="px-2 py-0.5 bg-tile-subtle rounded font-mono text-[11px] text-on-surface-variant border border-tile-border">
               {t.totalNotesCountBadge(total)}
             </span>
           </div>
         </div>
 
         {/* Row 2: Unified Filter Dropdowns Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-white/[0.05]">
+        <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-tile-border">
           {/* Feed Filter */}
           <div className="w-36 sm:w-40">
             <AppSelect
@@ -362,7 +362,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
                   value: h.name,
                   label: `#${h.name}`,
                   badge: h._count?.notes ? (
-                    <span className="text-[10px] px-1 py-0.2 rounded bg-white/5 text-on-surface-variant font-mono">
+                    <span className="text-[10px] px-1 py-0.2 rounded bg-tile-subtle text-on-surface-variant font-mono">
                       {h._count.notes}
                     </span>
                   ) : undefined,
@@ -379,7 +379,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               type="checkbox"
               checked={Boolean(includeDeleted)}
               onChange={(e) => onFilterChange('includeDeleted', e.target.checked ? 'true' : undefined)}
-              className="rounded bg-[#0c0e12] border-white/20 text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5"
+              className="rounded bg-control border-control-border text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5"
             />
             {t.status}: Deleted
           </label>
@@ -390,7 +390,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
       <div className="flex-1 overflow-auto min-h-0 relative">
         <div className="min-w-[760px] flex flex-col min-h-full">
           {/* Table Header (Sticky at top of scrollable container) */}
-          <div className="sticky top-0 z-10 grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-2 border-b border-white/5 bg-surface-container-high font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold select-none shadow-xs">
+          <div className="sticky top-0 z-10 grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-1.5 border-b border-tile-border bg-tile-subtle font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold select-none shadow-xs">
             {renderSortableHeader('title', `${t.titleCol} & ${t.feedCol}`)}
             {renderSortableHeader('folder', t.folderCol)}
             {renderSortableHeader('type', t.typeCol)}
@@ -400,7 +400,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
           </div>
 
           {/* Table Rows */}
-          <div className="divide-y divide-white/5 flex-1">
+          <div className="divide-y divide-tile-border flex-1">
             {notes.map((note) => (
               <NoteTableRow
                 key={note.id}
@@ -448,7 +448,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
       </div>
 
       {/* Bottom Status & Pagination Bar (Pinned) */}
-      <div className="p-2.5 px-4 border-t border-white/5 bg-surface-container-high/20 flex items-center justify-between text-xs font-mono text-on-surface-variant flex-shrink-0">
+      <div className="p-2 px-3.5 border-t border-tile-border bg-tile-subtle flex items-center justify-between text-[11px] font-mono text-on-surface-variant flex-shrink-0">
         <div>
           {total > 0 ? (
             <span>
@@ -465,7 +465,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               type="button"
               onClick={() => onPageChange(Math.max(0, offset - limit))}
               disabled={offset === 0}
-              className="px-2.5 py-0.5 bg-surface-container border border-outline-variant/40 rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-outline-variant/40 transition-colors cursor-pointer text-xs"
+              className="px-2 py-0.5 bg-control border border-control-border rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-control-border transition-colors cursor-pointer text-xs"
               title="Предыдущая страница"
             >
               ←
@@ -474,7 +474,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               type="button"
               onClick={() => onPageChange(offset + limit)}
               disabled={offset + limit >= total}
-              className="px-2.5 py-0.5 bg-surface-container border border-outline-variant/40 rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-outline-variant/40 transition-colors cursor-pointer text-xs"
+              className="px-2 py-0.5 bg-control border border-control-border rounded hover:border-primary hover:text-on-surface disabled:opacity-30 disabled:hover:border-control-border transition-colors cursor-pointer text-xs"
               title="Следующая страница"
             >
               →
