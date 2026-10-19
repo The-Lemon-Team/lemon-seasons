@@ -3,34 +3,34 @@ import { ThemeConfig, theme } from 'antd';
 export const lentaDarkThemeConfig: ThemeConfig = {
   algorithm: theme.darkAlgorithm,
   token: {
-    // Primary Olive Gold
-    colorPrimary: '#c9cd58',
-    colorPrimaryHover: '#e6e971',
-    colorPrimaryActive: '#939626',
-    colorPrimaryBg: 'rgba(201, 205, 88, 0.12)',
+    // Primary Atom Warm Lemon-Gold
+    colorPrimary: '#e5c07b',
+    colorPrimaryHover: '#f0d38d',
+    colorPrimaryActive: '#c99a45',
+    colorPrimaryBg: 'rgba(229, 192, 123, 0.12)',
 
-    // Surfaces & Backgrounds
-    colorBgBase: '#121414',
-    colorBgContainer: '#1a1d22',
-    colorBgElevated: '#21242a',
-    colorBgLayout: '#07080a',
-    colorBgSpotlight: '#2a2d34',
+    // Surfaces & Backgrounds (Atom One Dark slate palette)
+    colorBgBase: '#1b1d23',
+    colorBgContainer: '#282c34',
+    colorBgElevated: '#2c313a',
+    colorBgLayout: '#21252b',
+    colorBgSpotlight: '#353b45',
 
-    // Text & Content
-    colorText: '#e3e2e2',
-    colorTextSecondary: '#c9c7b2',
-    colorTextTertiary: '#93927e',
-    colorTextQuaternary: '#484837',
+    // Text & Content (One Dark typography)
+    colorText: '#abb2bf',
+    colorTextSecondary: '#828997',
+    colorTextTertiary: '#5c6370',
+    colorTextQuaternary: '#4b5263',
 
     // Borders & Outlines
-    colorBorder: 'rgba(255, 255, 255, 0.08)',
-    colorBorderSecondary: 'rgba(255, 255, 255, 0.05)',
+    colorBorder: 'rgba(255, 255, 255, 0.09)',
+    colorBorderSecondary: 'rgba(255, 255, 255, 0.06)',
 
-    // Functional Colors
-    colorSuccess: '#a4d0bf',
-    colorWarning: '#e6e4bf',
-    colorError: '#ffb4ab',
-    colorInfo: '#a4d0bf',
+    // Functional Colors (Atom Syntax Accents)
+    colorSuccess: '#98c379',
+    colorWarning: '#e5c07b',
+    colorError: '#e06c75',
+    colorInfo: '#61afef',
 
     // Geometry & Typography (Compact)
     borderRadius: 6,
@@ -45,47 +45,47 @@ export const lentaDarkThemeConfig: ThemeConfig = {
       borderRadius: 6,
       fontWeight: 500,
       controlHeight: 28,
-      defaultBg: '#1f2020',
-      defaultBorderColor: 'rgba(255, 255, 255, 0.1)',
-      defaultColor: '#e3e2e2',
+      defaultBg: '#282c34',
+      defaultBorderColor: 'rgba(255, 255, 255, 0.11)',
+      defaultColor: '#abb2bf',
     },
     Input: {
       borderRadius: 6,
       controlHeight: 28,
-      colorBgContainer: '#0c0e12',
-      colorBorder: 'rgba(255, 255, 255, 0.08)',
-      activeBorderColor: '#c9cd58',
-      hoverBorderColor: 'rgba(201, 205, 88, 0.6)',
+      colorBgContainer: '#1e2227',
+      colorBorder: 'rgba(255, 255, 255, 0.11)',
+      activeBorderColor: '#e5c07b',
+      hoverBorderColor: 'rgba(229, 192, 123, 0.6)',
     },
     Select: {
       borderRadius: 6,
       controlHeight: 28,
-      colorBgContainer: '#0c0e12',
-      colorBorder: 'rgba(255, 255, 255, 0.08)',
+      colorBgContainer: '#1e2227',
+      colorBorder: 'rgba(255, 255, 255, 0.11)',
     },
     DatePicker: {
       borderRadius: 6,
       controlHeight: 28,
-      colorBgContainer: '#0c0e12',
-      colorBorder: 'rgba(255, 255, 255, 0.08)',
+      colorBgContainer: '#1e2227',
+      colorBorder: 'rgba(255, 255, 255, 0.11)',
     },
     Table: {
       colorBgContainer: 'transparent',
-      headerBg: 'rgba(255, 255, 255, 0.03)',
-      headerColor: '#c9c7b2',
+      headerBg: '#242830',
+      headerColor: '#828997',
       rowHoverBg: 'rgba(255, 255, 255, 0.04)',
-      borderColor: 'rgba(255, 255, 255, 0.06)',
+      borderColor: 'rgba(255, 255, 255, 0.08)',
       borderRadius: 8,
       fontSize: 11,
     },
     Modal: {
-      contentBg: '#16181d',
-      headerBg: '#16181d',
+      contentBg: '#242830',
+      headerBg: '#242830',
       borderRadiusLG: 12,
     },
     Card: {
-      colorBgContainer: '#16181d',
-      colorBorderSecondary: 'rgba(255, 255, 255, 0.06)',
+      colorBgContainer: '#282c34',
+      colorBorderSecondary: 'rgba(255, 255, 255, 0.08)',
       borderRadiusLG: 8,
     },
     Tag: {
@@ -93,8 +93,8 @@ export const lentaDarkThemeConfig: ThemeConfig = {
     },
     Tree: {
       colorBgContainer: 'transparent',
-      nodeHoverBg: 'rgba(255, 255, 255, 0.05)',
-      nodeSelectedBg: 'rgba(201, 205, 88, 0.15)',
+      nodeHoverBg: 'rgba(255, 255, 255, 0.06)',
+      nodeSelectedBg: 'rgba(229, 192, 123, 0.15)',
     },
   },
 };
@@ -117,13 +117,13 @@ export const lentaLightThemeConfig: ThemeConfig = {
 
     // Text & Content
     colorText: '#0f172a',
-    colorTextSecondary: '#475569',
+    colorTextSecondary: '#334155',
     colorTextTertiary: '#64748b',
     colorTextQuaternary: '#94a3b8',
 
-    // Borders & Outlines
-    colorBorder: 'rgba(15, 23, 42, 0.08)',
-    colorBorderSecondary: 'rgba(15, 23, 42, 0.05)',
+    // Borders & Outlines (Expressive, clear structural borders)
+    colorBorder: 'rgba(15, 23, 42, 0.18)',
+    colorBorderSecondary: 'rgba(15, 23, 42, 0.12)',
 
     // Functional Colors
     colorSuccess: '#16a34a',
@@ -145,14 +145,14 @@ export const lentaLightThemeConfig: ThemeConfig = {
       fontWeight: 500,
       controlHeight: 28,
       defaultBg: '#ffffff',
-      defaultBorderColor: 'rgba(15, 23, 42, 0.12)',
+      defaultBorderColor: 'rgba(15, 23, 42, 0.18)',
       defaultColor: '#0f172a',
     },
     Input: {
       borderRadius: 6,
       controlHeight: 28,
       colorBgContainer: '#ffffff',
-      colorBorder: 'rgba(15, 23, 42, 0.12)',
+      colorBorder: 'rgba(15, 23, 42, 0.18)',
       activeBorderColor: '#707600',
       hoverBorderColor: 'rgba(112, 118, 0, 0.6)',
       colorText: '#0f172a',
@@ -162,20 +162,20 @@ export const lentaLightThemeConfig: ThemeConfig = {
       borderRadius: 6,
       controlHeight: 28,
       colorBgContainer: '#ffffff',
-      colorBorder: 'rgba(15, 23, 42, 0.12)',
+      colorBorder: 'rgba(15, 23, 42, 0.18)',
     },
     DatePicker: {
       borderRadius: 6,
       controlHeight: 28,
       colorBgContainer: '#ffffff',
-      colorBorder: 'rgba(15, 23, 42, 0.12)',
+      colorBorder: 'rgba(15, 23, 42, 0.18)',
     },
     Table: {
       colorBgContainer: 'transparent',
-      headerBg: '#f8fafc',
-      headerColor: '#475569',
+      headerBg: '#f1f5f9',
+      headerColor: '#334155',
       rowHoverBg: 'rgba(15, 23, 42, 0.03)',
-      borderColor: 'rgba(15, 23, 42, 0.06)',
+      borderColor: 'rgba(15, 23, 42, 0.18)',
       borderRadius: 8,
       fontSize: 11,
     },
@@ -186,7 +186,7 @@ export const lentaLightThemeConfig: ThemeConfig = {
     },
     Card: {
       colorBgContainer: '#ffffff',
-      colorBorderSecondary: 'rgba(15, 23, 42, 0.08)',
+      colorBorderSecondary: 'rgba(15, 23, 42, 0.16)',
       borderRadiusLG: 8,
     },
     Tag: {

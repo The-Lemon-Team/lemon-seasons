@@ -202,7 +202,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
       </div>
 
       {/* Table */}
-      <div className="platform-tile overflow-hidden">
+      <div className="rounded-xl border border-tile-border bg-tile overflow-hidden shadow-xs">
         <Table
           dataSource={filteredFiles}
           columns={columns}
@@ -215,7 +215,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
             pageSize: 10,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50'],
-            className: 'px-4 py-2 font-mono text-xs',
+            className: 'font-mono text-xs',
           }}
           locale={{
             emptyText: (

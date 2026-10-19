@@ -10,30 +10,30 @@
 
     /* Floating master containers (Sidebar, TopAppBar) */
     --panel-bg: #ffffff;
-    --panel-border: rgba(15, 23, 42, 0.08);
-    --panel-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.07), 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+    --panel-border: rgba(15, 23, 42, 0.14);
+    --panel-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 1px 3px 0 rgba(15, 23, 42, 0.04);
 
     /* Inner tiles / "плашки" resting on the canvas platform */
     --tile-bg: #ffffff;
-    --tile-bg-subtle: #f8fafc;
-    --tile-bg-muted: #f1f5f9;
-    --tile-border: rgba(15, 23, 42, 0.08);
-    --tile-border-hover: rgba(15, 23, 42, 0.16);
+    --tile-bg-subtle: #f1f5f9;
+    --tile-bg-muted: #e2e8f0;
+    --tile-border: rgba(15, 23, 42, 0.18);
+    --tile-border-hover: rgba(15, 23, 42, 0.32);
     /* Physical shadow for tiles resting on the surface */
-    --tile-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-    --tile-shadow-hover: 0 4px 12px -2px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.05);
+    --tile-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
+    --tile-shadow-hover: 0 4px 12px -2px rgba(15, 23, 42, 0.14), 0 2px 4px -1px rgba(15, 23, 42, 0.06);
 
     /* Controls (Inputs, Selects, Buttons) */
     --control-bg: #ffffff;
     --control-bg-hover: #f8fafc;
-    --control-border: rgba(15, 23, 42, 0.12);
-    --control-border-hover: rgba(15, 23, 42, 0.25);
+    --control-border: rgba(15, 23, 42, 0.18);
+    --control-border-hover: rgba(15, 23, 42, 0.35);
     --control-text: #0f172a;
     --control-placeholder: #94a3b8;
 
     /* Typography */
     --text-main: #0f172a;
-    --text-secondary: #475569;
+    --text-secondary: #334155;
     --text-muted: #64748b;
     --text-dim: #94a3b8;
 
@@ -45,53 +45,53 @@
     --on-primary: #ffffff;
 
     /* Scrollbars */
-    --scrollbar-thumb: rgba(15, 23, 42, 0.15);
-    --scrollbar-thumb-hover: rgba(15, 23, 42, 0.3);
+    --scrollbar-thumb: rgba(15, 23, 42, 0.16);
+    --scrollbar-thumb-hover: rgba(15, 23, 42, 0.32);
   }
 
   .dark {
-    /* Platform base (void deep matte) */
-    --platform-bg: #07080a;
-    --canvas-bg: #0c0e12;
+    /* Platform base (Atom One Dark deep base slate) */
+    --platform-bg: #1b1d23;
+    --canvas-bg: #21252b;
 
     /* Floating master containers */
-    --panel-bg: #131519;
+    --panel-bg: #242830;
     --panel-border: rgba(255, 255, 255, 0.08);
-    --panel-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
+    --panel-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
 
-    /* Inner tiles / "плашки" */
-    --tile-bg: #16181d;
-    --tile-bg-subtle: #111317;
-    --tile-bg-muted: #0d0e12;
-    --tile-border: rgba(255, 255, 255, 0.07);
-    --tile-border-hover: rgba(255, 255, 255, 0.15);
-    --tile-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.45), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --tile-shadow-hover: 0 6px 20px -2px rgba(0, 0, 0, 0.6), 0 2px 6px 0 rgba(0, 0, 0, 0.4);
+    /* Inner tiles / "плашки" (One Dark editor canvas) */
+    --tile-bg: #282c34;
+    --tile-bg-subtle: #242830;
+    --tile-bg-muted: #1e2227;
+    --tile-border: rgba(255, 255, 255, 0.09);
+    --tile-border-hover: rgba(255, 255, 255, 0.18);
+    --tile-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.15);
+    --tile-shadow-hover: 0 6px 18px -2px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.18);
 
-    /* Controls */
-    --control-bg: rgba(12, 14, 18, 0.85);
-    --control-bg-hover: rgba(25, 28, 34, 0.9);
-    --control-border: rgba(255, 255, 255, 0.08);
-    --control-border-hover: rgba(255, 255, 255, 0.2);
-    --control-text: #e2e2e2;
-    --control-placeholder: rgba(201, 199, 178, 0.5);
+    /* Controls (One Dark recessed wells/inputs) */
+    --control-bg: #1e2227;
+    --control-bg-hover: #252931;
+    --control-border: rgba(255, 255, 255, 0.11);
+    --control-border-hover: rgba(255, 255, 255, 0.24);
+    --control-text: #abb2bf;
+    --control-placeholder: #5c6370;
 
     /* Typography */
-    --text-main: #e2e2e2;
-    --text-secondary: #c9c7b2;
-    --text-muted: #93927e;
-    --text-dim: #5c5b4f;
+    --text-main: #abb2bf;
+    --text-secondary: #828997;
+    --text-muted: #5c6370;
+    --text-dim: #4b5263;
 
-    /* Brand Accents */
-    --primary: #c9cd58;
-    --primary-hover: #e5e971;
-    --primary-bg: rgba(201, 205, 88, 0.15);
-    --primary-border: rgba(201, 205, 88, 0.3);
-    --on-primary: #1c1d00;
+    /* Brand Accents (Atom warm gold / lemon) */
+    --primary: #e5c07b;
+    --primary-hover: #f0d38d;
+    --primary-bg: rgba(229, 192, 123, 0.12);
+    --primary-border: rgba(229, 192, 123, 0.28);
+    --on-primary: #1e2227;
 
     /* Scrollbars */
-    --scrollbar-thumb: rgba(255, 255, 255, 0.12);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.26);
   }
 
   body {
@@ -168,21 +168,85 @@
   color: var(--text-main) !important;
   font-size: 11px !important;
 }
+.ant-table-wrapper .ant-table-container {
+  border: none !important;
+  overflow: hidden !important;
+}
 .ant-table-wrapper .ant-table-thead > tr > th {
   background: var(--tile-bg-subtle) !important;
   color: var(--text-secondary) !important;
   border-bottom: 1px solid var(--tile-border) !important;
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 10px !important;
+  font-weight: 600 !important;
   text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 .ant-table-wrapper .ant-table-tbody > tr > td {
   border-bottom: 1px solid var(--tile-border) !important;
   color: var(--text-main) !important;
   padding: 6px 10px !important;
 }
+.ant-table-wrapper .ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
   background: var(--tile-bg-subtle) !important;
+}
+.ant-table-wrapper .ant-pagination {
+  margin: 0 !important;
+  padding: 6px 12px !important;
+  border-top: 1px solid var(--tile-border) !important;
+  background: var(--tile-bg-subtle) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-item {
+  background: var(--control-bg) !important;
+  border: 1px solid var(--control-border) !important;
+  border-radius: 4px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  line-height: 22px !important;
+  margin: 0 !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-item a {
+  color: var(--text-main) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-item-active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-item-active a {
+  color: var(--on-primary) !important;
+  font-weight: 600 !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-prev,
+.ant-table-wrapper .ant-pagination .ant-pagination-next {
+  min-width: 24px !important;
+  height: 24px !important;
+  line-height: 22px !important;
+  margin: 0 !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+.ant-table-wrapper .ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  background: var(--control-bg) !important;
+  border: 1px solid var(--control-border) !important;
+  border-radius: 4px !important;
+  color: var(--text-secondary) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.ant-table-wrapper .ant-pagination .ant-pagination-total-text {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  color: var(--text-secondary) !important;
+  margin-right: 8px !important;
 }
 
 /* Compact controls */
