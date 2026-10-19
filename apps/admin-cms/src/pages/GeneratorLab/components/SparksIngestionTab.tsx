@@ -67,7 +67,7 @@ export const SparksIngestionTab: React.FC = () => {
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-sans font-bold text-sm text-on-surface">
+            <h3 className="font-sans font-semibold text-sm text-on-surface">
               Журнал файлов конвейера Ingestion
             </h3>
             <p className="text-[11px] font-mono text-on-surface-variant">

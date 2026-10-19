@@ -28,14 +28,14 @@
     --control-bg-hover: #f8fafc;
     --control-border: rgba(15, 23, 42, 0.18);
     --control-border-hover: rgba(15, 23, 42, 0.35);
-    --control-text: #0f172a;
-    --control-placeholder: #94a3b8;
+    --control-text: #383a42;
+    --control-placeholder: #8b929e;
 
-    /* Typography */
-    --text-main: #0f172a;
-    --text-secondary: #334155;
-    --text-muted: #64748b;
-    --text-dim: #94a3b8;
+    /* Typography (Atom One Light & ergonomic soft graphite) */
+    --text-main: #383a42;
+    --text-secondary: #5c6370;
+    --text-muted: #7c8492;
+    --text-dim: #9da3af;
 
     /* Brand Accents */
     --primary: #707600;

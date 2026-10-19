@@ -56,7 +56,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
             <Tooltip title={record.fileName} placement="topLeft" mouseEnterDelay={0.3}>
               <button
                 onClick={() => onSelectFile(record)}
-                className="w-full text-left font-mono text-xs font-semibold text-on-surface hover:text-primary truncate block transition-colors cursor-pointer"
+                className="w-full text-left font-mono text-xs font-medium text-on-surface hover:text-primary truncate block transition-colors cursor-pointer"
               >
                 {record.fileName}
               </button>
@@ -106,7 +106,7 @@ export const IngestedFilesTable: React.FC<IngestedFilesTableProps> = ({
           <div className="flex items-center justify-between gap-2 min-w-0 w-full overflow-hidden">
             <div className="min-w-0 flex-1 overflow-hidden">
               <Tooltip title={record.note.title} placement="topLeft" mouseEnterDelay={0.3}>
-                <span className="font-sans font-semibold text-xs text-on-surface truncate block">
+                <span className="font-sans font-medium text-xs text-on-surface truncate block">
                   {record.note.title}
                 </span>
               </Tooltip>

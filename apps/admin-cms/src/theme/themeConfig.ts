@@ -115,11 +115,11 @@ export const lentaLightThemeConfig: ThemeConfig = {
     colorBgLayout: '#eaedf2',
     colorBgSpotlight: '#1e293b',
 
-    // Text & Content
-    colorText: '#0f172a',
-    colorTextSecondary: '#334155',
-    colorTextTertiary: '#64748b',
-    colorTextQuaternary: '#94a3b8',
+    // Text & Content (Softened ergonomic palette)
+    colorText: '#383a42',
+    colorTextSecondary: '#5c6370',
+    colorTextTertiary: '#7c8492',
+    colorTextQuaternary: '#9da3af',
 
     // Borders & Outlines (Expressive, clear structural borders)
     colorBorder: 'rgba(15, 23, 42, 0.18)',
@@ -146,7 +146,7 @@ export const lentaLightThemeConfig: ThemeConfig = {
       controlHeight: 28,
       defaultBg: '#ffffff',
       defaultBorderColor: 'rgba(15, 23, 42, 0.18)',
-      defaultColor: '#0f172a',
+      defaultColor: '#383a42',
     },
     Input: {
       borderRadius: 6,
@@ -155,8 +155,8 @@ export const lentaLightThemeConfig: ThemeConfig = {
       colorBorder: 'rgba(15, 23, 42, 0.18)',
       activeBorderColor: '#707600',
       hoverBorderColor: 'rgba(112, 118, 0, 0.6)',
-      colorText: '#0f172a',
-      colorTextPlaceholder: '#94a3b8',
+      colorText: '#383a42',
+      colorTextPlaceholder: '#8b929e',
     },
     Select: {
       borderRadius: 6,
@@ -173,7 +173,7 @@ export const lentaLightThemeConfig: ThemeConfig = {
     Table: {
       colorBgContainer: 'transparent',
       headerBg: '#f1f5f9',
-      headerColor: '#334155',
+      headerColor: '#5c6370',
       rowHoverBg: 'rgba(15, 23, 42, 0.03)',
       borderColor: 'rgba(15, 23, 42, 0.18)',
       borderRadius: 8,

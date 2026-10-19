@@ -248,7 +248,7 @@ export const AppLayout: React.FC = () => {
                 ? 'cloud_sync'
                 : 'dashboard'}
             </span>
-            <h1 className="font-sans font-bold text-xs text-on-surface tracking-tight truncate">
+            <h1 className="font-sans font-semibold text-xs text-on-surface tracking-tight truncate">
               {getPageTitle()}
             </h1>
           </div>

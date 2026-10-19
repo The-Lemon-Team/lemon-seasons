@@ -32,7 +32,7 @@ export const WatcherStatusCard: React.FC<WatcherStatusCardProps> = ({
                   isWatching ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400'
                 }`}
               />
-              <span className="font-sans font-bold text-xs text-on-surface">
+              <span className="font-sans font-semibold text-xs text-on-surface">
                 Слушатель Gemini Sparks & Google Drive
               </span>
             </div>
