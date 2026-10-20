@@ -23,6 +23,7 @@ export function useFeeds(includeDeleted = false, search?: string) {
   return useQuery({
     queryKey: ['feeds', { includeDeleted, search }],
     queryFn: () => feedsApi.getAll(includeDeleted, search),
+    staleTime: 60_000,
   });
 }
 
@@ -81,6 +82,8 @@ export function useNotes(params?: QueryNotesParams) {
   return useQuery({
     queryKey: ['notes', params],
     queryFn: () => notesApi.getAll(params),
+    staleTime: 30_000,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -464,6 +467,7 @@ export function useHashtags(includeDeleted = false, search?: string) {
   return useQuery({
     queryKey: ['hashtags', { includeDeleted, search }],
     queryFn: () => hashtagsApi.getAll(includeDeleted, search),
+    staleTime: 60_000,
   });
 }
 
@@ -510,6 +514,7 @@ export function useFolders(includeDeleted = false, search?: string) {
   return useQuery({
     queryKey: ['folders', { includeDeleted, search }],
     queryFn: () => foldersApi.getAll(includeDeleted, search),
+    staleTime: 60_000,
   });
 }
 

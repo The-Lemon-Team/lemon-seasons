@@ -51,10 +51,10 @@ export const NoteTypeBadge: React.FC<NoteTypeBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center font-mono font-semibold uppercase tracking-wider rounded-sm border ${config.bg} ${config.text} ${config.border} ${sizeClasses}`}
+      className={`inline-flex items-center font-mono font-semibold uppercase tracking-wider rounded-sm border whitespace-nowrap shrink-0 select-none ${config.bg} ${config.text} ${config.border} ${sizeClasses}`}
     >
       {showIcon && <IconComp className={iconClass} />}
-      <span>{label}</span>
+      <span className="whitespace-nowrap">{label}</span>
     </span>
   );
 };
