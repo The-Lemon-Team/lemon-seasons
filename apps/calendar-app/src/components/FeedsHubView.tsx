@@ -32,13 +32,24 @@ export interface FeedsHubViewProps {
 export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   selectedFeed,
   selectedFeeds,
+  startDate,
+  endDate,
 }) => {
   const activeFeed = selectedFeed ?? (selectedFeeds && selectedFeeds.length > 0 ? selectedFeeds[0] : undefined);
 
   const initialRoute = useMemo(() => {
     if (!activeFeed) return 'spark';
-    if (activeFeed === 'seasons' || activeFeed === 'classic' || activeFeed === 'telegram' || activeFeed === 'tg') {
-      return activeFeed === 'tg' ? 'telegram' : activeFeed;
+    if (
+      activeFeed === 'dev' ||
+      activeFeed === 'devhub' ||
+      activeFeed === 'seasons' ||
+      activeFeed === 'classic' ||
+      activeFeed === 'telegram' ||
+      activeFeed === 'tg'
+    ) {
+      if (activeFeed === 'tg') return 'telegram';
+      if (activeFeed === 'devhub') return 'dev';
+      return activeFeed;
     }
     return `spark?feed=${encodeURIComponent(activeFeed)}`;
   }, [activeFeed]);
@@ -47,7 +58,11 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
     <div className="flex-1 flex flex-col h-full bg-[#121414] dark:bg-[#0e1621] overflow-y-auto transition-colors">
       {/* Responsive Container with fixed stable width to avoid layout reflows */}
       <div className="max-w-6xl mx-auto w-full px-3 py-4 sm:px-5 sm:py-5">
-        <FeedAppMicrofrontend initialRoute={initialRoute} />
+        <FeedAppMicrofrontend
+          initialRoute={initialRoute}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </div>
     </div>
   );

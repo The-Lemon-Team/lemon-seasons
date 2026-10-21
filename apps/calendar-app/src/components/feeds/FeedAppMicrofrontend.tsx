@@ -1,16 +1,28 @@
-import React, { useState, useMemo } from 'react';
-import { ExternalLink, RefreshCw, Radio, Columns, Maximize2 } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { ExternalLink, RefreshCw, Radio, Columns, Maximize2, ShieldCheck } from 'lucide-react';
+import { MicrofrontendMessage, MicrofrontendAuthSyncPayload } from '@lenta/shared';
+import { useAuth } from '../../context/AuthContext';
+import { useUserKeys } from '../../context/UserKeysContext';
 
 interface FeedAppMicrofrontendProps {
   initialRoute?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   initialRoute = 'spark',
+  startDate,
+  endDate,
 }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeKey, setIframeKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [layoutMode, setLayoutMode] = useState<'split' | 'stream'>('split');
+  const [isAuthSynced, setIsAuthSynced] = useState(false);
+
+  const { user, token } = useAuth();
+  const { keys } = useUserKeys();
 
   // In local browser, feed-app runs on 5175
   const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
@@ -21,16 +33,90 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
       const url = new URL(cleanRoute === 'spark' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
       url.searchParams.set('embed', 'true');
       url.searchParams.set('layout', layoutMode);
+      if (startDate) url.searchParams.set('startDate', startDate);
+      if (endDate) url.searchParams.set('endDate', endDate);
       return url.toString();
     } catch {
       const cleanPath = initialRoute === 'spark' ? '' : initialRoute;
       const separator = cleanPath.includes('?') ? '&' : '?';
-      return `${feedAppBase}/${cleanPath}${separator}embed=true&layout=${layoutMode}`;
+      const dateParams = `${startDate ? `&startDate=${encodeURIComponent(startDate)}` : ''}${endDate ? `&endDate=${encodeURIComponent(endDate)}` : ''}`;
+      return `${feedAppBase}/${cleanPath}${separator}embed=true&layout=${layoutMode}${dateParams}`;
     }
-  }, [feedAppBase, initialRoute, layoutMode]);
+  }, [feedAppBase, initialRoute, layoutMode, startDate, endDate]);
+
+  const sendAuthSync = useCallback(() => {
+    if (!iframeRef.current?.contentWindow) return;
+
+    let targetOrigin = '*';
+    try {
+      targetOrigin = new URL(feedAppBase).origin;
+    } catch {
+      targetOrigin = '*';
+    }
+
+    const activeUserKey = keys.find((k) => !k.isRevoked)?.key || null;
+
+    const message: MicrofrontendMessage<MicrofrontendAuthSyncPayload> = {
+      type: 'LENTA_AUTH_SYNC',
+      source: 'lenta-calendar-app',
+      payload: {
+        token: token || (user ? `lenta_tok_${user.role}_${user.id}` : null),
+        user: user
+          ? {
+              id: user.id,
+              role: user.role,
+              name: user.name,
+              email: user.email,
+            }
+          : null,
+        userKey: activeUserKey,
+      },
+    };
+
+    iframeRef.current.contentWindow.postMessage(message, targetOrigin);
+    setIsAuthSynced(true);
+  }, [feedAppBase, token, user, keys]);
+
+  // Listen for handshake requests from embedded microfrontend
+  useEffect(() => {
+    let expectedOrigin = '';
+    try {
+      expectedOrigin = new URL(feedAppBase).origin;
+    } catch {
+      expectedOrigin = '';
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      if (expectedOrigin && event.origin !== expectedOrigin && event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type === 'LENTA_AUTH_REQUEST') {
+        sendAuthSync();
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [feedAppBase, sendAuthSync]);
+
+  // Push updated auth whenever user or session changes
+  useEffect(() => {
+    if (!isLoading) {
+      sendAuthSync();
+    }
+  }, [sendAuthSync, isLoading]);
+
+  const handleIframeLoad = () => {
+    setIsLoading(false);
+    sendAuthSync();
+    // Safety retry in case child React app mounts listeners shortly after load event
+    setTimeout(sendAuthSync, 250);
+  };
 
   const handleReload = () => {
     setIsLoading(true);
+    setIsAuthSynced(false);
     setIframeKey((prev) => prev + 1);
   };
 
@@ -49,6 +135,16 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
           <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
           <span className="font-semibold text-white">Микрофронтенд: Lenta Feed App</span>
           <span className="text-[#8292a2] hidden sm:inline">• :5175</span>
+
+          {isAuthSynced && user && (
+            <span
+              className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]"
+              title={`Токен авторизации передан через postMessage для пользователя ${user.name}`}
+            >
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span>Токен синхронизирован ({user.role})</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -111,11 +207,12 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
           </div>
         )}
         <iframe
+          ref={iframeRef}
           key={iframeKey}
           src={feedAppUrl}
           title="Lenta Feed App Microfrontend"
           className="w-full h-full border-0 min-h-[780px]"
-          onLoad={() => setIsLoading(false)}
+          onLoad={handleIframeLoad}
         />
       </div>
     </div>

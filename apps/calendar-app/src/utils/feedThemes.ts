@@ -254,6 +254,62 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeConfig> = {
     emoji: '📰',
     iconName: 'Newspaper',
   },
+  'spark-cyber-security': {
+    slug: 'spark-cyber-security',
+    title: 'Cyber Security (Spark)',
+    shortTitle: 'CyberSec',
+    tagline: 'Информационная безопасность, бюллетени CVE и защита периметра',
+    category: 'engineering',
+    accentColor: '#10b981', // Emerald
+    gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
+    borderAccent: '#059669',
+    bgLight: 'rgba(16, 185, 129, 0.12)',
+    badgeBg: 'rgba(16, 185, 129, 0.25)',
+    emoji: '🛡️',
+    iconName: 'Shield',
+  },
+  'spark-xakep': {
+    slug: 'spark-xakep',
+    title: 'Журнал «Хакер» (Spark)',
+    shortTitle: 'Хакер',
+    tagline: 'Разборы уязвимостей, reverse engineering и эксплойты',
+    category: 'engineering',
+    accentColor: '#22c55e', // Green
+    gradient: 'from-green-500/20 via-emerald-500/10 to-transparent',
+    borderAccent: '#16a34a',
+    bgLight: 'rgba(34, 197, 94, 0.12)',
+    badgeBg: 'rgba(34, 197, 94, 0.25)',
+    emoji: '👾',
+    iconName: 'Terminal',
+  },
+  'spark-notebooklmai': {
+    slug: 'spark-notebooklmai',
+    title: 'NotebookLM AI (Spark)',
+    shortTitle: 'NotebookLM',
+    tagline: 'Структурированные аудио-обзоры и аналитические синтезы',
+    category: 'engineering',
+    accentColor: '#a855f7', // Violet
+    gradient: 'from-purple-500/20 via-indigo-500/10 to-transparent',
+    borderAccent: '#7e22ce',
+    bgLight: 'rgba(168, 85, 247, 0.12)',
+    badgeBg: 'rgba(168, 85, 247, 0.25)',
+    emoji: '🎙️',
+    iconName: 'Radio',
+  },
+  'spark-changelogsfeed': {
+    slug: 'spark-changelogsfeed',
+    title: 'Changelogs & Релизы (Spark)',
+    shortTitle: 'Changelogs',
+    tagline: 'Официальные обновления и релизы вендоров: Google, OpenAI, Anthropic',
+    category: 'engineering',
+    accentColor: '#f97316', // Orange
+    gradient: 'from-orange-500/20 via-amber-500/10 to-transparent',
+    borderAccent: '#ea580c',
+    bgLight: 'rgba(249, 115, 22, 0.12)',
+    badgeBg: 'rgba(249, 115, 22, 0.25)',
+    emoji: '🚀',
+    iconName: 'Rocket',
+  },
 };
 
 // Curated dynamic palette for unmapped feeds

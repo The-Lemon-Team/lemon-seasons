@@ -40,9 +40,12 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
   const currentMonth = dayjs(startDate || undefined).format('MMMM YYYY');
   const isClassic = sourceType === 'classic';
   const isTelegram = sourceType === 'telegram';
+  const isDev = sourceType === 'dev';
 
   const headerCategory = activeFeed
     ? activeFeed.category
+    : isDev
+    ? 'Dev Hub'
     : isClassic
     ? 'Все события'
     : isTelegram
@@ -51,6 +54,8 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
 
   const headerEmoji = activeFeed
     ? activeFeed.emoji
+    : isDev
+    ? '💻'
     : isClassic
     ? '🏛️'
     : isTelegram
@@ -59,6 +64,8 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
 
   const headerTitle = activeFeed
     ? activeFeed.title
+    : isDev
+    ? 'Dev Hub — Центр разработки'
     : isClassic
     ? 'Все календари и праздники'
     : isTelegram
@@ -67,6 +74,8 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
 
   const headerDescription = activeFeed
     ? activeFeed.description
+    : isDev
+    ? 'Инженерные сводки, релизы моделей, changelog обновления вендоров, IT-статьи и кибербезопасность'
     : isClassic
     ? 'Объединенный хронологический поток государственных, религиозных и мировых дат'
     : isTelegram
@@ -74,13 +83,15 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
     : 'Объединенный новостной поток всех тематических папок Spark';
 
   const displayCount = isTelegram ? 624 : (activeFeed ? activeFeed.count : totalNotesCount);
-  const categoriesLabel = isClassic ? 'тем' : 'папок';
-  const widgetTitle = isClassic
+  const categoriesLabel = isDev ? 'тем' : isClassic ? 'тем' : 'папок';
+  const widgetTitle = isDev
+    ? 'Разделы Dev Hub'
+    : isClassic
     ? 'Категории календаря'
     : isTelegram
     ? 'Папки Telegram'
     : 'Папки в Spark';
-  const allLabel = isClassic ? 'Все события' : isTelegram ? 'Все папки' : 'Все каналы';
+  const allLabel = isDev ? 'Все Dev ленты' : isClassic ? 'Все события' : isTelegram ? 'Все папки' : 'Все каналы';
 
   return (
     <aside className="w-72 shrink-0 hidden lg:flex flex-col space-y-3.5 select-none text-xs">
@@ -125,6 +136,69 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 1.5 Subtopics Widget (e.g. for Changelogs) */}
+      {activeFeed?.subtopics && activeFeed.subtopics.length > 0 && (
+        <div className="p-4 rounded-2xl bg-white/95 dark:bg-[#18222d]/95 border border-slate-200/80 dark:border-white/[0.08] shadow-2xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>Подтемы {activeFeed.shortTitle}</span>
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/10 text-slate-500">
+              {activeFeed.subtopics.length}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => onSelectFeed(activeFeed.slug)}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-colors duration-150 text-left font-medium ${
+                selectedFeedSlug === activeFeed.slug
+                  ? 'bg-[#2481cc]/10 text-[#2481cc] font-semibold border border-[#2481cc]/25'
+                  : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span>📁</span>
+                <span className="truncate">Все {activeFeed.shortTitle}</span>
+              </div>
+              <span className="font-mono text-[10px] opacity-70">
+                {activeFeed.count}
+              </span>
+            </button>
+
+            {activeFeed.subtopics.map((sub) => {
+              const isSubActive = selectedFeedSlug === sub.slug;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => onSelectFeed(sub.slug)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-colors duration-150 text-left font-medium ${
+                    isSubActive
+                      ? 'bg-[#2481cc]/10 text-[#2481cc] font-semibold border border-[#2481cc]/25'
+                      : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span>{sub.emoji}</span>
+                    <span className="truncate">{sub.title}</span>
+                  </div>
+                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-full ${
+                    isSubActive
+                      ? 'bg-[#2481cc]/20 text-[#2481cc]'
+                      : 'bg-slate-100 dark:bg-white/10 opacity-70'
+                  }`}>
+                    {sub.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 2. Folders / Feeds Navigation Widget */}
       <div className="p-4 rounded-2xl bg-white/95 dark:bg-[#18222d]/95 border border-slate-200/80 dark:border-white/[0.08] shadow-2xs space-y-2.5">

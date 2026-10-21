@@ -124,6 +124,18 @@ export const FeedsSoftPanel: React.FC<FeedsSoftPanelProps> = ({
 
             <button
               type="button"
+              onClick={() => onSetStreamSource('dev')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors duration-150 flex items-center gap-1 sm:gap-1.5 font-medium ${
+                streamSource === 'dev'
+                  ? 'bg-white dark:bg-[#243343] text-[#2481cc] dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>💻 Dev Hub</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => onSetStreamSource('seasons')}
               className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors duration-150 flex items-center gap-1 sm:gap-1.5 font-medium ${
                 streamSource === 'seasons'
@@ -196,45 +208,99 @@ export const FeedsSoftPanel: React.FC<FeedsSoftPanelProps> = ({
         </div>
       </div>
 
-      {/* 2. Thematic Tabs Row (Spark or Classic) */}
+      {/* 2. Thematic Tabs Row (Spark, Dev Hub, or Classic) */}
       {streamSource !== 'telegram' && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
-          {/* All Channels Option */}
-          <FeedTabPill
-            label={streamSource === 'classic' ? 'Все события' : 'Все каналы'}
-            emoji={streamSource === 'classic' ? '🏛️' : '📡'}
-            count={totalNotesCount}
-            isActive={isAllSelected}
-            onClick={() => onSelectFeed(undefined)}
-          />
-
-          {/* Individual Thematic Feed Tabs */}
-          {tabs.map((tab) => {
-            const isSelected = activeFeedSlug === tab.slug;
-            return (
-              <FeedTabPill
-                key={tab.id}
-                label={tab.shortTitle}
-                emoji={tab.emoji}
-                count={tab.count}
-                isActive={isSelected}
-                accentColor={tab.accentColor}
-                onClick={() => onSelectFeed(tab.slug)}
-                title={`${tab.title}${tab.description ? ` — ${tab.description}` : ''}`}
-              />
-            );
-          })}
-
-          {!isAllSelected && (
-            <button
-              type="button"
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+            {/* All Channels Option */}
+            <FeedTabPill
+              label={streamSource === 'dev' ? 'Все Dev ленты' : streamSource === 'classic' ? 'Все события' : 'Все каналы'}
+              emoji={streamSource === 'dev' ? '💻' : streamSource === 'classic' ? '🏛️' : '📡'}
+              count={totalNotesCount}
+              isActive={isAllSelected}
               onClick={() => onSelectFeed(undefined)}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-              title="Сбросить фильтр"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+            />
+
+            {/* Individual Thematic Feed Tabs */}
+            {tabs.map((tab) => {
+              const isSelected =
+                activeFeedSlug === tab.slug ||
+                Boolean(tab.subtopics && tab.subtopics.some((s) => s.slug === activeFeedSlug));
+              return (
+                <FeedTabPill
+                  key={tab.id}
+                  label={tab.shortTitle}
+                  emoji={tab.emoji}
+                  count={tab.count}
+                  isActive={isSelected}
+                  accentColor={tab.accentColor}
+                  onClick={() => onSelectFeed(tab.slug)}
+                  title={`${tab.title}${tab.description ? ` — ${tab.description}` : ''}`}
+                />
+              );
+            })}
+
+            {!isAllSelected && (
+              <button
+                type="button"
+                onClick={() => onSelectFeed(undefined)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                title="Сбросить фильтр"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Subtopics Row (for tabs with subtopics, e.g. Changelogs: Google, OpenAI, Anthropic) */}
+          {(() => {
+            const activeTabWithSubtopics = tabs.find(
+              (t) =>
+                t.subtopics &&
+                t.subtopics.length > 0 &&
+                (activeFeedSlug === t.slug || t.subtopics.some((s) => s.slug === activeFeedSlug))
+            );
+            if (!activeTabWithSubtopics || !activeTabWithSubtopics.subtopics?.length) return null;
+
+            return (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar pl-2 border-l-2 border-[#2481cc]/40 dark:border-[#2481cc]/50">
+                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                  Подтемы:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onSelectFeed(activeTabWithSubtopics.slug)}
+                  className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors select-none ${
+                    activeFeedSlug === activeTabWithSubtopics.slug
+                      ? 'bg-[#2481cc] text-white shadow-xs font-semibold'
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  <span>Все {activeTabWithSubtopics.shortTitle}</span>
+                  <span className="font-mono text-[9px] opacity-80">{activeTabWithSubtopics.count}</span>
+                </button>
+                {activeTabWithSubtopics.subtopics.map((sub) => {
+                  const isSubSelected = activeFeedSlug === sub.slug;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => onSelectFeed(sub.slug)}
+                      className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors select-none ${
+                        isSubSelected
+                          ? 'bg-[#2481cc] text-white shadow-xs font-semibold'
+                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{sub.emoji}</span>
+                      <span>{sub.title}</span>
+                      <span className="font-mono text-[9px] opacity-80">{sub.count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 

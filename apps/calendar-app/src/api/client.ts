@@ -32,6 +32,19 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
+let currentCalendarAuthToken: string | null = null;
+
+export const setCalendarAuthToken = (tok: string | null) => {
+  currentCalendarAuthToken = tok;
+};
+
+apiClient.interceptors.request.use((config) => {
+  if (currentCalendarAuthToken) {
+    config.headers.Authorization = `Bearer ${currentCalendarAuthToken}`;
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

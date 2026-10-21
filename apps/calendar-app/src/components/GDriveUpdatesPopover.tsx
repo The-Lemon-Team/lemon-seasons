@@ -96,7 +96,10 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity"
+        onClick={onClose}
+      />
 
       {/* Popover Card */}
       <div className="absolute right-0 top-11 z-50 w-96 max-w-[calc(100vw-2rem)] bg-[#161818] border border-[#2e3434] rounded-xl shadow-2xl p-4 text-xs font-sans animate-in fade-in slide-in-from-top-2">

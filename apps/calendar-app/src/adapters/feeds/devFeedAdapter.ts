@@ -1,0 +1,463 @@
+import { Note } from '@lenta/shared';
+import {
+  FeedAdapter,
+  FeedAdapterContext,
+  UnifiedFeedItem,
+  UnifiedFeedTab,
+  UnifiedSubtopic,
+  ThematicCategoryBadge,
+} from './types';
+
+export interface DevFeedPresetConfig {
+  slug: string;
+  title: string;
+  shortTitle: string;
+  emoji: string;
+  category: string;
+  accentColor: string;
+  badgeBgLight: string;
+  badgeTextLight: string;
+  badgeBgDark: string;
+  badgeTextDark: string;
+  description: string;
+  matcher: (note: Note) => boolean;
+  isChangelogs?: boolean;
+}
+
+const KNOWN_CHANGELOG_SUBTOPICS: Array<{
+  subfolder: string;
+  title: string;
+  emoji: string;
+  accentColor: string;
+}> = [
+  { subfolder: 'google', title: 'Google', emoji: '🌐', accentColor: '#4285f4' },
+  { subfolder: 'openai', title: 'OpenAI', emoji: '🧠', accentColor: '#10a37f' },
+  { subfolder: 'anthropic', title: 'Anthropic', emoji: '⚡', accentColor: '#d97706' },
+];
+
+/**
+ * Extracts the changelog subfolder from a note (e.g. 'google', 'openai', 'anthropic').
+ */
+export function extractChangelogSubfolder(note: Note): string | null {
+  const checkString = (str?: string | null): string | null => {
+    if (!str) return null;
+    const normalized = str.replace(/\\/g, '/').toLowerCase();
+    const match = normalized.match(/changelogsfeed\/([^/]+)/);
+    if (match && match[1]) {
+      const clean = match[1].trim().toLowerCase();
+      return clean === 'antropic' ? 'anthropic' : clean;
+    }
+    return null;
+  };
+
+  const fromFolderPath = checkString(note.folderPath);
+  if (fromFolderPath) return fromFolderPath;
+
+  if (note.folders && Array.isArray(note.folders)) {
+    for (const f of note.folders) {
+      const p = f.folder?.path || f.folder?.name || '';
+      const res = checkString(p);
+      if (res) return res;
+    }
+  }
+
+  const slug = (note.feed?.slug || '').toLowerCase();
+  if (slug.startsWith('spark-changelogsfeed-')) {
+    const sub = slug.replace(/^spark-changelogsfeed-/, '').trim();
+    return sub === 'antropic' ? 'anthropic' : sub;
+  }
+
+  return null;
+}
+
+export function isChangelogsNote(note: Note): boolean {
+  if (extractChangelogSubfolder(note)) return true;
+  const slug = (note.feed?.slug || '').toLowerCase();
+  if (slug.startsWith('spark-changelogsfeed') || slug === 'changelogsfeed') return true;
+  const fp = (note.folderPath || '').replace(/\\/g, '/').toLowerCase();
+  if (fp.includes('changelogsfeed')) return true;
+  if (note.folders && Array.isArray(note.folders)) {
+    return note.folders.some((f) => {
+      const p = (f.folder?.path || f.folder?.name || '').replace(/\\/g, '/').toLowerCase();
+      return p.includes('changelogsfeed');
+    });
+  }
+  return false;
+}
+
+export const DEV_PRESETS: DevFeedPresetConfig[] = [
+  {
+    slug: 'spark-ai',
+    title: 'AI & Нейросети',
+    shortTitle: 'AI & ML',
+    emoji: '🤖',
+    category: 'AI & Нейросети',
+    accentColor: '#8b5cf6',
+    badgeBgLight: 'rgba(139, 92, 246, 0.1)',
+    badgeTextLight: '#6d28d9',
+    badgeBgDark: 'rgba(139, 92, 246, 0.25)',
+    badgeTextDark: '#c4b5fd',
+    description: 'Релизы LLM моделей, рассуждения (reasoning), агентные вычисления и прорывы',
+    matcher: (n: Note) => {
+      const slug = (n.feed?.slug || '').toLowerCase();
+      if (slug === 'spark-ai' || slug === 'dev-ai') return true;
+      const fp = (n.folderPath || '').toLowerCase();
+      if (fp.startsWith('spark/ai') || fp === 'ai') return true;
+      if (n.folders && Array.isArray(n.folders)) {
+        return n.folders.some((f) => {
+          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
+          return p.startsWith('spark/ai') || p === 'ai';
+        });
+      }
+      return false;
+    },
+  },
+  {
+    slug: 'spark-habr',
+    title: 'Хабр & IT Статьи',
+    shortTitle: 'Хабр',
+    emoji: '💻',
+    category: 'IT & Архитектура',
+    accentColor: '#0284c7',
+    badgeBgLight: 'rgba(2, 132, 199, 0.1)',
+    badgeTextLight: '#0369a1',
+    badgeBgDark: 'rgba(2, 132, 199, 0.25)',
+    badgeTextDark: '#7dd3fc',
+    description: 'Инженерные статьи, архитектура ПО, DevOps и сообщество Хабр',
+    matcher: (n: Note) => {
+      const slug = (n.feed?.slug || '').toLowerCase();
+      if (slug === 'spark-habr' || slug === 'dev-habr') return true;
+      const fp = (n.folderPath || '').toLowerCase();
+      if (fp.startsWith('spark/habr') || fp === 'habr') return true;
+      if (n.folders && Array.isArray(n.folders)) {
+        return n.folders.some((f) => {
+          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
+          return p.startsWith('spark/habr') || p === 'habr';
+        });
+      }
+      return false;
+    },
+  },
+  {
+    slug: 'spark-cyber-security',
+    title: 'Cyber Security & InfoSec',
+    shortTitle: 'CyberSec',
+    emoji: '🛡️',
+    category: 'Кибербезопасность',
+    accentColor: '#10b981',
+    badgeBgLight: 'rgba(16, 185, 129, 0.1)',
+    badgeTextLight: '#047857',
+    badgeBgDark: 'rgba(16, 185, 129, 0.25)',
+    badgeTextDark: '#6ee7b7',
+    description: 'Информационная безопасность, бюллетени CVE, SecOps и защита инфраструктуры',
+    matcher: (n: Note) => {
+      const slug = (n.feed?.slug || '').toLowerCase();
+      if (slug.includes('cyber-security') || slug.includes('cybersec')) return true;
+      const fp = (n.folderPath || '').toLowerCase();
+      if (fp.includes('cyber security') || fp.includes('cybersecurity') || fp.includes('cybersec')) return true;
+      if (n.folders && Array.isArray(n.folders)) {
+        return n.folders.some((f) => {
+          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
+          return p.includes('cyber security') || p.includes('cybersecurity') || p.includes('cybersec');
+        });
+      }
+      return false;
+    },
+  },
+  {
+    slug: 'spark-xakep',
+    title: 'Журнал «Хакер» (xakep.ru)',
+    shortTitle: 'Хакер',
+    emoji: '👾',
+    category: 'AppSec & Реверс',
+    accentColor: '#22c55e',
+    badgeBgLight: 'rgba(34, 197, 94, 0.1)',
+    badgeTextLight: '#15803d',
+    badgeBgDark: 'rgba(34, 197, 94, 0.25)',
+    badgeTextDark: '#86efac',
+    description: 'Материалы журнала «Хакер», эксплойты, reverse engineering и разборы атак',
+    matcher: (n: Note) => {
+      const slug = (n.feed?.slug || '').toLowerCase();
+      if (slug === 'spark-xakep' || slug === 'xakep') return true;
+      const fp = (n.folderPath || '').toLowerCase();
+      if (fp.startsWith('spark/xakep') || fp === 'xakep') return true;
+      if (n.folders && Array.isArray(n.folders)) {
+        return n.folders.some((f) => {
+          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
+          return p.startsWith('spark/xakep') || p === 'xakep';
+        });
+      }
+      return false;
+    },
+  },
+  {
+    slug: 'spark-notebooklmai',
+    title: 'NotebookLM AI Deep Dives',
+    shortTitle: 'NotebookLM',
+    emoji: '🎙️',
+    category: 'Аналитика & Подкасты',
+    accentColor: '#a855f7',
+    badgeBgLight: 'rgba(168, 85, 247, 0.1)',
+    badgeTextLight: '#7e22ce',
+    badgeBgDark: 'rgba(168, 85, 247, 0.25)',
+    badgeTextDark: '#d8b4fe',
+    description: 'Глубокие структурированные аудио-обзоры и аналитические синтезы от NotebookLM',
+    matcher: (n: Note) => {
+      const slug = (n.feed?.slug || '').toLowerCase();
+      if (slug === 'spark-notebooklmai' || slug === 'notebooklm-ai' || slug === 'notebooklm-podcasts') return true;
+      const fp = (n.folderPath || '').toLowerCase();
+      if (fp.includes('notebooklm') || fp.includes('podcasts/ai')) return true;
+      if (n.folders && Array.isArray(n.folders)) {
+        return n.folders.some((f) => {
+          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
+          return p.includes('notebooklm') || p.includes('podcasts/ai');
+        });
+      }
+      return false;
+    },
+  },
+  {
+    slug: 'spark-changelogsfeed',
+    title: 'Changelogs & Релизы вендоров',
+    shortTitle: 'Changelogs',
+    emoji: '🚀',
+    category: 'Changelogs & Updates',
+    accentColor: '#f97316',
+    badgeBgLight: 'rgba(249, 115, 22, 0.1)',
+    badgeTextLight: '#c2410c',
+    badgeBgDark: 'rgba(249, 115, 22, 0.25)',
+    badgeTextDark: '#fdba74',
+    description: 'Официальные обновления и ченджлоги вендоров: Google, OpenAI, Anthropic и др.',
+    isChangelogs: true,
+    matcher: isChangelogsNote,
+  },
+];
+
+export function isDevNote(note: Note): boolean {
+  return DEV_PRESETS.some((preset) => preset.matcher(note));
+}
+
+function resolveDevBadge(note: Note): ThematicCategoryBadge {
+  const subfolder = extractChangelogSubfolder(note);
+  if (subfolder) {
+    if (subfolder === 'google') {
+      return {
+        label: 'Changelog / Google',
+        emoji: '🌐',
+        colorClass: 'bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40',
+      };
+    }
+    if (subfolder === 'openai') {
+      return {
+        label: 'Changelog / OpenAI',
+        emoji: '🧠',
+        colorClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40',
+      };
+    }
+    if (subfolder === 'anthropic') {
+      return {
+        label: 'Changelog / Anthropic',
+        emoji: '⚡',
+        colorClass: 'bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40',
+      };
+    }
+    const cap = subfolder.charAt(0).toUpperCase() + subfolder.slice(1);
+    return {
+      label: `Changelog / ${cap}`,
+      emoji: '🚀',
+      colorClass: 'bg-orange-50 text-orange-700 border-orange-200/70 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/40',
+    };
+  }
+
+  if (isChangelogsNote(note)) {
+    return {
+      label: 'Changelogs',
+      emoji: '🚀',
+      colorClass: 'bg-orange-50 text-orange-700 border-orange-200/70 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/40',
+    };
+  }
+
+  for (const preset of DEV_PRESETS) {
+    if (preset.matcher(note)) {
+      return {
+        label: preset.category,
+        emoji: preset.emoji,
+        colorClass: 'bg-slate-50 text-slate-700 border-slate-200/70 dark:bg-slate-900/40 dark:text-slate-300 dark:border-slate-700/40',
+      };
+    }
+  }
+
+  return {
+    label: 'Dev Hub',
+    emoji: '💻',
+    colorClass: 'bg-sky-50 text-sky-700 border-sky-200/70 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40',
+  };
+}
+
+function resolveDevAvatar(note: Note): string {
+  const subfolder = extractChangelogSubfolder(note);
+  if (subfolder === 'google') return '🌐';
+  if (subfolder === 'openai') return '🧠';
+  if (subfolder === 'anthropic') return '⚡';
+  if (isChangelogsNote(note)) return '🚀';
+
+  const slug = (note.feed?.slug || '').toLowerCase();
+  const title = (note.title || '').toLowerCase();
+  if (slug.includes('xakep') || title.includes('хакер')) return '👾';
+  if (slug.includes('cyber') || title.includes('sec')) return '🛡️';
+  if (slug.includes('notebooklm') || title.includes('notebooklm')) return '🎙️';
+  if (slug.includes('habr') || title.includes('habr')) return '💻';
+  if (slug.includes('ai') || title.includes('ai')) return '🤖';
+  return '💻';
+}
+
+export const DevFeedAdapter: FeedAdapter = {
+  sourceType: 'dev',
+  label: 'Dev Hub',
+  shortLabel: 'Dev Hub',
+  emoji: '💻',
+  description: 'Инженерные новости, релизы моделей, changelog обновления вендоров и IT сообщество',
+
+  getTabs(context: FeedAdapterContext): UnifiedFeedTab[] {
+    const { notes } = context;
+
+    // Discover changelog subfolders from notes
+    const changelogSubCounts: Record<string, number> = {};
+    for (const n of notes) {
+      if (isChangelogsNote(n)) {
+        const sub = extractChangelogSubfolder(n) || 'other';
+        changelogSubCounts[sub] = (changelogSubCounts[sub] || 0) + 1;
+      }
+    }
+
+    return DEV_PRESETS.map((preset) => {
+      const matchingNotes = notes.filter(preset.matcher);
+      let subtopics: UnifiedSubtopic[] | undefined;
+
+      if (preset.isChangelogs) {
+        const discovered = new Set<string>();
+        subtopics = [];
+
+        // 1. Add known default subtopics
+        for (const known of KNOWN_CHANGELOG_SUBTOPICS) {
+          discovered.add(known.subfolder);
+          subtopics.push({
+            id: `sub-${known.subfolder}`,
+            slug: `spark-changelogsfeed-${known.subfolder}`,
+            subfolder: known.subfolder,
+            title: known.title,
+            emoji: known.emoji,
+            count: changelogSubCounts[known.subfolder] || 0,
+            accentColor: known.accentColor,
+          });
+        }
+
+        // 2. Add dynamically discovered subfolders
+        for (const [sub, count] of Object.entries(changelogSubCounts)) {
+          if (sub !== 'other' && !discovered.has(sub)) {
+            const cap = sub.charAt(0).toUpperCase() + sub.slice(1);
+            subtopics.push({
+              id: `sub-${sub}`,
+              slug: `spark-changelogsfeed-${sub}`,
+              subfolder: sub,
+              title: cap,
+              emoji: '📦',
+              count,
+              accentColor: '#f97316',
+            });
+            discovered.add(sub);
+          }
+        }
+      }
+
+      return {
+        id: preset.slug,
+        slug: preset.slug,
+        title: preset.title,
+        shortTitle: preset.shortTitle,
+        emoji: preset.emoji,
+        category: preset.category,
+        count: matchingNotes.length,
+        accentColor: preset.accentColor,
+        badgeBgLight: preset.badgeBgLight,
+        badgeTextLight: preset.badgeTextLight,
+        badgeBgDark: preset.badgeBgDark,
+        badgeTextDark: preset.badgeTextDark,
+        description: preset.description,
+        isCustomFolder: false,
+        subtopics,
+      };
+    });
+  },
+
+  adaptNotes(notes: Note[], activeFeedSlug?: string, searchQuery?: string): UnifiedFeedItem[] {
+    // 1. Strictly filter to Dev Hub ecosystem notes
+    let matched = notes.filter(isDevNote);
+
+    // 2. Specific feed or subtopic filter
+    if (activeFeedSlug) {
+      if (activeFeedSlug.startsWith('spark-changelogsfeed-')) {
+        const targetSub = activeFeedSlug.replace(/^spark-changelogsfeed-/, '').toLowerCase();
+        matched = matched.filter((n) => {
+          const sub = extractChangelogSubfolder(n);
+          return sub === targetSub;
+        });
+      } else {
+        const preset = DEV_PRESETS.find((p) => p.slug === activeFeedSlug);
+        if (preset) {
+          matched = matched.filter(preset.matcher);
+        } else {
+          matched = matched.filter((n) => n.feed?.slug === activeFeedSlug);
+        }
+      }
+    }
+
+    // 3. Search query filter
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      matched = matched.filter((n) => {
+        const titleMatch = n.title.toLowerCase().includes(q);
+        const descMatch = Boolean(n.description?.toLowerCase().includes(q));
+        const feedMatch = Boolean(n.feed?.title?.toLowerCase().includes(q));
+        const tagMatch = n.hashtags?.some((h) => h.name.toLowerCase().includes(q));
+        const subfolder = extractChangelogSubfolder(n);
+        const subMatch = Boolean(subfolder && subfolder.includes(q));
+        return titleMatch || descMatch || feedMatch || tagMatch || subMatch;
+      });
+    }
+
+    // 4. Sort newest first
+    matched.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+
+    // 5. Convert to UnifiedFeedItem
+    return matched.map((n) => {
+      const sub = extractChangelogSubfolder(n);
+      let channelTitle = n.feed?.title || 'Dev Feed';
+      if (sub) {
+        channelTitle = `${sub.charAt(0).toUpperCase() + sub.slice(1)} Changelog`;
+      } else {
+        channelTitle = channelTitle.replace(/\s*\(Spark\)/i, '').replace(/^Spark\s*[—–-]\s*/i, '').trim();
+      }
+
+      return {
+        id: n.id,
+        sourceType: 'dev',
+        feedSlug: n.feed?.slug || (sub ? `spark-changelogsfeed-${sub}` : 'dev'),
+        channelTitle,
+        channelHandle: n.feed?.slug || 'dev',
+        avatarIcon: resolveDevAvatar(n),
+        category: resolveDevBadge(n),
+        title: n.title,
+        description: n.description || '',
+        summary: (n as any).summary || null,
+        publishedAt: n.startDate,
+        timeSlot: (n.metadata as any)?.timeSlot,
+        resonanceScore: (n.metadata as any)?.resonanceScore ?? (n as any).resonanceScore,
+        sourceLink: n.sourceLink,
+        curator: n.curator,
+        hashtags: n.hashtags?.map((h) => h.name) || [],
+        rawPayload: n,
+      };
+    });
+  },
+};
