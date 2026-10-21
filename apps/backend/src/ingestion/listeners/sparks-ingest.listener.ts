@@ -85,7 +85,13 @@ export class SparksIngestListener {
       });
 
       // 3. Folder assignment
-      parsed.noteDto.folders = [folderPath];
+      const folderList = [folderPath];
+      if (folderPath.startsWith('Spark/') && folderPath.split('/').length > 2) {
+        // Also associate with parent folder (e.g. "Spark/changelogsfeed")
+        const parentFolder = folderPath.split('/').slice(0, 2).join('/');
+        folderList.push(parentFolder);
+      }
+      parsed.noteDto.folders = folderList;
       parsed.noteDto.folderPath = folderPath;
       parsed.noteDto.metadata = {
         ...(parsed.noteDto.metadata || {}),
@@ -177,13 +183,20 @@ export class SparksIngestListener {
 
   private async resolveFeedForFolder(folderPath: string, filePath: string, frontmatterFeed?: string) {
     const parts = folderPath.split('/');
+    const isChangelogs = parts.length > 1 && parts[1].toLowerCase() === 'changelogsfeed';
     const subfolder = parts.length > 1 ? parts[1] : (parts[0] || 'AI');
 
     let targetSlug = 'spark-general';
     let targetTitle = 'Spark — Общая лента';
     let targetDesc = 'Автоматически импортированные новости и дайджесты из Google Drive';
 
-    if (subfolder && subfolder.toLowerCase() !== 'spark') {
+    if (isChangelogs && parts.length > 2) {
+      const subtopic = parts[2];
+      const lowerSub = subtopic.toLowerCase();
+      targetSlug = `spark-changelogsfeed-${lowerSub.replace(/[^a-z0-9а-яё]/gi, '-')}`;
+      targetTitle = `${subtopic.charAt(0).toUpperCase() + subtopic.slice(1)} (Changelogs)`;
+      targetDesc = `Официальные обновления и релизы ${subtopic} из каталога Changelogs`;
+    } else if (subfolder && subfolder.toLowerCase() !== 'spark') {
       const lowerFolder = subfolder.toLowerCase();
       targetSlug = `spark-${lowerFolder.replace(/[^a-z0-9а-яё]/gi, '-')}`;
       targetTitle = `${subfolder} (Spark)`;
@@ -205,6 +218,7 @@ export class SparksIngestListener {
             title: targetTitle,
             description: targetDesc,
             folderPaths: [folderPath],
+            privacy: 'public',
           },
         });
         this.logger.log(`📢 Автоматически создана лента новостей: "${targetTitle}" [slug: ${targetSlug}]`);
@@ -219,6 +233,30 @@ export class SparksIngestListener {
           folderPaths: Array.from(new Set([...(feed.folderPaths || []), folderPath])),
         },
       });
+    }
+
+    // If this is a changelog subfolder, also ensure parent feed spark-changelogsfeed is registered
+    if (isChangelogs) {
+      const parentSlug = 'spark-changelogsfeed';
+      const parentFeed = await this.prisma.feed.findUnique({ where: { slug: parentSlug } });
+      if (!parentFeed) {
+        await this.prisma.feed.create({
+          data: {
+            slug: parentSlug,
+            title: 'Changelogs & Релизы (Spark)',
+            description: 'Официальные обновления и релизы вендоров: Google, OpenAI, Anthropic',
+            folderPaths: ['Spark/changelogsfeed', folderPath],
+            privacy: 'public',
+          },
+        }).catch(() => {});
+      } else if (!parentFeed.folderPaths.includes(folderPath)) {
+        await this.prisma.feed.update({
+          where: { id: parentFeed.id },
+          data: {
+            folderPaths: Array.from(new Set([...parentFeed.folderPaths, folderPath, 'Spark/changelogsfeed'])),
+          },
+        }).catch(() => {});
+      }
     }
 
     return feed;

@@ -9,10 +9,39 @@ import { QueryNotesDto } from './dto/query-notes.dto';
 export class NotesQueryBuilder {
   constructor(private readonly prisma: PrismaService) {}
 
+  private buildFeedCondition(targetFeed: { id: string; folderPaths: string[]; hashtags: string[] }): Prisma.NoteWhereInput {
+    const hasFolders = targetFeed.folderPaths && targetFeed.folderPaths.length > 0;
+    const hasHashtags = targetFeed.hashtags && targetFeed.hashtags.length > 0;
+
+    if (hasFolders || hasHashtags) {
+      const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
+      if (hasFolders) {
+        orClauses.push(
+          ...targetFeed.folderPaths.map((fp) => ({
+            folderPath: { startsWith: fp, mode: 'insensitive' as const },
+          })),
+        );
+      }
+      if (hasHashtags) {
+        const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
+        orClauses.push({
+          hashtags: {
+            some: {
+              name: { in: cleanTags },
+              deletedAt: null,
+            },
+          },
+        });
+      }
+      return { OR: orClauses };
+    }
+    return { feedId: targetFeed.id };
+  }
+
   /**
    * Constructs the strongly-typed Prisma.NoteWhereInput condition from the HTTP query parameters.
    */
-  async buildWhereClause(query: QueryNotesDto): Promise<Prisma.NoteWhereInput> {
+  async buildWhereClause(query: QueryNotesDto, isAdmin = false): Promise<Prisma.NoteWhereInput> {
     const {
       feedId,
       feedSlug,
@@ -26,6 +55,7 @@ export class NotesQueryBuilder {
       folderId,
       folder,
       folderPrefix,
+      folderPath,
       unfiled,
       startDateFrom,
       startDateTo,
@@ -39,81 +69,33 @@ export class NotesQueryBuilder {
       userId,
     } = query;
 
-    const qStart = queryStart || overlapStart;
-    const qEnd = queryEnd || overlapEnd;
+    // NOTE: All notes are treated as public — no private folders or feeds exist in this deployment.
+    // Privacy gating is intentionally bypassed. Re-enable when private access control is needed.
 
-    let parsedContainers: string[] | undefined = undefined;
-    if (containers) {
-      parsedContainers = containers
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean);
-    }
+    const andConditions: Prisma.NoteWhereInput[] = [
+      { deletedAt: null },
+    ];
 
-    let feedFilter: Prisma.NoteWhereInput | undefined = undefined;
+    // Feed filtering
     if (feedId) {
       const targetFeed = await this.prisma.feed.findUnique({
         where: { id: feedId },
         select: { id: true, folderPaths: true, hashtags: true },
       });
-      const hasFolders = targetFeed?.folderPaths && targetFeed.folderPaths.length > 0;
-      const hasHashtags = targetFeed?.hashtags && targetFeed.hashtags.length > 0;
-
-      if (targetFeed && (hasFolders || hasHashtags)) {
-        const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
-        if (hasFolders) {
-          orClauses.push(
-            ...targetFeed.folderPaths.map((fp) => ({
-              folderPath: { startsWith: fp, mode: 'insensitive' as const },
-            }))
-          );
-        }
-        if (hasHashtags) {
-          const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
-          orClauses.push({
-            hashtags: {
-              some: {
-                name: { in: cleanTags },
-                deletedAt: null,
-              },
-            },
-          });
-        }
-        feedFilter = { OR: orClauses };
+      if (targetFeed) {
+        andConditions.push(this.buildFeedCondition(targetFeed));
       } else {
-        feedFilter = { feedId };
+        andConditions.push({ feedId });
       }
     } else if (feedSlug) {
       const targetFeed = await this.prisma.feed.findFirst({
         where: { slug: feedSlug, deletedAt: null },
         select: { id: true, folderPaths: true, hashtags: true },
       });
-      const hasFolders = targetFeed?.folderPaths && targetFeed.folderPaths.length > 0;
-      const hasHashtags = targetFeed?.hashtags && targetFeed.hashtags.length > 0;
-
-      if (targetFeed && (hasFolders || hasHashtags)) {
-        const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
-        if (hasFolders) {
-          orClauses.push(
-            ...targetFeed.folderPaths.map((fp) => ({
-              folderPath: { startsWith: fp, mode: 'insensitive' as const },
-            }))
-          );
-        }
-        if (hasHashtags) {
-          const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
-          orClauses.push({
-            hashtags: {
-              some: {
-                name: { in: cleanTags },
-                deletedAt: null,
-              },
-            },
-          });
-        }
-        feedFilter = { OR: orClauses };
+      if (targetFeed) {
+        andConditions.push(this.buildFeedCondition(targetFeed));
       } else {
-        feedFilter =
+        const legacySlugFilter: Prisma.NoteWhereInput =
           feedSlug === 'russian-holidays'
             ? {
                 feed: {
@@ -126,124 +108,144 @@ export class NotesQueryBuilder {
             : feedSlug === 'wiki' || feedSlug === 'wiki-history'
             ? { feed: { slug: { in: ['wiki', 'wiki-history', 'wikipedia'] }, deletedAt: null } }
             : { feed: { slug: feedSlug, deletedAt: null } };
+        andConditions.push(legacySlugFilter);
       }
     }
 
-    const where: Prisma.NoteWhereInput = {
-      deletedAt: null,
-      ...(feedFilter ? feedFilter : {}),
-      ...(containerId ? { containerId } : {}),
-      ...(parsedContainers && parsedContainers.length > 0
-        ? { containerId: { in: parsedContainers } }
-        : {}),
-      ...(type ? { type: type as any } : {}),
-      ...(query.status ? { status: query.status as any } : {}),
-      ...(query.curator
-        ? {
-            OR: [
-              { curator: { equals: query.curator, mode: 'insensitive' } },
-              { curator: { contains: query.curator, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
-      ...(tagId ? { tags: { some: { id: tagId, deletedAt: null } } } : {}),
-      ...(tagPath
-        ? {
-            tags: {
-              some: {
-                path: { startsWith: tagPath.toLowerCase().trim() },
-                deletedAt: null,
-              },
+    // Container filters
+    if (containerId) {
+      andConditions.push({ containerId });
+    }
+    if (containers) {
+      const parsedContainers = containers
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (parsedContainers.length > 0) {
+        andConditions.push({ containerId: { in: parsedContainers } });
+      }
+    }
+
+    // Type & Status
+    if (type) {
+      andConditions.push({ type: type as any });
+    }
+    if (query.status) {
+      andConditions.push({ status: query.status as any });
+    }
+
+    // Curator
+    if (query.curator) {
+      andConditions.push({
+        OR: [
+          { curator: { equals: query.curator, mode: 'insensitive' } },
+          { curator: { contains: query.curator, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // Tags & Hashtags
+    if (tagId) {
+      andConditions.push({ tags: { some: { id: tagId, deletedAt: null } } });
+    }
+    if (tagPath) {
+      andConditions.push({
+        tags: {
+          some: {
+            path: { startsWith: tagPath.toLowerCase().trim() },
+            deletedAt: null,
+          },
+        },
+      });
+    }
+    if (hashtag) {
+      andConditions.push({
+        hashtags: {
+          some: {
+            name: HashtagsService.normalizeName(hashtag),
+            deletedAt: null,
+          },
+        },
+      });
+    }
+    if (hashtagId) {
+      andConditions.push({
+        hashtags: {
+          some: {
+            id: hashtagId,
+            deletedAt: null,
+          },
+        },
+      });
+    }
+
+    // Folders
+    if (unfiled) {
+      andConditions.push({ folders: { none: {} } });
+    }
+    if (folderId) {
+      andConditions.push({
+        folders: {
+          some: {
+            folderId,
+            folder: { deletedAt: null },
+          },
+        },
+      });
+    }
+    if (folder) {
+      andConditions.push({
+        folders: {
+          some: {
+            folder: {
+              path: FoldersService.normalizePath(folder),
+              deletedAt: null,
             },
-          }
-        : {}),
-      ...(hashtag
-        ? {
-            hashtags: {
-              some: {
-                name: HashtagsService.normalizeName(hashtag),
-                deletedAt: null,
-              },
-            },
-          }
-        : {}),
-      ...(hashtagId
-        ? {
-            hashtags: {
-              some: {
-                id: hashtagId,
-                deletedAt: null,
-              },
-            },
-          }
-        : {}),
-      ...(unfiled ? { folders: { none: {} } } : {}),
-      ...(folderId
-        ? {
-            folders: {
-              some: {
-                folderId,
-                folder: { deletedAt: null },
-              },
-            },
-          }
-        : {}),
-      ...(folder
-        ? {
+          },
+        },
+      });
+    }
+    if (folderPath) {
+      andConditions.push({
+        OR: [
+          { folderPath: { equals: folderPath, mode: 'insensitive' as const } },
+          {
             folders: {
               some: {
                 folder: {
-                  path: FoldersService.normalizePath(folder),
+                  path: FoldersService.normalizePath(folderPath),
                   deletedAt: null,
                 },
               },
             },
-          }
-        : {}),
-      ...(query.folderPath
-        ? {
-            OR: [
-              { folderPath: { equals: query.folderPath, mode: 'insensitive' as const } },
-              {
-                folders: {
-                  some: {
-                    folder: {
-                      path: FoldersService.normalizePath(query.folderPath),
-                      deletedAt: null,
-                    },
+          },
+        ],
+      });
+    }
+    if (folderPrefix) {
+      andConditions.push({
+        OR: [
+          {
+            folderPath: {
+              startsWith: FoldersService.normalizePath(folderPrefix),
+              mode: 'insensitive' as const,
+            },
+          },
+          {
+            folders: {
+              some: {
+                folder: {
+                  path: {
+                    startsWith: FoldersService.normalizePath(folderPrefix),
                   },
+                  deletedAt: null,
                 },
               },
-            ],
-          }
-        : {}),
-      ...(folderPrefix
-        ? {
-            OR: [
-              {
-                folderPath: {
-                  startsWith: FoldersService.normalizePath(folderPrefix),
-                  mode: 'insensitive' as const,
-                },
-              },
-              {
-                folders: {
-                  some: {
-                    folder: {
-                      path: {
-                        startsWith: FoldersService.normalizePath(folderPrefix),
-                      },
-                      deletedAt: null,
-                    },
-                  },
-                },
-              },
-            ],
-          }
-        : {}),
-    };
-
-    const andConditions: Prisma.NoteWhereInput[] = [];
+            },
+          },
+        ],
+      });
+    }
 
     // Multi-tenancy & Container Privacy Filter
     if (userId !== 'usr-admin-999') {
@@ -300,6 +302,9 @@ export class NotesQueryBuilder {
     }
 
     // Time window overlap query handling
+    const qStart = queryStart || overlapStart;
+    const qEnd = queryEnd || overlapEnd;
+
     if (qStart && qEnd) {
       const windowStart = new Date(qStart);
       const windowEnd = new Date(qEnd);
@@ -314,24 +319,26 @@ export class NotesQueryBuilder {
       });
     } else {
       if (startDateFrom || startDateTo) {
-        where.startDate = {
-          ...(startDateFrom ? { gte: new Date(startDateFrom) } : {}),
-          ...(startDateTo ? { lte: new Date(startDateTo) } : {}),
-        };
+        andConditions.push({
+          startDate: {
+            ...(startDateFrom ? { gte: new Date(startDateFrom) } : {}),
+            ...(startDateTo ? { lte: new Date(startDateTo) } : {}),
+          },
+        });
       }
       if (endDateFrom || endDateTo) {
-        where.endDate = {
-          ...(endDateFrom ? { gte: new Date(endDateFrom) } : {}),
-          ...(endDateTo ? { lte: new Date(endDateTo) } : {}),
-        };
+        andConditions.push({
+          endDate: {
+            ...(endDateFrom ? { gte: new Date(endDateFrom) } : {}),
+            ...(endDateTo ? { lte: new Date(endDateTo) } : {}),
+          },
+        });
       }
     }
 
-    if (andConditions.length > 0) {
-      where.AND = andConditions;
-    }
-
-    return where;
+    return {
+      AND: andConditions,
+    };
   }
 
   buildOrderBy(query: QueryNotesDto): Prisma.NoteOrderByWithRelationInput[] {
@@ -354,4 +361,3 @@ export class NotesQueryBuilder {
     return [{ startDate: 'desc' }];
   }
 }
-

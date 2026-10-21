@@ -212,7 +212,57 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 16 Feeds (including NotebookLM AI Daily Briefing, Orthodox, Catholic, Islamic, World Religions, Russian Official & Military, World Holidays)');
+  const feedSparkAi = await prisma.feed.create({
+    data: {
+      title: 'AI & Нейросети (Spark)',
+      description: 'Релизы LLM, агентные вычисления, прорывы и локальный инференс',
+      slug: 'spark-ai',
+      folderPaths: ['Spark/AI'],
+    },
+  });
+
+  const feedSparkHabr = await prisma.feed.create({
+    data: {
+      title: 'Хабр & IT (Spark)',
+      description: 'Инженерные статьи, архитектура ПО, DevOps и сообщество Хабр',
+      slug: 'spark-habr',
+      folderPaths: ['Spark/Habr'],
+    },
+  });
+
+  const feedSparkCyber = await prisma.feed.create({
+    data: {
+      title: 'Cyber Security & InfoSec (Spark)',
+      description: 'Информационная безопасность, бюллетени CVE, SecOps и защита инфраструктуры',
+      slug: 'spark-cyber-security',
+      folderPaths: ['Spark/Cyber Security'],
+    },
+  });
+
+  const feedSparkXakep = await prisma.feed.create({
+    data: {
+      title: 'Журнал «Хакер» (Spark)',
+      description: 'Материалы журнала «Хакер», эксплойты, reverse engineering и разборы атак',
+      slug: 'spark-xakep',
+      folderPaths: ['Spark/xakep'],
+    },
+  });
+
+  const feedSparkChangelogs = await prisma.feed.create({
+    data: {
+      title: 'Changelogs & Релизы (Spark)',
+      description: 'Официальные обновления и релизы вендоров: Google, OpenAI, Anthropic',
+      slug: 'spark-changelogsfeed',
+      folderPaths: [
+        'Spark/changelogsfeed',
+        'Spark/changelogsfeed/google',
+        'Spark/changelogsfeed/openai',
+        'Spark/changelogsfeed/anthropic',
+      ],
+    },
+  });
+
+  console.log('✅ Created 21 Feeds (including Dev Hub: Changelogs, Google/OpenAI/Anthropic, Xakep, CyberSec, Spark AI & Habr)');
 
   // 1.5 Seed Initial Vault Containers (Public & Private)
   await prisma.container.upsert({
@@ -762,6 +812,95 @@ async function main() {
   // 7. Seed Engineering & Design System Notes
   console.log('⚡ Seeding Tech, Design, & DevOps Notes...');
   const techNotes = [
+    // ── Dev Hub: Changelogs (Vendor Releases & Subtopics) ─────────────
+    {
+      feedId: feedSparkChangelogs.id,
+      containerId: 'main-vault',
+      title: 'Google I/O 2026 & Gemini 2.5 Flash GA • Мультимодальный Context Caching',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-20T14:30:00.000Z',
+      icon: 'globe',
+      folderPath: 'Spark/changelogsfeed/google',
+      folders: ['Spark/changelogsfeed/google', 'Spark/changelogsfeed'],
+      hashtags: ['Google', 'Gemini', 'Changelog', 'ContextCaching', 'Release'],
+      description: '### 🌐 Google Official Changelog & Release Notes\n\n- **Gemini 2.5 Flash**: Полноценный GA релиз с задержкой TTFT менее 150ms.\n- **Context Caching v2**: Снижение стоимости входящих токенов на 75% при повторном анализе репозиториев.\n- **Vertex AI SDK**: Интеграция structured outputs с Pydantic v2 и автоматическим function calling.',
+    },
+    {
+      feedId: feedSparkChangelogs.id,
+      containerId: 'main-vault',
+      title: 'OpenAI DevDay Updates • GPT-4o Realtime Audio WebRTC & Reasoning Engine',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-19T17:00:00.000Z',
+      icon: 'brain',
+      folderPath: 'Spark/changelogsfeed/openai',
+      folders: ['Spark/changelogsfeed/openai', 'Spark/changelogsfeed'],
+      hashtags: ['OpenAI', 'GPT4o', 'Realtime', 'Changelog', 'API'],
+      description: '### 🧠 OpenAI Developer Changelog\n\n- **Realtime API via WebRTC**: Прямой стриминг двустороннего аудио без сторонних прокси.\n- **Reasoning Controls**: Параметр effort_budget для точной настройки глубины рассуждений модели o1/o3.\n- **Fine-Tuning on Structured Outputs**: Возможность файнтюнинга JSON-схем с гарантированной валидацией.',
+    },
+    {
+      feedId: feedSparkChangelogs.id,
+      containerId: 'main-vault',
+      title: 'Anthropic Claude 3.7 Sonnet Release • Computer Use 2.0 & Thought Signatures',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-18T11:15:00.000Z',
+      icon: 'zap',
+      folderPath: 'Spark/changelogsfeed/anthropic',
+      folders: ['Spark/changelogsfeed/anthropic', 'Spark/changelogsfeed'],
+      hashtags: ['Anthropic', 'Claude', 'ComputerUse', 'Changelog', 'Agents'],
+      description: '### ⚡ Anthropic Official Changelog\n\n- **Claude 3.7 Sonnet**: Гибридное рассуждение и рекордные результаты в SWE-bench verified (74.2%).\n- **Computer Use v2**: Поддержка динамического масштабирования рабочего стола и устойчивость к артефактам сжатия.\n- **Thought Signatures**: Криптографическая верификация цепочек мыслей в корпоративных API-вызовах.',
+    },
+
+    // ── Dev Hub: AppSec & Infosec ─────────────────────────────────────
+    {
+      feedId: feedSparkXakep.id,
+      containerId: 'main-vault',
+      title: 'Журнал «Хакер» #312 • Анатомия 0-day в eBPF и обход изоляции контейнеров',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-17T16:00:00.000Z',
+      icon: 'terminal',
+      folderPath: 'Spark/xakep',
+      folders: ['Spark/xakep'],
+      hashtags: ['Хакер', 'eBPF', 'Kernel', 'AppSec', 'Exploit'],
+      description: '### 👾 Журнал «Хакер» • Выпуск #312\n\n- **0-day в подсистеме eBPF**: Разбор бага в верификаторе ядра Linux 6.10, приводящего к LPE.\n- **Kubernetes Container Escape**: Техника побега из непривилегированного неймспейса через race condition в runc.\n- **Reverse Engineering**: Анализ обфусцированных бинарников на Rust с помощью Ghidra 11.2.',
+    },
+    {
+      feedId: feedSparkCyber.id,
+      containerId: 'main-vault',
+      title: 'Бюллетень CVE-2026-8812 • Критическая уязвимость в OpenSSH agent forwarding',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-16T12:00:00.000Z',
+      icon: 'shield',
+      folderPath: 'Spark/Cyber Security',
+      folders: ['Spark/Cyber Security'],
+      hashtags: ['CyberSecurity', 'CVE', 'OpenSSH', 'SecOps', 'Patch'],
+      description: '### 🛡️ Срочный бюллетень кибербезопасности\n\n- **CVSS 9.8**: Удаленное выполнение кода при включенном SSH Agent Forwarding на скомпрометированном хосте.\n- **Статус патча**: Вендоры Debian, Ubuntu, RHEL выпустили экстренные обновления безопасности.\n- **Рекомендация**: Отключить ForwardAgent в ssh_config до применения апдейтов.',
+    },
+
+    // ── Dev Hub: AI & Habr ────────────────────────────────────────────
+    {
+      feedId: feedSparkAi.id,
+      containerId: 'main-vault',
+      title: 'Spark AI • Сравнение локального инференса vLLM vs SGLang на кластере H200',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-15T09:30:00.000Z',
+      icon: 'bot',
+      folderPath: 'Spark/AI',
+      folders: ['Spark/AI'],
+      hashtags: ['AI', 'vLLM', 'SGLang', 'Inference', 'H200'],
+      description: '### 🤖 Spark AI Engineering Report\n\nБенчмарки пропускной способности при генерации с длинным контекстом (>64k токенов). SGLang показывает прирост 28% RPS за счет RadixAttention кэширования префиксов.',
+    },
+    {
+      feedId: feedSparkHabr.id,
+      containerId: 'main-vault',
+      title: 'Хабр IT • Паттерны микрофронтендов на Vite 6 Module Federation в highload',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-14T13:45:00.000Z',
+      icon: 'laptop',
+      folderPath: 'Spark/Habr',
+      folders: ['Spark/Habr'],
+      hashtags: ['Habr', 'Vite', 'ModuleFederation', 'Frontend', 'Highload'],
+      description: '### 💻 Хабр IT Дайджест\n\nРазбор архитектуры изоляции состояния между хостом и микрофронтендами через postMessage шину событий, решение проблемы разделяемых зависимостей React и оптимизация бандлов.',
+    },
     {
       feedId: feedNotebooklmAi.id,
       containerId: 'main-vault',

@@ -33,6 +33,11 @@ export class CreateFeedDto {
   @IsOptional()
   color?: string;
 
+  @ApiPropertyOptional({ description: 'Privacy level of the feed (public or private)', example: 'public', enum: ['public', 'private'] })
+  @IsString()
+  @IsOptional()
+  privacy?: 'public' | 'private';
+
   @ApiPropertyOptional({ description: 'Saved hashtags for automatic content inclusion', example: ['ai', 'neuro'] })
   @IsArray()
   @IsString({ each: true })

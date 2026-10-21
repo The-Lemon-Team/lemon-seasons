@@ -14,12 +14,15 @@ model Feed {
   slug        String    @unique
   icon        String?
   color       String?
+  privacy     String    @default("public")
   folderPaths String[]  @default([])
   hashtags    String[]  @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
   notes       Note[]
+
+  @@index([privacy])
 }
 
 model Note {

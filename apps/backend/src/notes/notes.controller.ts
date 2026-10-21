@@ -26,6 +26,8 @@ import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/l
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 import { IngestNoteDto } from './dto/ingest-note.dto';
 import { NotesIngestService } from './notes-ingest.service';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/auth.types';
 
 @ApiTags('Notes')
 @Controller(['notes', 'api/v1/notes'])
@@ -87,14 +89,14 @@ export class NotesController {
 
   @Get()
   @ApiOperation({ summary: 'Query notes with filters (range, type, feed, taxonomy, search)' })
-  findAll(@Query() query: QueryNotesDto) {
-    return this.notesService.findAll(query);
+  findAll(@Query() query: QueryNotesDto, @CurrentUser() user?: RequestUser) {
+    return this.notesService.findAll(query, user?.isAdmin ?? false);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific note by ID' })
-  findOne(@Param('id') id: string) {
-    return this.notesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
+    return this.notesService.findOne(id, user?.isAdmin ?? false);
   }
 
   @Patch(':id')

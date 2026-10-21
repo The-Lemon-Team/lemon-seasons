@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
@@ -177,6 +184,7 @@ export class FoldersService {
     search?: string,
     containerId?: string,
     scope?: 'external' | 'internal' | 'all',
+    isAdmin = false,
   ) {
     let containerCondition: any = {};
 
@@ -202,10 +210,13 @@ export class FoldersService {
       };
     }
 
+    const privacyCondition = isAdmin ? {} : { privacy: 'public' };
+
     return this.prisma.folder.findMany({
       where: {
         ...(includeDeleted ? {} : { deletedAt: null }),
         ...containerCondition,
+        ...privacyCondition,
         ...(search
           ? {
               OR: [
@@ -230,8 +241,9 @@ export class FoldersService {
     includeDeleted = false,
     containerId?: string,
     scope?: 'external' | 'internal' | 'all',
+    isAdmin = false,
   ): Promise<FolderTreeNode[]> {
-    const folders = await this.findAll(includeDeleted, undefined, containerId, scope);
+    const folders = await this.findAll(includeDeleted, undefined, containerId, scope, isAdmin);
 
     const folderMap = new Map<string, FolderTreeNode>();
     const roots: FolderTreeNode[] = [];
@@ -288,7 +300,7 @@ export class FoldersService {
     return roots;
   }
 
-  async findOne(idOrPath: string) {
+  async findOne(idOrPath: string, isAdmin = false) {
     const normalized = FoldersService.normalizePath(idOrPath);
     const folder = await this.prisma.folder.findFirst({
       where: {
@@ -323,6 +335,11 @@ export class FoldersService {
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(`Folder '${idOrPath}' not found`);
     }
+
+    if (!isAdmin && folder.privacy !== 'public') {
+      throw new ForbiddenException('Доступ к приватной папке запрещен. Требуются права администратора.');
+    }
+
     return folder;
   }
 
@@ -330,6 +347,28 @@ export class FoldersService {
     const current = await this.prisma.folder.findUnique({ where: { id } });
     if (!current || current.deletedAt) {
       throw new NotFoundException(`Folder with ID '${id}' not found`);
+    }
+
+    // Enforce privacy rule:
+    // If setting privacy to private/obsidian from public, check if folder is used in any public feed
+    if (
+      updateFolderDto.privacy &&
+      updateFolderDto.privacy !== 'public' &&
+      current.privacy === 'public'
+    ) {
+      const publicFeeds = await this.prisma.feed.findMany({
+        where: {
+          privacy: 'public',
+          deletedAt: null,
+          folderPaths: { has: current.path },
+        },
+        select: { title: true, slug: true },
+      });
+      if (publicFeeds.length > 0) {
+        throw new BadRequestException(
+          `Нельзя сделать папку "${current.path}" приватной, так как она используется в публичных лентах: ${publicFeeds.map((f) => f.title).join(', ')}. В публичных лентах разрешены только публичные папки.`
+        );
+      }
     }
 
     const newPath = updateFolderDto.path

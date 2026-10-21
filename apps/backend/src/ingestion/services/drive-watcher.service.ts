@@ -156,10 +156,10 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
         },
       });
 
-      // Resolve assigned folder path (e.g. "Spark/AI" or "Spark/Habr")
+      // Resolve assigned folder path (e.g. "Spark/AI" or "Spark/changelogsfeed/google")
       const relPath = path.relative(this.watchedDir, filePath);
-      const parts = relPath.split(path.sep);
-      const assignedFolder = parts.length > 1 ? `Spark/${parts[0]}` : 'Spark';
+      const relDir = path.dirname(relPath).replace(/\\/g, '/');
+      const assignedFolder = relDir && relDir !== '.' ? `Spark/${relDir}` : 'Spark';
 
       // 2. Emit event to EventBus
       this.logger.log(`📢 [file.detected] Отправка события в шину: "${fileName}" [${assignedFolder}]`);

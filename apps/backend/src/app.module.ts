@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { AuthContextMiddleware } from './auth/auth-context.middleware';
 import { FeedsModule } from './feeds/feeds.module';
 import { NotesModule } from './notes/notes.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
@@ -18,7 +20,10 @@ import { BusModule } from './bus/bus.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '../../.env'],
+    }),
     EventEmitterModule.forRoot({
       wildcard: true,
       delimiter: '.',
@@ -26,6 +31,7 @@ import { BusModule } from './bus/bus.module';
       verboseMemoryLeak: true,
     }),
     PrismaModule,
+    AuthModule,
     FeedsModule,
     NotesModule,
     TaxonomyModule,
@@ -41,4 +47,8 @@ import { BusModule } from './bus/bus.module';
     BusModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthContextMiddleware).forRoutes('*');
+  }
+}

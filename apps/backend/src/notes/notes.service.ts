@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
@@ -212,15 +218,15 @@ export class NotesService implements OnModuleInit {
     };
   }
 
-  async findAll(query: QueryNotesDto) {
-    const cacheKey = this.notesCacheService.generateKey('findAll', query as any);
+  async findAll(query: QueryNotesDto, isAdmin = false) {
+    const cacheKey = this.notesCacheService.generateKey('findAll', { ...query, isAdmin } as any);
     const cached = this.notesCacheService.get<any>(cacheKey);
     if (cached) {
       return cached;
     }
 
     const { limit = 50, offset = 0 } = query;
-    const where = await this.notesQueryBuilder.buildWhereClause(query);
+    const where = await this.notesQueryBuilder.buildWhereClause(query, isAdmin);
     const orderBy = this.notesQueryBuilder.buildOrderBy(query);
 
     const queryStartTime = Date.now();
@@ -251,7 +257,7 @@ export class NotesService implements OnModuleInit {
     return result;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, isAdmin = false) {
     const note = await this.prisma.note.findUnique({
       where: { id },
       include: NOTE_INCLUDE_DEFAULT,
@@ -260,12 +266,34 @@ export class NotesService implements OnModuleInit {
     if (!note || note.deletedAt) {
       throw new NotFoundException(`Note with ID '${id}' not found`);
     }
+
+    if (!isAdmin) {
+      if (note.feed && (note.feed as any).privacy && (note.feed as any).privacy !== 'public') {
+        throw new ForbiddenException('Заметка принадлежит приватной ленте. Доступ запрещен.');
+      }
+      if (note.folders?.some((f: any) => f.folder?.privacy && f.folder.privacy !== 'public')) {
+        throw new ForbiddenException('Заметка находится в приватной папке. Доступ запрещен.');
+      }
+      if (note.folderPath) {
+        const privateFolders = await this.prisma.folder.findMany({
+          where: { privacy: { not: 'public' }, deletedAt: null },
+          select: { path: true },
+        });
+        const isPrivateFolder = privateFolders.some((pf) =>
+          note.folderPath!.toLowerCase().startsWith(pf.path.toLowerCase()),
+        );
+        if (isPrivateFolder) {
+          throw new ForbiddenException('Заметка находится в приватной папке. Доступ запрещен.');
+        }
+      }
+    }
+
     return note;
   }
 
   async update(id: string, updateNoteDto: UpdateNoteDto) {
     this.notesCacheService.invalidateAll();
-    const current = await this.findOne(id);
+    const current = await this.findOne(id, true);
 
     if (updateNoteDto.feedId) {
       const feed = await this.prisma.feed.findUnique({
@@ -399,7 +427,7 @@ export class NotesService implements OnModuleInit {
 
   async softDelete(id: string) {
     this.notesCacheService.invalidateAll();
-    await this.findOne(id);
+    await this.findOne(id, true);
     const deleted = await this.prisma.note.update({
       where: { id },
       data: { deletedAt: new Date() },

@@ -13,6 +13,8 @@ import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { FeedsService } from './feeds.service';
 import { CreateFeedDto } from './dto/create-feed.dto';
 import { UpdateFeedDto } from './dto/update-feed.dto';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/auth.types';
 
 @ApiTags('Feeds')
 @Controller('feeds')
@@ -27,21 +29,22 @@ export class FeedsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all feeds' })
+  @ApiOperation({ summary: 'Get all feeds (filtered by privacy for public users)' })
   @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
   findAll(
     @Query('includeDeleted') includeDeleted?: string,
     @Query('search') search?: string,
+    @CurrentUser() user?: RequestUser,
   ) {
     const isDeleted = includeDeleted === 'true';
-    return this.feedsService.findAll(isDeleted, search);
+    return this.feedsService.findAll(isDeleted, search, user?.isAdmin ?? false);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific feed by ID' })
-  findOne(@Param('id') id: string) {
-    return this.feedsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
+    return this.feedsService.findOne(id, user?.isAdmin ?? false);
   }
 
   @Patch(':id')

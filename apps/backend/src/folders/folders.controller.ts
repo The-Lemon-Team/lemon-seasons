@@ -12,6 +12,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { FoldersService } from './folders.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { RequestUser } from '../auth/auth.types';
 
 @ApiTags('Folders')
 @Controller('folders')
@@ -36,8 +38,15 @@ export class FoldersController {
     @Query('search') search?: string,
     @Query('containerId') containerId?: string,
     @Query('scope') scope?: 'external' | 'internal' | 'all',
+    @CurrentUser() user?: RequestUser,
   ) {
-    return this.foldersService.findAll(includeDeleted === 'true', search, containerId, scope);
+    return this.foldersService.findAll(
+      includeDeleted === 'true',
+      search,
+      containerId,
+      scope,
+      user?.isAdmin ?? false,
+    );
   }
 
   @Get('tree')
@@ -51,18 +60,24 @@ export class FoldersController {
     @Query('includeDeleted') includeDeleted?: string,
     @Query('containerId') containerId?: string,
     @Query('scope') scope?: 'external' | 'internal' | 'all',
+    @CurrentUser() user?: RequestUser,
   ) {
-    return this.foldersService.getTree(includeDeleted === 'true', containerId, scope);
+    return this.foldersService.getTree(
+      includeDeleted === 'true',
+      containerId,
+      scope,
+      user?.isAdmin ?? false,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single folder by ID or path with its notes' })
-  findOne(@Param('id') id: string) {
-    return this.foldersService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
+    return this.foldersService.findOne(id, user?.isAdmin ?? false);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update folder properties (name, path, icon, color)' })
+  @ApiOperation({ summary: 'Update folder properties (name, path, icon, color, privacy)' })
   update(@Param('id') id: string, @Body() updateFolderDto: UpdateFolderDto) {
     return this.foldersService.update(id, updateFolderDto);
   }

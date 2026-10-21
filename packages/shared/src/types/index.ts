@@ -9,6 +9,7 @@ export interface Feed {
   slug: string;
   icon?: string | null;
   color?: string | null;
+  privacy?: 'public' | 'private';
   folderPaths?: string[];
   hashtags?: string[];
   createdAt: string;
@@ -20,6 +21,7 @@ export interface Feed {
   notes?: Note[];
 }
 
+export type FeedPrivacy = 'public' | 'private';
 export type FolderPrivacy = 'private' | 'public' | 'obsidian';
 export type FolderScope = 'external' | 'internal';
 
@@ -511,6 +513,30 @@ export interface User {
 export interface AuthSession {
   token: string;
   user: User;
+}
+
+export type MicrofrontendAuthMessageType =
+  | 'LENTA_AUTH_SYNC'
+  | 'LENTA_AUTH_REQUEST'
+  | 'LENTA_AUTH_LOGOUT';
+
+export interface MicrofrontendAuthUser {
+  id: string;
+  role: UserRole;
+  name: string;
+  email?: string;
+}
+
+export interface MicrofrontendAuthSyncPayload {
+  token: string | null;
+  user: MicrofrontendAuthUser | null;
+  userKey?: string | null;
+}
+
+export interface MicrofrontendMessage<T = any> {
+  type: MicrofrontendAuthMessageType | string;
+  payload?: T;
+  source?: string;
 }
 
 export interface LoginInput {
