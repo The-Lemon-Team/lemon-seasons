@@ -106,11 +106,17 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      {/* Backdrop with subtle dimming to isolate popover from dashboard widgets */}
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity"
+        onClick={onClose}
+      />
 
-      {/* Popover Card */}
-      <div className="absolute right-0 top-10 z-50 w-96 max-w-[calc(100vw-2rem)] bg-panel border border-panel rounded-2xl shadow-2xl p-3.5 text-xs font-sans animate-in fade-in slide-in-from-top-2">
+      {/* Popover Card with solid opaque background */}
+      <div
+        className="absolute right-0 top-10 z-50 w-96 max-w-[calc(100vw-2rem)] border border-tile-border rounded-2xl shadow-2xl p-3.5 text-xs font-sans animate-in fade-in slide-in-from-top-2 ring-1 ring-black/10 dark:ring-white/10"
+        style={{ backgroundColor: 'var(--panel-bg)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-2.5 border-b border-tile-border">
           <div className="flex items-center gap-2">
@@ -138,7 +144,10 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
 
         {/* Status Meta summary */}
         {syncStatus && (
-          <div className="py-2 px-2.5 my-2 rounded-lg bg-tile-subtle border border-tile-border flex items-center justify-between text-[10px] font-mono">
+          <div
+            className="py-2 px-2.5 my-2 rounded-lg border border-tile-border flex items-center justify-between text-[10px] font-mono"
+            style={{ backgroundColor: 'var(--tile-bg-subtle)' }}
+          >
             <span className="text-on-surface-variant">Последняя синхронизация:</span>
             <span className="text-on-surface font-semibold">
               {syncStatus.lastCommit?.createdAt
@@ -170,7 +179,8 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="p-2 rounded-lg bg-tile-subtle/80 hover:bg-tile-subtle border border-tile-border transition-all cursor-pointer group"
+                className="p-2 rounded-lg hover:border-primary/40 border border-tile-border transition-all cursor-pointer group"
+                style={{ backgroundColor: 'var(--tile-bg-subtle)' }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 min-w-0">

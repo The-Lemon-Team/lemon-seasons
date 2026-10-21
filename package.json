@@ -7,7 +7,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "dev:local": "turbo run dev --filter=lemon-lenta-backend --filter=@lenta/calendar-app --filter=lemon-seasons-admin",
+    "dev:local": "turbo run dev --filter=lemon-lenta-backend --filter=@lenta/calendar-app --filter=lemon-seasons-admin --filter=@lenta/feed-app",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "stats": "curl.exe -s http://localhost:3001/stats",

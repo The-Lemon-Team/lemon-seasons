@@ -70,6 +70,56 @@ export const KNOWN_SPARK_THEMES: Record<string, SparkFolderTheme> = {
     feedSlug: 'spark-cyber-security',
     defaultDelta: 3,
   },
+  'Spark/xakep': {
+    folderPath: 'Spark/xakep',
+    cleanName: 'sparks/xakep',
+    emoji: '👾',
+    accentColor: '#22c55e', // Green
+    badgeBg: 'rgba(34, 197, 94, 0.12)',
+    borderAccent: '#16a34a',
+    feedSlug: 'spark-xakep',
+    defaultDelta: 4,
+  },
+  'Spark/changelogsfeed': {
+    folderPath: 'Spark/changelogsfeed',
+    cleanName: 'sparks/Changelogs',
+    emoji: '🚀',
+    accentColor: '#f97316', // Orange
+    badgeBg: 'rgba(249, 115, 22, 0.12)',
+    borderAccent: '#ea580c',
+    feedSlug: 'spark-changelogsfeed',
+    defaultDelta: 8,
+  },
+  'Spark/changelogsfeed/Google': {
+    folderPath: 'Spark/changelogsfeed/Google',
+    cleanName: 'sparks/Changelogs/Google',
+    emoji: '🌐',
+    accentColor: '#4285f4', // Google Blue
+    badgeBg: 'rgba(66, 133, 244, 0.12)',
+    borderAccent: '#1a73e8',
+    feedSlug: 'spark-changelogsfeed-google',
+    defaultDelta: 3,
+  },
+  'Spark/changelogsfeed/OpenAI': {
+    folderPath: 'Spark/changelogsfeed/OpenAI',
+    cleanName: 'sparks/Changelogs/OpenAI',
+    emoji: '🧠',
+    accentColor: '#10a37f', // OpenAI Green
+    badgeBg: 'rgba(16, 163, 127, 0.12)',
+    borderAccent: '#0d8c6d',
+    feedSlug: 'spark-changelogsfeed-openai',
+    defaultDelta: 3,
+  },
+  'Spark/changelogsfeed/Anthropic': {
+    folderPath: 'Spark/changelogsfeed/Anthropic',
+    cleanName: 'sparks/Changelogs/Anthropic',
+    emoji: '⚡',
+    accentColor: '#d97706', // Anthropic Amber
+    badgeBg: 'rgba(217, 119, 6, 0.12)',
+    borderAccent: '#b45309',
+    feedSlug: 'spark-changelogsfeed-anthropic',
+    defaultDelta: 2,
+  },
   'Spark/World of Warcraft': {
     folderPath: 'Spark/World of Warcraft',
     cleanName: 'sparks/WoW',
@@ -209,6 +259,13 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeItem> = {
   'ai-machine-learning': { slug: 'ai-machine-learning', title: 'AI & Нейросети', shortTitle: 'AI Research', accentColor: '#e879f9', emoji: '🧠' },
   'spark-ai': { slug: 'spark-ai', title: 'AI & Нейросети (Spark)', shortTitle: 'Spark AI', accentColor: '#a855f7', emoji: '🤖' },
   'spark-habr': { slug: 'spark-habr', title: 'Хабр & IT (Spark)', shortTitle: 'Spark Хабр', accentColor: '#06b6d4', emoji: '📰' },
+  'spark-cyber-security': { slug: 'spark-cyber-security', title: 'Cyber Security (Spark)', shortTitle: 'CyberSec', accentColor: '#10b981', emoji: '🛡️' },
+  'spark-xakep': { slug: 'spark-xakep', title: 'Журнал «Хакер» (Spark)', shortTitle: 'Хакер', accentColor: '#22c55e', emoji: '👾' },
+  'spark-notebooklmai': { slug: 'spark-notebooklmai', title: 'NotebookLM AI (Spark)', shortTitle: 'NotebookLM', accentColor: '#a855f7', emoji: '🎙️' },
+  'spark-changelogsfeed': { slug: 'spark-changelogsfeed', title: 'Changelogs & Релизы (Spark)', shortTitle: 'Changelogs', accentColor: '#f97316', emoji: '🚀' },
+  'spark-changelogsfeed-google': { slug: 'spark-changelogsfeed-google', title: 'Google Changelogs', shortTitle: 'Google', accentColor: '#4285f4', emoji: '🌐' },
+  'spark-changelogsfeed-openai': { slug: 'spark-changelogsfeed-openai', title: 'OpenAI Changelogs', shortTitle: 'OpenAI', accentColor: '#10a37f', emoji: '🧠' },
+  'spark-changelogsfeed-anthropic': { slug: 'spark-changelogsfeed-anthropic', title: 'Anthropic Changelogs', shortTitle: 'Anthropic', accentColor: '#d97706', emoji: '⚡' },
   'spark-рф-и-украина': { slug: 'spark-рф-и-украина', title: 'Сводки РФ & Украина', shortTitle: 'РФ-Украина', accentColor: '#60a5fa', emoji: '🕊️' },
   'spark-политика': { slug: 'spark-политика', title: 'Политика & Мир (Spark)', shortTitle: 'Политика', accentColor: '#f43f5e', emoji: '🌐' },
 };

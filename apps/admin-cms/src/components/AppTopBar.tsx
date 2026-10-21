@@ -47,7 +47,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   };
 
   return (
-    <header className="h-11 shrink-0 rounded-2xl bg-panel border border-panel shadow-panel px-3 flex items-center justify-between z-10 transition-all duration-200">
+    <header className="h-11 shrink-0 rounded-2xl bg-panel border border-panel shadow-panel px-3 flex items-center justify-between z-30 transition-all duration-200">
       <div className="flex items-center gap-2 min-w-0">
         <span className="material-symbols-outlined text-primary text-[18px] shrink-0">
           {getPageIcon()}
