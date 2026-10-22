@@ -53,10 +53,11 @@
 | **CONT-02** | **Полировка UX контейнеров, табов и папок (Compact Feed View)** | Frontend / UX | **3** | 🟡 Medium | Ближайший |
 | **CUR-01** | **Консервация и упрощение текущей кураторской логики** | Architecture / Refactor | **2** | 🟢 High | Немедленно |
 | **CONT-03** | **Быстрые фильтры и счетчики непрочитанного внутри табов** | Frontend / State | **2** | 🟡 Medium | Средний |
+| **WATCH-00** | **[Future] Подсистема Watchers (Локальные слушатели интернет-новостей)** | Architecture / Ingestion | **32** | 🔵 Future Vision | Долгосрочный ([Детали](file:///c:/Users/Ilege/projects/lemon-calendarium/docs/WATCHERS_TASKLIST.md)) |
 | **CUR-02** | **[Future] Кураторы как классификаторы зон влияния Notes** | AI / Agents | **8** | 🔵 Future Vision | Долгосрочный |
 
 **Итого в активном пуле**: **15 SP**  
-**Будущий горизонт (Кураторы 2.0)**: **8 SP**
+**Будущий горизонт (Watchers + Кураторы 2.0)**: **40 SP**
 
 ---
 
