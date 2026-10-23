@@ -1089,13 +1089,14 @@ export interface GDriveAuthStatus {
 export interface SyncStatusResponse {
   deviceId: string;
   activeSession: SyncSession | null;
-  lastCommit: {
+  lastCommit?: {
     id: string;
     createdAt: string;
     entitiesCount: number;
     summary?: string | null;
     isPushed: boolean;
   } | null;
+  lastSyncAt?: string | null;
   pendingChangesCount: number;
   gdrive: {
     connected: boolean;

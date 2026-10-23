@@ -184,6 +184,7 @@ export class SparksIngestListener {
   private async resolveFeedForFolder(folderPath: string, filePath: string, frontmatterFeed?: string) {
     const parts = folderPath.split('/');
     const isChangelogs = parts.length > 1 && parts[1].toLowerCase() === 'changelogsfeed';
+    const isNotebooklm = parts.length > 1 && parts[1].toLowerCase() === 'notebooklmai';
     const subfolder = parts.length > 1 ? parts[1] : (parts[0] || 'AI');
 
     let targetSlug = 'spark-general';
@@ -196,6 +197,12 @@ export class SparksIngestListener {
       targetSlug = `spark-changelogsfeed-${lowerSub.replace(/[^a-z0-9а-яё]/gi, '-')}`;
       targetTitle = `${subtopic.charAt(0).toUpperCase() + subtopic.slice(1)} (Changelogs)`;
       targetDesc = `Официальные обновления и релизы ${subtopic} из каталога Changelogs`;
+    } else if (isNotebooklm && parts.length > 2) {
+      const subtopic = parts[2];
+      const lowerSub = subtopic.toLowerCase();
+      targetSlug = `spark-notebooklmai-${lowerSub.replace(/[^a-z0-9а-яё]/gi, '-')}`;
+      targetTitle = `${subtopic.charAt(0).toUpperCase() + subtopic.slice(1)} (NotebookLM)`;
+      targetDesc = `Аудио-подкасты и аналитические сводки NotebookLM (${subtopic})`;
     } else if (subfolder && subfolder.toLowerCase() !== 'spark') {
       const lowerFolder = subfolder.toLowerCase();
       targetSlug = `spark-${lowerFolder.replace(/[^a-z0-9а-яё]/gi, '-')}`;

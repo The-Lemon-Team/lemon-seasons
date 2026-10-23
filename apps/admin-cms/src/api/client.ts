@@ -541,7 +541,9 @@ export const ingestionApi = {
     aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
     context?: string;
   }): Promise<GeneratedImageResult> => {
-    const res = await apiClient.post<GeneratedImageResult>('/ingestion/ai/generate-image', data);
+    const res = await apiClient.post<GeneratedImageResult>('/ingestion/ai/generate-image', data, {
+      timeout: 120000,
+    });
     return res.data;
   },
   generateAiBatch: async (data: {
@@ -552,7 +554,28 @@ export const ingestionApi = {
     count?: number;
     noteId?: string;
   }): Promise<GeneratedBatchResult> => {
-    const res = await apiClient.post<GeneratedBatchResult>('/ingestion/ai/generate-batch', data);
+    const res = await apiClient.post<GeneratedBatchResult>('/ingestion/ai/generate-batch', data, {
+      timeout: 120000,
+    });
+    return res.data;
+  },
+  remixAiImage: async (data: {
+    sourceAssetId: string;
+    instruction: string;
+    style?: string;
+    aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+    count?: number;
+  }): Promise<{
+    sourceAsset: AiMediaAsset;
+    remixPrompt: string;
+    description: string;
+    model: string;
+    isFallback: boolean;
+    candidates: AiMediaAsset[];
+  }> => {
+    const res = await apiClient.post('/ingestion/ai/remix-image', data, {
+      timeout: 120000,
+    });
     return res.data;
   },
   getAiAssets: async (params?: {
@@ -597,6 +620,7 @@ export const ingestionApi = {
     const res = await apiClient.post<GenerateCoverForNoteResult>(
       `/ingestion/ai/notes/${noteId}/generate-cover`,
       data || {},
+      { timeout: 120000 },
     );
     return res.data;
   },

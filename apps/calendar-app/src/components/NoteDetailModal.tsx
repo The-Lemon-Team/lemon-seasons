@@ -169,6 +169,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     <Modal
       isOpen={Boolean(current)}
       onClose={onClose}
+      closeOnEsc={!isEditModalOpen}
       showDefaultHeader={false}
       maxWidth="max-w-3xl"
       containerClassName="bg-[#1b1e1e] border-[#323636]"

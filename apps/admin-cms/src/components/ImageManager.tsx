@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { message, Popconfirm, Modal, Tooltip, Spin } from 'antd';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Cpu } from 'lucide-react';
 import { NoteImage } from '../types';
 import {
   useUploadNoteImages,
@@ -10,10 +10,12 @@ import {
 } from '../api/queries';
 import { useAdminI18n } from '../i18n';
 import { AiCoverStudioModal } from './AiCoverStudioModal';
+import { IT_WORKFLOW_TEMPLATES } from './cover-studio/coverStudio.constants';
 
 interface ImageManagerProps {
   noteId?: string;
   noteTitle?: string;
+  noteDescription?: string;
   images?: NoteImage[];
   pendingFiles?: File[];
   pendingMainIndex?: number;
@@ -25,6 +27,7 @@ interface ImageManagerProps {
 export const ImageManager: React.FC<ImageManagerProps> = ({
   noteId,
   noteTitle,
+  noteDescription,
   images = [],
   pendingFiles = [],
   pendingMainIndex = 0,
@@ -40,6 +43,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   const [previewTitle, setPreviewTitle] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isAiStudioOpen, setIsAiStudioOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
 
   const uploadMutation = useUploadNoteImages();
   const setMainMutation = useSetMainNoteImage();
@@ -52,7 +56,11 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     reorderMutation.isPending ||
     deleteMutation.isPending;
 
-  // Handle files selected via input or drop
+  const openAiStudioWithTemplate = (templateId?: string) => {
+    setSelectedTemplateId(templateId);
+    setIsAiStudioOpen(true);
+  };
+
   const handleFilesAdded = async (filesList: FileList | File[]) => {
     const validFiles: File[] = [];
     for (let i = 0; i < filesList.length; i++) {
@@ -79,25 +87,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!readOnly) setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    if (readOnly) return;
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFilesAdded(e.dataTransfer.files);
-    }
-  };
-
-  // Set Main Cover Photo
   const handleSetMain = async (image: NoteImage) => {
     if (!isExistingNote || !noteId) return;
     try {
@@ -108,13 +97,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     }
   };
 
-  const handleSetPendingMain = (index: number) => {
-    if (onPendingFilesChange) {
-      onPendingFilesChange(pendingFiles, index);
-    }
-  };
-
-  // Reorder Images (Move Left / Right)
   const handleMove = async (currentIndex: number, targetIndex: number) => {
     if (!isExistingNote || !noteId) return;
     if (targetIndex < 0 || targetIndex >= images.length) return;
@@ -131,7 +113,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     }
   };
 
-  // Delete Image
   const handleDelete = async (imageId: string) => {
     if (!isExistingNote || !noteId) return;
     try {
@@ -145,14 +126,15 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   const handleDeletePending = (index: number) => {
     if (onPendingFilesChange) {
       const updated = pendingFiles.filter((_, i) => i !== index);
-      const newMainIndex = pendingMainIndex >= updated.length ? Math.max(0, updated.length - 1) : pendingMainIndex;
+      const newMainIndex =
+        pendingMainIndex >= updated.length ? Math.max(0, updated.length - 1) : pendingMainIndex;
       onPendingFilesChange(updated, newMainIndex);
     }
   };
 
-  // Copy Markdown Tag
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const handleCopyMarkdown = (img: NoteImage) => {
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     const fullUrl = img.url.startsWith('http') ? img.url : `${apiBase}${img.url}`;
     const altText = img.caption || img.alt || img.filename || 'Note image';
     const snippet = `![${altText}](${fullUrl})`;
@@ -166,16 +148,12 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     }
   };
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {/* Header & Stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            photo_library
-          </span>
+          <span className="material-symbols-outlined text-primary text-[20px]">photo_library</span>
           <h3 className="font-sans font-semibold text-base text-on-surface">
             {t.mediaGalleryLabel}
           </h3>
@@ -186,16 +164,15 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
 
         {!readOnly && (
           <div className="flex items-center gap-2">
-            {isExistingNote && (
-              <button
-                type="button"
-                onClick={() => setIsAiStudioOpen(true)}
-                className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Studio</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => openAiStudioWithTemplate(undefined)}
+              className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Studio (IT Covers)</span>
+            </button>
+
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -223,26 +200,55 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
         />
       </div>
 
+      {/* Quick-Launch IT Cover Generator Strip */}
+      {!readOnly && (
+        <div className="bg-surface-container-low/80 border border-white/5 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant">
+            <Cpu className="w-3.5 h-3.5 text-primary" />
+            <span>Быстрая генерация IT-обложки:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {IT_WORKFLOW_TEMPLATES.map((tpl) => (
+              <Tooltip key={tpl.id} title={`${tpl.description} (${tpl.aspectRatio})`}>
+                <button
+                  type="button"
+                  onClick={() => openAiStudioWithTemplate(tpl.id)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-primary/15 border border-white/5 hover:border-primary/40 text-on-surface-variant hover:text-primary text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{tpl.icon}</span>
+                  <span>{tpl.label}</span>
+                </button>
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Dropzone Area */}
       {!readOnly && (
         <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            if (e.dataTransfer.files?.length) handleFilesAdded(e.dataTransfer.files);
+          }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+          className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
             isDragOver
               ? 'border-primary bg-primary/10 scale-[0.99]'
               : 'border-white/10 hover:border-primary/40 bg-surface-container/50 hover:bg-surface-container'
           }`}
         >
-          <div className="flex flex-col items-center justify-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[22px]">cloud_upload</span>
+          <div className="flex flex-col items-center justify-center gap-1.5">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[20px]">cloud_upload</span>
             </div>
-            <p className="text-sm font-medium text-on-surface">
-              {t.uploadImagesBtn}
-            </p>
+            <p className="text-xs font-medium text-on-surface">{t.uploadImagesBtn}</p>
           </div>
         </div>
       )}
@@ -275,7 +281,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                {/* Thumbnail Image */}
                 <div
                   className="relative aspect-video bg-black/40 cursor-pointer overflow-hidden"
                   onClick={() => {
@@ -290,7 +295,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     loading="lazy"
                   />
 
-                  {/* Main Cover Badge */}
                   {img.isMain && (
                     <div className="absolute top-2 left-2 bg-primary text-on-primary px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
                       <span className="material-symbols-outlined text-[14px]">star</span>
@@ -298,7 +302,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     </div>
                   )}
 
-                  {/* Dimensions & Size Tag */}
                   {img.width && img.height && (
                     <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-sm text-[10px] text-white/80 font-mono px-1.5 py-0.5 rounded">
                       {img.width}×{img.height}
@@ -306,9 +309,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                   )}
                 </div>
 
-                {/* Footer Controls */}
                 <div className="p-2 flex items-center justify-between gap-1 bg-surface-container-high border-t border-white/5">
-                  {/* Set Main Button */}
                   {!readOnly && (
                     <button
                       type="button"
@@ -327,9 +328,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     </button>
                   )}
 
-                  {/* Action Icons */}
                   <div className="flex items-center gap-0.5">
-                    {/* Copy / Insert to Markdown */}
                     <Tooltip title="Markdown">
                       <button
                         type="button"
@@ -342,7 +341,6 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                       </button>
                     </Tooltip>
 
-                    {/* Move Left */}
                     {!readOnly && idx > 0 && (
                       <button
                         type="button"
@@ -350,13 +348,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                         disabled={isMutating}
                         className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
-                          chevron_left
-                        </span>
+                        <span className="material-symbols-outlined text-[16px]">chevron_left</span>
                       </button>
                     )}
 
-                    {/* Move Right */}
                     {!readOnly && idx < images.length - 1 && (
                       <button
                         type="button"
@@ -364,13 +359,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                         disabled={isMutating}
                         className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[16px]">
-                          chevron_right
-                        </span>
+                        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                       </button>
                     )}
 
-                    {/* Delete with Popconfirm */}
                     {!readOnly && (
                       <Popconfirm
                         title={t.deleteImageBtn}
@@ -419,11 +411,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                     setPreviewTitle(file.name);
                   }}
                 >
-                  <img
-                    src={objectUrl}
-                    alt={file.name}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={objectUrl} alt={file.name} className="w-full h-full object-cover" />
                   {isMain && (
                     <div className="absolute top-2 left-2 bg-primary text-on-primary px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
                       <span className="material-symbols-outlined text-[14px]">star</span>
@@ -435,7 +423,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
                 <div className="p-2 flex items-center justify-between gap-1 bg-surface-container-high border-t border-white/5">
                   <button
                     type="button"
-                    onClick={() => handleSetPendingMain(idx)}
+                    onClick={() => onPendingFilesChange?.(pendingFiles, idx)}
                     className={`text-[11px] px-2 py-1 rounded font-medium flex items-center gap-1 transition-all ${
                       isMain
                         ? 'text-primary font-bold cursor-default'
@@ -487,8 +475,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
         onClose={() => setIsAiStudioOpen(false)}
         noteId={noteId}
         initialTitle={noteTitle}
+        initialDescription={noteDescription}
+        initialTemplateId={selectedTemplateId}
+        onInsertMarkdown={onInsertMarkdown}
       />
     </div>
   );
 };
-

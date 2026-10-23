@@ -14,6 +14,7 @@ import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
 import { ImageManager } from '../../components/ImageManager';
+import { ItContentAssistantBar } from '../../components/cover-studio/ItContentAssistantBar';
 import { LinkManager } from '../../components/LinkManager';
 import { HashtagInput } from '../../components/HashtagInput';
 import { FolderSelect } from '../../components/FolderSelect';
@@ -27,7 +28,7 @@ export const NoteEditorPage: React.FC = () => {
   const isNew = !id || id === 'new';
   const navigate = useNavigate();
 
-  const { data: note, isLoading: isNoteLoading } = useNote(id || '');
+  const { data: note } = useNote(id || '');
   const { data: feeds = [] } = useFeeds();
 
   const createNoteMutation = useCreateNote();
@@ -248,6 +249,19 @@ export const NoteEditorPage: React.FC = () => {
               />
             </div>
 
+            {/* IT Content Blueprints (Podcasts, Changelogs, Security, AI) */}
+            <ItContentAssistantBar
+              currentTitle={title}
+              currentDescription={description}
+              currentHashtags={hashtags}
+              onApplyBlueprint={({ markdown, hashtags: nextTags, icon: nextIcon, noteType }) => {
+                setDescription(markdown);
+                setHashtags(nextTags);
+                if (!icon && nextIcon) setIcon(nextIcon);
+                if (noteType) setType(noteType);
+              }}
+            />
+
             {/* Description (Raw Markdown Editor + Live Preview) */}
             <div className="space-y-1.5">
               <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
@@ -267,6 +281,7 @@ export const NoteEditorPage: React.FC = () => {
             <ImageManager
               noteId={id}
               noteTitle={title}
+              noteDescription={description}
               images={note?.images || []}
               pendingFiles={pendingFiles}
               pendingMainIndex={pendingMainIndex}
@@ -379,4 +394,3 @@ export const NoteEditorPage: React.FC = () => {
     </div>
   );
 };
-

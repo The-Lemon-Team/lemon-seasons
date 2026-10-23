@@ -282,7 +282,7 @@ export class TmdbService {
 Грандиозный финал Саги Мультивселенной (The Multiverse Saga). Создание Мира Битв (Battleworld) и объединение абсолютно всех итераций супергероев Marvel за всю 25-летнюю историю кинематографа: MCU, вселенной Fox (Люди Икс), вселенных Сэма Рэйми и Марка Уэбба.
 
 > Фильм призван стать величайшим кроссовером в истории кино и мягким перезапуском Вселенной Marvel на следующее десятилетие.`,
-        posterUrl: 'https://image.tmdb.org/t/p/w780/bOGkgRGdhrBYJSLpXaxhXVstNsV.jpg',
+        posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800',
         sourceLink: 'https://www.marvel.com/movies/avengers-secret-wars',
         taxonomyPath: 'films.marvel.phase6',
         folders: ['Films/Marvel/Phase6', 'Films/Marvel'],

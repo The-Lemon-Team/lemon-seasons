@@ -47,6 +47,22 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
   const { data: note, isLoading } = useNote(noteId || '');
   const deleteNoteMutation = useDeleteNote();
 
+  React.useEffect(() => {
+    if (!open || isEditOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, isEditOpen, onClose]);
+
   if (!open) return null;
 
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -147,6 +163,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
     <Modal
       open={open}
       onCancel={onClose}
+      keyboard={!isEditOpen}
       footer={null}
       width={720}
       centered

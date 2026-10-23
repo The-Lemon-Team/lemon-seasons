@@ -36,18 +36,6 @@ export class SyncOrchestratorService {
    * Returns current workstation sync and cloud status.
    */
   async getStatus(deviceId = 'default-device'): Promise<SyncStatusResponse> {
-    const lastCommit = await this.prisma.syncCommit.findFirst({
-      where: { deviceId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        createdAt: true,
-        entitiesCount: true,
-        summary: true,
-        isPushed: true,
-      },
-    });
-
     const unpushedCount = await this.prisma.syncCommit.count({
       where: { isPushed: false },
     });
@@ -58,18 +46,37 @@ export class SyncOrchestratorService {
     const deviceRefs = await this.gdriveStorage.getAllDeviceRefs();
     const myRef = deviceRefs.find((r) => r.deviceId === deviceId);
 
+    // Latest sync timestamp across ingestion and notes
+    const [latestIngestion, latestDriveNote] = await Promise.all([
+      this.prisma.ingestionFile.findFirst({
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true },
+      }),
+      this.prisma.note.findFirst({
+        where: {
+          OR: [
+            { sourceType: 'GOOGLE_DRIVE' },
+            { externalId: { not: null } },
+            { metadata: { path: ['isRemoteSync'], equals: true } },
+          ],
+          deletedAt: null,
+        },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true },
+      }),
+    ]);
+
+    const syncDates = [
+      latestIngestion?.updatedAt?.getTime(),
+      latestDriveNote?.updatedAt?.getTime(),
+    ].filter((t): t is number => typeof t === 'number');
+
+    const lastSyncAt = syncDates.length > 0 ? new Date(Math.max(...syncDates)).toISOString() : null;
+
     return {
       deviceId,
       activeSession: null,
-      lastCommit: lastCommit
-        ? {
-            id: lastCommit.id,
-            createdAt: lastCommit.createdAt.toISOString(),
-            entitiesCount: lastCommit.entitiesCount,
-            summary: lastCommit.summary,
-            isPushed: lastCommit.isPushed,
-          }
-        : null,
+      lastSyncAt,
       pendingChangesCount: 0,
       gdrive: {
         connected: authStatus.authenticated || true, // local relay is always connected
@@ -214,7 +221,7 @@ export class SyncOrchestratorService {
    * Retrieves recent files and notes synced from Google Drive (Sparks, Commits, Bus).
    */
   async getRecentUpdates(limit = 25): Promise<GDriveRecentUpdatesResponse> {
-    const [ingestionFiles, driveNotes, lastCommit] = await Promise.all([
+    const [ingestionFiles, driveNotes] = await Promise.all([
       this.prisma.ingestionFile.findMany({
         take: limit,
         orderBy: { updatedAt: 'desc' },
@@ -254,10 +261,6 @@ export class SyncOrchestratorService {
           updatedAt: true,
           externalId: true,
         },
-      }),
-      this.prisma.syncCommit.findFirst({
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
       }),
     ]);
 
@@ -310,9 +313,7 @@ export class SyncOrchestratorService {
     items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     const sliced = items.slice(0, limit);
 
-    const lastSyncAt =
-      lastCommit?.createdAt?.toISOString() ||
-      (sliced.length > 0 ? sliced[0].updatedAt : null);
+    const lastSyncAt = sliced.length > 0 ? sliced[0].updatedAt : null;
 
     return {
       totalCount: sliced.length,

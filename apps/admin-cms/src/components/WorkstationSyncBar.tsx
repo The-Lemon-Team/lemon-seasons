@@ -121,9 +121,9 @@ export const WorkstationSyncBar: React.FC = () => {
         {/* GDrive Connection & Popover Trigger */}
         <Tooltip
           title={
-            syncStatus.lastCommit?.createdAt
+            (syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt)
               ? `Google Drive • Последнее обновление: ${formatSyncTime(
-                  syncStatus.lastCommit.createdAt
+                  (syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt)!
                 )} (кликните для просмотра недавних файлов)`
               : 'Google Drive подключен (кликните для просмотра недавних файлов)'
           }

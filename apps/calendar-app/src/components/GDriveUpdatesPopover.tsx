@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Cloud,
   FileText,
@@ -41,6 +41,19 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
   isSyncing,
   onSelectNote,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const formatTime = (dateStr?: string) => {
@@ -133,8 +146,8 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
           <div className="py-2.5 px-3 my-2 rounded-lg bg-[#1e2020] border border-[#242828] flex items-center justify-between text-[11px] font-mono">
             <span className="text-[#93927e]">Последняя синхронизация:</span>
             <span className="text-[#e2e2e2] font-semibold">
-              {syncStatus.lastCommit?.createdAt
-                ? dayjs(syncStatus.lastCommit.createdAt).format('HH:mm:ss')
+              {syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt
+                ? dayjs(syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt).format('HH:mm:ss')
                 : 'Только что'}
             </span>
           </div>

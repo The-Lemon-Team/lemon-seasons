@@ -266,6 +266,22 @@ export function useGenerateAiBatch() {
   });
 }
 
+export function useRemixAiImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      sourceAssetId: string;
+      instruction: string;
+      style?: string;
+      aspectRatio?: '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
+      count?: number;
+    }) => ingestionApi.remixAiImage(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-assets'] });
+    },
+  });
+}
+
 export function useAiAssets(params?: {
   search?: string;
   style?: string;

@@ -169,6 +169,7 @@ export class SparksParserService {
         generator: 'gemini-spark',
         fileName,
         filePath,
+        subtype: (fm.subtype as string) || undefined,
         timeSlot,
         feedSlug: fm.feed || undefined,
         fileSize: fileStats?.size,

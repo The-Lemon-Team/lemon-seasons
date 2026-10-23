@@ -38,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 lg:px-6 h-14 sm:h-16 bg-[#121414]/95 backdrop-blur-md border-b border-[#242828] w-full transition-colors">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 lg:px-6 h-14 sm:h-16 bg-[#121414] border-b border-[#242828] w-full transition-colors">
       {/* Left: Search Field & Mobile Brand */}
       <div className="flex items-center gap-3 flex-1 max-w-xs md:max-w-md">
         {/* Mobile Brand Icon */}

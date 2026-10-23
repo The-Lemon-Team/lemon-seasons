@@ -141,6 +141,12 @@ export function resolveSparkFeeds(
   for (const n of notes) {
     if (n.feed?.slug) {
       countsBySlug[n.feed.slug] = (countsBySlug[n.feed.slug] || 0) + 1;
+      if (n.feed.slug.startsWith('spark-changelogsfeed-')) {
+        countsBySlug['spark-changelogsfeed'] = (countsBySlug['spark-changelogsfeed'] || 0) + 1;
+      }
+      if (n.feed.slug.startsWith('spark-notebooklmai-')) {
+        countsBySlug['spark-notebooklmai'] = (countsBySlug['spark-notebooklmai'] || 0) + 1;
+      }
     }
   }
 
@@ -173,7 +179,13 @@ export function resolveSparkFeeds(
 
   // 2. Discover additional feeds from backend that match spark-*
   for (const feed of allFeeds) {
-    if (feed.slug && isSparkSlug(feed.slug) && !processedSlugs.has(feed.slug)) {
+    if (
+      feed.slug &&
+      isSparkSlug(feed.slug) &&
+      !processedSlugs.has(feed.slug) &&
+      !feed.slug.startsWith('spark-changelogsfeed-') &&
+      !feed.slug.startsWith('spark-notebooklmai-')
+    ) {
       const palette = getDynamicPalette(feed.slug);
       const cleanTitle = feed.title
         .replace(/\s*\(Spark\)/i, '')
@@ -185,7 +197,7 @@ export function resolveSparkFeeds(
         slug: feed.slug,
         title: feed.title,
         shortTitle: cleanTitle.length > 16 ? cleanTitle.slice(0, 16) + '...' : cleanTitle,
-        emoji: palette.emoji,
+        emoji: feed.slug === 'spark-notebooklmai' ? '🎙️' : feed.slug === 'spark-changelogsfeed' ? '🚀' : palette.emoji,
         category: cleanTitle,
         accentColor: palette.accent,
         badgeBgLight: palette.badgeBgLight,
@@ -206,7 +218,7 @@ export function resolveSparkFeeds(
       for (const f of n.folders) {
         const folderPath = f.folder?.path || f.folder?.name || '';
         if (folderPath.toLowerCase().startsWith('spark/')) {
-          const subfolderName = folderPath.slice(6).trim();
+          const subfolderName = folderPath.slice(6).split('/')[0].trim();
           if (subfolderName) {
             const dynamicSlug = `spark-${subfolderName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-')}`;
             if (!processedSlugs.has(dynamicSlug)) {

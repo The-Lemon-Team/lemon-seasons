@@ -82,7 +82,14 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
     ? 'Живой синхронизированный поток внешних каналов по тематическим папкам'
     : 'Объединенный новостной поток всех тематических папок Spark';
 
-  const displayCount = isTelegram ? 624 : (activeFeed ? activeFeed.count : totalNotesCount);
+  const selectedSubtopic = activeFeed?.subtopics?.find((s) => s.slug === selectedFeedSlug);
+  const displayCount = isTelegram
+    ? 624
+    : selectedSubtopic
+    ? selectedSubtopic.count
+    : activeFeed
+    ? activeFeed.count
+    : totalNotesCount;
   const categoriesLabel = isDev ? 'тем' : isClassic ? 'тем' : 'папок';
   const widgetTitle = isDev
     ? 'Разделы Dev Hub'
@@ -129,76 +136,62 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
             </span>
           </div>
           <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5">
-            <span className="text-slate-400 block text-[10px]">Категории</span>
+            <span className="text-slate-400 block text-[10px]">
+              {activeFeed ? 'Всего в ленте' : 'Категории'}
+            </span>
             <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">
-              {tabs.length} {categoriesLabel}
+              {activeFeed ? totalNotesCount : `${tabs.length} ${categoriesLabel}`}
             </span>
           </div>
         </div>
-      </div>
 
-      {/* 1.5 Subtopics Widget (e.g. for Changelogs) */}
-      {activeFeed?.subtopics && activeFeed.subtopics.length > 0 && (
-        <div className="p-4 rounded-2xl bg-white/95 dark:bg-[#18222d]/95 border border-slate-200/80 dark:border-white/[0.08] shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-              <span>🏷️</span>
-              <span>Подтемы {activeFeed.shortTitle}</span>
-            </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/10 text-slate-500">
-              {activeFeed.subtopics.length}
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={() => onSelectFeed(activeFeed.slug)}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-colors duration-150 text-left font-medium ${
-                selectedFeedSlug === activeFeed.slug
-                  ? 'bg-[#2481cc]/10 text-[#2481cc] font-semibold border border-[#2481cc]/25'
-                  : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-2 truncate">
-                <span>📁</span>
-                <span className="truncate">Все {activeFeed.shortTitle}</span>
-              </div>
-              <span className="font-mono text-[10px] opacity-70">
-                {activeFeed.count}
+        {/* Subtopics Chips (e.g. for Changelogs) */}
+        {activeFeed?.subtopics && activeFeed.subtopics.length > 0 && (
+          <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] space-y-1.5 animate-fadeIn">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <Tag className="w-3 h-3 text-[#2481cc]" />
+                <span>Подтемы {activeFeed.shortTitle}</span>
               </span>
-            </button>
+              <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/10 text-slate-500">
+                {activeFeed.subtopics.length}
+              </span>
+            </div>
 
-            {activeFeed.subtopics.map((sub) => {
-              const isSubActive = selectedFeedSlug === sub.slug;
-              return (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => onSelectFeed(sub.slug)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-colors duration-150 text-left font-medium ${
-                    isSubActive
-                      ? 'bg-[#2481cc]/10 text-[#2481cc] font-semibold border border-[#2481cc]/25'
-                      : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span>{sub.emoji}</span>
-                    <span className="truncate">{sub.title}</span>
-                  </div>
-                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-full ${
-                    isSubActive
-                      ? 'bg-[#2481cc]/20 text-[#2481cc]'
-                      : 'bg-slate-100 dark:bg-white/10 opacity-70'
-                  }`}>
-                    {sub.count}
-                  </span>
-                </button>
-              );
-            })}
+            <div className="flex flex-wrap gap-1">
+              <button
+                type="button"
+                onClick={() => onSelectFeed(activeFeed.slug)}
+                className={`px-2 py-0.5 rounded-full font-mono text-[10px] transition-colors cursor-pointer ${
+                  !selectedFeedSlug || selectedFeedSlug === activeFeed.slug
+                    ? 'bg-[#2481cc]/20 text-[#2481cc] dark:text-[#64b5f6] font-semibold border border-[#2481cc]/30 shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-transparent'
+                }`}
+              >
+                Все ({activeFeed.count})
+              </button>
+
+              {activeFeed.subtopics.map((sub) => {
+                const isSubActive = selectedFeedSlug === sub.slug;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => onSelectFeed(isSubActive ? activeFeed.slug : sub.slug)}
+                    className={`px-2 py-0.5 rounded-full font-mono text-[10px] transition-colors cursor-pointer ${
+                      isSubActive
+                        ? 'bg-[#2481cc]/20 text-[#2481cc] dark:text-[#64b5f6] font-semibold border border-[#2481cc]/30 shadow-2xs'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-transparent'
+                    }`}
+                  >
+                    {sub.title} ({sub.count})
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 2. Folders / Feeds Navigation Widget */}
       <div className="p-4 rounded-2xl bg-white/95 dark:bg-[#18222d]/95 border border-slate-200/80 dark:border-white/[0.08] shadow-2xs space-y-2.5">
@@ -234,7 +227,9 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
 
           {/* Individual feeds */}
           {tabs.map((tab) => {
-            const isSelected = selectedFeedSlug === tab.slug;
+            const isSelected =
+              selectedFeedSlug === tab.slug ||
+              Boolean(tab.subtopics && tab.subtopics.some((s) => s.slug === selectedFeedSlug));
             return (
               <button
                 key={tab.id}

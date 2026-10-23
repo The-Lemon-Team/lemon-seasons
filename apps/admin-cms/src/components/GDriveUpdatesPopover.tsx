@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cloud,
@@ -41,6 +41,19 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
   isSyncing,
 }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -150,8 +163,8 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
           >
             <span className="text-on-surface-variant">Последняя синхронизация:</span>
             <span className="text-on-surface font-semibold">
-              {syncStatus.lastCommit?.createdAt
-                ? dayjs(syncStatus.lastCommit.createdAt).format('HH:mm:ss')
+              {syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt
+                ? dayjs(syncStatus.lastSyncAt || syncStatus.lastCommit?.createdAt).format('HH:mm:ss')
                 : 'Только что'}
             </span>
           </div>

@@ -8,6 +8,24 @@ import {
   ThematicCategoryBadge,
 } from './types';
 
+import {
+  KNOWN_CHANGELOG_SUBTOPICS,
+  KNOWN_NOTEBOOKLM_SUBTOPICS,
+  extractChangelogSubfolder,
+  isChangelogsNote,
+  isNotebooklmNote,
+  extractNotebooklmSubtopic,
+} from './devFeedSubtopics';
+
+export {
+  KNOWN_CHANGELOG_SUBTOPICS,
+  KNOWN_NOTEBOOKLM_SUBTOPICS,
+  extractChangelogSubfolder,
+  isChangelogsNote,
+  isNotebooklmNote,
+  extractNotebooklmSubtopic,
+} from './devFeedSubtopics';
+
 export interface DevFeedPresetConfig {
   slug: string;
   title: string;
@@ -22,67 +40,7 @@ export interface DevFeedPresetConfig {
   description: string;
   matcher: (note: Note) => boolean;
   isChangelogs?: boolean;
-}
-
-const KNOWN_CHANGELOG_SUBTOPICS: Array<{
-  subfolder: string;
-  title: string;
-  emoji: string;
-  accentColor: string;
-}> = [
-  { subfolder: 'google', title: 'Google', emoji: '🌐', accentColor: '#4285f4' },
-  { subfolder: 'openai', title: 'OpenAI', emoji: '🧠', accentColor: '#10a37f' },
-  { subfolder: 'anthropic', title: 'Anthropic', emoji: '⚡', accentColor: '#d97706' },
-];
-
-/**
- * Extracts the changelog subfolder from a note (e.g. 'google', 'openai', 'anthropic').
- */
-export function extractChangelogSubfolder(note: Note): string | null {
-  const checkString = (str?: string | null): string | null => {
-    if (!str) return null;
-    const normalized = str.replace(/\\/g, '/').toLowerCase();
-    const match = normalized.match(/changelogsfeed\/([^/]+)/);
-    if (match && match[1]) {
-      const clean = match[1].trim().toLowerCase();
-      return clean === 'antropic' ? 'anthropic' : clean;
-    }
-    return null;
-  };
-
-  const fromFolderPath = checkString(note.folderPath);
-  if (fromFolderPath) return fromFolderPath;
-
-  if (note.folders && Array.isArray(note.folders)) {
-    for (const f of note.folders) {
-      const p = f.folder?.path || f.folder?.name || '';
-      const res = checkString(p);
-      if (res) return res;
-    }
-  }
-
-  const slug = (note.feed?.slug || '').toLowerCase();
-  if (slug.startsWith('spark-changelogsfeed-')) {
-    const sub = slug.replace(/^spark-changelogsfeed-/, '').trim();
-    return sub === 'antropic' ? 'anthropic' : sub;
-  }
-
-  return null;
-}
-
-export function isChangelogsNote(note: Note): boolean {
-  if (extractChangelogSubfolder(note)) return true;
-  const slug = (note.feed?.slug || '').toLowerCase();
-  if (slug.startsWith('spark-changelogsfeed') || slug === 'changelogsfeed') return true;
-  const fp = (note.folderPath || '').replace(/\\/g, '/').toLowerCase();
-  if (fp.includes('changelogsfeed')) return true;
-  if (note.folders && Array.isArray(note.folders)) {
-    return note.folders.some((f) => {
-      const p = (f.folder?.path || f.folder?.name || '').replace(/\\/g, '/').toLowerCase();
-      return p.includes('changelogsfeed');
-    });
-  }
-  return false;
+  isNotebooklm?: boolean;
 }
 
 export const DEV_PRESETS: DevFeedPresetConfig[] = [
@@ -201,20 +159,9 @@ export const DEV_PRESETS: DevFeedPresetConfig[] = [
     badgeTextLight: '#7e22ce',
     badgeBgDark: 'rgba(168, 85, 247, 0.25)',
     badgeTextDark: '#d8b4fe',
-    description: 'Глубокие структурированные аудио-обзоры и аналитические синтезы от NotebookLM',
-    matcher: (n: Note) => {
-      const slug = (n.feed?.slug || '').toLowerCase();
-      if (slug === 'spark-notebooklmai' || slug === 'notebooklm-ai' || slug === 'notebooklm-podcasts') return true;
-      const fp = (n.folderPath || '').toLowerCase();
-      if (fp.includes('notebooklm') || fp.includes('podcasts/ai')) return true;
-      if (n.folders && Array.isArray(n.folders)) {
-        return n.folders.some((f) => {
-          const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
-          return p.includes('notebooklm') || p.includes('podcasts/ai');
-        });
-      }
-      return false;
-    },
+    description: 'Глубокие структурированные аудио-обзоры и аналитические синтезы от NotebookLM (Обычные и Telegram)',
+    isNotebooklm: true,
+    matcher: isNotebooklmNote,
   },
   {
     slug: 'spark-changelogsfeed',
@@ -277,6 +224,22 @@ function resolveDevBadge(note: Note): ThematicCategoryBadge {
     };
   }
 
+  const notebooklmSub = extractNotebooklmSubtopic(note);
+  if (notebooklmSub === 'telegram') {
+    return {
+      label: 'NotebookLM / Telegram',
+      emoji: '✈️',
+      colorClass: 'bg-sky-50 text-sky-700 border-sky-200/70 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40',
+    };
+  }
+  if (notebooklmSub === 'regular') {
+    return {
+      label: 'NotebookLM / Обычные',
+      emoji: '🎙️',
+      colorClass: 'bg-purple-50 text-purple-700 border-purple-200/70 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/40',
+    };
+  }
+
   for (const preset of DEV_PRESETS) {
     if (preset.matcher(note)) {
       return {
@@ -301,6 +264,10 @@ function resolveDevAvatar(note: Note): string {
   if (subfolder === 'anthropic') return '⚡';
   if (isChangelogsNote(note)) return '🚀';
 
+  const notebooklmSub = extractNotebooklmSubtopic(note);
+  if (notebooklmSub === 'telegram') return '✈️';
+  if (notebooklmSub === 'regular') return '🎙️';
+
   const slug = (note.feed?.slug || '').toLowerCase();
   const title = (note.title || '').toLowerCase();
   if (slug.includes('xakep') || title.includes('хакер')) return '👾';
@@ -321,12 +288,20 @@ export const DevFeedAdapter: FeedAdapter = {
   getTabs(context: FeedAdapterContext): UnifiedFeedTab[] {
     const { notes } = context;
 
-    // Discover changelog subfolders from notes
+    // Discover changelog subfolders and NotebookLM subtopics from notes
     const changelogSubCounts: Record<string, number> = {};
+    const notebooklmSubCounts: Record<'regular' | 'telegram', number> = {
+      regular: 0,
+      telegram: 0,
+    };
     for (const n of notes) {
       if (isChangelogsNote(n)) {
         const sub = extractChangelogSubfolder(n) || 'other';
         changelogSubCounts[sub] = (changelogSubCounts[sub] || 0) + 1;
+      }
+      if (isNotebooklmNote(n)) {
+        const nbSub = extractNotebooklmSubtopic(n) || 'regular';
+        notebooklmSubCounts[nbSub] = (notebooklmSubCounts[nbSub] || 0) + 1;
       }
     }
 
@@ -368,6 +343,16 @@ export const DevFeedAdapter: FeedAdapter = {
             discovered.add(sub);
           }
         }
+      } else if (preset.isNotebooklm) {
+        subtopics = KNOWN_NOTEBOOKLM_SUBTOPICS.map((known) => ({
+          id: `sub-notebooklm-${known.subfolder}`,
+          slug: `spark-notebooklmai-${known.subfolder}`,
+          subfolder: known.subfolder,
+          title: known.title,
+          emoji: known.emoji,
+          count: notebooklmSubCounts[known.subfolder] || 0,
+          accentColor: known.accentColor,
+        }));
       }
 
       return {
@@ -402,6 +387,12 @@ export const DevFeedAdapter: FeedAdapter = {
           const sub = extractChangelogSubfolder(n);
           return sub === targetSub;
         });
+      } else if (activeFeedSlug.startsWith('spark-notebooklmai-')) {
+        const targetSub = activeFeedSlug.replace(/^spark-notebooklmai-/, '').toLowerCase();
+        matched = matched.filter((n) => {
+          const sub = extractNotebooklmSubtopic(n);
+          return sub === targetSub;
+        });
       } else {
         const preset = DEV_PRESETS.find((p) => p.slug === activeFeedSlug);
         if (preset) {
@@ -422,7 +413,9 @@ export const DevFeedAdapter: FeedAdapter = {
         const tagMatch = n.hashtags?.some((h) => h.name.toLowerCase().includes(q));
         const subfolder = extractChangelogSubfolder(n);
         const subMatch = Boolean(subfolder && subfolder.includes(q));
-        return titleMatch || descMatch || feedMatch || tagMatch || subMatch;
+        const nbSub = extractNotebooklmSubtopic(n);
+        const nbMatch = Boolean(nbSub && nbSub.includes(q));
+        return titleMatch || descMatch || feedMatch || tagMatch || subMatch || nbMatch;
       });
     }
 
@@ -432,9 +425,14 @@ export const DevFeedAdapter: FeedAdapter = {
     // 5. Convert to UnifiedFeedItem
     return matched.map((n) => {
       const sub = extractChangelogSubfolder(n);
+      const nbSub = extractNotebooklmSubtopic(n);
       let channelTitle = n.feed?.title || 'Dev Feed';
       if (sub) {
         channelTitle = `${sub.charAt(0).toUpperCase() + sub.slice(1)} Changelog`;
+      } else if (nbSub === 'telegram') {
+        channelTitle = 'NotebookLM • Telegram';
+      } else if (nbSub === 'regular') {
+        channelTitle = 'NotebookLM AI';
       } else {
         channelTitle = channelTitle.replace(/\s*\(Spark\)/i, '').replace(/^Spark\s*[—–-]\s*/i, '').trim();
       }
@@ -442,7 +440,13 @@ export const DevFeedAdapter: FeedAdapter = {
       return {
         id: n.id,
         sourceType: 'dev',
-        feedSlug: n.feed?.slug || (sub ? `spark-changelogsfeed-${sub}` : 'dev'),
+        feedSlug:
+          n.feed?.slug ||
+          (sub
+            ? `spark-changelogsfeed-${sub}`
+            : nbSub
+            ? `spark-notebooklmai-${nbSub}`
+            : 'dev'),
         channelTitle,
         channelHandle: n.feed?.slug || 'dev',
         avatarIcon: resolveDevAvatar(n),

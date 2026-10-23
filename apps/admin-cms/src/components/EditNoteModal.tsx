@@ -93,6 +93,22 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
     }
   }, [note, open]);
 
+  useEffect(() => {
+    if (!open || isAiStudioOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, isAiStudioOpen, onClose]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!note || !title.trim() || isSubmitting) return;
@@ -144,6 +160,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
     <Modal
       open={open}
       onCancel={onClose}
+      keyboard={!isAiStudioOpen}
       footer={null}
       width={720}
       zIndex={1100}

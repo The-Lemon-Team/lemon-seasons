@@ -47,7 +47,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
 
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#1e2020] border-r border-[#242828] flex flex-col py-6 px-4 gap-2 z-40 hidden md:flex transition-all duration-200 ease-in-out">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-[#1e2020] border-r border-[#242828] flex flex-col py-6 px-4 gap-2 z-20 hidden md:flex transition-all duration-200 ease-in-out">
       {/* Brand Header */}
       <a
         href="/"

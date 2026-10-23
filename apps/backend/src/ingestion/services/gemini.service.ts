@@ -15,7 +15,7 @@ export class GeminiService {
   private readonly modelName: string = 'gemini-2.5-flash';
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    this.apiKey = this.configService.get<string>('GEMINI_API_KEY')?.replace(/^["']|["']$/g, '');
     if (this.apiKey) {
       this.logger.log('✨ Gemini API key detected. AI enrichment service initialized.');
     } else {
@@ -70,7 +70,7 @@ ${context ? `- Дополнительный контекст: "${context}"` : ''
   "keyQuote": "Короткая главная цитата или слоган события"
 }`;
 
-    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
 
     for (const model of modelsToTry) {
       try {

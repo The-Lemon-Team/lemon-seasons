@@ -11,53 +11,23 @@ import { DriveWatcherService } from './services/drive-watcher.service';
 import { WikiEngineService } from './services/wiki-engine.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NoteType } from '@prisma/client';
+import {
+  GenerateNoteAiDto,
+  GenerateImageAiDto,
+  RemixImageAiDto,
+  GenerateNoteCoverAiDto,
+  AttachCoverDto,
+  ImportNoteDto,
+} from './dto/ingestion.dto';
 
-export class GenerateNoteAiDto {
-  title: string;
-  category: string;
-  dateStr: string;
-  context?: string;
-}
-
-export class GenerateImageAiDto {
-  title?: string;
-  prompt: string;
-  style?: string;
-  aspectRatio?: ImageAspectRatio;
-  context?: string;
-  count?: number;
-  noteId?: string;
-}
-
-export class GenerateNoteCoverAiDto {
-  style?: string;
-  aspectRatio?: ImageAspectRatio;
-  customPrompt?: string;
-  setAsMain?: boolean;
-}
-
-export class AttachCoverDto {
-  assetUrl: string;
-  caption?: string;
-  setAsMain?: boolean;
-}
-
-export class ImportNoteDto {
-  feedSlug: string;
-  title: string;
-  description: string;
-  type: NoteType;
-  startDate: string;
-  endDate?: string;
-  icon?: string;
-  sourceLink?: string;
-  taxonomyPath?: string;
-  folders: string[];
-  hashtags: string[];
-  imageUrl?: string;
-  imageCaption?: string;
-  trailerUrl?: string;
-}
+export {
+  GenerateNoteAiDto,
+  GenerateImageAiDto,
+  RemixImageAiDto,
+  GenerateNoteCoverAiDto,
+  AttachCoverDto,
+  ImportNoteDto,
+};
 
 @ApiTags('Data Ingestion & AI Generators')
 @Controller('ingestion')
@@ -149,8 +119,18 @@ export class IngestionController {
     });
   }
 
+  @Post('ai/remix-image')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ремикс существующего изображения через Vision + Imagen 3 в Media Hub',
+    description: 'Анализирует исходное изображение через Gemini Vision и трансформирует его по инструкции пользователя с сохранением композиции.',
+  })
+  async remixAiImage(@Body() dto: RemixImageAiDto) {
+    return this.geminiImageService.remixImage(dto);
+  }
+
   @Get('ai/assets')
-  @ApiOperation({ summary: 'Получить сохраненные ассеты из AI Media Library' })
+  @ApiOperation({ summary: 'Получить сохраненные ассеты из AI Media Library / Lemon Media Hub' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'style', required: false })
   @ApiQuery({ name: 'isFavorite', required: false, type: Boolean })
@@ -163,7 +143,7 @@ export class IngestionController {
     @Query('limit') limit = '40',
     @Query('offset') offset = '0',
   ) {
-    return this.aiMediaLibrary.getAssets({
+    return this.geminiImageService.getAiAssets({
       search,
       style,
       isFavorite: isFavorite === undefined ? undefined : isFavorite === 'true',
@@ -175,7 +155,7 @@ export class IngestionController {
   @Patch('ai/assets/:id/favorite')
   @ApiOperation({ summary: 'Переключить статус "Избранное" у ассета' })
   async toggleAssetFavorite(@Param('id') id: string) {
-    return this.aiMediaLibrary.toggleFavorite(id);
+    return this.geminiImageService.toggleFavorite(id);
   }
 
   @Delete('ai/assets/:id')

@@ -40,7 +40,7 @@ export function getOrthodoxHolidaysData(year = 2026): HolidayItem[] {
       startDate: `${year}-01-07T00:00:00.000Z`,
       type: NoteType.EVENT,
       icon: 'sparkles',
-      imageUrl: 'https://images.unsplash.com/photo-1543258103-a62bd9610bd6?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=800',
       imageCaption: 'Рождественская звезда и свечи',
       description: `### Рождество Господа Бога и Спаса нашего Иисуса Христа
 

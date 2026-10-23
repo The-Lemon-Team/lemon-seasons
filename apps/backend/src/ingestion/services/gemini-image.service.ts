@@ -1,10 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StorageService, ProcessedImageResult } from '../../storage/storage.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotesMediaService } from '../../notes/notes-media.service';
 import { AiMediaLibraryService, AiMediaAsset } from './ai-media-library.service';
 import { NoteImage } from '@prisma/client';
+import { LemonMediaClient } from '@lenta/shared';
 
 export type ImageAspectRatio = '16:9' | '1:1' | '9:16' | '4:3' | '3:4';
 
@@ -42,6 +43,9 @@ export interface GenerateNoteCoverOptions {
 export class GeminiImageService {
   private readonly logger = new Logger(GeminiImageService.name);
   private readonly apiKey?: string;
+  private readonly mediaClient: LemonMediaClient;
+  private mediaHubHealthy = false;
+  private lastHealthCheck = 0;
 
   constructor(
     private readonly configService: ConfigService,
@@ -50,48 +54,115 @@ export class GeminiImageService {
     private readonly notesMediaService: NotesMediaService,
     private readonly aiMediaLibraryService: AiMediaLibraryService,
   ) {
-    this.apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    this.apiKey = this.configService.get<string>('GEMINI_API_KEY')?.replace(/^["']|["']$/g, '');
     if (this.apiKey) {
       this.logger.log('🎨 Gemini Image (Imagen 3) service initialized with API key.');
     } else {
       this.logger.warn('⚠️ GEMINI_API_KEY not configured. Themed SVG fallback will be used for image generation.');
     }
-  }
 
-  isConfigured(): boolean {
-    return Boolean(this.apiKey);
+    const mediaHubUrl = this.configService.get<string>('LEMON_MEDIA_HUB_URL') || 'http://localhost:3005';
+    this.mediaClient = new LemonMediaClient({ baseUrl: mediaHubUrl });
   }
 
   /**
+   * Health check with 30s cache to verify if Lemon Media Hub microservice is online
+   */
+  async isMediaHubAvailable(): Promise<boolean> {
+    const now = Date.now();
+    if (now - this.lastHealthCheck < 30000 && this.mediaHubHealthy) {
+      return true;
+    }
+
+    try {
+      const status = await this.mediaClient.ai.status();
+      this.mediaHubHealthy = Boolean(status?.configured || status?.imageModels?.length);
+      this.lastHealthCheck = now;
+      if (this.mediaHubHealthy) {
+        this.logger.debug(`🍋 Connected to Lemon Media Hub at ${this.mediaClient.baseUrl}`);
+      }
+      return this.mediaHubHealthy;
+    } catch {
+      this.mediaHubHealthy = false;
+      this.lastHealthCheck = now;
+      return false;
+    }
+  }
+
+  getMediaClient(): LemonMediaClient {
+    return this.mediaClient;
+  }
+
+  isConfigured(): boolean {
+    return Boolean(this.apiKey) || this.mediaHubHealthy;
+  }
+
+  /**
+   * Declarative style descriptors for IT, AI, Security, Podcast, Changelog, and classic styles.
+   */
+  private readonly stylePromptDescriptors: Record<string, string> = {
+    'ai-neural':
+      'Futuristic AI neural network visualization, glowing synaptic pathways, crystalline tensor core, dark glassmorphism UI, deep indigo and electric cyan lighting, 8k octane render',
+    'cyber-security':
+      'Cybersecurity SOC operations center aesthetic, glowing digital cryptographic shield, zero-day threat matrix, red and blue volumetric contrast lighting, dark high-tech HUD telemetry',
+    'changelog-blueprint':
+      'Precision technical CAD blueprint and modular software release architecture, glowing wireframe schematic grid, assembling geometric core modules, dark slate engineering aesthetic',
+    'podcast-neon':
+      'High-tech IT & AI podcast broadcast studio, sleek condenser microphone in sharp focus, glowing neon audio waveforms and equalizer rings, acoustic dark panels, warm amber and cyan rim lighting',
+    'isometric-tech':
+      '3D isometric cloud infrastructure and microservices architecture, sleek server racks, glowing fiber-optic data pipelines, clean Blender Octane render, soft global illumination',
+    'silicon-hardware':
+      'Extreme macro photography of EUV silicon processor wafer, intricate gold circuit traces, liquid-cooled AI GPU cluster, laser lithography glow, shallow depth of field',
+    'terminal-retro':
+      'Retro-futuristic developer workstation, phosphor green and amber CRT terminal code matrix, synthwave grid reflections, dark hacker console aesthetic',
+    'abstract-data':
+      'Futuristic big data analytics and network graph topology, glowing fiber-optic particle streams, dark mode telemetry dashboard, high-contrast tech editorial',
+    photorealistic:
+      '35mm photography, natural cinematic lighting, authentic textures, sharp focus, hyperdetailed depth of field',
+    minimalist:
+      'Modern flat vector graphic, clean geometry, bold Swiss design layout, balanced negative space',
+    cyberpunk:
+      'Volumetric neon lighting, rain-slicked surfaces, retro-futuristic interfaces, atmospheric fog',
+    vintage:
+      'Period-accurate archival aesthetic, sepia/matte tones, rich grain, classic historical texture',
+    'oil-painting':
+      'Expressive digital concept art and rich textured oil painting, dramatic brush strokes',
+    cinematic:
+      '8k resolution, dramatic anamorphic lighting, photorealistic cinematic film still, atmospheric haze',
+  };
+
+  /**
    * Transforms a natural language topic or note context into a vivid English prompt
-   * and semantic tags optimized for Imagen 3.
+   * and semantic tags optimized for Imagen 3 and Flux AI.
    */
   async synthesizePrompt(
     subject: string,
     visualStyle = 'cinematic',
     context?: string,
   ): Promise<{ prompt: string; tags: string[] }> {
+    const styleDescriptor =
+      this.stylePromptDescriptors[visualStyle] || this.stylePromptDescriptors.cinematic;
+
     if (!this.apiKey) {
       return {
-        prompt: `${subject}, ${visualStyle} style, high quality artwork`,
-        tags: [visualStyle, 'calendar'],
+        prompt: `${subject}. ${styleDescriptor}`,
+        tags: [visualStyle, 'it-feed', 'calendar'],
       };
     }
 
-    const systemPrompt = `You are an expert art director and prompt engineer for Imagen 3 and digital calendar visuals.
-Transform the given calendar event, topic or concept into a single evocative English image generation prompt.
+    const guidelinesList = Object.entries(this.stylePromptDescriptors)
+      .map(([key, desc]) => `- '${key}': ${desc}`)
+      .join('\n');
+
+    const systemPrompt = `You are an expert art director and prompt engineer for IT, AI, Cybersecurity, Changelogs, Tech Podcasts, and digital calendar visuals.
+Transform the given topic or event into a single evocative English image generation prompt (no text or words rendered inside the image).
 
 Guidelines by style:
-- 'photorealistic' / 'photo': 35mm photography, natural cinematic lighting, authentic textures, sharp focus, hyperdetailed depth of field.
-- 'editorial' / 'magazine': Modern editorial photography, high-contrast framing, National Geographic / Vogue aesthetic.
-- 'minimalist' / 'flat': Modern flat vector graphic, clean geometry, bold Swiss design layout, balanced negative space.
-- 'cyberpunk' / 'scifi': Volumetric neon lighting, rain-slicked surfaces, retro-futuristic interfaces, atmospheric fog.
-- 'vintage' / 'historical': Period-accurate archival aesthetic, sepia/matte tones, rich grain, classic oil painting texture.
-- 'cinematic' (default): 8k resolution, dramatic anamorphic lighting, photorealistic cinematic film still, atmospheric haze.
+${guidelinesList}
 
 Subject: "${subject}"
-Requested Visual Style: "${visualStyle}"
-${context ? `Event context: "${context.slice(0, 300)}"` : ''}
+Requested Visual Style: "${visualStyle}" (${styleDescriptor})
+${context ? `Event context: "${context.slice(0, 350)}"` : ''}
 
 Output strictly valid JSON (no markdown formatting):
 {
@@ -99,7 +170,7 @@ Output strictly valid JSON (no markdown formatting):
   "tags": ["tag1", "tag2", "tag3"]
 }`;
 
-    const flashModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const flashModels = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
     for (const model of flashModels) {
       try {
@@ -107,6 +178,7 @@ Output strictly valid JSON (no markdown formatting):
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(4000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
             generationConfig: {
@@ -123,8 +195,8 @@ Output strictly valid JSON (no markdown formatting):
           if (raw) {
             const parsed = JSON.parse(raw);
             return {
-              prompt: parsed.prompt?.trim() || `${subject}, ${visualStyle}`,
-              tags: Array.isArray(parsed.tags) ? parsed.tags : [visualStyle],
+              prompt: parsed.prompt?.trim() || `${subject}. ${styleDescriptor}`,
+              tags: Array.isArray(parsed.tags) ? parsed.tags : [visualStyle, 'it'],
             };
           }
         }
@@ -134,8 +206,8 @@ Output strictly valid JSON (no markdown formatting):
     }
 
     return {
-      prompt: `${subject}, ${visualStyle} style, high definition atmospheric artwork`,
-      tags: [visualStyle],
+      prompt: `${subject}. ${styleDescriptor}`,
+      tags: [visualStyle, 'it'],
     };
   }
 
@@ -195,6 +267,60 @@ Output strictly valid JSON (no markdown formatting):
   }
 
   /**
+   * Generates real photorealistic AI images via Flux (Pollinations) when Google Imagen quota is unavailable
+   */
+  async callFluxApi(
+    prompt: string,
+    aspectRatio: ImageAspectRatio = '16:9',
+    sampleCount = 1,
+  ): Promise<Buffer[]> {
+    const dimensionsMap: Record<ImageAspectRatio, { width: number; height: number }> = {
+      '16:9': { width: 1280, height: 720 },
+      '1:1': { width: 1024, height: 1024 },
+      '9:16': { width: 720, height: 1280 },
+      '4:3': { width: 1024, height: 768 },
+      '3:4': { width: 768, height: 1024 },
+    };
+
+    const dims = dimensionsMap[aspectRatio] || { width: 1280, height: 720 };
+    const count = Math.min(Math.max(sampleCount, 1), 4);
+    const pollinationsKey = this.configService.get<string>('POLLINATIONS_API_KEY')?.replace(/^["']|["']$/g, '');
+
+    const fetchSample = async (index: number) => {
+      const seed = Math.floor(Math.random() * 900000) + index * 1000 + 1;
+      const cleanPrompt = encodeURIComponent(prompt.slice(0, 400));
+      const modelsToTry = pollinationsKey ? ['flux', 'z-image-turbo', 'sana'] : ['flux', 'sana'];
+      const baseUrl = pollinationsKey ? 'https://gen.pollinations.ai/image/prompt' : 'https://image.pollinations.ai/prompt';
+
+      for (const model of modelsToTry) {
+        const url = `${baseUrl}/${cleanPrompt}?width=${dims.width}&height=${dims.height}&model=${model}&nologo=true&seed=${seed}`;
+
+        try {
+          const res = await fetch(url, {
+            signal: AbortSignal.timeout(30000),
+            headers: pollinationsKey ? { Authorization: `Bearer ${pollinationsKey}` } : undefined,
+          });
+
+          if (res.ok) {
+            const arrayBuf = await res.arrayBuffer();
+            if (arrayBuf.byteLength > 1000) {
+              return Buffer.from(arrayBuf);
+            }
+          } else if (res.status === 402 || res.status === 429) {
+            this.logger.warn(`Pollinations ${model} rate-limited (402/429). Add POLLINATIONS_API_KEY to .env for unlimited generations.`);
+          }
+        } catch (err: any) {
+          this.logger.warn(`Pollinations ${model} sample #${index + 1} fetch failed: ${err.message}`);
+        }
+      }
+      return null;
+    };
+
+    const results = await Promise.all(Array.from({ length: count }, (_, i) => fetchSample(i)));
+    return results.filter(Boolean) as Buffer[];
+  }
+
+  /**
    * Generates a sleek themed SVG card buffer when AI API is unavailable.
    */
   generateFallbackThemedSvg(title: string, subtitle?: string, accentColor = '#f59e0b', variantIdx = 0): Buffer {
@@ -235,6 +361,7 @@ Output strictly valid JSON (no markdown formatting):
 
   /**
    * Generates a batch of candidates (1..4) and registers all into the AI Media Library.
+   * Prioritizes Lemon Media Hub microservice, falling back to local Imagen 3 / SVG.
    */
   async generateBatch(options: GenerateImageOptions): Promise<GeneratedBatchResult> {
     const style = options.style || 'cinematic';
@@ -245,7 +372,63 @@ Output strictly valid JSON (no markdown formatting):
       options.context,
     );
 
-    const buffers = await this.callImagenApi(synthesizedPrompt, options.aspectRatio || '16:9', count);
+    // 1. First attempt generation via standalone Lemon Media Hub microservice
+    if (await this.isMediaHubAvailable()) {
+      try {
+        this.logger.log(`🚀 Delegating batch generation to Lemon Media Hub (${count} candidates)...`);
+        const hubResult = await this.mediaClient.ai.generateImages({
+          prompt: options.prompt,
+          style,
+          aspectRatio: (options.aspectRatio || '16:9') as any,
+          count,
+          context: options.context,
+          tags,
+        });
+
+        const candidates: AiMediaAsset[] = hubResult.items.map((item) => ({
+          id: item.id,
+          url: this.mediaClient.resolveUrl(item.url),
+          thumbnailUrl: this.mediaClient.resolveUrl(item.thumbnailUrl),
+          filename: item.filename,
+          prompt: item.prompt,
+          userPrompt: item.userPrompt || options.prompt,
+          style: item.style || style,
+          aspectRatio: item.aspectRatio || options.aspectRatio || '16:9',
+          model: item.model || hubResult.model,
+          width: item.width,
+          height: item.height,
+          sizeBytes: item.sizeBytes,
+          mimeType: item.mimeType,
+          tags: item.tags || tags,
+          sourceNoteId: options.noteId,
+          isFavorite: item.isFavorite,
+          usageCount: item.usageCount,
+          createdAt: item.createdAt,
+        }));
+
+        return {
+          synthesizedPrompt: hubResult.synthesizedPrompt,
+          model: hubResult.model,
+          isFallback: hubResult.isFallback,
+          candidates,
+        };
+      } catch (err: any) {
+        this.logger.warn(`Media Hub generation failed, falling back to local engine: ${err.message}`);
+      }
+    }
+
+    this.logger.log(`🎨 Generating ${count} image candidates via Flux AI...`);
+    let buffers = await this.callFluxApi(synthesizedPrompt, options.aspectRatio || '16:9', count);
+    let activeModel = 'flux';
+
+    if (buffers.length === 0) {
+      this.logger.log(`Flux returned no samples. Attempting Google Imagen (${count} samples)...`);
+      buffers = await this.callImagenApi(synthesizedPrompt, options.aspectRatio || '16:9', count);
+      if (buffers.length > 0) {
+        activeModel = 'imagen-3.0';
+      }
+    }
+
     const candidates: AiMediaAsset[] = [];
     const isFallback = buffers.length === 0;
 
@@ -266,7 +449,7 @@ Output strictly valid JSON (no markdown formatting):
           userPrompt: options.prompt,
           style,
           aspectRatio: options.aspectRatio || '16:9',
-          model: 'imagen-3.0',
+          model: activeModel,
           width: saved.width,
           height: saved.height,
           sizeBytes: saved.sizeBytes,
@@ -280,7 +463,7 @@ Output strictly valid JSON (no markdown formatting):
 
       return {
         synthesizedPrompt,
-        model: 'imagen-3.0',
+        model: activeModel,
         isFallback: false,
         candidates,
       };
@@ -428,6 +611,142 @@ Output strictly valid JSON (no markdown formatting):
     );
 
     await this.aiMediaLibraryService.recordUsage(assetUrl);
+
+    // Notify Media Hub usage counter if applicable
+    if (asset?.id) {
+      this.isMediaHubAvailable().then((available) => {
+        if (available && asset?.id) {
+          this.mediaClient.assets.incrementUsage(asset.id).catch(() => {});
+        }
+      });
+    }
+
     return attached;
+  }
+
+  /**
+   * Remix an existing image using multimodal vision + Imagen 3 via Lemon Media Hub
+   */
+  async remixImage(options: {
+    sourceAssetId: string;
+    instruction: string;
+    style?: string;
+    aspectRatio?: ImageAspectRatio;
+    count?: number;
+  }) {
+    if (await this.isMediaHubAvailable()) {
+      const hubResult = await this.mediaClient.ai.remixImage({
+        sourceAssetId: options.sourceAssetId,
+        instruction: options.instruction,
+        style: options.style,
+        aspectRatio: (options.aspectRatio || '16:9') as any,
+        count: options.count || 2,
+      });
+
+      return {
+        sourceAsset: {
+          ...hubResult.sourceAsset,
+          url: this.mediaClient.resolveUrl(hubResult.sourceAsset.url),
+          thumbnailUrl: this.mediaClient.resolveUrl(hubResult.sourceAsset.thumbnailUrl),
+        },
+        remixPrompt: hubResult.remixPrompt,
+        description: hubResult.description,
+        model: hubResult.model,
+        isFallback: hubResult.isFallback,
+        candidates: hubResult.items.map((item) => ({
+          id: item.id,
+          url: this.mediaClient.resolveUrl(item.url),
+          thumbnailUrl: this.mediaClient.resolveUrl(item.thumbnailUrl),
+          filename: item.filename,
+          prompt: item.prompt,
+          userPrompt: item.userPrompt,
+          style: item.style,
+          aspectRatio: item.aspectRatio,
+          model: item.model,
+          width: item.width,
+          height: item.height,
+          sizeBytes: item.sizeBytes,
+          mimeType: item.mimeType,
+          tags: item.tags,
+          isFavorite: item.isFavorite,
+          usageCount: item.usageCount,
+          createdAt: item.createdAt,
+        })),
+      };
+    }
+
+    throw new BadRequestException('Image remixing requires Lemon Media Hub to be active.');
+  }
+
+  /**
+   * Returns assets, querying Lemon Media Hub if online, else local media library
+   */
+  async getAiAssets(params?: {
+    search?: string;
+    style?: string;
+    isFavorite?: boolean;
+    limit?: number;
+    offset?: number;
+  }) {
+    if (await this.isMediaHubAvailable()) {
+      try {
+        const hubRes = await this.mediaClient.assets.list({
+          search: params?.search,
+          style: params?.style,
+          isFavorite: params?.isFavorite,
+          limit: params?.limit,
+          offset: params?.offset,
+        });
+
+        return {
+          items: hubRes.items.map((item) => ({
+            id: item.id,
+            url: this.mediaClient.resolveUrl(item.url),
+            thumbnailUrl: this.mediaClient.resolveUrl(item.thumbnailUrl),
+            filename: item.filename,
+            prompt: item.prompt,
+            userPrompt: item.userPrompt,
+            style: item.style,
+            aspectRatio: item.aspectRatio,
+            model: item.model,
+            width: item.width,
+            height: item.height,
+            sizeBytes: item.sizeBytes,
+            mimeType: item.mimeType,
+            tags: item.tags,
+            sourceAssetId: item.sourceAssetId,
+            sourceNoteId: item.sourceNoteId,
+            isFavorite: item.isFavorite,
+            usageCount: item.usageCount,
+            createdAt: item.createdAt,
+          })),
+          total: hubRes.total,
+        };
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch assets from Media Hub: ${err.message}`);
+      }
+    }
+
+    return this.aiMediaLibraryService.getAssets(params);
+  }
+
+  /**
+   * Toggles asset favorite flag across Media Hub and local storage
+   */
+  async toggleFavorite(id: string) {
+    if (await this.isMediaHubAvailable()) {
+      try {
+        const updated = await this.mediaClient.assets.toggleFavorite(id);
+        return {
+          ...updated,
+          url: this.mediaClient.resolveUrl(updated.url),
+          thumbnailUrl: this.mediaClient.resolveUrl(updated.thumbnailUrl),
+        };
+      } catch (err: any) {
+        this.logger.warn(`Failed to toggle favorite on Media Hub: ${err.message}`);
+      }
+    }
+
+    return this.aiMediaLibraryService.toggleFavorite(id);
   }
 }

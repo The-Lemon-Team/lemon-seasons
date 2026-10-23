@@ -62,7 +62,7 @@ export function getCatholicHolidaysData(year = 2026): HolidayItem[] {
       startDate: `${year}-01-06T00:00:00.000Z`,
       type: NoteType.EVENT,
       icon: 'crown',
-      imageUrl: 'https://images.unsplash.com/photo-1543258103-a62bd9610bd6?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=800',
       imageCaption: 'Поклонение волхвов и Вифлеемская звезда',
       description: `### Торжество Богоявления Господня
 
@@ -373,7 +373,7 @@ export function getCatholicHolidaysData(year = 2026): HolidayItem[] {
       startDate: `${year}-12-25T00:00:00.000Z`,
       type: NoteType.EVENT,
       icon: 'sparkles',
-      imageUrl: 'https://images.unsplash.com/photo-1543258103-a62bd9610bd6?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=800',
       imageCaption: 'Рождество Христово (Nativitas Domini)',
       description: `### Рождество Господа нашего Иисуса Христа
 
