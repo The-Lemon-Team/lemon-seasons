@@ -151,6 +151,7 @@ export class SparksParserService {
       description: cleanedBody, // Cleaned description without the raw trailing markdown block
       type: type as any,
       status: status as any,
+      privacy: ((fm.privacy as string) || 'public') as any,
       publishAt,
       startDate: startDate.toISOString(),
       endDate: endDate ? endDate.toISOString() : undefined,
@@ -196,39 +197,48 @@ export class SparksParserService {
     let start: Date | null = null;
     let end: Date | null = null;
 
-    // Check frontmatter dates
+    // 1. Resolve canonical edition/issue date from filename if present
+    let fileDatePrefix: string | null = null;
+    const ruDateMatch = fileName.match(/(\d{2})\.(\d{2})\.(\d{2,4})/);
+    if (ruDateMatch) {
+      const day = ruDateMatch[1];
+      const month = ruDateMatch[2];
+      let year = ruDateMatch[3];
+      if (year.length === 2) year = `20${year}`;
+      fileDatePrefix = `${year}-${month}-${day}`;
+    } else {
+      const isoDateMatch = fileName.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (isoDateMatch) {
+        fileDatePrefix = `${isoDateMatch[1]}-${isoDateMatch[2]}-${isoDateMatch[3]}`;
+      }
+    }
+
+    // 2. Check frontmatter dates
     const rawStart = fm.start_date || fm.startDate || fm.date;
     if (rawStart) {
       const parsed = new Date(rawStart);
-      if (!isNaN(parsed.getTime())) start = parsed;
+      if (!isNaN(parsed.getTime())) {
+        if (fileDatePrefix) {
+          // If filename specifies an explicit publication date, align calendar day with filename while preserving time
+          const hours = String(parsed.getUTCHours()).padStart(2, '0');
+          const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+          const seconds = String(parsed.getUTCSeconds()).padStart(2, '0');
+          start = new Date(`${fileDatePrefix}T${hours}:${minutes}:${seconds}.000Z`);
+        } else {
+          start = parsed;
+        }
+      }
+    }
+
+    // 3. If no frontmatter start date, use filename date
+    if (!start && fileDatePrefix) {
+      start = new Date(`${fileDatePrefix}T12:00:00.000Z`);
     }
 
     const rawEnd = fm.end_date || fm.endDate;
     if (rawEnd) {
       const parsed = new Date(rawEnd);
       if (!isNaN(parsed.getTime())) end = parsed;
-    }
-
-    // Check Russian date pattern in filename: DD.MM.YY or DD.MM.YYYY
-    if (!start) {
-      const ruDateMatch = fileName.match(/(\d{2})\.(\d{2})\.(\d{2,4})/);
-      if (ruDateMatch) {
-        const day = ruDateMatch[1];
-        const month = ruDateMatch[2];
-        let year = ruDateMatch[3];
-        if (year.length === 2) year = `20${year}`;
-        const parsed = new Date(`${year}-${month}-${day}T12:00:00.000Z`);
-        if (!isNaN(parsed.getTime())) start = parsed;
-      }
-    }
-
-    // Check ISO date pattern in filename: YYYY-MM-DD
-    if (!start) {
-      const dateMatch = fileName.match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (dateMatch) {
-        const parsed = new Date(`${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}T12:00:00.000Z`);
-        if (!isNaN(parsed.getTime())) start = parsed;
-      }
     }
 
     // Fallback to file mtime or now

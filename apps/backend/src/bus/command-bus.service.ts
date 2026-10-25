@@ -26,6 +26,7 @@ export class CommandBusService implements OnModuleInit {
   // In-memory queue ring buffer
   private commands: BusCommand[] = [];
   private isProcessing = false;
+  private saveTimer: NodeJS.Timeout | null = null;
 
   // Declarative handler map
   private readonly handlerMap: Record<CommandType, ICommandHandler>;
@@ -250,14 +251,16 @@ export class CommandBusService implements OnModuleInit {
   }
 
   private savePersistedQueue() {
-    try {
-      const dir = path.dirname(this.queueFilePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+    if (this.saveTimer) return;
+    this.saveTimer = setTimeout(async () => {
+      this.saveTimer = null;
+      try {
+        const dir = path.dirname(this.queueFilePath);
+        await fs.promises.mkdir(dir, { recursive: true });
+        await fs.promises.writeFile(this.queueFilePath, JSON.stringify(this.commands, null, 2), 'utf8');
+      } catch (err: any) {
+        this.logger.warn(`Could not persist queue: ${err.message}`);
       }
-      fs.writeFileSync(this.queueFilePath, JSON.stringify(this.commands, null, 2), 'utf8');
-    } catch (err: any) {
-      this.logger.warn(`Could not persist queue: ${err.message}`);
-    }
+    }, 100);
   }
 }

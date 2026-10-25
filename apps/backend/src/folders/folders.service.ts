@@ -312,6 +312,7 @@ export class FoldersService {
       include: {
         noteFolders: {
           where: { note: { deletedAt: null } },
+          take: 100,
           include: {
             note: {
               include: {
@@ -397,12 +398,15 @@ export class FoldersService {
         },
       });
 
-      for (const sub of subfolders) {
-        const updatedSubPath = `${newPath}/${sub.path.substring(oldPrefix.length)}`;
-        await this.prisma.folder.update({
-          where: { id: sub.id },
-          data: { path: updatedSubPath },
-        });
+      if (subfolders.length > 0) {
+        await this.prisma.$transaction(
+          subfolders.map((sub) =>
+            this.prisma.folder.update({
+              where: { id: sub.id },
+              data: { path: `${newPath}/${sub.path.substring(oldPrefix.length)}` },
+            }),
+          ),
+        );
       }
     }
 

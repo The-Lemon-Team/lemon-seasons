@@ -7,7 +7,9 @@ import { FoldersModule } from '../folders/folders.module';
 
 import { CommandBusService } from './command-bus.service';
 import { CommandBusController } from './command-bus.controller';
+import { DriveBusRelayController } from './controllers/drive-bus-relay.controller';
 import { DriveBusRelayService } from './services/drive-bus-relay.service';
+import { DriveBusReaderService } from './services/drive-bus-reader.service';
 
 import {
   CreateNoteHandler,
@@ -26,10 +28,11 @@ import {
     ContainersModule,
     FoldersModule,
   ],
-  controllers: [CommandBusController],
+  controllers: [CommandBusController, DriveBusRelayController],
   providers: [
     CommandBusService,
     DriveBusRelayService,
+    DriveBusReaderService,
     CreateNoteHandler,
     UpdateContainerHandler,
     AddBookmarkHandler,
@@ -37,6 +40,6 @@ import {
     IngestAudioHandler,
     AddNotebookLmHandler,
   ],
-  exports: [CommandBusService, DriveBusRelayService],
+  exports: [CommandBusService, DriveBusRelayService, DriveBusReaderService],
 })
 export class BusModule {}

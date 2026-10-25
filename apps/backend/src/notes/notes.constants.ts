@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 
 export const NOTE_INCLUDE_DEFAULT = {
   feed: true,
+  publicFeed: true,
   tags: { where: { deletedAt: null } },
   hashtags: { where: { deletedAt: null } },
   folders: {
@@ -15,6 +16,8 @@ export const NOTE_INCLUDE_DEFAULT = {
 export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   id: true,
   feedId: true,
+  publicFeedId: true,
+  privacy: true,
   containerId: true,
   filePath: true,
   title: true,
@@ -41,6 +44,7 @@ export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   parentNoteId: true,
   resonanceScore: true,
   feed: true,
+  publicFeed: true,
   tags: { where: { deletedAt: null } },
   hashtags: { where: { deletedAt: null } },
   folders: {

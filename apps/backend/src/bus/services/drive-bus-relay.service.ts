@@ -21,6 +21,9 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   private readonly watermarkFile: string;
   private watcher: chokidar.FSWatcher | null = null;
   private lastProcessedTimestamp: string | null = null;
+  private knownBusHashes = new Set<string>();
+  private knownBusFileNames = new Set<string>();
+  private busIndexInitialized = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -44,7 +47,7 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.ensureDirectories();
     this.loadWatermark();
-    await this.runCatchUpSync();
+    this.runCatchUpSync().catch((err) => this.logger.warn(`Catch-up warning: ${err?.message}`));
     this.startWatchingEvents();
   }
 
@@ -58,6 +61,14 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
   public getBusDirectory(): string {
     return this.busDir;
+  }
+
+  public getEventsDirectory(): string {
+    return this.eventsDir;
+  }
+
+  public isWatching(): boolean {
+    return Boolean(this.watcher);
   }
 
   // ── 1. OUTBOUND: Публикация локального события в облачную шину ───────────────
@@ -107,6 +118,8 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       };
 
       await fs.promises.writeFile(targetFilePath, JSON.stringify(envelope, null, 2), 'utf-8');
+      if (payload.fileHash) this.knownBusHashes.add(payload.fileHash);
+      if (payload.externalId) this.knownBusFileNames.add(path.basename(payload.externalId).toLowerCase());
       this.logger.log(`☁️ [DriveBus:OUT] Событие опубликовано в шину: "${fileName}" (ID: ${event.noteId})`);
     } catch (err: any) {
       this.logger.error(`❌ Ошибка записи события в Google Drive шину: ${err.message}`, err.stack);
@@ -158,6 +171,11 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       const envelope: BusEventEnvelope = JSON.parse(raw);
 
       if (!envelope || !envelope.entityType || !envelope.payload) return;
+
+      if (envelope.payload?.fileHash) this.knownBusHashes.add(envelope.payload.fileHash);
+      if (envelope.payload?.externalId) {
+        this.knownBusFileNames.add(path.basename(envelope.payload.externalId).toLowerCase());
+      }
 
       if (envelope.deviceId === this.deviceId) return;
 
@@ -237,6 +255,9 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
     let processed = 0;
     let skipped = 0;
+    const safeWatermarkPrefix = this.lastProcessedTimestamp
+      ? this.lastProcessedTimestamp.replace(/[:.]/g, '-')
+      : null;
 
     for (const fileName of jsonFiles) {
       // Пропускаем собственные события
@@ -245,10 +266,22 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
         continue;
       }
 
+      // Быстрая фильтрация по префиксу времени в имени файла без чтения с диска
+      const fileTimePrefix = fileName.split('_')[0];
+      if (safeWatermarkPrefix && fileTimePrefix && fileTimePrefix <= safeWatermarkPrefix) {
+        skipped++;
+        continue;
+      }
+
       const filePath = path.join(this.eventsDir, fileName);
       try {
         const raw = await fs.promises.readFile(filePath, 'utf-8');
         const envelope: BusEventEnvelope = JSON.parse(raw);
+
+        if (envelope?.payload?.fileHash) this.knownBusHashes.add(envelope.payload.fileHash);
+        if (envelope?.payload?.externalId) {
+          this.knownBusFileNames.add(path.basename(envelope.payload.externalId).toLowerCase());
+        }
 
         if (!envelope || envelope.deviceId === this.deviceId) {
           skipped++;
@@ -262,12 +295,18 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
         }
 
         await this.applyEventToLocalDatabase(envelope);
-        this.updateWatermark(envelope.timestamp);
+        if (!this.lastProcessedTimestamp || envelope.timestamp > this.lastProcessedTimestamp) {
+          this.lastProcessedTimestamp = envelope.timestamp;
+        }
         processed++;
       } catch (err: any) {
         this.logger.warn(`Ошибка обработки файла catch-up "${fileName}": ${err.message}`);
         skipped++;
       }
+    }
+
+    if (processed > 0 && this.lastProcessedTimestamp) {
+      this.persistWatermark();
     }
 
     this.logger.log(`✅ [DriveBus] Catch-up завершен. Обработано новых: ${processed}, пропущено: ${skipped}`);
@@ -278,33 +317,52 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Проверяет, опубликовано ли уже событие для данного файла в шине другими машинами.
+   * Использует in-memory индекс хэшей и имен файлов, чтобы избежать чтения 200 файлов на каждую заметку.
    */
   public async isFileAlreadyInBus(filePath: string, fileHash?: string): Promise<boolean> {
     if (!fs.existsSync(this.eventsDir)) return false;
 
-    try {
-      const files = await fs.promises.readdir(this.eventsDir);
-      // Проверяем последние 200 событий
-      const recent = files
-        .filter((f) => f.toLowerCase().endsWith('.json') && !f.startsWith('.'))
-        .sort()
-        .slice(-200);
+    const targetFileName = path.basename(filePath).toLowerCase();
 
-      const targetFileName = path.basename(filePath).toLowerCase();
-
-      for (const f of recent) {
-        const full = path.join(this.eventsDir, f);
-        const text = await fs.promises.readFile(full, 'utf-8');
-        if (text.toLowerCase().includes(targetFileName)) {
-          if (!fileHash || text.includes(fileHash)) {
-            return true;
-          }
-        }
-      }
-    } catch {
-      return false;
+    if (fileHash && this.knownBusHashes.has(fileHash)) {
+      return true;
+    }
+    if (this.knownBusFileNames.has(targetFileName) && !fileHash) {
+      return true;
     }
 
+    if (!this.busIndexInitialized) {
+      this.busIndexInitialized = true;
+      try {
+        const files = await fs.promises.readdir(this.eventsDir);
+        const recent = files
+          .filter((f) => f.toLowerCase().endsWith('.json') && !f.startsWith('.'))
+          .sort()
+          .slice(-200);
+
+        for (const f of recent) {
+          const full = path.join(this.eventsDir, f);
+          const text = await fs.promises.readFile(full, 'utf-8');
+          try {
+            const parsed: BusEventEnvelope = JSON.parse(text);
+            if (parsed?.payload?.fileHash) {
+              this.knownBusHashes.add(parsed.payload.fileHash);
+            }
+            if (parsed?.payload?.externalId) {
+              this.knownBusFileNames.add(path.basename(parsed.payload.externalId).toLowerCase());
+            }
+          } catch {
+            // fallback if malformed
+          }
+        }
+      } catch {
+        return false;
+      }
+    }
+
+    if (fileHash && this.knownBusHashes.has(fileHash)) {
+      return true;
+    }
     return false;
   }
 
@@ -324,16 +382,21 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   private updateWatermark(timestamp: string): void {
     if (!this.lastProcessedTimestamp || timestamp > this.lastProcessedTimestamp) {
       this.lastProcessedTimestamp = timestamp;
-      try {
-        fs.writeFileSync(
-          this.watermarkFile,
-          JSON.stringify({ deviceId: this.deviceId, lastProcessedTimestamp: this.lastProcessedTimestamp }, null, 2),
-          'utf-8',
-        );
-      } catch (err: any) {
-        this.logger.warn(`Не удалось сохранить watermark: ${err.message}`);
-      }
+      this.persistWatermark();
     }
+  }
+
+  private persistWatermark(): void {
+    if (!this.lastProcessedTimestamp) return;
+    fs.promises
+      .writeFile(
+        this.watermarkFile,
+        JSON.stringify({ deviceId: this.deviceId, lastProcessedTimestamp: this.lastProcessedTimestamp }, null, 2),
+        'utf-8',
+      )
+      .catch((err: any) => {
+        this.logger.warn(`Не удалось сохранить watermark: ${err.message}`);
+      });
   }
 
   private ensureDirectories(): void {

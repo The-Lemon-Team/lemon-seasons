@@ -5,6 +5,9 @@ import { RequestUser } from './auth.types';
 
 @Injectable()
 export class AuthContextMiddleware implements NestMiddleware {
+  private readonly keyCache = new Map<string, { user: RequestUser; expiresAt: number }>();
+  private readonly KEY_CACHE_TTL_MS = 60_000;
+
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
@@ -44,7 +47,7 @@ export class AuthContextMiddleware implements NestMiddleware {
       }
 
       // 2. Demo Admin Token pattern (e.g. lenta_tok_admin_...)
-      if (token.startsWith('lenta_tok_admin_') || token.includes('admin')) {
+      if (token.startsWith('lenta_tok_admin_') || token === 'admin-demo-token') {
         req.user = {
           id: 'usr-admin-999',
           role: 'admin',
@@ -54,20 +57,35 @@ export class AuthContextMiddleware implements NestMiddleware {
         return next();
       }
 
-      // 3. UserKey lookup in database
+      // 3. UserKey lookup in database (with 60s TTL cache)
+      const cached = this.keyCache.get(token);
+      if (cached && cached.expiresAt > Date.now()) {
+        req.user = cached.user;
+        return next();
+      }
+
       try {
-        const dbKey = await this.prisma.userKey.findFirst({
-          where: { key: token, isRevoked: false },
+        const dbKey = await this.prisma.userKey.findUnique({
+          where: { key: token },
           include: { user: true },
         });
 
-        if (dbKey?.user) {
-          req.user = {
+        if (dbKey && !dbKey.isRevoked && dbKey.user) {
+          const resolvedUser: RequestUser = {
             id: dbKey.user.id,
             role: dbKey.user.role as any,
             isAdmin: dbKey.user.role === 'admin',
             name: dbKey.user.name,
-          } satisfies RequestUser;
+          };
+          if (this.keyCache.size > 200) {
+            const firstKey = this.keyCache.keys().next().value;
+            if (firstKey) this.keyCache.delete(firstKey);
+          }
+          this.keyCache.set(token, {
+            user: resolvedUser,
+            expiresAt: Date.now() + this.KEY_CACHE_TTL_MS,
+          });
+          req.user = resolvedUser;
           return next();
         }
       } catch {

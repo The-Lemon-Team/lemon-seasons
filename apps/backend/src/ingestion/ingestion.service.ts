@@ -176,12 +176,35 @@ export class IngestionService {
         title,
         deletedAt: null,
       },
-      include: {
-        images: true,
-        links: true,
-        folders: true,
+      select: {
+        id: true,
+        containerId: true,
+        sourceLink: true,
       },
     });
+
+    // Resolve all hashtags in batch (findMany + createMany) instead of N+1 upserts
+    const resolvedHashtagIds: string[] = [];
+    if (hashtags && hashtags.length > 0) {
+      const normalizedNames = Array.from(
+        new Set(
+          hashtags
+            .map((ht) => ht.replace(/^#/, '').toLowerCase().trim())
+            .filter(Boolean),
+        ),
+      );
+      if (normalizedNames.length > 0) {
+        await this.prisma.hashtag.createMany({
+          data: normalizedNames.map((name) => ({ name })),
+          skipDuplicates: true,
+        });
+        const tagRecords = await this.prisma.hashtag.findMany({
+          where: { name: { in: normalizedNames } },
+          select: { id: true },
+        });
+        resolvedHashtagIds.push(...tagRecords.map((t) => t.id));
+      }
+    }
 
     const sDate = new Date(startDate);
     const eDate = endDate ? new Date(endDate) : null;
@@ -202,6 +225,9 @@ export class IngestionService {
           icon,
           sourceLink: sourceLink || existingNote.sourceLink,
           ...(tagNode ? { tags: { set: [{ id: tagNode.id }] } } : {}),
+          ...(resolvedHashtagIds.length > 0
+            ? { hashtags: { connect: resolvedHashtagIds.map((id) => ({ id })) } }
+            : {}),
         },
       });
     } else {
@@ -218,6 +244,9 @@ export class IngestionService {
           icon,
           sourceLink,
           ...(tagNode ? { tags: { connect: [{ id: tagNode.id }] } } : {}),
+          ...(resolvedHashtagIds.length > 0
+            ? { hashtags: { connect: resolvedHashtagIds.map((id) => ({ id })) } }
+            : {}),
         },
       });
       noteId = createdNote.id;
@@ -244,27 +273,6 @@ export class IngestionService {
             folderId: folder.id,
             isPrimary: i === 0,
             order: i,
-          },
-        });
-      }
-    }
-
-    // 4. Connect Hashtags
-    if (hashtags && hashtags.length > 0) {
-      for (const htName of hashtags) {
-        const cleanName = htName.replace(/^#/, '').toLowerCase().trim();
-        if (!cleanName) continue;
-        const tag = await this.prisma.hashtag.upsert({
-          where: { name: cleanName },
-          update: {},
-          create: { name: cleanName },
-        });
-        await this.prisma.note.update({
-          where: { id: noteId },
-          data: {
-            hashtags: {
-              connect: [{ id: tag.id }],
-            },
           },
         });
       }

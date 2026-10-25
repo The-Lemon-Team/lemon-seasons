@@ -4,7 +4,10 @@ import { SyncService } from './sync.service';
 import { SessionService } from './session.service';
 import { SyncOrchestratorService } from './sync-orchestrator.service';
 import { GDriveStorageService } from './gdrive-storage.service';
+import { NoteSyncService } from './note-sync.service';
+import { SyncChangesService } from './sync-changes.service';
 import {
+  SyncEventEnvelope,
   StartSessionInput,
   CommitSessionInput,
   RecordChangeInput,
@@ -18,6 +21,8 @@ export class SyncController {
     private readonly sessionService: SessionService,
     private readonly orchestrator: SyncOrchestratorService,
     private readonly gdriveStorage: GDriveStorageService,
+    private readonly noteSync: NoteSyncService,
+    private readonly changes: SyncChangesService,
   ) {}
 
   // ==========================================
@@ -43,6 +48,21 @@ export class SyncController {
   @ApiQuery({ name: 'deviceId', required: false })
   pull(@Query('deviceId') deviceId?: string) {
     return this.orchestrator.pull(deviceId);
+  }
+
+  @Post('events')
+  @ApiOperation({ summary: 'LAN sync: apply a batch of v2 sync events (idempotent by eventId)' })
+  @ApiBody({ schema: { type: 'object', properties: { events: { type: 'array', items: { type: 'object' } } } } })
+  applyEvents(@Body() body: { events: SyncEventEnvelope[] }) {
+    return this.noteSync.applyEvents(body?.events ?? []);
+  }
+
+  @Get('pull')
+  @ApiOperation({ summary: 'LAN sync v2: pull notes/attachments changed since a cursor' })
+  @ApiQuery({ name: 'since', required: false })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  pullChanges(@Query('since') since?: string, @Query('limit') limit?: number) {
+    return this.changes.getChanges(since, limit ? Number(limit) : undefined);
   }
 
   @Get('updates')

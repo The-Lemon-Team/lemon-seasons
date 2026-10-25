@@ -161,9 +161,9 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
       const relDir = path.dirname(relPath).replace(/\\/g, '/');
       const assignedFolder = relDir && relDir !== '.' ? `Spark/${relDir}` : 'Spark';
 
-      // 2. Emit event to EventBus
+      // 2. Emit event to EventBus (await async listeners so batch scans do not flood the DB connection pool)
       this.logger.log(`📢 [file.detected] Отправка события в шину: "${fileName}" [${assignedFolder}]`);
-      this.eventEmitter.emit(
+      await this.eventEmitter.emitAsync(
         'file.detected',
         new FileDetectedEvent(
           filePath,
@@ -173,6 +173,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
           event,
           stats.mtime,
           stats.size,
+          content,
         ),
       );
     } catch (err: any) {

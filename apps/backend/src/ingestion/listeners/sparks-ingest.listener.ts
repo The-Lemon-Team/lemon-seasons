@@ -26,7 +26,7 @@ export class SparksIngestListener {
 
   @OnEvent('file.detected', { async: true })
   public async handleFileDetected(event: FileDetectedEvent): Promise<void> {
-    const { filePath, fileName, folderPath, fileHash, eventType, mtime, size } = event;
+    const { filePath, fileName, folderPath, fileHash, eventType, mtime, size, content: preloadedContent } = event;
 
     // Only process Markdown files from Spark folders or root
     const lowerName = fileName.toLowerCase();
@@ -77,8 +77,8 @@ export class SparksIngestListener {
         },
       });
 
-      // 2. Read content and parse via SparksParserService
-      const content = await fs.promises.readFile(filePath, 'utf-8');
+      // 2. Read content (reuse preloaded content from watcher if available) and parse via SparksParserService
+      const content = preloadedContent ?? (await fs.promises.readFile(filePath, 'utf-8'));
       const parsed = this.sparksParser.parseSparkFile(filePath, content, {
         mtime,
         size,
@@ -102,6 +102,7 @@ export class SparksIngestListener {
       const targetFeed = await this.resolveFeedForFolder(folderPath, filePath, parsed.noteDto.metadata?.feedSlug);
       if (targetFeed) {
         parsed.noteDto.feedId = parsed.noteDto.feedId || targetFeed.id;
+        parsed.noteDto.privacy = (targetFeed.privacy || 'public') as any;
       }
 
       // 5. Create or Update Note in Database
@@ -183,15 +184,21 @@ export class SparksIngestListener {
 
   private async resolveFeedForFolder(folderPath: string, filePath: string, frontmatterFeed?: string) {
     const parts = folderPath.split('/');
+    const lowerPath = folderPath.toLowerCase();
     const isChangelogs = parts.length > 1 && parts[1].toLowerCase() === 'changelogsfeed';
     const isNotebooklm = parts.length > 1 && parts[1].toLowerCase() === 'notebooklmai';
+    const isRuUkraine = lowerPath.includes('рф и украина') || lowerPath.includes('rf-and-ukraine');
     const subfolder = parts.length > 1 ? parts[1] : (parts[0] || 'AI');
 
     let targetSlug = 'spark-general';
     let targetTitle = 'Spark — Общая лента';
     let targetDesc = 'Автоматически импортированные новости и дайджесты из Google Drive';
 
-    if (isChangelogs && parts.length > 2) {
+    if (isRuUkraine) {
+      targetSlug = 'spark-рф-и-украина';
+      targetTitle = 'РФ и Украина (Spark)';
+      targetDesc = 'Хроника событий, дипломатии и военных сводок (РФ и Украина) от Spark';
+    } else if (isChangelogs && parts.length > 2) {
       const subtopic = parts[2];
       const lowerSub = subtopic.toLowerCase();
       targetSlug = `spark-changelogsfeed-${lowerSub.replace(/[^a-z0-9а-яё]/gi, '-')}`;

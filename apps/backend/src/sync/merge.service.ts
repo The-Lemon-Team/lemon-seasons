@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CommitPackage } from '@lenta/shared';
+import { CommitPackage, formatHlc } from '@lenta/shared';
+import { NoteSyncService } from './note-sync.service';
 
 @Injectable()
 export class MergeService {
   private readonly logger = new Logger(MergeService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private noteSync: NoteSyncService,
+  ) {}
 
   /**
    * Applies an incoming CommitPackage from Google Drive into the local database.
@@ -135,113 +139,39 @@ export class MergeService {
 
           appliedEntities++;
         } else {
-          // Note exists locally. Perform 3-way reconciliation
-          const localDesc = existing.description || '';
-          const remoteDesc = data.description || '';
-
-          let mergedDesc = remoteDesc;
-          let isConflict = false;
-
-          if (localDesc !== remoteDesc) {
-            if (!localDesc) {
-              mergedDesc = remoteDesc;
-            } else if (!remoteDesc) {
-              mergedDesc = localDesc;
-            } else {
-              // Both modified. Perform line-by-line merge
-              const mergeResult = this.mergeMarkdownTexts(localDesc, remoteDesc, pkg.author);
-              mergedDesc = mergeResult.text;
-              if (mergeResult.hasConflict) {
-                isConflict = true;
-                conflicts.push(existing.title || existing.id);
-                this.logger.warn(`Conflict detected in note ${existing.title} (${existing.id})`);
-              }
-            }
+          // Note exists: delegate to the shared merge (per-field LWW + 3-way body merge).
+          // A true body collision keeps the local text and stores the incoming text as a
+          // CONFLICT_COPY attachment on the parent note (no inline conflict markers).
+          const result = await this.noteSync.applyEvent({
+            schemaVersion: 2,
+            eventId: `${pkg.commitId}:${incomingNote.id}`,
+            timestamp: pkg.timestamp,
+            hlc: formatHlc({
+              wallMs: Date.parse(pkg.timestamp) || Date.now(),
+              counter: 0,
+              deviceId: pkg.deviceId,
+            }),
+            deviceId: pkg.deviceId,
+            entityType: 'NOTE',
+            entityId: incomingNote.id,
+            action: 'UPSERT',
+            baseVersion: Math.max(1, (incomingNote.version || 1) - 1),
+            payload: {
+              title: data.title,
+              description: data.description,
+              sourceLink: data.sourceLink,
+              icon: data.icon,
+            },
+          });
+          if (result.outcome === 'CONFLICT_ATTACHED') {
+            conflicts.push(existing.title || existing.id);
           }
-
-          const nextVersion = Math.max(existing.version, incomingNote.version || 1) + 1;
-
-          await this.prisma.note.update({
-            where: { id: existing.id },
-            data: {
-              title: data.title || existing.title,
-              description: mergedDesc,
-              type: data.type || existing.type,
-              startDate: data.startDate ? new Date(data.startDate) : existing.startDate,
-              endDate: data.endDate ? new Date(data.endDate) : existing.endDate,
-              curator: data.curator || existing.curator,
-              resonanceScore: null,
-              version: nextVersion,
-              deletedAt: null,
-            },
-          });
-
-          await this.prisma.noteVersion.create({
-            data: {
-              noteId: existing.id,
-              version: nextVersion,
-              content: mergedDesc,
-              commitHash: pkg.commitId,
-              authorName: pkg.author,
-              commitMessage: isConflict
-                ? `[Конфликт слияния] Правки от ${pkg.author}`
-                : `Слияние коммита ${pkg.commitId}`,
-            },
-          });
-
-          appliedEntities++;
+          if (result.outcome !== 'DUPLICATE' && result.outcome !== 'NOOP') appliedEntities++;
         }
       }
     }
 
     return { appliedEntities, conflicts };
   }
-
-  /**
-   * Intelligent 3-way line-based merge for Markdown notes.
-   * If both edits are non-overlapping, merges cleanly.
-   * If overlapping, wraps in standard conflict markers to prevent data loss.
-   */
-  private mergeMarkdownTexts(
-    localText: string,
-    remoteText: string,
-    remoteAuthor: string,
-  ): { text: string; hasConflict: boolean } {
-    if (localText.trim() === remoteText.trim()) {
-      return { text: localText, hasConflict: false };
-    }
-
-    // If one contains the other entirely, take the longer one
-    if (remoteText.includes(localText)) {
-      return { text: remoteText, hasConflict: false };
-    }
-    if (localText.includes(remoteText)) {
-      return { text: localText, hasConflict: false };
-    }
-
-    // Line-level non-overlapping check
-    const localLines = localText.split('\n');
-    const remoteLines = remoteText.split('\n');
-
-    // If simple disjoint appending (e.g. news links or extra section added at the end)
-    if (remoteText.startsWith(localText)) {
-      return { text: remoteText, hasConflict: false };
-    }
-    if (localText.startsWith(remoteText)) {
-      return { text: localText, hasConflict: false };
-    }
-
-    // True conflict: format cleanly without losing either side
-    const conflictBlock = [
-      '',
-      `<<<<<<< Локальная версия (Этот компьютер)`,
-      localText,
-      `=======`,
-      `>>>>>>> Удаленная версия (${remoteAuthor})`,
-      remoteText,
-      '',
-    ].join('\n');
-
-    return { text: conflictBlock, hasConflict: true };
-  }
 }
+

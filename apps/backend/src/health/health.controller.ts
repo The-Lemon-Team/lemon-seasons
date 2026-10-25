@@ -1,10 +1,11 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { getInstanceId } from './instance-id';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 
 @ApiTags('Health')
-@Controller('api/health')
+@Controller(['api/health', 'health'])
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -17,6 +18,7 @@ export class HealthController {
       await this.prisma.$queryRaw`SELECT 1`;
       return res.status(HttpStatus.OK).json({
         status: 'ok',
+        instanceId: getInstanceId(),
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         database: 'connected',

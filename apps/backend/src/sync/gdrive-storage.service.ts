@@ -26,6 +26,7 @@ export class GDriveStorageService {
   }
 
   private readonly tokensPath = path.join(os.homedir(), '.lemon', 'gdrive-tokens.json');
+  private cachedTokens: TokenData | null = null;
 
   private readonly clientId = process.env.GDRIVE_CLIENT_ID || '';
   private readonly clientSecret = process.env.GDRIVE_CLIENT_SECRET || '';
@@ -136,7 +137,7 @@ export class GDriveStorageService {
     const localFilePath = path.join(this.defaultSyncDir, 'commits', filename);
 
     // Save locally into sync hub folder (works with Google Drive desktop client or local relay)
-    fs.writeFileSync(localFilePath, JSON.stringify(commitPackage, null, 2), 'utf-8');
+    await fs.promises.writeFile(localFilePath, JSON.stringify(commitPackage, null, 2), 'utf-8');
     this.logger.log(`Saved commit file locally: ${localFilePath}`);
 
     // If cloud Google Drive API is active, also push via REST API
@@ -166,12 +167,8 @@ export class GDriveStorageService {
       return [];
     }
 
-    const files = fs
-      .readdirSync(commitsDir)
-      .filter((file) => file.endsWith('.json'))
-      .sort();
-
-    return files;
+    const files = await fs.promises.readdir(commitsDir);
+    return files.filter((file) => file.endsWith('.json')).sort();
   }
 
   /**
@@ -184,7 +181,7 @@ export class GDriveStorageService {
     const localFilePath = path.join(this.defaultSyncDir, 'commits', filename);
 
     if (fs.existsSync(localFilePath)) {
-      const content = fs.readFileSync(localFilePath, 'utf-8');
+      const content = await fs.promises.readFile(localFilePath, 'utf-8');
       return JSON.parse(content) as CommitPackage;
     }
 
@@ -193,7 +190,7 @@ export class GDriveStorageService {
     if (tokens) {
       const content = await this.downloadFileFromCloudDrive(filename);
       if (content) {
-        fs.writeFileSync(localFilePath, content, 'utf-8');
+        await fs.promises.writeFile(localFilePath, content, 'utf-8');
         return JSON.parse(content) as CommitPackage;
       }
     }
@@ -207,7 +204,7 @@ export class GDriveStorageService {
   async updateDeviceRef(ref: DeviceRef): Promise<void> {
     const filename = `${ref.deviceId}.json`;
     const localFilePath = path.join(this.defaultSyncDir, 'refs', filename);
-    fs.writeFileSync(localFilePath, JSON.stringify(ref, null, 2), 'utf-8');
+    await fs.promises.writeFile(localFilePath, JSON.stringify(ref, null, 2), 'utf-8');
 
     const tokens = await this.getValidAccessToken();
     if (tokens) {
@@ -233,12 +230,13 @@ export class GDriveStorageService {
       return [];
     }
 
-    const files = fs.readdirSync(refsDir).filter((file) => file.endsWith('.json'));
+    const allFiles = await fs.promises.readdir(refsDir);
+    const files = allFiles.filter((file) => file.endsWith('.json'));
     const refs: DeviceRef[] = [];
 
     for (const file of files) {
       try {
-        const content = fs.readFileSync(path.join(refsDir, file), 'utf-8');
+        const content = await fs.promises.readFile(path.join(refsDir, file), 'utf-8');
         refs.push(JSON.parse(content));
       } catch (err) {
         this.logger.warn(`Could not parse ref file ${file}`);
@@ -258,19 +256,24 @@ export class GDriveStorageService {
   // --- Internal Google Drive Cloud REST Helpers ---
 
   private readSavedTokens(): TokenData | null {
+    if (this.cachedTokens) {
+      return this.cachedTokens;
+    }
     if (!fs.existsSync(this.tokensPath)) {
       return null;
     }
     try {
       const raw = fs.readFileSync(this.tokensPath, 'utf-8');
-      return JSON.parse(raw);
+      this.cachedTokens = JSON.parse(raw);
+      return this.cachedTokens;
     } catch {
       return null;
     }
   }
 
   private saveTokens(data: TokenData): void {
-    fs.writeFileSync(this.tokensPath, JSON.stringify(data, null, 2), 'utf-8');
+    this.cachedTokens = data;
+    fs.promises.writeFile(this.tokensPath, JSON.stringify(data, null, 2), 'utf-8').catch(() => {});
   }
 
   private async getValidAccessToken(): Promise<string | null> {

@@ -4,6 +4,8 @@ import { SyncController } from './sync.controller';
 import { SessionService } from './session.service';
 import { GDriveStorageService } from './gdrive-storage.service';
 import { MergeService } from './merge.service';
+import { NoteSyncService } from './note-sync.service';
+import { SyncChangesService } from './sync-changes.service';
 import { SyncOrchestratorService } from './sync-orchestrator.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { IngestionModule } from '../ingestion/ingestion.module';
@@ -21,6 +23,8 @@ import { BusModule } from '../bus/bus.module';
     SessionService,
     GDriveStorageService,
     MergeService,
+    NoteSyncService,
+    SyncChangesService,
     SyncOrchestratorService,
   ],
   exports: [
@@ -28,6 +32,8 @@ import { BusModule } from '../bus/bus.module';
     SessionService,
     GDriveStorageService,
     MergeService,
+    NoteSyncService,
+    SyncChangesService,
     SyncOrchestratorService,
   ],
 })

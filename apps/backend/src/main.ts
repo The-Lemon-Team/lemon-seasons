@@ -9,6 +9,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Enable graceful shutdown hooks for Prisma, Chokidar watchers, and container SIGTERM
+  app.enableShutdownHooks();
+
   // Enable HTTP response compression for JSON APIs & static assets
   app.use(compression());
 

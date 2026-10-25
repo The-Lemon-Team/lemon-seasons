@@ -14,6 +14,21 @@ export class QueryNotesDto {
   @IsOptional()
   feedSlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by Target Public Feed ID' })
+  @IsString()
+  @IsOptional()
+  publicFeedId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by Target Public Feed Slug' })
+  @IsString()
+  @IsOptional()
+  publicFeedSlug?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by note privacy contour (private | public | all)' })
+  @IsString()
+  @IsOptional()
+  privacy?: string;
+
   @ApiPropertyOptional({ description: 'Filter by Container ID' })
   @IsString()
   @IsOptional()

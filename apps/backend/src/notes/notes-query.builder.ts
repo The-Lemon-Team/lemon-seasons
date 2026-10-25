@@ -14,7 +14,10 @@ export class NotesQueryBuilder {
     const hasHashtags = targetFeed.hashtags && targetFeed.hashtags.length > 0;
 
     if (hasFolders || hasHashtags) {
-      const orClauses: Prisma.NoteWhereInput[] = [{ feedId: targetFeed.id }];
+      const orClauses: Prisma.NoteWhereInput[] = [
+        { feedId: targetFeed.id },
+        { publicFeedId: targetFeed.id },
+      ];
       if (hasFolders) {
         orClauses.push(
           ...targetFeed.folderPaths.map((fp) => ({
@@ -35,7 +38,9 @@ export class NotesQueryBuilder {
       }
       return { OR: orClauses };
     }
-    return { feedId: targetFeed.id };
+    return {
+      OR: [{ feedId: targetFeed.id }, { publicFeedId: targetFeed.id }],
+    };
   }
 
   /**
@@ -45,6 +50,9 @@ export class NotesQueryBuilder {
     const {
       feedId,
       feedSlug,
+      publicFeedId,
+      publicFeedSlug,
+      privacy,
       containerId,
       containers,
       type,
@@ -69,12 +77,27 @@ export class NotesQueryBuilder {
       userId,
     } = query;
 
-    // NOTE: All notes are treated as public — no private folders or feeds exist in this deployment.
-    // Privacy gating is intentionally bypassed. Re-enable when private access control is needed.
-
     const andConditions: Prisma.NoteWhereInput[] = [
       { deletedAt: null },
     ];
+
+    // Privacy & Staging / Public contour gating:
+    // - Non-admin (public port 5176 / guest) strictly sees only privacy = 'public' AND status = 'PUBLISHED'
+    // - Admin / Staging Hub can filter by privacy='private' | 'public' | 'all'
+    if (!isAdmin) {
+      andConditions.push({ privacy: 'public' });
+      andConditions.push({ status: 'PUBLISHED' });
+    } else if (privacy && privacy !== 'all') {
+      andConditions.push({ privacy });
+    }
+
+    if (publicFeedId) {
+      andConditions.push({ publicFeedId });
+    } else if (publicFeedSlug) {
+      andConditions.push({
+        publicFeed: { slug: publicFeedSlug, deletedAt: null },
+      });
+    }
 
     // Feed filtering
     if (feedId) {

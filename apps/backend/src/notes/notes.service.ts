@@ -43,6 +43,19 @@ export class NotesService implements OnModuleInit {
   async onModuleInit() {
     try {
       await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE "Note" ADD COLUMN IF NOT EXISTS "privacy" TEXT NOT NULL DEFAULT 'private';
+      `);
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE "Note" ADD COLUMN IF NOT EXISTS "publicFeedId" TEXT;
+      `);
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE "Note" SET "privacy" = 'private' WHERE "privacy" IS NULL OR "privacy" = '';
+      `);
+    } catch (e: any) {
+      this.logger.warn(`Privacy column init skipped: ${e.message}`);
+    }
+    try {
+      await this.prisma.$executeRawUnsafe(`
         UPDATE "Note" n
         SET "folderPath" = f.path
         FROM "NoteFolder" nf
@@ -91,14 +104,24 @@ export class NotesService implements OnModuleInit {
     let targetContainerId = (createNoteDto as any).containerId || undefined;
     const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
 
-    // If containerId not provided, attempt to inherit from the primary assigned folder
-    if (!targetContainerId && folderAssignments.length > 0) {
+    let initialFolderPath =
+      createNoteDto.folderPath ||
+      (createNoteDto.folder as string) ||
+      (Array.isArray(createNoteDto.folders) && typeof createNoteDto.folders[0] === 'string'
+        ? (createNoteDto.folders[0] as string)
+        : undefined);
+
+    // Single lookup for primary folder containerId & path if needed
+    if ((!targetContainerId || !initialFolderPath) && folderAssignments.length > 0) {
       const primaryFolder = await this.prisma.folder.findUnique({
         where: { id: folderAssignments[0].folderId },
-        select: { containerId: true },
+        select: { containerId: true, path: true },
       });
-      if (primaryFolder?.containerId) {
+      if (!targetContainerId && primaryFolder?.containerId) {
         targetContainerId = primaryFolder.containerId;
+      }
+      if (!initialFolderPath && primaryFolder?.path) {
+        initialFolderPath = primaryFolder.path;
       }
     }
 
@@ -106,6 +129,7 @@ export class NotesService implements OnModuleInit {
     if (targetContainerId) {
       const containerExists = await this.prisma.container.findUnique({
         where: { id: targetContainerId },
+        select: { id: true },
       });
       if (!containerExists) {
         targetContainerId = undefined;
@@ -133,29 +157,13 @@ export class NotesService implements OnModuleInit {
       createNoteDto.links?.find((l) => l.isSource)?.url ||
       createNoteDto.links?.[0]?.url;
 
-    let initialFolderPath =
-      createNoteDto.folderPath ||
-      (createNoteDto.folder as string) ||
-      (Array.isArray(createNoteDto.folders) && typeof createNoteDto.folders[0] === 'string'
-        ? (createNoteDto.folders[0] as string)
-        : undefined);
-
-    if (!initialFolderPath && folderAssignments.length > 0) {
-      const primaryFolder = await this.prisma.folder.findUnique({
-        where: { id: folderAssignments[0].folderId },
-        select: { path: true },
-      });
-      if (primaryFolder?.path) {
-        initialFolderPath = primaryFolder.path;
-      }
-    }
-
     const note = await this.prisma.note.create({
       data: {
         title: createNoteDto.title,
         description: createNoteDto.description,
         type: (createNoteDto.type as any) || 'SINGLE',
         status: (createNoteDto.status as any) || 'PUBLISHED',
+        privacy: createNoteDto.privacy || 'private',
         publishAt: createNoteDto.publishAt ? new Date(createNoteDto.publishAt) : null,
         folderPath: initialFolderPath,
         startDate: createNoteDto.startDate ? new Date(createNoteDto.startDate) : new Date(),
@@ -174,6 +182,7 @@ export class NotesService implements OnModuleInit {
           ? { parentNote: { connect: { id: createNoteDto.parentNoteId } } }
           : {}),
         ...(createNoteDto.feedId ? { feed: { connect: { id: createNoteDto.feedId } } } : {}),
+        ...(createNoteDto.publicFeedId ? { publicFeed: { connect: { id: createNoteDto.publicFeedId } } } : {}),
         ...(targetContainerId ? { container: { connect: { id: targetContainerId } } } : {}),
         hashtags: hashtagIds.length > 0 ? { connect: hashtagIds.map((id) => ({ id })) } : undefined,
         folders:
@@ -268,6 +277,9 @@ export class NotesService implements OnModuleInit {
     }
 
     if (!isAdmin) {
+      if ((note as any).privacy !== 'public' || note.status !== 'PUBLISHED') {
+        throw new ForbiddenException('Заметка не опубликована в публичной ленте. Доступ запрещен.');
+      }
       if (note.feed && (note.feed as any).privacy && (note.feed as any).privacy !== 'public') {
         throw new ForbiddenException('Заметка принадлежит приватной ленте. Доступ запрещен.');
       }
@@ -387,6 +399,7 @@ export class NotesService implements OnModuleInit {
         ...(updateNoteDto.description !== undefined ? { description: updateNoteDto.description } : {}),
         ...(updateNoteDto.type ? { type: updateNoteDto.type as any } : {}),
         ...(updateNoteDto.status !== undefined ? { status: updateNoteDto.status as any } : {}),
+        ...(updateNoteDto.privacy !== undefined ? { privacy: updateNoteDto.privacy } : {}),
         ...(updateNoteDto.publishAt !== undefined
           ? { publishAt: updateNoteDto.publishAt ? new Date(updateNoteDto.publishAt) : null }
           : {}),
@@ -411,6 +424,11 @@ export class NotesService implements OnModuleInit {
             : { parentNote: { disconnect: true } }
           : {}),
         ...(updateNoteDto.feedId ? { feed: { connect: { id: updateNoteDto.feedId } } } : {}),
+        ...(updateNoteDto.publicFeedId !== undefined
+          ? updateNoteDto.publicFeedId
+            ? { publicFeed: { connect: { id: updateNoteDto.publicFeedId } } }
+            : { publicFeed: { disconnect: true } }
+          : {}),
         ...((updateNoteDto as any).containerId !== undefined
           ? (updateNoteDto as any).containerId
             ? { container: { connect: { id: (updateNoteDto as any).containerId } } }

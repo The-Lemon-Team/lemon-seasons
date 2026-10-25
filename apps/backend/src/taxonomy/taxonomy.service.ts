@@ -126,6 +126,7 @@ export class TaxonomyService {
         notes: {
           where: { deletedAt: null },
           orderBy: { startDate: 'desc' },
+          take: 100,
         },
         _count: {
           select: {

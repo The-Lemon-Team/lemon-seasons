@@ -167,6 +167,7 @@ export class HashtagsService {
         notes: {
           where: { deletedAt: null },
           orderBy: { startDate: 'desc' },
+          take: 100,
           include: {
             feed: true,
             tags: { where: { deletedAt: null } },

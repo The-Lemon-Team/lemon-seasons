@@ -123,6 +123,7 @@ export class FeedsService {
         notes: {
           where: { deletedAt: null },
           orderBy: { startDate: 'desc' },
+          take: 100,
           include: {
             hashtags: true,
             folders: {

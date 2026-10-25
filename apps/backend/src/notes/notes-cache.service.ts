@@ -24,8 +24,8 @@ export class NotesCacheService {
   }
 
   set<T>(key: string, data: T, ttlMs: number = this.DEFAULT_TTL_MS): void {
-    // Keep max 500 cached queries in memory
-    if (this.cache.size > 500) {
+    // Keep max 100 cached queries in memory for lightweight production footprint
+    if (this.cache.size >= 100) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) this.cache.delete(firstKey);
     }

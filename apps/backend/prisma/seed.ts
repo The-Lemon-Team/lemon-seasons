@@ -6,6 +6,7 @@ import { PoliticalEngineService } from '../src/ingestion/services/political-engi
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-reset')) { throw new Error('SAFETY LOCK: Refusing to run destructive seed when NODE_ENV=production'); }
   console.log('🌱 Starting Project Lenta database seed with AI & Ingestion Engines...');
 
   // Clean existing data

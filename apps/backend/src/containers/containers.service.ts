@@ -45,29 +45,34 @@ export interface FileVersionDto {
 @Injectable()
 export class ContainersService {
   private readonly configFilePath = path.resolve(process.cwd(), 'uploads', 'container-configs.json');
+  private configsCache: Record<string, ContainerConfig> | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
 
   private loadAllConfigs(): Record<string, ContainerConfig> {
+    if (this.configsCache) {
+      return this.configsCache;
+    }
     try {
       if (fs.existsSync(this.configFilePath)) {
         const raw = fs.readFileSync(this.configFilePath, 'utf-8');
-        return JSON.parse(raw);
+        this.configsCache = JSON.parse(raw);
+        return this.configsCache!;
       }
     } catch {
       // ignore
     }
-    return this.getDefaultSeedConfigs();
+    this.configsCache = this.getDefaultSeedConfigs();
+    return this.configsCache;
   }
 
   private saveAllConfigs(configs: Record<string, ContainerConfig>): void {
-    try {
-      const dir = path.dirname(this.configFilePath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(this.configFilePath, JSON.stringify(configs, null, 2), 'utf-8');
-    } catch {
-      // ignore
-    }
+    this.configsCache = configs;
+    const dir = path.dirname(this.configFilePath);
+    fs.promises
+      .mkdir(dir, { recursive: true })
+      .then(() => fs.promises.writeFile(this.configFilePath, JSON.stringify(configs, null, 2), 'utf-8'))
+      .catch(() => {});
   }
 
   private getDefaultSeedConfigs(): Record<string, ContainerConfig> {
@@ -170,18 +175,24 @@ export class ContainersService {
     }));
 
     // Synthesize feeds as containers if not explicitly in database
-    const feeds = await this.prisma.feed.findMany({ where: { deletedAt: null } });
+    const feeds = await this.prisma.feed.findMany({
+      where: { deletedAt: null },
+      include: {
+        _count: {
+          select: { notes: { where: { deletedAt: null } } },
+        },
+      },
+    });
     for (const feed of feeds) {
       const feedId = `feed-${feed.slug}`;
       if (!results.some((r) => r.id === feedId)) {
-        const count = await this.prisma.note.count({ where: { feedId: feed.id, deletedAt: null } });
         results.push({
           id: feedId,
           name: `📰 Feed: ${feed.title}`,
           type: 'feed',
           description: feed.description || undefined,
           visibility: 'public',
-          totalNotes: count,
+          totalNotes: feed._count.notes,
           config: configs[feedId] || null,
         });
       }
@@ -482,7 +493,7 @@ export class ContainersService {
     };
 
     const list = this.containerCommits.get(id) || [];
-    this.containerCommits.set(id, [newCommit, ...list]);
+    this.containerCommits.set(id, [newCommit, ...list].slice(0, 50));
 
     try {
       const firstNote = await this.prisma.note.findFirst({

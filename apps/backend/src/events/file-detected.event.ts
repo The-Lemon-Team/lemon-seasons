@@ -7,5 +7,6 @@ export class FileDetectedEvent {
     public readonly eventType: 'ADD' | 'CHANGE',
     public readonly mtime: Date,
     public readonly size?: number,
+    public readonly content?: string,
   ) {}
 }

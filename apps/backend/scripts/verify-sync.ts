@@ -25,6 +25,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { SessionService } from '../src/sync/session.service';
 import { GDriveStorageService } from '../src/sync/gdrive-storage.service';
 import { MergeService } from '../src/sync/merge.service';
+import { NoteSyncService } from '../src/sync/note-sync.service';
 import { SyncOrchestratorService } from '../src/sync/sync-orchestrator.service';
 
 async function run() {
@@ -35,7 +36,7 @@ async function run() {
 
   const sessionService = new SessionService(prisma);
   const gdriveStorage = new GDriveStorageService();
-  const mergeService = new MergeService(prisma);
+  const mergeService = new MergeService(prisma, new NoteSyncService(prisma));
   const orchestrator = new SyncOrchestratorService(
     prisma,
     sessionService,

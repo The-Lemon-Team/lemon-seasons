@@ -34,6 +34,16 @@ export class CreateNoteDto {
   @IsOptional()
   feedId?: string;
 
+  @ApiPropertyOptional({ description: 'Target Public/Staging Feed ID when publishing from Admin to Staging Hub' })
+  @IsString()
+  @IsOptional()
+  publicFeedId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Privacy contour of the note (private | public)', default: 'private' })
+  @IsString()
+  @IsOptional()
+  privacy?: 'private' | 'public';
+
   @ApiPropertyOptional({ description: 'Container ID this note belongs to' })
   @IsString()
   @IsOptional()
