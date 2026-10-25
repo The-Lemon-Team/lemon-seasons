@@ -129,3 +129,76 @@ export interface BusTasksFilter {
   limit?: number;
   offset?: number;
 }
+
+// ── LemonBus Cloud Relay & P2P Event Types ─────────────────────────────────────
+
+export type BusActionType = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE';
+export type BusEntityType = 'NOTE' | 'FOLDER' | 'FEED';
+
+export interface BusEventEnvelope<T = any> {
+  eventId: string;
+  timestamp: string;
+  deviceId: string;
+  entityType: BusEntityType;
+  action: BusActionType;
+  payload: T;
+}
+
+export interface NoteEventPayload {
+  id: string;
+  title: string;
+  description?: string | null;
+  folderPath?: string | null;
+  status?: string;
+  publishAt?: string | null;
+  feedId?: string | null;
+  feedSlug?: string | null;
+  type?: string;
+  startDate?: string;
+  endDate?: string | null;
+  sourceLink?: string | null;
+  sourceType?: string | null;
+  externalId?: string | null;
+  summary?: string | null;
+  icon?: string | null;
+  tags?: any[];
+  hashtags?: string[];
+  fileHash?: string | null;
+  isRemoteSync?: boolean;
+}
+
+export interface DriveBusNodeStats {
+  deviceId: string;
+  eventsCount: number;
+  lastEventTimestamp: string | null;
+  watermarkTimestamp: string | null;
+  isCurrentDevice: boolean;
+}
+
+export interface DriveBusRelayStatus {
+  isWatching: boolean;
+  busDir: string;
+  eventsDir: string;
+  currentDeviceId: string;
+  totalEventsCount: number;
+  nodes: DriveBusNodeStats[];
+  watermarks: Record<string, string>;
+  lastEventTimestamp: string | null;
+}
+
+export interface DriveBusEventsFilter {
+  page?: number;
+  limit?: number;
+  deviceId?: string;
+  action?: BusActionType;
+  search?: string;
+}
+
+export interface DriveBusEventsResponse {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  items: BusEventEnvelope<NoteEventPayload>[];
+}
+

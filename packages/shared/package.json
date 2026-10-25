@@ -16,7 +16,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsup && node --test \"test/*.test.mjs\""
   },
   "dependencies": {
     "zod": "^3.24.2"

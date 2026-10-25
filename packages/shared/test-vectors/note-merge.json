@@ -1,0 +1,90 @@
+[
+  {
+    "name": "fast-forward: only remote changed body",
+    "role": "AUTHORITY",
+    "baseDescription": "a\nb\nc",
+    "local": { "id": "n1", "version": 3, "fields": { "title": "T", "description": "a\nb\nc" }, "clocks": { "title": "0000000000100-0000-pc", "description": "0000000000100-0000-pc" } },
+    "event": { "eventId": "e1", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 3, "payload": { "description": "a\nB\nc" } },
+    "expect": { "outcome": "APPLIED", "fields": { "description": "a\nB\nc" }, "version": 4, "attachments": 0 }
+  },
+  {
+    "name": "clean 3-way merge of non-overlapping edits",
+    "role": "AUTHORITY",
+    "baseDescription": "a\nb\nc\nd\ne",
+    "local": { "id": "n1", "version": 4, "fields": { "description": "A\nb\nc\nd\ne" }, "clocks": { "description": "0000000000150-0000-pc" } },
+    "event": { "eventId": "e2", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 3, "payload": { "description": "a\nb\nc\nd\nE" } },
+    "expect": { "outcome": "APPLIED", "fields": { "description": "A\nb\nc\nd\nE" }, "version": 5, "attachments": 0 }
+  },
+  {
+    "name": "true collision on authority: parent untouched, remote text attached",
+    "role": "AUTHORITY",
+    "baseDescription": "a\nb\nc",
+    "local": { "id": "n1", "version": 4, "fields": { "description": "a\nWEB\nc" }, "clocks": { "description": "0000000000150-0000-pc" } },
+    "event": { "eventId": "e3", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 3, "payload": { "description": "a\nMOBILE\nc" } },
+    "expect": { "outcome": "CONFLICT_ATTACHED", "fields": { "description": "a\nWEB\nc" }, "version": 4, "attachments": 1, "attachmentContent": "a\nMOBILE\nc", "attachmentId": "conflict-n1-e3" }
+  },
+  {
+    "name": "true collision on replica: deferred, nothing applied",
+    "role": "REPLICA",
+    "baseDescription": "a\nb\nc",
+    "local": { "id": "n1", "version": 4, "fields": { "description": "a\nMOBILE\nc" }, "clocks": { "description": "0000000000150-0000-pixel" } },
+    "event": { "eventId": "e4", "hlc": "0000000000200-0000-pc", "deviceId": "pc", "action": "UPSERT", "baseVersion": 3, "payload": { "description": "a\nWEB\nc" } },
+    "expect": { "outcome": "DEFER", "fields": { "description": "a\nMOBILE\nc" }, "version": 4, "attachments": 0 }
+  },
+  {
+    "name": "unknown base + differing bodies is a conflict",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 2, "fields": { "description": "x" }, "clocks": {} },
+    "event": { "eventId": "e5", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": null, "payload": { "description": "y" } },
+    "expect": { "outcome": "CONFLICT_ATTACHED", "fields": { "description": "x" }, "version": 2, "attachments": 1 }
+  },
+  {
+    "name": "title LWW: older remote loses",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 2, "fields": { "title": "New" }, "clocks": { "title": "0000000000300-0000-pc" } },
+    "event": { "eventId": "e6", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 1, "payload": { "title": "Old" } },
+    "expect": { "outcome": "NOOP", "fields": { "title": "New" }, "version": 2, "attachments": 0 }
+  },
+  {
+    "name": "title LWW: newer remote wins",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 2, "fields": { "title": "Old" }, "clocks": { "title": "0000000000100-0000-pc" } },
+    "event": { "eventId": "e7", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 1, "payload": { "title": "New" } },
+    "expect": { "outcome": "APPLIED", "fields": { "title": "New" }, "version": 3, "attachments": 0 }
+  },
+  {
+    "name": "delete newer than last edit tombstones the note",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 2, "fields": { "title": "T" }, "clocks": { "title": "0000000000100-0000-pc" } },
+    "event": { "eventId": "e8", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "DELETE", "baseVersion": 2, "payload": null },
+    "expect": { "outcome": "DELETED", "deleted": true, "version": 3, "attachments": 0 }
+  },
+  {
+    "name": "delete older than a local edit is ignored",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 2, "fields": { "title": "T" }, "clocks": { "title": "0000000000300-0000-pc" } },
+    "event": { "eventId": "e9", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "DELETE", "baseVersion": 1, "payload": null },
+    "expect": { "outcome": "NOOP", "deleted": false, "version": 2, "attachments": 0 }
+  },
+  {
+    "name": "edit older than tombstone is ignored",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 3, "fields": { "title": "T" }, "clocks": { "title": "0000000000100-0000-pc" }, "deletedHlc": "0000000000250-0000-pc" },
+    "event": { "eventId": "e10", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 2, "payload": { "title": "X" } },
+    "expect": { "outcome": "IGNORED_DELETED", "deleted": true, "version": 3, "attachments": 0 }
+  },
+  {
+    "name": "edit newer than tombstone resurrects the note",
+    "role": "AUTHORITY",
+    "baseDescription": null,
+    "local": { "id": "n1", "version": 3, "fields": { "title": "T" }, "clocks": { "title": "0000000000100-0000-pc" }, "deletedHlc": "0000000000150-0000-pc" },
+    "event": { "eventId": "e11", "hlc": "0000000000200-0000-pixel", "deviceId": "pixel", "action": "UPSERT", "baseVersion": 2, "payload": { "title": "Back" } },
+    "expect": { "outcome": "APPLIED", "deleted": false, "fields": { "title": "Back" }, "version": 4, "attachments": 0 }
+  }
+]

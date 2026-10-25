@@ -22,6 +22,7 @@ export interface Feed {
 }
 
 export type FeedPrivacy = 'public' | 'private';
+export type NotePrivacy = 'private' | 'public';
 export type FolderPrivacy = 'private' | 'public' | 'obsidian';
 export type FolderScope = 'external' | 'internal';
 
@@ -154,6 +155,9 @@ export interface Note {
   id: string;
   feedId?: string | null;
   feed?: Feed;
+  publicFeedId?: string | null;
+  publicFeed?: Feed | null;
+  privacy?: NotePrivacy;
   containerId?: string | null;
   status?: NoteStatus;
   publishAt?: string | null;
@@ -212,6 +216,10 @@ export interface IngestionFile {
 export interface QueryNotesParams {
   feedId?: string;
   feedSlug?: string;
+  publicFeedId?: string;
+  publicFeedSlug?: string;
+  privacy?: NotePrivacy | 'all';
+  status?: NoteStatus | string;
   type?: NoteType;
   startDateFrom?: string;
   startDateTo?: string;
@@ -269,6 +277,10 @@ export interface CreateNoteInput {
   folder?: string;
   folderIds?: string[];
   links?: CreateNoteLinkInput[];
+  publicFeedId?: string | null;
+  privacy?: NotePrivacy;
+  summary?: string | null;
+  metadata?: Record<string, any> | null;
   suggestFolder?: boolean;
 }
 
@@ -293,6 +305,10 @@ export interface UpdateNoteInput {
   folder?: string;
   folderIds?: string[];
   links?: CreateNoteLinkInput[];
+  publicFeedId?: string | null;
+  privacy?: NotePrivacy;
+  summary?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 export interface CreateFeedInput {
@@ -515,10 +531,14 @@ export interface AuthSession {
   user: User;
 }
 
+export type AppRuntimeMode = 'dev' | 'staging' | 'public';
+
 export type MicrofrontendAuthMessageType =
   | 'LENTA_AUTH_SYNC'
   | 'LENTA_AUTH_REQUEST'
-  | 'LENTA_AUTH_LOGOUT';
+  | 'LENTA_AUTH_LOGOUT'
+  | 'LENTA_SET_APP_MODE'
+  | 'LENTA_APP_MODE_CHANGED';
 
 export interface MicrofrontendAuthUser {
   id: string;
@@ -609,6 +629,10 @@ export interface ContainerAgentConfig {
 export interface ContainerFeedProjectionConfig {
   enabled?: boolean;
   feedSlug?: string;
+  publicFeedId?: string;
+  publicFeedSlug?: string;
+  privacy?: NotePrivacy | 'all';
+  status?: NoteStatus | string;
   feedTitle?: string;
   targetTab?: string;
   accentColor?: string;
@@ -667,6 +691,10 @@ export interface ParsedNoteCard {
   endDate?: string | null;
   feedId?: string;
   feedSlug?: string;
+  publicFeedId?: string;
+  publicFeedSlug?: string;
+  privacy?: NotePrivacy | 'all';
+  status?: NoteStatus | string;
   feedTitle?: string;
   folder?: string;
   taxonomyPath?: string;
