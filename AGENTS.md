@@ -31,3 +31,10 @@
 ### 5. Verification & Backward Compatibility
 - When refactoring, always preserve existing public exports and method signatures (`export * from ...`, re-exports in index files).
 - Always verify refactorings with full workspace build checks (`pnpm run build` / `turbo run build`).
+
+### 6. Spark Content Generation & Ingestion Standards
+- All Spark notes in `spark/` and `docs/templates/` must comply with [SPARK_GENERATION_RULES.md](file:///c:/Users/Ilege/projects/lemon-calendarium/docs/rules/SPARK_GENERATION_RULES.md) and [.agents/rules/spark_generation.md](file:///c:/Users/Ilege/projects/lemon-calendarium/.agents/rules/spark_generation.md).
+- Filename format: `DD.MM.YY - <Title>.md`. The frontmatter `start_date` MUST strictly match the calendar day in the filename.
+- Whitelist only user frontmatter fields; never emit system fields (`curator`, `feed`, `lenta_id`).
+- Tag daily digest materials with `jmdaily`.
+
