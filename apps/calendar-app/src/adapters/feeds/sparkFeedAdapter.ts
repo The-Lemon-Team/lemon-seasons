@@ -9,6 +9,7 @@ import {
 import { resolveSparkFeeds, getThematicCategoryBadge, isSparkSlug } from '../../utils/sparkFeeds';
 import {
   KNOWN_NOTEBOOKLM_SUBTOPICS,
+  buildChangelogSubtopics,
   isNotebooklmNote,
   extractNotebooklmSubtopic,
   isChangelogsNote,
@@ -16,6 +17,11 @@ import {
 } from './devFeedAdapter';
 
 function resolveAvatarIcon(note: Note): string {
+  const changelogSub = extractChangelogSubfolder(note);
+  if (changelogSub === 'google') return '🌐';
+  if (changelogSub === 'openai') return '🧠';
+  if (changelogSub === 'anthropic') return '⚡';
+  if (isChangelogsNote(note)) return '🚀';
   const nbSub = extractNotebooklmSubtopic(note);
   if (nbSub === 'telegram') return '✈️';
   if (nbSub === 'regular') return '🎙️';
@@ -76,20 +82,7 @@ export const SparkFeedAdapter: FeedAdapter = {
           accentColor: known.accentColor,
         }));
       } else if (f.slug === 'spark-changelogsfeed') {
-        const knownChangelog = [
-          { subfolder: 'google', title: 'Google', emoji: '🌐', accentColor: '#4285f4' },
-          { subfolder: 'openai', title: 'OpenAI', emoji: '🧠', accentColor: '#10a37f' },
-          { subfolder: 'anthropic', title: 'Anthropic', emoji: '⚡', accentColor: '#d97706' },
-        ];
-        subtopics = knownChangelog.map((known) => ({
-          id: `sub-${known.subfolder}`,
-          slug: `spark-changelogsfeed-${known.subfolder}`,
-          subfolder: known.subfolder,
-          title: known.title,
-          emoji: known.emoji,
-          count: changelogSubCounts[known.subfolder] || 0,
-          accentColor: known.accentColor,
-        }));
+        subtopics = buildChangelogSubtopics(changelogSubCounts, context.allFeeds);
       }
 
       return {
@@ -128,9 +121,13 @@ export const SparkFeedAdapter: FeedAdapter = {
 
     // 2. Specific feed or subtopic filter
     if (activeFeedSlug) {
-      if (activeFeedSlug.startsWith('spark-notebooklmai-')) {
+      if (activeFeedSlug === 'spark-notebooklmai') {
+        matched = matched.filter(isNotebooklmNote);
+      } else if (activeFeedSlug.startsWith('spark-notebooklmai-')) {
         const targetSub = activeFeedSlug.replace(/^spark-notebooklmai-/, '').toLowerCase();
         matched = matched.filter((n) => extractNotebooklmSubtopic(n) === targetSub);
+      } else if (activeFeedSlug === 'spark-changelogsfeed') {
+        matched = matched.filter(isChangelogsNote);
       } else if (activeFeedSlug.startsWith('spark-changelogsfeed-')) {
         const targetSub = activeFeedSlug.replace(/^spark-changelogsfeed-/, '').toLowerCase();
         matched = matched.filter((n) => extractChangelogSubfolder(n) === targetSub);

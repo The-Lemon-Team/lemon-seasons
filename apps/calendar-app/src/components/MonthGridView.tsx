@@ -86,7 +86,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
 }) => {
   const { t, lang } = useI18n();
   const { data: allFeeds = [] } = useFeeds();
-  const [hoveredDayKey, setHoveredDayKey] = useState<string | null>(null);
+  /* hoveredDayKey removed */
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
   const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false);
   const monthPopoverRef = useRef<HTMLDivElement>(null);
@@ -104,8 +104,8 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMiniCalendarOpen]);
 
-  const currentMonth = dayjs(startDate);
-  const startOfMonth = currentMonth.startOf('month');
+  const currentMonth = useMemo(() => dayjs(startDate), [startDate]);
+  const startOfMonth = useMemo(() => currentMonth.startOf('month'), [currentMonth]);
 
   // Count active filters
   const activeFilterCount =
@@ -504,8 +504,8 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             <div
               key={cell.dateKey}
               onClick={() => setSelectedDayKey(cell.dateKey)}
-              onMouseEnter={() => setHoveredDayKey(cell.dateKey)}
-              onMouseLeave={() => setHoveredDayKey(null)}
+              /* hover state removed */
+              /* hover leave removed */
               className={`min-h-[75px] sm:min-h-[85px] lg:min-h-0 border-r border-b border-[#242828] p-1.5 sm:p-2 flex flex-col transition-all group relative cursor-pointer overflow-hidden ${
                 cell.isCurrentMonth ? 'bg-[#121414]' : 'bg-[#0d0f0f]/80 opacity-45'
               } ${

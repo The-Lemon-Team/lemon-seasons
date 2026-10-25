@@ -11,6 +11,7 @@ import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { LemonLogo } from './LemonLogo';
 import { WorkstationSyncBar } from './WorkstationSyncBar';
+import { AppModeSwitcher } from './common/AppModeSwitcher';
 
 interface NavbarProps {
   startDate?: string;
@@ -36,6 +37,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
+  const [localSearch, setLocalSearch] = React.useState(search);
+
+  React.useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  React.useEffect(() => {
+    if (localSearch === search) return;
+    const timer = setTimeout(() => {
+      onSearchChange(localSearch);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [localSearch, search, onSearchChange]);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 lg:px-6 h-14 sm:h-16 bg-[#121414] border-b border-[#242828] w-full transition-colors">
@@ -61,12 +75,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <input
               type="text"
               placeholder={t.searchPlaceholder}
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full bg-[#181a1a] border border-[#242828] focus:border-[#c9cd58] focus:ring-1 focus:ring-[#c9cd58] rounded text-xs font-mono pl-8 pr-3 py-1.5 text-[#e2e2e2] placeholder-[#93927e] outline-none transition-all"
             />
           </div>
         )}
+      </div>
+
+      {/* Center: Global App Mode Switcher (Dev - Staging - Public) */}
+      <div className="flex items-center justify-center mx-1 sm:mx-2">
+        <AppModeSwitcher />
       </div>
 
       {/* Right: Sync Status / Viewer Bar, Admin CMS Launcher & Profile */}

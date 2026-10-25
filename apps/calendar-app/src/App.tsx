@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { Note, CalendarViewMode } from '@lenta/shared';
 import { I18nProvider } from './i18n';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -8,22 +8,25 @@ import { SideNavBar } from './components/SideNavBar';
 import { Navbar } from './components/Navbar';
 import { FilterSidebar } from './components/FilterSidebar';
 import { TimelineView } from './components/TimelineView';
-import { MonthGridView } from './components/MonthGridView';
-import { GanttView } from './components/GanttView';
-import { FeedsHubView } from './components/FeedsHubView';
-import { NoteDetailModal } from './components/NoteDetailModal';
-import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
-import { CreateNoteModal } from './components/CreateNoteModal';
-import { AiQuickAddModal } from './components/AiQuickAddModal';
-import { KeyManagementModal } from './components/KeyManagementModal';
-import { FolderManagerView } from './components/FolderManagerView';
 import { FoldersProvider } from './context/FoldersContext';
+import { AppModeProvider, useAppMode } from './context/AppModeContext';
 import { UserKeysProvider } from './context/UserKeysContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
+const MonthGridView = lazy(() => import('./components/MonthGridView').then((m) => ({ default: m.MonthGridView })));
+const GanttView = lazy(() => import('./components/GanttView').then((m) => ({ default: m.GanttView })));
+const FeedsHubView = lazy(() => import('./components/FeedsHubView').then((m) => ({ default: m.FeedsHubView })));
+const FolderManagerView = lazy(() => import('./components/FolderManagerView').then((m) => ({ default: m.FolderManagerView })));
+const LandingPage = lazy(() => import('./components/LandingPage').then((m) => ({ default: m.LandingPage })));
+const NoteDetailModal = lazy(() => import('./components/NoteDetailModal').then((m) => ({ default: m.NoteDetailModal })));
+const CreateNoteModal = lazy(() => import('./components/CreateNoteModal').then((m) => ({ default: m.CreateNoteModal })));
+const AiQuickAddModal = lazy(() => import('./components/AiQuickAddModal').then((m) => ({ default: m.AiQuickAddModal })));
+const KeyManagementModal = lazy(() => import('./components/KeyManagementModal').then((m) => ({ default: m.KeyManagementModal })));
+
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { appMode } = useAppMode();
   const {
     filters,
     setStartDate,
@@ -64,10 +67,27 @@ const CalendarAppInner: React.FC = () => {
     setView(newView);
   };
 
+  // Listen for navigation messages from embedded microfrontends (e.g. Feed App toolbar buttons)
+  useEffect(() => {
+    const handleGlobalMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'LENTA_HOST_NAVIGATE') {
+        const targetView = event.data.payload?.view;
+        if (targetView === 'timeline' || targetView === 'month' || targetView === 'gantt' || targetView === 'feeds' || targetView === 'folders') {
+          handleSetView(targetView);
+        }
+      }
+    };
+    window.addEventListener('message', handleGlobalMessage);
+    return () => window.removeEventListener('message', handleGlobalMessage);
+  }, []);
+
   // Scoped query filters: Calendar filters (tags, hashtags, types) strictly apply to Calendar pages only
   const effectiveQueryFilters = useMemo(() => {
     if (isCalendarView) {
-      return filters;
+      return {
+        ...filters,
+        appMode,
+      };
     }
     if (filters.view === 'feeds') {
       return {
@@ -79,6 +99,7 @@ const CalendarAppInner: React.FC = () => {
         tags: [],
         hashtags: [],
         types: [],
+        appMode,
       };
     }
     return {
@@ -90,8 +111,9 @@ const CalendarAppInner: React.FC = () => {
       tags: [],
       hashtags: [],
       types: [],
+      appMode,
     };
-  }, [isCalendarView, filters]);
+  }, [isCalendarView, filters, appMode]);
 
   // Queries
   const { data: notesData, isLoading: isNotesLoading } = useTimeSliceNotes(effectiveQueryFilters);
@@ -111,10 +133,10 @@ const CalendarAppInner: React.FC = () => {
   // Tier 1: Public Users (Not Logged In) -> Presentation Landing Page with Interactive Widget
   if (!isAuthenticated) {
     return (
-      <>
+      <Suspense fallback={<div className="h-screen w-screen bg-[#121414]" />}>
         <LandingPage />
         <AuthModal />
-      </>
+      </Suspense>
     );
   }
 
@@ -155,6 +177,7 @@ const CalendarAppInner: React.FC = () => {
         {/* View Content Canvas */}
         <main className="flex-1 flex overflow-hidden relative min-h-0 bg-[#121414]">
           <ErrorBoundary fallbackTitle="View Failed to Render">
+            <Suspense fallback={<div className="flex-1 bg-[#121414]" />}>
             {filters.view === 'timeline' && (
               <TimelineView
                 notes={notes}
@@ -221,6 +244,7 @@ const CalendarAppInner: React.FC = () => {
               <FeedsHubView
                 notes={notes}
                 isLoading={isNotesLoading}
+                appMode={appMode}
                 selectedFeed={filters.feed}
                 startDate={filters.start}
                 endDate={filters.end}
@@ -243,6 +267,7 @@ const CalendarAppInner: React.FC = () => {
             {filters.view === 'folders' && (
               <FolderManagerView />
             )}
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
@@ -266,30 +291,37 @@ const CalendarAppInner: React.FC = () => {
         />
       )}
 
-      {/* 4. Editorial Note Detail Reader Modal */}
-      <NoteDetailModal
-        note={selectedNote}
-        onClose={() => setSelectedNote(null)}
-      />
+      {/* 4. Lazy-loaded Modals */}
+      <Suspense fallback={null}>
+        {selectedNote && (
+          <NoteDetailModal
+            note={selectedNote}
+            onClose={() => setSelectedNote(null)}
+          />
+        )}
 
-      {/* 5. Create Note Modal for Logged in Users */}
-      <CreateNoteModal
-        isOpen={isCreateNoteOpen}
-        onClose={() => setIsCreateNoteOpen(false)}
-      />
+        {isCreateNoteOpen && (
+          <CreateNoteModal
+            isOpen={isCreateNoteOpen}
+            onClose={() => setIsCreateNoteOpen(false)}
+          />
+        )}
 
-      {/* 5.1 AI Quick Add Modal */}
-      <AiQuickAddModal
-        isOpen={isAiQuickAddOpen}
-        onClose={() => setIsAiQuickAddOpen(false)}
-        defaultDate={filters.start}
-      />
+        {isAiQuickAddOpen && (
+          <AiQuickAddModal
+            isOpen={isAiQuickAddOpen}
+            onClose={() => setIsAiQuickAddOpen(false)}
+            defaultDate={filters.start}
+          />
+        )}
 
-      {/* 6. Key Management Modal */}
-      <KeyManagementModal
-        isOpen={isKeysModalOpen}
-        onClose={() => setIsKeysModalOpen(false)}
-      />
+        {isKeysModalOpen && (
+          <KeyManagementModal
+            isOpen={isKeysModalOpen}
+            onClose={() => setIsKeysModalOpen(false)}
+          />
+        )}
+      </Suspense>
 
       {/* 7. Auth Modal */}
       <AuthModal />
@@ -303,7 +335,9 @@ export const App: React.FC = () => {
       <AuthProvider>
         <UserKeysProvider>
           <FoldersProvider>
-            <CalendarAppInner />
+            <AppModeProvider>
+              <CalendarAppInner />
+            </AppModeProvider>
           </FoldersProvider>
         </UserKeysProvider>
       </AuthProvider>

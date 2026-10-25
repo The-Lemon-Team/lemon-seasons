@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Note, NoteType, NoteStatus, Folder as FolderType } from '@lenta/shared';
+import { Note, NoteType, NoteStatus, Folder as FolderType, extractCleanSnippet } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -64,6 +64,9 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [sourceLink, setSourceLink] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
+  const [privacy, setPrivacy] = useState<'private' | 'public'>('private');
+  const [publicFeedId, setPublicFeedId] = useState('');
+  const [summary, setSummary] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -86,6 +89,9 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       setSourceLink(note.sourceLink || '');
       const meta = (note.metadata as any) || {};
       setAudioUrl(meta.audioUrl || meta.podcast?.audioUrl || '');
+      setPrivacy(note.privacy === 'public' ? 'public' : 'private');
+      setPublicFeedId(note.publicFeedId || '');
+      setSummary(note.summary || '');
       setErrorMessage(null);
     }
   }, [note, isOpen]);
@@ -121,6 +127,10 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
         hashtags,
         sourceLink: sourceLink.trim() || undefined,
+        privacy,
+        publicFeedId: privacy === 'public' ? (publicFeedId || feedId || null) : null,
+        summary: summary.trim() || undefined,
+        ...(status === 'PUBLISHED' ? { publishAt: new Date().toISOString() } : {}),
       });
 
       await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });

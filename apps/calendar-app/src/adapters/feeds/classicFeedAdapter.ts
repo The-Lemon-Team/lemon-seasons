@@ -174,7 +174,7 @@ export const ClassicFeedAdapter: FeedAdapter = {
     }
 
     // 3. Sort chronologically
-    matched.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    matched.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
     // 4. Convert to UnifiedFeedItem
     const items: UnifiedFeedItem[] = matched.map((n) => {

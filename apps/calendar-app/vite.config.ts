@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@lenta/shared': path.resolve(__dirname, '../../packages/shared/src'),
     },
   },
   server: {
@@ -19,19 +20,29 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            const normalized = id.replace(/\\/g, '/');
+            if (
+              normalized.includes('/node_modules/react/') ||
+              normalized.includes('/node_modules/react-dom/') ||
+              normalized.includes('/node_modules/scheduler/')
+            ) {
               return 'vendor-react';
             }
-            if (id.includes('lucide-react')) {
+            if (normalized.includes('/node_modules/lucide-react/')) {
               return 'vendor-icons';
             }
-            if (id.includes('@tanstack')) {
+            if (normalized.includes('/node_modules/@tanstack/')) {
               return 'vendor-tanstack';
             }
-            if (id.includes('react-markdown') || id.includes('remark-gfm')) {
+            if (
+              normalized.includes('/node_modules/react-markdown/') ||
+              normalized.includes('/node_modules/remark-gfm/') ||
+              normalized.includes('/node_modules/unified/') ||
+              normalized.includes('/node_modules/micromark')
+            ) {
               return 'vendor-markdown';
             }
-            if (id.includes('dayjs')) {
+            if (normalized.includes('/node_modules/dayjs/')) {
               return 'vendor-dayjs';
             }
           }

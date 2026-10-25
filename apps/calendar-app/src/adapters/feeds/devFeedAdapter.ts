@@ -11,6 +11,7 @@ import {
 import {
   KNOWN_CHANGELOG_SUBTOPICS,
   KNOWN_NOTEBOOKLM_SUBTOPICS,
+  buildChangelogSubtopics,
   extractChangelogSubfolder,
   isChangelogsNote,
   isNotebooklmNote,
@@ -20,6 +21,7 @@ import {
 export {
   KNOWN_CHANGELOG_SUBTOPICS,
   KNOWN_NOTEBOOKLM_SUBTOPICS,
+  buildChangelogSubtopics,
   extractChangelogSubfolder,
   isChangelogsNote,
   isNotebooklmNote,
@@ -310,39 +312,7 @@ export const DevFeedAdapter: FeedAdapter = {
       let subtopics: UnifiedSubtopic[] | undefined;
 
       if (preset.isChangelogs) {
-        const discovered = new Set<string>();
-        subtopics = [];
-
-        // 1. Add known default subtopics
-        for (const known of KNOWN_CHANGELOG_SUBTOPICS) {
-          discovered.add(known.subfolder);
-          subtopics.push({
-            id: `sub-${known.subfolder}`,
-            slug: `spark-changelogsfeed-${known.subfolder}`,
-            subfolder: known.subfolder,
-            title: known.title,
-            emoji: known.emoji,
-            count: changelogSubCounts[known.subfolder] || 0,
-            accentColor: known.accentColor,
-          });
-        }
-
-        // 2. Add dynamically discovered subfolders
-        for (const [sub, count] of Object.entries(changelogSubCounts)) {
-          if (sub !== 'other' && !discovered.has(sub)) {
-            const cap = sub.charAt(0).toUpperCase() + sub.slice(1);
-            subtopics.push({
-              id: `sub-${sub}`,
-              slug: `spark-changelogsfeed-${sub}`,
-              subfolder: sub,
-              title: cap,
-              emoji: '📦',
-              count,
-              accentColor: '#f97316',
-            });
-            discovered.add(sub);
-          }
-        }
+        subtopics = buildChangelogSubtopics(changelogSubCounts, context.allFeeds);
       } else if (preset.isNotebooklm) {
         subtopics = KNOWN_NOTEBOOKLM_SUBTOPICS.map((known) => ({
           id: `sub-notebooklm-${known.subfolder}`,

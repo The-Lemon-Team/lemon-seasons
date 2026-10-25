@@ -15,6 +15,9 @@ export interface TimeSliceFilter {
   folder?: string;
   curator?: string;
   minResonance?: number;
+  privacy?: string;
+  status?: string;
+  appMode?: 'dev' | 'staging' | 'public';
 }
 
 export const queryKeys = {
@@ -33,10 +36,11 @@ export const queryKeys = {
 /**
  * Scoped Time-Slice query for notes in range [start, end]
  */
-export function useTimeSliceNotes(filter: TimeSliceFilter) {
+export function useTimeSliceNotes(filter: TimeSliceFilter, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.timeSliceNotes(filter),
     placeholderData: (previousData) => previousData,
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const params: QueryNotesParams = {
         startDateFrom: filter.start,
@@ -65,8 +69,20 @@ export function useTimeSliceNotes(filter: TimeSliceFilter) {
         params.containers = filter.containers;
       }
 
-      if (filter.curator) {
+            if (filter.curator) {
         params.curator = filter.curator;
+      }
+
+      if (filter.appMode === 'public') {
+        params.privacy = 'public';
+        params.status = 'PUBLISHED';
+      } else if (filter.appMode === 'staging') {
+        params.privacy = 'public';
+      } else if (filter.appMode === 'dev') {
+        params.privacy = 'all';
+      } else {
+        if (filter.privacy) params.privacy = filter.privacy as any;
+        if (filter.status) params.status = filter.status;
       }
 
       const response = await calendarApi.getNotes(params);

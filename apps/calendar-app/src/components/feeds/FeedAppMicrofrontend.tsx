@@ -1,19 +1,60 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ExternalLink, RefreshCw, Radio, Columns, Maximize2, ShieldCheck } from 'lucide-react';
-import { MicrofrontendMessage, MicrofrontendAuthSyncPayload } from '@lenta/shared';
+import { MicrofrontendMessage, MicrofrontendAuthSyncPayload, AppRuntimeMode } from '@lenta/shared';
 import { useAuth } from '../../context/AuthContext';
 import { useUserKeys } from '../../context/UserKeysContext';
 
 interface FeedAppMicrofrontendProps {
+  appMode?: AppRuntimeMode;
+  onAppModeChange?: (mode: AppRuntimeMode) => void;
   initialRoute?: string;
   startDate?: string;
   endDate?: string;
+  onNavigate?: (payload: {
+    url?: string;
+    pathname?: string;
+    streamSource?: string;
+    selectedFeedSlug?: string;
+    subtopicSlug?: string;
+    noteId?: string;
+  }) => void;
+  onHostNavigate?: (view: string) => void;
+}
+
+function computeFeedAppUrl(
+  feedAppBase: string,
+  route: string,
+  layoutMode: 'split' | 'stream',
+  startDate?: string,
+  endDate?: string,
+  appMode?: string
+): string {
+  try {
+    const cleanRoute = route.startsWith('/') ? route.slice(1) : route;
+    const url = new URL(cleanRoute === 'spark' || cleanRoute === '' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
+    url.searchParams.set('embed', 'true');
+    url.searchParams.set('layout', layoutMode);
+    if (appMode) url.searchParams.set('appMode', appMode);
+    if (startDate) url.searchParams.set('startDate', startDate);
+    if (endDate) url.searchParams.set('endDate', endDate);
+    return url.toString();
+  } catch {
+    const cleanPath = route === 'spark' ? '' : route;
+    const separator = cleanPath.includes('?') ? '&' : '?';
+    const modeParam = appMode ? `&appMode=${encodeURIComponent(appMode)}` : '';
+    const dateParams = `${startDate ? `&startDate=${encodeURIComponent(startDate)}` : ''}${endDate ? `&endDate=${encodeURIComponent(endDate)}` : ''}`;
+    return `${feedAppBase}/${cleanPath}${separator}embed=true&layout=${layoutMode}${modeParam}${dateParams}`;
+  }
 }
 
 export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   initialRoute = 'spark',
   startDate,
   endDate,
+  appMode,
+  onAppModeChange,
+  onNavigate,
+  onHostNavigate,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeKey, setIframeKey] = useState(0);
@@ -27,22 +68,17 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   // In local browser, feed-app runs on 5175
   const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
 
-  const feedAppUrl = useMemo(() => {
-    try {
-      const cleanRoute = initialRoute.startsWith('/') ? initialRoute.slice(1) : initialRoute;
-      const url = new URL(cleanRoute === 'spark' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
-      url.searchParams.set('embed', 'true');
-      url.searchParams.set('layout', layoutMode);
-      if (startDate) url.searchParams.set('startDate', startDate);
-      if (endDate) url.searchParams.set('endDate', endDate);
-      return url.toString();
-    } catch {
-      const cleanPath = initialRoute === 'spark' ? '' : initialRoute;
-      const separator = cleanPath.includes('?') ? '&' : '?';
-      const dateParams = `${startDate ? `&startDate=${encodeURIComponent(startDate)}` : ''}${endDate ? `&endDate=${encodeURIComponent(endDate)}` : ''}`;
-      return `${feedAppBase}/${cleanPath}${separator}embed=true&layout=${layoutMode}${dateParams}`;
-    }
-  }, [feedAppBase, initialRoute, layoutMode, startDate, endDate]);
+  // Last route synchronized between iframe and host to prevent redundant re-renders or infinite loops
+  const lastReportedRouteRef = useRef<string>(initialRoute);
+  // Stable initial iframe src that does not change on in-iframe navigation (prevents iframe reloads)
+  const initialSrcRef = useRef<string>(
+    computeFeedAppUrl(feedAppBase, initialRoute, layoutMode, startDate, endDate, appMode)
+  );
+
+  const fullscreenUrl = useMemo(() => {
+    const currentRoute = lastReportedRouteRef.current || initialRoute;
+    return computeFeedAppUrl(feedAppBase, currentRoute, layoutMode, startDate, endDate);
+  }, [feedAppBase, initialRoute, layoutMode, startDate, endDate, appMode]);
 
   const sendAuthSync = useCallback(() => {
     if (!iframeRef.current?.contentWindow) return;
@@ -77,7 +113,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
     setIsAuthSynced(true);
   }, [feedAppBase, token, user, keys]);
 
-  // Listen for handshake requests from embedded microfrontend
+  // Listen for handshake and navigation events from embedded microfrontend
   useEffect(() => {
     let expectedOrigin = '';
     try {
@@ -94,11 +130,77 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
       if (event.data?.type === 'LENTA_AUTH_REQUEST') {
         sendAuthSync();
       }
+
+      if (event.data?.type === 'LENTA_FEED_NAVIGATE') {
+        const payload = event.data.payload || {};
+        const cleanPath = (payload.pathname || '').replace(/^\/+/, '');
+        const reported = `${cleanPath}${payload.noteId ? (cleanPath.includes('?') ? '&' : '?') + 'note=' + payload.noteId : ''}`;
+        lastReportedRouteRef.current = reported || 'spark';
+        onNavigate?.(payload);
+      }
+
+            if (event.data?.type === 'LENTA_APP_MODE_CHANGED') {
+        const newMode = event.data.payload?.appMode;
+        if (newMode && onAppModeChange) {
+          onAppModeChange(newMode);
+        }
+      }
+
+      if (event.data?.type === 'LENTA_HOST_NAVIGATE') {
+        const targetView = event.data.payload?.view;
+        if (targetView && onHostNavigate) {
+          onHostNavigate(targetView);
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [feedAppBase, sendAuthSync]);
+  }, [feedAppBase, sendAuthSync, onNavigate, onHostNavigate]);
+
+  // Synchronize changes to initialRoute coming from the host (browser back/forward) to child without iframe reload
+  useEffect(() => {
+    const cleanRoute = (initialRoute || 'spark').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+    const cleanLast = (lastReportedRouteRef.current || 'spark').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+
+    if (cleanRoute !== cleanLast) {
+      lastReportedRouteRef.current = cleanRoute;
+      if (iframeRef.current?.contentWindow) {
+        let targetOrigin = '*';
+        try {
+          targetOrigin = new URL(feedAppBase).origin;
+        } catch {
+          targetOrigin = '*';
+        }
+        iframeRef.current.contentWindow.postMessage(
+          {
+            type: 'LENTA_NAVIGATE_FEED',
+            payload: { route: cleanRoute },
+          },
+          targetOrigin
+        );
+      }
+    }
+  }, [initialRoute, feedAppBase]);
+
+    // Push updated appMode to embedded feed-app
+  useEffect(() => {
+    if (!iframeRef.current?.contentWindow || !appMode) return;
+    let targetOrigin = '*';
+    try {
+      targetOrigin = new URL(feedAppBase).origin;
+    } catch {
+      targetOrigin = '*';
+    }
+    iframeRef.current.contentWindow.postMessage(
+      {
+        type: 'LENTA_SET_APP_MODE',
+        source: 'lenta-calendar-app',
+        payload: { appMode },
+      },
+      targetOrigin
+    );
+  }, [appMode, feedAppBase]);
 
   // Push updated auth whenever user or session changes
   useEffect(() => {
@@ -110,13 +212,19 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   const handleIframeLoad = () => {
     setIsLoading(false);
     sendAuthSync();
-    // Safety retry in case child React app mounts listeners shortly after load event
     setTimeout(sendAuthSync, 250);
   };
 
   const handleReload = () => {
     setIsLoading(true);
     setIsAuthSynced(false);
+    initialSrcRef.current = computeFeedAppUrl(
+      feedAppBase,
+      lastReportedRouteRef.current || initialRoute,
+      layoutMode,
+      startDate,
+      endDate
+    );
     setIframeKey((prev) => prev + 1);
   };
 
@@ -124,6 +232,13 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
     if (mode === layoutMode) return;
     setIsLoading(true);
     setLayoutMode(mode);
+    initialSrcRef.current = computeFeedAppUrl(
+      feedAppBase,
+      lastReportedRouteRef.current || initialRoute,
+      mode,
+      startDate,
+      endDate
+    );
     setIframeKey((prev) => prev + 1);
   };
 
@@ -186,7 +301,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
           </button>
 
           <a
-            href={feedAppUrl}
+            href={fullscreenUrl}
             target="_blank"
             rel="noreferrer"
             className="px-2.5 py-1.5 rounded-lg bg-[#2481cc]/20 hover:bg-[#2481cc]/30 text-[#64b5f6] border border-[#2481cc]/40 transition-colors flex items-center gap-1.5 text-[11px] font-semibold"
@@ -209,7 +324,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
         <iframe
           ref={iframeRef}
           key={iframeKey}
-          src={feedAppUrl}
+          src={initialSrcRef.current}
           title="Lenta Feed App Microfrontend"
           className="w-full h-full border-0 min-h-[780px]"
           onLoad={handleIframeLoad}

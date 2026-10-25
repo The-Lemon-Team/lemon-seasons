@@ -86,9 +86,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   // Flatten notes into date groups
   const timelineItems: TimelineItem[] = useMemo(() => {
-    const sorted = [...notes].sort(
-      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-    );
+    const sorted = [...notes].sort((a, b) => {
+      const bTime = b.startDate ? new Date(b.startDate).getTime() : 0;
+      const aTime = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const diff = bTime - aTime;
+      if (diff !== 0) return diff;
+      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      if (bCreated !== aCreated) return bCreated - aCreated;
+      return (b.id || '').localeCompare(a.id || '');
+    });
 
     const items: TimelineItem[] = [];
     let lastDateKey = '';

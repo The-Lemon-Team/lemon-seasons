@@ -56,11 +56,16 @@ interface FoldersContextType {
 const FoldersContext = createContext<FoldersContextType | undefined>(undefined);
 
 export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load notes to match folder assignments
-  const { data: notesData } = useTimeSliceNotes({
-    start: '2026-01-01T00:00:00.000Z',
-    end: '2026-12-31T23:59:59.000Z',
-  });
+  const [needsNotesLoaded, setNeedsNotesLoaded] = useState(false);
+
+  // Lazy-load full-year notes only when folder note counts/lists are actually requested
+  const { data: notesData } = useTimeSliceNotes(
+    {
+      start: '2026-01-01T00:00:00.000Z',
+      end: '2026-12-31T23:59:59.000Z',
+    },
+    { enabled: needsNotesLoaded },
+  );
   const allNotes = notesData?.items || [];
 
   const [folders, setFolders] = useState<Folder[]>(() => {
@@ -246,6 +251,9 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Get notes associated with a folder
   const getNotesForFolder = useCallback(
     (folderPath: string, recursive = true): Note[] => {
+      if (!needsNotesLoaded) {
+        setNeedsNotesLoaded(true);
+      }
       const normalized = normalizeFolderPath(folderPath).toLowerCase();
       const matchedFolder = folders.find((f) => f.path.toLowerCase() === normalized);
 
@@ -271,7 +279,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return false;
       });
     },
-    [allNotes, folders]
+    [allNotes, folders, needsNotesLoaded]
   );
 
   // Privacy change impact calculation
@@ -338,29 +346,49 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [folders]
   );
 
+  const contextValue = useMemo(
+    () => ({
+      folders,
+      folderTree,
+      selectedFolderId,
+      selectedFolder,
+      setSelectedFolderId,
+      scopeFilter,
+      setScopeFilter,
+      externalFolders,
+      internalFolders,
+      getInternalFoldersForContainer,
+      addFolder,
+      updateFolder,
+      deleteFolder,
+      getFolderPrivacyImpact,
+      executePrivacyChange,
+      getFolderContainerUsage,
+      getNotesForFolder,
+      refreshFolders,
+    }),
+    [
+      folders,
+      folderTree,
+      selectedFolderId,
+      selectedFolder,
+      scopeFilter,
+      externalFolders,
+      internalFolders,
+      getInternalFoldersForContainer,
+      addFolder,
+      updateFolder,
+      deleteFolder,
+      getFolderPrivacyImpact,
+      executePrivacyChange,
+      getFolderContainerUsage,
+      getNotesForFolder,
+      refreshFolders,
+    ],
+  );
+
   return (
-    <FoldersContext.Provider
-      value={{
-        folders,
-        folderTree,
-        selectedFolderId,
-        selectedFolder,
-        setSelectedFolderId,
-        scopeFilter,
-        setScopeFilter,
-        externalFolders,
-        internalFolders,
-        getInternalFoldersForContainer,
-        addFolder,
-        updateFolder,
-        deleteFolder,
-        getFolderPrivacyImpact,
-        executePrivacyChange,
-        getFolderContainerUsage,
-        getNotesForFolder,
-        refreshFolders,
-      }}
-    >
+    <FoldersContext.Provider value={contextValue}>
       {children}
     </FoldersContext.Provider>
   );

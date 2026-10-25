@@ -20,14 +20,20 @@ function getDefaultFilterState(): CalendarFilterState {
   };
 }
 
-export function getPathForView(view: CalendarViewMode): string {
+export function getPathForView(view: CalendarViewMode, feedRoute?: string): string {
   switch (view) {
     case 'month':
       return '/calendar';
     case 'gantt':
       return '/gantts';
-    case 'feeds':
+    case 'feeds': {
+      if (feedRoute) {
+        const clean = feedRoute.trim().replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+        const [pathOnly] = clean.split('?');
+        return pathOnly ? `/feeds/${pathOnly}` : '/feeds';
+      }
       return '/feeds';
+    }
     case 'folders':
       return '/folders';
     case 'obsidian':
@@ -41,7 +47,7 @@ export function getViewFromPath(pathname: string = window.location.pathname, vie
   const path = (pathname || '/').toLowerCase().replace(/\/+$/, '');
   if (path.endsWith('/calendar')) return 'month';
   if (path.endsWith('/gantt') || path.endsWith('/gantts') || path.endsWith('/gannts')) return 'gantt';
-  if (path.endsWith('/feeds') || path === '/feeds') return 'feeds';
+  if (path.startsWith('/feeds') || path.includes('/feeds') || path.endsWith('/feeds') || path === '/feeds') return 'feeds';
   if (path.endsWith('/folders') || path === '/folders') return 'folders';
 
   if (viewQueryParam) {
@@ -68,8 +74,20 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
   const viewRaw = params.get('view');
   const view: CalendarViewMode = getViewFromPath(pathname, viewRaw);
 
-  const feedParam = params.get('feed') || params.get('feeds');
-  const feed = feedParam ? feedParam.split(',')[0].trim() || undefined : undefined;
+  let feedParam = params.get('feed') || params.get('feeds');
+  if (view === 'feeds' && pathname.toLowerCase().startsWith('/feeds')) {
+    const feedSubpath = pathname.replace(/^\/feeds\/?/i, '').replace(/\/+$/, '');
+    if (feedSubpath) {
+      feedParam = feedSubpath;
+    }
+  }
+  const noteParam = params.get('note');
+  let feed = feedParam ? feedParam.split(',')[0].trim() || undefined : undefined;
+  if (feed && noteParam && !feed.includes('?note=')) {
+    feed = `${feed}?note=${noteParam}`;
+  } else if (!feed && noteParam) {
+    feed = `?note=${noteParam}`;
+  }
 
   const containers = params.get('containers')
     ? params.get('containers')!.split(',').map((s) => s.trim()).filter(Boolean)
@@ -114,7 +132,15 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
 
   if (state.start) params.set('start', state.start);
   if (state.end) params.set('end', state.end);
-  if (state.feed) params.set('feed', state.feed);
+  if (state.view !== 'feeds') {
+    if (state.feed) params.set('feed', state.feed);
+  } else if (state.feed && state.feed.includes('?note=')) {
+    const [, query] = state.feed.split('?');
+    const noteMatch = new URLSearchParams(query).get('note');
+    if (noteMatch) {
+      params.set('note', noteMatch);
+    }
+  }
   if (state.containers && state.containers.length > 0) params.set('containers', state.containers.join(','));
   if (state.obsidianFolders && state.obsidianFolders.length > 0) params.set('obsidianFolders', state.obsidianFolders.join(','));
   if (state.tags && state.tags.length > 0) params.set('tags', state.tags.join(','));
@@ -143,15 +169,22 @@ export function useCalendarState() {
   }, []);
 
   // Update URL whenever filter state changes
-  const updateFilter = useCallback((updater: Partial<CalendarFilterState> | ((prev: CalendarFilterState) => CalendarFilterState)) => {
+  const updateFilter = useCallback((
+    updater: Partial<CalendarFilterState> | ((prev: CalendarFilterState) => CalendarFilterState),
+    options?: { replace?: boolean }
+  ) => {
     setFilterState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
-      const path = getPathForView(next.view);
+      const path = getPathForView(next.view, next.view === 'feeds' ? next.feed : undefined);
       const search = serializeFilterToUrl(next);
       const newUrl = `${path}${search}${window.location.hash}`;
       const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       if (newUrl !== currentUrl) {
-        window.history.pushState(null, '', newUrl);
+        if (options?.replace) {
+          window.history.replaceState(null, '', newUrl);
+        } else {
+          window.history.pushState(null, '', newUrl);
+        }
       }
       return next;
     });
@@ -173,8 +206,8 @@ export function useCalendarState() {
     updateFilter({ view });
   }, [updateFilter]);
 
-  const selectFeed = useCallback((feedSlug?: string | null) => {
-    updateFilter({ feed: feedSlug || undefined });
+  const selectFeed = useCallback((feedSlug?: string | null, options?: { replace?: boolean }) => {
+    updateFilter({ feed: feedSlug || undefined }, options);
   }, [updateFilter]);
 
   const toggleFeed = useCallback((feedSlug: string) => {
