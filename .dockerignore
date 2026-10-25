@@ -4,6 +4,8 @@ node_modules
 dist
 !packages/shared/dist
 !apps/feed-app/dist
+!apps/calendar-app/dist
+!apps/admin-cms/dist
 build
 coverage
 uploads

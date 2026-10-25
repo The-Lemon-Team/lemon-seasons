@@ -13,6 +13,10 @@ services:
       - "${POSTGRES_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lemon} -d ${POSTGRES_DB:-lemon_calendarium}"]
       interval: 5s
@@ -25,16 +29,24 @@ services:
       dockerfile: apps/backend/Dockerfile
     container_name: lemon-calendarium-backend
     restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public&connection_limit=10&pool_timeout=20
       PORT: 3001
       NODE_ENV: production
       SPARKS_INCOMING_DIR: /app/sparks
+      GDRIVE_SYNC_FOLDER: /app/gdrive
     ports:
       - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
       interval: 10s
@@ -43,6 +55,7 @@ services:
     volumes:
       - backend_uploads:/app/apps/backend/uploads
       - "${SPARKS_HOST_DIR:-C:/Users/Ilege/Мой диск/spark}:/app/sparks"
+      - "${GDRIVE_SYNC_FOLDER:-C:/remote}:/app/gdrive"
 
   feed-app:
     build:
@@ -54,6 +67,10 @@ services:
       - "5175:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
   calendar-app:
     build:
@@ -65,6 +82,10 @@ services:
       - "5174:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
   admin-cms:
     build:
@@ -74,6 +95,12 @@ services:
     restart: unless-stopped
     ports:
       - "5173:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
   gateway:
     build:
@@ -88,9 +115,14 @@ services:
     volumes:
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - backend
       - feed-app
       - calendar-app
       - admin-cms
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
   container-sync-server:
     build:

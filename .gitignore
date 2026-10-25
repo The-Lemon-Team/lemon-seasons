@@ -49,3 +49,5 @@ test-artifacts/
 packages/obsidian-containers/
 .turbo/
 test_*.png
+apps/mobile-tauri/src-tauri/target
+apps/mobile-tauri/src-tauri/gen/schemas
