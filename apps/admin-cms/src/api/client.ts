@@ -647,6 +647,25 @@ export const ingestionApi = {
 };
 
 
+export const busRelayApi = {
+  getStatus: async () => {
+    const res = await apiClient.get('/bus/relay/status');
+    return res.data;
+  },
+  getEvents: async (filter) => {
+    const res = await apiClient.get('/bus/relay/events', { params: filter });
+    return res.data;
+  },
+  runCatchUp: async () => {
+    const res = await apiClient.post('/bus/relay/catch-up');
+    return res.data;
+  },
+  publishTestEvent: async (data) => {
+    const res = await apiClient.post('/bus/relay/test-event', data || {});
+    return res.data;
+  },
+};
+
 export const statsApi = {
   getStats: async (): Promise<SystemStats> => {
     const res = await apiClient.get<SystemStats>('/stats');

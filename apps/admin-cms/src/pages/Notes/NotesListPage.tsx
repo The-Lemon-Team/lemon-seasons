@@ -12,6 +12,7 @@ import {
 import { FolderExplorer } from '../../components/FolderExplorer';
 import { NoteDetailModal } from '../../components/NoteDetailModal';
 import { EditNoteModal } from '../../components/EditNoteModal';
+import { PublishToStagingModal } from '../../components/PublishToStagingModal';
 import { CreateNoteModal } from '../../components/CreateNoteModal';
 import { NotesTableWithFilters } from './components/NotesTableWithFilters';
 import { NoteType } from '../../types';
@@ -26,6 +27,7 @@ export const NotesListPage: React.FC = () => {
   const [viewingNoteId, setViewingNoteId] = useState<string | null>(null);
   // Selected note for quick modal edit
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [publishingNoteId, setPublishingNoteId] = useState<string | null>(null);
   // Modal for creating a new note
   const [createNoteModalOpen, setCreateNoteModalOpen] = useState(false);
   const [createNoteFolder, setCreateNoteFolder] = useState<string | undefined>(undefined);
@@ -41,6 +43,11 @@ export const NotesListPage: React.FC = () => {
   const includeDeleted = searchParams.get('includeDeleted') === 'true';
   const sortBy = (searchParams.get('sortBy') as 'startDate' | 'type' | 'folder' | 'title') || undefined;
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined;
+  const privacyMode = searchParams.get('privacyMode') || undefined;
+  const resolvedPrivacy =
+    privacyMode === 'private' ? 'private' : privacyMode === 'staging' || privacyMode === 'published' ? 'public' : undefined;
+  const resolvedStatus =
+    privacyMode === 'staging' ? 'DRAFT' : privacyMode === 'published' ? 'PUBLISHED' : undefined;
 
   const [limit] = useState(25);
   const [offset, setOffset] = useState(0);
@@ -61,6 +68,8 @@ export const NotesListPage: React.FC = () => {
     includeDeleted,
     sortBy,
     sortOrder,
+    privacy: resolvedPrivacy,
+    status: resolvedStatus,
     limit,
     offset,
   });
@@ -232,6 +241,8 @@ export const NotesListPage: React.FC = () => {
             onResetFilters={() => setSearchParams(new URLSearchParams())}
             onViewNote={setViewingNoteId}
             onEditNote={setEditingNoteId}
+            onPublishStaging={setPublishingNoteId}
+            privacyFilter={privacyMode}
             onDeleteNote={handleDelete}
             onRestoreNote={handleRestore}
             onPageChange={setOffset}
@@ -256,6 +267,13 @@ export const NotesListPage: React.FC = () => {
         open={Boolean(editingNoteId)}
         onClose={() => setEditingNoteId(null)}
         onOpenFullPage={(id) => navigate(`/notes/${id}`)}
+      />
+
+      {/* Publish to Staging / Public Modal */}
+      <PublishToStagingModal
+        noteId={publishingNoteId}
+        open={Boolean(publishingNoteId)}
+        onClose={() => setPublishingNoteId(null)}
       />
 
       {/* Create Note Modal */}

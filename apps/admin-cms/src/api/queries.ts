@@ -8,6 +8,7 @@ import {
   syncApi,
   statsApi,
   ingestionApi,
+  busRelayApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -16,6 +17,7 @@ import {
   CreateFolderInput,
   UpdateFolderInput,
   QueryNotesParams,
+  DriveBusEventsFilter,
 } from '../types';
 
 // Feeds Queries & Mutations
@@ -603,14 +605,16 @@ export function useSyncChanges(since?: string) {
     queryKey: ['sync', since],
     queryFn: () => syncApi.getChanges(since),
     refetchInterval: 30000, // Background sync poll every 30s
+    refetchIntervalInBackground: false,
   });
 }
 
-export function useGDriveUpdates(limit = 25, refetchInterval = 10000) {
+export function useGDriveUpdates(limit = 25, refetchInterval = 15000) {
   return useQuery({
     queryKey: ['sync-updates', limit],
     queryFn: () => syncApi.getUpdates(limit),
     refetchInterval,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -619,7 +623,8 @@ export function useSystemStats() {
   return useQuery({
     queryKey: ['system-stats'],
     queryFn: () => statsApi.getStats(),
-    refetchInterval: 15000, // Refresh metrics every 15s
+    refetchInterval: 20000, // Refresh metrics every 20s
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -631,19 +636,21 @@ export function useSystemStats() {
 // Ingestion Watcher Hooks (Sparks & Google Drive)
 // ---------------------------------------------------------------------------
 
-export function useWatcherStatus(refetchInterval = 4000) {
+export function useWatcherStatus(refetchInterval = 15000) {
   return useQuery({
     queryKey: ['ingestion-watcher-status'],
     queryFn: () => ingestionApi.getWatcherStatus(),
-    refetchInterval,
+    refetchInterval: (query) => ((query.state.data as any)?.filesPending > 0 ? 4000 : refetchInterval),
+    refetchIntervalInBackground: false,
   });
 }
 
-export function useIngestedFiles(status?: string, limit = 50, refetchInterval = 4000) {
+export function useIngestedFiles(status?: string, limit = 50, refetchInterval = 15000) {
   return useQuery({
     queryKey: ['ingestion-files', { status, limit }],
     queryFn: () => ingestionApi.getIngestedFiles(status, limit),
     refetchInterval,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -672,5 +679,47 @@ export function useCreateTestSpark() {
   });
 }
 
+// LemonBus Relay Hooks
+export function useDriveBusStatus(refetchInterval = 10000) {
+  return useQuery({
+    queryKey: ['drive-bus-status'],
+    queryFn: () => busRelayApi.getStatus(),
+    refetchInterval,
+    refetchIntervalInBackground: false,
+  });
+}
 
+export function useDriveBusEvents(filter?: DriveBusEventsFilter, refetchInterval = 10000) {
+  return useQuery({
+    queryKey: ['drive-bus-events', filter],
+    queryFn: () => busRelayApi.getEvents(filter),
+    refetchInterval,
+    refetchIntervalInBackground: false,
+  });
+}
 
+export function useTriggerBusCatchUp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => busRelayApi.runCatchUp(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drive-bus-status'] });
+      queryClient.invalidateQueries({ queryKey: ['drive-bus-events'] });
+      queryClient.invalidateQueries({ queryKey: ['sync-updates'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+export function usePublishTestBusEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data?: { title?: string; folderPath?: string }) =>
+      busRelayApi.publishTestEvent(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drive-bus-status'] });
+      queryClient.invalidateQueries({ queryKey: ['drive-bus-events'] });
+      queryClient.invalidateQueries({ queryKey: ['sync-updates'] });
+    },
+  });
+}

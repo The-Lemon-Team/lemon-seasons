@@ -15,6 +15,7 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import { SparksIngestionTab } from './components/SparksIngestionTab';
+import { BusRelayTab } from './components/bus';
 import { NoteType } from '@lenta/shared';
 import {
   ingestionApi,
@@ -68,13 +69,20 @@ export const GeneratorLabPage: React.FC = () => {
   const [isLoadingPolitics, setIsLoadingPolitics] = useState(false);
   const [politicsList, setPoliticsList] = useState<PoliticalEventItem[]>([]);
 
-  // Load Status on mount
+  // Load Status on mount, and lazily load tab data only when that tab is active
   useEffect(() => {
     loadStatus();
-    loadMovies('');
-    loadHolidays(2026, 'russian');
-    loadPolitics();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'movies' && moviesList.length === 0) {
+      loadMovies('');
+    } else if (activeTab === 'holidays' && holidaysList.length === 0) {
+      loadHolidays(2026, 'russian');
+    } else if (activeTab === 'politics' && politicsList.length === 0) {
+      loadPolitics();
+    }
+  }, [activeTab]);
 
   const loadStatus = async () => {
     try {
@@ -347,6 +355,19 @@ export const GeneratorLabPage: React.FC = () => {
           onChange={(key) => setSearchParams({ tab: key })}
           tabBarStyle={{ marginBottom: 12 }}
           items={[
+            // TAB: LemonBus Cloud Relay & P2P Event Bus
+            {
+              key: 'bus',
+              label: (
+                <span className="flex items-center gap-2 font-semibold text-sm">
+                  <span className="material-symbols-outlined text-[18px] text-emerald-400">
+                    podcasts
+                  </span>
+                  Шина событий LemonBus
+                </span>
+              ),
+              children: <BusRelayTab />,
+            },
             // TAB 0: Gemini Sparks & Google Drive Ingestion Hub
             {
               key: 'sparks',

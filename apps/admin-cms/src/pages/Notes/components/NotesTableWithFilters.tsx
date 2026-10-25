@@ -33,6 +33,8 @@ export interface NotesTableWithFiltersProps {
   onResetFilters: () => void;
   onViewNote: (id: string) => void;
   onEditNote: (id: string) => void;
+  onPublishStaging?: (id: string) => void;
+  privacyFilter?: string;
   onDeleteNote: (id: string) => void;
   onRestoreNote: (id: string) => void;
   onPageChange: (newOffset: number) => void;
@@ -65,6 +67,8 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
   onResetFilters,
   onViewNote,
   onEditNote,
+  onPublishStaging,
+  privacyFilter,
   onDeleteNote,
   onRestoreNote,
   onPageChange,
@@ -373,6 +377,22 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
             />
           </div>
 
+          {/* Privacy / Staging Contour Filter */}
+          <div className="w-36 sm:w-44">
+            <AppSelect
+              value={privacyFilter || ''}
+              onChange={(val) => onFilterChange('privacyMode', val || undefined)}
+              options={[
+                { value: '', label: 'Контур: Все заметки' },
+                { value: 'private', label: '🔒 Приватные (Private)' },
+                { value: 'staging', label: '⏳ В Стейджинге (Draft)' },
+                { value: 'published', label: '🌐 Опубликовано (Public)' },
+              ]}
+              size="sm"
+              placeholder="Контур: Все заметки"
+            />
+          </div>
+
           {/* Include Deleted Checkbox */}
           <label className="ml-auto flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant hover:text-on-surface cursor-pointer select-none">
             <input
@@ -390,7 +410,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
       <div className="flex-1 overflow-auto min-h-0 relative">
         <div className="min-w-[760px] flex flex-col min-h-full">
           {/* Table Header (Sticky at top of scrollable container) */}
-          <div className="sticky top-0 z-10 grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-1.5 border-b border-tile-border bg-tile-subtle font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold select-none shadow-xs">
+          <div className="sticky top-0 z-10 grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_90px] gap-3 px-3.5 py-1.5 border-b border-tile-border bg-tile-subtle font-mono text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold select-none shadow-xs">
             {renderSortableHeader('title', `${t.titleCol} & ${t.feedCol}`)}
             {renderSortableHeader('folder', t.folderCol)}
             {renderSortableHeader('type', t.typeCol)}
@@ -407,6 +427,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
                 note={note}
                 onView={onViewNote}
                 onEdit={onEditNote}
+                onPublishStaging={onPublishStaging}
                 onDelete={onDeleteNote}
                 onRestore={onRestoreNote}
                 onSelectFolder={onSelectFolder}

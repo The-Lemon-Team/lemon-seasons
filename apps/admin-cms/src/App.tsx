@@ -53,6 +53,7 @@ const AppContent: React.FC = () => {
                 <Route path="/taxonomy" element={<Navigate to="/notes" replace />} />
                 <Route path="/generators" element={<GeneratorLabPage />} />
                 <Route path="/sync" element={<Navigate to="/generators?tab=sparks" replace />} />
+                <Route path="/bus" element={<Navigate to="/generators?tab=bus" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

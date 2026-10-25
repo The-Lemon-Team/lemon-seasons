@@ -22,6 +22,7 @@ import { useNote, useDeleteNote } from '../api/queries';
 import { NoteTypeBadge } from './NoteTypeBadge';
 import { HashtagBadge } from './HashtagBadge';
 import { EditNoteModal } from './EditNoteModal';
+import { PublishToStagingModal } from './PublishToStagingModal';
 import { useAdminI18n } from '../i18n';
 
 export interface NoteDetailModalProps {
@@ -44,6 +45,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
   const { t } = useAdminI18n();
   const navigate = useNavigate();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isPublishStagingOpen, setIsPublishStagingOpen] = useState(false);
   const { data: note, isLoading } = useNote(noteId || '');
   const deleteNoteMutation = useDeleteNote();
 
@@ -222,6 +224,19 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
             <div className="min-w-0 space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <NoteTypeBadge type={note.type} size="sm" />
+                {note.privacy === 'public' && note.status === 'PUBLISHED' ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-semibold">
+                    🌐 Public {note.publicFeed ? `• ${note.publicFeed.title}` : ''}
+                  </span>
+                ) : note.privacy === 'public' ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold">
+                    ⏳ В Стейджинге {note.publicFeed ? `• ${note.publicFeed.title}` : ''}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-500/15 border border-slate-500/30 text-slate-300 font-medium">
+                    🔒 Private
+                  </span>
+                )}
                 {note.status && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-control border border-tile-border text-text-muted font-medium">
                     {note.status}
@@ -272,6 +287,16 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 aria-label="Копировать текст записи"
               >
                 <Copy className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPublishStagingOpen(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500/25 transition-all text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer"
+                title="Отправить в Стейджинг-хаб / Опубликовать в паблик"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">В Стейджинг</span>
               </button>
 
               <button
@@ -550,6 +575,16 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 
               <button
                 type="button"
+                onClick={() => setIsPublishStagingOpen(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500/25 transition-all text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer"
+                title="Отправить в Стейджинг-хаб / Опубликовать в паблик"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">В Стейджинг</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsEditOpen(true)}
                 className="h-7 px-3 rounded bg-primary text-on-primary hover:bg-primary-fixed-dim text-xs font-mono font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
@@ -560,6 +595,12 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           </div>
         </div>
       )}
+
+      <PublishToStagingModal
+        noteId={note?.id || null}
+        open={isPublishStagingOpen}
+        onClose={() => setIsPublishStagingOpen(false)}
+      />
 
       <EditNoteModal
         noteId={note?.id || null}

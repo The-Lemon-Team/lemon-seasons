@@ -9,6 +9,7 @@ export interface NoteTableRowProps {
   note: Note;
   onView: (id: string) => void;
   onEdit: (id: string) => void;
+  onPublishStaging?: (id: string) => void;
   onDelete: (id: string) => void;
   onRestore: (id: string) => void;
   onSelectFolder: (folderPath?: string) => void;
@@ -20,6 +21,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
   note,
   onView,
   onEdit,
+  onPublishStaging,
   onDelete,
   onRestore,
   onSelectFolder,
@@ -54,7 +56,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
 
   return (
     <div
-      className={`group grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_70px] gap-3 px-3.5 py-1.5 items-center hover:bg-tile-subtle transition-colors ${
+      className={`group grid grid-cols-[2.8fr_1.8fr_1.1fr_1.6fr_2fr_90px] gap-3 px-3.5 py-1.5 items-center hover:bg-tile-subtle transition-colors ${
         isDeleted ? 'opacity-50' : ''
       }`}
     >
@@ -86,6 +88,27 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
             {note.title}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap mt-0.5 leading-none">
+            {note.privacy === 'public' && note.status === 'PUBLISHED' ? (
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-semibold"
+                title={note.publicFeed ? `Опубликовано в: ${note.publicFeed.title}` : 'Опубликовано в паблике'}
+              >
+                <span>🌐 Public</span>
+                {note.publicFeed && <span>• {note.publicFeed.title}</span>}
+              </span>
+            ) : note.privacy === 'public' ? (
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold"
+                title={note.publicFeed ? `В стейджинге: ${note.publicFeed.title}` : 'На премодерации в стейджинге'}
+              >
+                <span>⏳ Staging</span>
+                {note.publicFeed && <span>• {note.publicFeed.title}</span>}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-slate-500/10 border border-slate-500/30 text-slate-400">
+                <span>🔒 Private</span>
+              </span>
+            )}
             {note.feed && (
               <span className="text-[10px] font-mono text-outline hover:text-on-surface-variant truncate">
                 {note.feed.title}
@@ -198,6 +221,15 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
       <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {!isDeleted ? (
           <>
+            {onPublishStaging && (
+              <button
+                onClick={() => onPublishStaging(note.id)}
+                className="p-0.5 text-amber-400 hover:text-emerald-400 transition-colors rounded hover:bg-tile-subtle cursor-pointer"
+                title="В Стейджинг / Публикация в паблик"
+              >
+                <span className="material-symbols-outlined text-[16px]">send</span>
+              </button>
+            )}
             <button
               onClick={() => onView(note.id)}
               className="p-0.5 text-on-surface-variant hover:text-primary transition-colors rounded hover:bg-tile-subtle cursor-pointer"

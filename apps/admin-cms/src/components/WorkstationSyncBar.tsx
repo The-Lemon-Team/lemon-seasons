@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tooltip, message } from 'antd';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles, Radio } from 'lucide-react';
 import { syncApi } from '../api/client';
 import { useGDriveUpdates } from '../api/queries';
 import { SyncStatusResponse } from '../types';
@@ -11,6 +12,7 @@ const STORAGE_LAST_SEEN_KEY = 'lemon_gdrive_last_seen_sync';
 
 export const WorkstationSyncBar: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const lastKnownIdsRef = useRef<Set<string>>(new Set());
@@ -164,6 +166,21 @@ export const WorkstationSyncBar: React.FC = () => {
                 ↑{unpushedCount}
               </span>
             )}
+          </button>
+        </Tooltip>
+
+        <div className="h-3.5 w-[1px] bg-control-border mx-0.5" />
+
+        <div className="h-3.5 w-[1px] bg-control-border mx-0.5" />
+
+        {/* LemonBus Shortcut */}
+        <Tooltip title="Открыть интерактивную шину событий LemonBus">
+          <button
+            onClick={() => navigate('/generators?tab=bus')}
+            className="h-5.5 flex items-center gap-1 px-1.5 rounded hover:bg-tile-subtle transition-colors cursor-pointer text-on-surface font-mono text-[10px]"
+          >
+            <Radio className="w-2.5 h-2.5 text-emerald-500 animate-pulse" />
+            <span className="font-semibold">Шина</span>
           </button>
         </Tooltip>
 
