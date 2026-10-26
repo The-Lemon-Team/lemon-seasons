@@ -30,7 +30,6 @@
     "calendar:dev": "pnpm --filter @lenta/calendar-app run dev",
     "calendar:build": "pnpm --filter @lenta/calendar-app run build",
     "feed:dev": "pnpm --filter @lenta/feed-app run dev",
-    "feed:staging:dev": "pnpm --filter @lenta/feed-app run dev:staging",
     "feed:public:dev": "pnpm --filter @lenta/feed-app run dev:public",
     "feed:build": "pnpm --filter @lenta/feed-app run build",
     "shared:build": "pnpm --filter @lenta/shared run build",

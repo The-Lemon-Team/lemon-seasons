@@ -20,6 +20,7 @@ import {
   GDriveSyncResult,
   GDriveRecentUpdatesResponse,
   GDriveUpdateItem,
+  AppRuntimeMode,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -33,14 +34,24 @@ export const apiClient = axios.create({
 });
 
 let currentCalendarAuthToken: string | null = null;
+let currentCalendarAppMode: AppRuntimeMode = 'dev';
 
 export const setCalendarAuthToken = (tok: string | null) => {
   currentCalendarAuthToken = tok;
 };
 
+export const setCalendarAppMode = (mode: AppRuntimeMode) => {
+  currentCalendarAppMode = mode;
+};
+
+export const getCalendarAppMode = (): AppRuntimeMode => currentCalendarAppMode;
+
 apiClient.interceptors.request.use((config) => {
   if (currentCalendarAuthToken) {
     config.headers.Authorization = `Bearer ${currentCalendarAuthToken}`;
+  }
+  if (currentCalendarAppMode) {
+    config.headers['x-app-mode'] = currentCalendarAppMode;
   }
   return config;
 });
@@ -87,7 +98,12 @@ export const calendarApi = {
 
   // Range Notes Query
   getNotes: async (params?: QueryNotesParams): Promise<NotesResponse> => {
-    const res = await apiClient.get<NotesResponse>('/notes', { params });
+    const res = await apiClient.get<NotesResponse>('/notes', {
+      params: {
+        appMode: currentCalendarAppMode,
+        ...params,
+      },
+    });
     return res.data;
   },
 

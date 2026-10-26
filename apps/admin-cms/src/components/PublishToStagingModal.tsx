@@ -190,7 +190,7 @@ export const PublishToStagingModal: React.FC<PublishToStagingModalProps> = ({
 
               <div className="flex items-center gap-2 text-[11px] font-mono">
                 <a
-                  href="http://localhost:5175"
+                  href="http://localhost:5175?appMode=staging"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-amber-400 hover:underline"

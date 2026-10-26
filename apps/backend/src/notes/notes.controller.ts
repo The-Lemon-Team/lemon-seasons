@@ -89,7 +89,14 @@ export class NotesController {
 
   @Get()
   @ApiOperation({ summary: 'Query notes with filters (range, type, feed, taxonomy, search)' })
-  findAll(@Query() query: QueryNotesDto, @CurrentUser() user?: RequestUser) {
+  findAll(
+    @Query() query: QueryNotesDto,
+    @CurrentUser() user?: RequestUser,
+    @Headers('x-app-mode') appModeHeader?: string,
+  ) {
+    if (!query.appMode && appModeHeader) {
+      query.appMode = appModeHeader;
+    }
     return this.notesService.findAll(query, user?.isAdmin ?? false);
   }
 

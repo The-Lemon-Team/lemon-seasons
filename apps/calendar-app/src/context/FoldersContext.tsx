@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { Folder, FolderTreeNode, FolderPrivacy, CreateFolderInput, Note } from '@lenta/shared';
 import { useTimeSliceNotes } from '../api/queries';
+import { useAppMode } from './AppModeContext';
 import { calendarApi } from '../api/client';
 import {
   FOLDERS_STORAGE_KEY,
