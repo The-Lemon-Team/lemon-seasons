@@ -234,7 +234,7 @@ export class SyncOrchestratorService {
               startDate: true,
               folderPath: true,
               summary: true,
-              curator: true,
+              author: true,
             },
           },
         },
@@ -257,7 +257,7 @@ export class SyncOrchestratorService {
           startDate: true,
           folderPath: true,
           summary: true,
-          curator: true,
+          author: true,
           updatedAt: true,
           externalId: true,
         },
@@ -284,7 +284,7 @@ export class SyncOrchestratorService {
         summary: f.note?.summary,
         folderPath: f.note?.folderPath,
         fileSize: f.fileSize,
-        curator: f.note?.curator,
+        author: f.note?.author,
       });
     }
 
@@ -305,7 +305,8 @@ export class SyncOrchestratorService {
         source: 'BUS',
         summary: n.summary,
         folderPath: n.folderPath,
-        curator: n.curator,
+        author: n.author,
+        curator: n.author,
       });
     }
 

@@ -74,7 +74,7 @@ async function main() {
         threadId: modelsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `### 🧠 Радар релизов: Выход моделей нового поколения
 
@@ -98,7 +98,7 @@ async function main() {
         threadId: modelsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `#### 🌐 Google: Анонс Gemini 4 Argon, Gemini 3.8 Flash и WeatherNext 3
 
@@ -115,11 +115,12 @@ async function main() {
           type: 'EVENT',
           title: 'Google: Анонсирована Gemini 4 Argon с окном вывода 1M токенов и WeatherNext 3',
           folder: '03_Research/AI',
+          author: 'Окация',
           curator: 'Окация',
           hashtags: ['google', 'gemini4argon', 'gemini38', 'weathernext', 'ai', 'кибербезопасность'],
           description: `## Google: Флагманская модель Gemini 4 Argon и экосистема обновления
 
-> **Куратор:** ⚡ Окация (Архитектор IT & AI)  
+> **Автор:** ⚡ Окация (Архитектор IT & AI)  
 > **Окно генерации:** 1 000 000 токенов (output window)  
 > **Статус доступа:** Закрытая программа Fairwind
 
@@ -140,7 +141,7 @@ async function main() {
         threadId: modelsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `#### 🟢 OpenAI: Шестое поколение GPT-6 (Astra, Sol, Luna) и отмена GPT-6.1 Astra
 
@@ -156,11 +157,12 @@ async function main() {
           type: 'EVENT',
           title: 'OpenAI: Презентация шестого поколения GPT-6 (Astra, Sol, Luna) и отмена GPT-6.1 Astra',
           folder: '03_Research/AI',
+          author: 'Окация',
           curator: 'Окация',
           hashtags: ['openai', 'gpt6', 'gpt6sol', 'gpt6astra', 'aiбезопасность'],
           description: `## OpenAI: Шестое поколение моделей GPT-6
 
-> **Куратор:** ⚡ Окация (Архитектор IT & AI)  
+> **Автор:** ⚡ Окация (Архитектор IT & AI)  
 > **Семейство:** Astra, Sol, Luna  
 > **Ценовой сдвиг:** Sol равен флагману за 20% стоимости  
 > **Аномалия:** Отмена GPT-6.1 Astra из-за провала тестов безопасности
@@ -180,7 +182,7 @@ async function main() {
         threadId: modelsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `#### 🟣 Anthropic: Линейка Claude 5.5 (Opus 5.5 и Sonnet 5.5) с кибербезопасным роутингом
 
@@ -196,11 +198,12 @@ async function main() {
           type: 'EVENT',
           title: 'Anthropic: Выпущена линейка Claude 5.5 (Opus 5.5 и Sonnet 5.5) с кибербезопасным роутингом',
           folder: '03_Research/AI',
+          author: 'Окация',
           curator: 'Окация',
           hashtags: ['anthropic', 'claude55', 'opus55', 'sonnet55', 'кибербезопасность'],
           description: `## Anthropic: Линейка Claude 5.5
 
-> **Куратор:** ⚡ Окация (Архитектор IT & AI)  
+> **Автор:** ⚡ Окация (Архитектор IT & AI)  
 > **Модели:** Opus 5.5, Sonnet 5.5  
 > **Инновация:** Алгоритмический кибербезопасный роутер запросов
 
@@ -268,7 +271,7 @@ async function main() {
         threadId: agentsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `### 🤖 Эра автономных ИИ-агентов: Тектонический переход
 
@@ -289,7 +292,7 @@ async function main() {
         threadId: agentsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `#### 🚀 Флагманы автономности: OpenAI Dots, Meta Muse и магазин сотрудников Grok 4.7
 
@@ -312,11 +315,12 @@ async function main() {
           type: 'EVENT',
           title: 'Автономные агенты: Запуск OpenAI Dots, Meta Muse и маркетплейса сотрудников Grok 4.7',
           folder: '03_Research/AI',
+          author: 'Окация',
           curator: 'Окация',
           hashtags: ['ииагенты', 'openaidots', 'metamuse', 'grok47', 'автономность', 'agentops'],
           description: `## Эра автономных агентов: Переход к фоновым процессам
 
-> **Куратор:** ⚡ Окация (Архитектор IT & AI)  
+> **Автор:** ⚡ Окация (Архитектор IT & AI)  
 > **Ключевые релизы:** OpenAI Dots, Meta Muse (Spark 1.3), Grok 4.7
 
 ### Сводка инициатив:
@@ -335,7 +339,7 @@ async function main() {
         threadId: agentsThread.id,
         sender: 'okatsiya',
         senderName: 'Окация',
-        senderRole: 'Архитектор и куратор контура IT & AI',
+        senderRole: 'Архитектор и редактор контура IT & AI',
         avatar: '⚡',
         text: `#### 💻 Смежные новости: Локальные вычисления и инфраструктура
 
@@ -357,11 +361,12 @@ async function main() {
           type: 'SINGLE',
           title: 'Локальные вычисления: Релиз ПК NVIDIA RTX Spark и Siri AI в обновлении iOS 27.2',
           folder: '03_Research/AI',
+          author: 'Окация',
           curator: 'Окация',
           hashtags: ['nvidia', 'rtxspark', 'apple', 'siri', 'локальныйии', 'железо'],
           description: `## Локальные вычисления и инфраструктура ИИ
 
-> **Куратор:** ⚡ Окация (Архитектор IT & AI)  
+> **Автор:** ⚡ Окация (Архитектор IT & AI)  
 > **Оборудование:** NVIDIA RTX Spark, Apple Neural Engine (iOS 27.2)
 
 ### Ключевые аспекты:
@@ -407,7 +412,7 @@ async function main() {
           hashtags: ['ftc', 'autowarcom', 'пентагон', 'иидолг', 'уоллстрит', 'регуляторика'],
           description: `## Институциональные вызовы автономного ИИ
 
-> **Кураторы:** 🌐 Kirk Kitten & ⚡ Окация  
+> **Авторы:** 🌐 Kirk Kitten & ⚡ Окация  
 > **Темы:** Расследование FTC, военное командование AUTOWARCOM, финмодель CapEx ($88 млрд)
 
 ### Сводка:
@@ -463,7 +468,8 @@ async function main() {
       title: 'Выход моделей нового поколения: Gemini 4 Argon, GPT-6 и Claude 5.5',
       type: NoteType.EVENT,
       startDate: new Date('2026-10-04T09:00:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 96,
       hashtags: ['ai', 'llm', 'модели', 'gemini4', 'gpt6', 'claude55'],
       description: `## Выход моделей нового поколения: Синтез анонсов осени 2026
@@ -484,13 +490,14 @@ async function main() {
 - **Claude 5.5 (Opus 5.5 и Sonnet 5.5):** Обновленный Sonnet 5.5 получил динамический кибербезопасный роутинг потенциально рискованных запросов.
 
 ---
-*Материал подготовлен куратором контура IT & AI (Окация). Мы ведем непрерывный мониторинг и пополняем ленту новыми моделями по мере их выхода.*`,
+*Материал подготовлен автором контура IT & AI (Окация). Мы ведем непрерывный мониторинг и пополняем ленту новыми моделями по мере их выхода.*`,
     },
     {
       title: 'Google: Анонсирована Gemini 4 Argon с окном вывода 1M токенов, Gemini 3.8 Flash и WeatherNext 3',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T09:30:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 94,
       hashtags: ['google', 'gemini4argon', 'fairwind', 'gemini38', 'weathernext'],
       description: `## Google: Анонс флагмана Gemini 4 Argon и системы WeatherNext 3
@@ -504,7 +511,8 @@ Google представила новое поколение ИИ-систем:
       title: 'OpenAI: Презентация семейства GPT-6 (Astra, Sol, Luna) и отмена релиза GPT-6.1 Astra',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T10:00:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 95,
       hashtags: ['openai', 'gpt6', 'gpt6sol', 'gpt6astra', 'aiбезопасность'],
       description: `## OpenAI: Шестое поколение GPT-6 и отмена релиза Astra 6.1
@@ -517,7 +525,8 @@ Google представила новое поколение ИИ-систем:
       title: 'Anthropic: Выпуск Claude 5.5 (Opus 5.5 и Sonnet 5.5) со специальным алгоритмом киберзащиты',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T10:30:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 92,
       hashtags: ['anthropic', 'claude55', 'opus55', 'sonnet55', 'кибербезопасность'],
       description: `## Anthropic: Линейка Claude 5.5
@@ -529,7 +538,8 @@ Google представила новое поколение ИИ-систем:
       title: 'Эра автономных ИИ-агентов: Переход от диалоговых чат-ботов к постоянным рабочим процессам',
       type: NoteType.EVENT,
       startDate: new Date('2026-10-04T11:00:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 96,
       hashtags: ['ииагенты', 'автономность', 'dots', 'muse', 'grok47', 'ai'],
       description: `## Эра автономных ИИ-агентов: Глобальная смена парадигмы
@@ -550,7 +560,8 @@ Google представила новое поколение ИИ-систем:
       title: 'Автономные агенты: OpenAI Dots, Meta Muse и магазин виртуальных сотрудников Grok 4.7',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T11:30:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 93,
       hashtags: ['openaidots', 'metamuse', 'grok47', 'иисотрудники', 'автономность'],
       description: `## Флагманы агентной автономии: Dots, Muse и Grok 4.7
@@ -563,7 +574,8 @@ Google представила новое поколение ИИ-систем:
       title: 'Локальные вычисления и инфраструктура: Линейка ПК NVIDIA RTX Spark и Siri AI в iOS 27.2',
       type: NoteType.SINGLE,
       startDate: new Date('2026-10-04T12:00:00.000Z'),
-      curator: 'Окация',
+      author: 'Окация',
+          curator: 'Окация',
       resonanceScore: 90,
       hashtags: ['nvidia', 'rtxspark', 'apple', 'siri', 'локальныйии'],
       description: `## Локальные вычисления и приватность ИИ-агентов
@@ -610,7 +622,8 @@ Google представила новое поколение ИИ-систем:
           description: item.description,
           type: item.type,
           startDate: item.startDate,
-          curator: item.curator,
+          author: item.author || item.curator,
+          curator: item.author || item.curator,
           resonanceScore: item.resonanceScore,
           feedId: aiFeed.id,
           containerId: aiFolder?.containerId || 'main-vault',

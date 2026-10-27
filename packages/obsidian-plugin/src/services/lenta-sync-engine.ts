@@ -359,7 +359,8 @@ export class LentaSyncEngine {
       new Date().toISOString();
 
     const noteId = parsed.lentaId || parsed.frontmatter.id;
-    const curatorVal = parsed.frontmatter.curator || undefined;
+    const authorVal = parsed.frontmatter.author || parsed.frontmatter.curator || undefined;
+    const curatorVal = authorVal;
 
     if (noteId) {
       // Update existing note
@@ -371,7 +372,8 @@ export class LentaSyncEngine {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || null,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || null,
         icon: parsed.frontmatter.icon || null,
-        curator: curatorVal || null,
+        author: authorVal || null,
+        curator: authorVal || null,
       });
 
       // Update local file if attachments were converted
@@ -426,7 +428,8 @@ export class LentaSyncEngine {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || undefined,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || undefined,
         icon: parsed.frontmatter.icon || undefined,
-        curator: curatorVal,
+        author: authorVal,
+        curator: authorVal,
       });
 
       // Update local file with generated lenta_id
@@ -521,7 +524,8 @@ export class LentaSyncEngine {
         folders: relativeFolder
           ? [{ id: '', noteId: lentaId, folderId: '', isPrimary: true, order: 0, folder: { id: '', name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: '', updatedAt: '', deletedAt: null } }]
           : [],
-        curator: parsed.frontmatter.curator || null,
+        author: parsed.frontmatter.author || parsed.frontmatter.curator || null,
+        curator: parsed.frontmatter.author || parsed.frontmatter.curator || null,
         createdAt: '',
         updatedAt: new Date().toISOString(),
         deletedAt: null,

@@ -34,7 +34,7 @@ export class RelatedNotesResolverService {
       type: NoteType | string;
       startDate: Date | string;
       icon: string | null;
-      curator: string | null;
+      author: string | null;
       metadata: any;
       externalId: string | null;
     }>,
@@ -96,7 +96,7 @@ export class RelatedNotesResolverService {
           type: true,
           startDate: true,
           icon: true,
-          curator: true,
+          author: true,
           metadata: true,
           externalId: true,
         },
@@ -157,7 +157,8 @@ export class RelatedNotesResolverService {
           targetTitle: target.title,
           targetType: target.type,
           targetIcon: target.icon || undefined,
-          targetCurator: target.curator || undefined,
+          targetAuthor: target.author || undefined,
+          targetCurator: target.author || undefined,
           targetDate: typeof target.startDate === 'string' ? target.startDate : target.startDate.toISOString(),
           isParent,
         };
@@ -209,7 +210,7 @@ export class RelatedNotesResolverService {
         type: true,
         startDate: true,
         icon: true,
-        curator: true,
+        author: true,
         metadata: true,
         externalId: true,
         description: true,

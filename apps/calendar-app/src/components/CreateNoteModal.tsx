@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAppMode } from '../context/AppModeContext';
 import { NoteType } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
@@ -41,6 +42,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 }) => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { appMode } = useAppMode();
   const { data: feeds = [] } = useFeeds();
 
   let folders: FolderType[] = [];
@@ -60,7 +62,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [folderPath, setFolderPath] = useState(initialFolderPath || '');
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
-  const [curator, setCurator] = useState('');
+  const [author, setAuthor] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         folderPath: cleanFolder || undefined,
         folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
-        curator: curator.trim() || undefined,
+        author: author.trim() || undefined,
       });
 
       // Invalidate queries so that the newly created note is immediately displayed on the calendar & folder views
@@ -120,7 +122,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         setDescription('');
         setHashtagsInput('');
         setFolderPath('');
-        setCurator('');
+        setAuthor('');
         setIsCustomFolder(false);
         onSuccess?.();
         onClose();

@@ -110,6 +110,26 @@ export const KNOWN_SPARK_THEMES: Record<string, SparkFolderTheme> = {
     feedSlug: 'spark-changelogsfeed',
     defaultDelta: 8,
   },
+  'Spark/youtube/oneday': {
+    folderPath: 'Spark/youtube/oneday',
+    cleanName: 'sparks/YouTube-OneDay',
+    emoji: '📺',
+    accentColor: '#ef4444',
+    badgeBg: 'rgba(239, 68, 68, 0.12)',
+    borderAccent: '#dc2626',
+    feedSlug: 'spark-youtube-oneday',
+    defaultDelta: 4,
+  },
+  'Spark/youtube': {
+    folderPath: 'Spark/youtube',
+    cleanName: 'sparks/YouTube',
+    emoji: '📺',
+    accentColor: '#ef4444',
+    badgeBg: 'rgba(239, 68, 68, 0.12)',
+    borderAccent: '#dc2626',
+    feedSlug: 'spark-youtube-oneday',
+    defaultDelta: 4,
+  },
   'Spark/changelogsfeed/Google': {
     folderPath: 'Spark/changelogsfeed/Google',
     cleanName: 'sparks/Changelogs/Google',
@@ -280,7 +300,7 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeItem> = {
   'spark-ai': { slug: 'spark-ai', title: 'AI & Нейросети (Spark)', shortTitle: 'Spark AI', accentColor: '#a855f7', emoji: '🤖' },
   'spark-habr': { slug: 'spark-habr', title: 'Хабр & IT (Spark)', shortTitle: 'Spark Хабр', accentColor: '#06b6d4', emoji: '📰' },
   'spark-cyber-security': { slug: 'spark-cyber-security', title: 'Cyber Security (Spark)', shortTitle: 'CyberSec', accentColor: '#10b981', emoji: '🛡️' },
-  'spark-xakep': { slug: 'spark-xakep', title: 'Журнал «Хакер» (Spark)', shortTitle: 'Хакер', accentColor: '#22c55e', emoji: '👾' },
+  'spark-xakep': { slug: 'spark-xakep', title: 'Журнал «Хакер» (Spark)', shortTitle: 'Журнал «Хакер»', accentColor: '#22c55e', emoji: '👾' },
   'spark-notebooklmai': { slug: 'spark-notebooklmai', title: 'NotebookLM AI (Spark)', shortTitle: 'NotebookLM', accentColor: '#a855f7', emoji: '🎙️' },
   'spark-notebooklmai-regular': { slug: 'spark-notebooklmai-regular', title: 'NotebookLM • Обычные подкасты', shortTitle: 'Обычные', accentColor: '#a855f7', emoji: '🎙️' },
   'spark-notebooklmai-telegram': { slug: 'spark-notebooklmai-telegram', title: 'NotebookLM • Telegram подкасты', shortTitle: 'Telegram', accentColor: '#2481cc', emoji: '✈️' },
@@ -290,6 +310,7 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeItem> = {
   'spark-changelogsfeed-anthropic': { slug: 'spark-changelogsfeed-anthropic', title: 'Anthropic Changelogs', shortTitle: 'Anthropic', accentColor: '#d97706', emoji: '⚡' },
   'spark-рф-и-украина': { slug: 'spark-рф-и-украина', title: 'Сводки РФ & Украина', shortTitle: 'РФ-Украина', accentColor: '#60a5fa', emoji: '🕊️' },
   'spark-политика': { slug: 'spark-политика', title: 'Политика & Мир (Spark)', shortTitle: 'Политика', accentColor: '#f43f5e', emoji: '🌐' },
+  'spark-youtube-oneday': { slug: 'spark-youtube-oneday', title: 'YouTube • OneDay (Spark)', shortTitle: 'YouTube', accentColor: '#ef4444', emoji: '📺' },
 };
 
 const DYNAMIC_FEED_PALETTES = [

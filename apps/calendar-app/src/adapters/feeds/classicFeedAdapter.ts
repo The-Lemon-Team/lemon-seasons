@@ -197,7 +197,8 @@ export const ClassicFeedAdapter: FeedAdapter = {
         timeSlot: (n.metadata as any)?.timeSlot,
         resonanceScore: (n.metadata as any)?.resonanceScore ?? (n as any).resonanceScore,
         sourceLink: n.sourceLink,
-        curator: n.curator || 'Календарь',
+        author: (n as any).author || n.curator || 'Календарь',
+        curator: (n as any).author || n.curator || 'Календарь',
         hashtags: n.hashtags?.map((h) => h.name) || [],
         rawPayload: n,
       };

@@ -74,7 +74,7 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
     ? item.resonanceScore
     : ((actualNote.metadata as any)?.resonanceScore ?? (actualNote as any).resonanceScore);
   const sourceLink = item ? item.sourceLink : actualNote.sourceLink;
-  const curator = item ? item.curator : actualNote.curator;
+  const author = item ? ((item as any).author || item.curator) : ((actualNote as any).author || actualNote.curator);
   const hashtags = item ? item.hashtags || [] : actualNote.hashtags?.map((h) => h.name) || [];
 
   const formattedDate = new Date(publishedAt).toLocaleDateString('ru-RU', {
@@ -244,10 +244,10 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
             </div>
           )}
 
-          {/* Curator Source */}
+          {/* Author Source */}
           <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             <Sparkles className="w-3 h-3 text-[#2481cc]" />
-            <span>{curator && curator !== 'auto' ? curator : 'Spark Feed'}</span>
+            <span>{author && author !== 'auto' ? author : 'Spark Feed'}</span>
           </div>
         </div>
 

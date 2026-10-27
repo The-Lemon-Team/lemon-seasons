@@ -181,6 +181,8 @@ export interface Note {
   folders?: NoteFolder[];
   images?: NoteImage[];
   links?: NoteLink[];
+  author?: string | null;
+  /** @deprecated Use author */
   curator?: string | null;
   parentNoteId?: string | null;
   parentNote?: Note | null;
@@ -214,6 +216,7 @@ export interface IngestionFile {
 }
 
 export interface QueryNotesParams {
+  appMode?: AppRuntimeMode;
   feedId?: string;
   feedSlug?: string;
   publicFeedId?: string;
@@ -242,6 +245,8 @@ export interface QueryNotesParams {
   containerId?: string;
   containers?: string[] | string;
   userId?: string;
+  author?: string;
+  /** @deprecated Use author */
   curator?: string;
   limit?: number;
   offset?: number;
@@ -269,6 +274,8 @@ export interface CreateNoteInput {
   endDate?: string | null;
   sourceLink?: string;
   icon?: string;
+  author?: string;
+  /** @deprecated Use author */
   curator?: string;
   parentNoteId?: string;
   tagIds?: string[];
@@ -297,6 +304,8 @@ export interface UpdateNoteInput {
   icon?: string;
   feedId?: string;
   containerId?: string | null;
+  author?: string | null;
+  /** @deprecated Use author */
   curator?: string | null;
   parentNoteId?: string | null;
   tagIds?: string[];
@@ -405,6 +414,8 @@ export interface LentaFrontmatter {
   icon?: string;
   sourceLink?: string;
   source_link?: string;
+  author?: string;
+  /** @deprecated Use author */
   curator?: string;
   persona?: string;
   assistants?: string[];
@@ -425,6 +436,8 @@ export interface RelatedNoteItem {
   targetNoteId?: string;
   targetTitle?: string;
   targetType?: NoteType | string;
+  targetAuthor?: string | null;
+  /** @deprecated Use targetAuthor */
   targetCurator?: string | null;
   targetIcon?: string | null;
   targetDate?: string | null;
@@ -488,6 +501,8 @@ export interface CalendarFilterState {
   hashtags: string[];
   types: NoteType[];
   search: string;
+  author?: string;
+  /** @deprecated Use author */
   curator?: string;
 }
 
@@ -618,6 +633,8 @@ export interface ContainerSourceConfig {
 
 export interface ContainerAgentConfig {
   enabled?: boolean;
+  agentId?: string;
+  /** @deprecated Use agentId */
   curatorId?: string;
   name?: string;
   emoji?: string;
@@ -703,6 +720,8 @@ export interface ParsedNoteCard {
   icon?: string;
   sourceLink?: string;
   description?: string;
+  author?: string;
+  /** @deprecated Use author */
   curator?: string;
   selected?: boolean;
 }
@@ -768,26 +787,12 @@ export interface SystemStats {
 // Chat Architecture Types (Folders, Threads & Persisted Messages)
 // ---------------------------------------------------------------------------
 
-export type ChatType = 'TOPIC' | 'CURATOR' | 'ASSISTANT' | 'GROUP' | 'DIRECT';
+export type ChatType = 'TOPIC' | 'ASSISTANT' | 'GROUP' | 'DIRECT';
 
 export type AssistantSkill = 'IMAGE_GEN' | 'NOTEBOOKLM_PODCAST' | 'NOTE_FORMATTER' | 'FEED_MAKER';
 
-export interface Curator {
-  id: string;
-  folderId?: string | null;
-  name: string;
-  shortName?: string | null;
-  roleTitle: string;
-  personality?: string | null;
-  systemPrompt: string;
-  emoji: string;
-  accentColor: string;
-  isSystem: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
-  folder?: ChatFolder | null;
-}
+/** @deprecated Curators model is obsolete */
+export type Curator = Record<string, any>;
 
 export interface Assistant {
   id: string;
@@ -818,11 +823,9 @@ export interface ChatFolder {
   parent?: ChatFolder | null;
   children?: ChatFolder[];
   threads?: ChatThread[];
-  curators?: Curator[];
   assistants?: Assistant[];
   _count?: {
     threads?: number;
-    curators?: number;
     assistants?: number;
   };
   createdAt: string;
@@ -836,8 +839,6 @@ export interface ChatThread {
   type: ChatType;
   folderId?: string | null;
   folder?: ChatFolder | null;
-  curatorId?: string | null;
-  curator?: Curator | null;
   assistantId?: string | null;
   assistant?: Assistant | null;
   targetAgent?: string | null;
@@ -861,10 +862,10 @@ export interface TelegramNewsPreview {
   summary: string;
   rawText?: string;
   imageUrl?: string;
-  curatorId: string;
-  curatorName: string;
-  curatorEmoji: string;
-  curatorRole: string;
+  authorId?: string;
+  authorName?: string;
+  authorEmoji?: string;
+  authorRole?: string;
   sourceName: string;
   sourceUrl?: string;
   tags: string[];
@@ -917,27 +918,11 @@ export interface UpdateChatFolderInput {
   contextRules?: string;
 }
 
-export interface CreateCuratorInput {
-  name: string;
-  shortName?: string;
-  roleTitle: string;
-  personality?: string;
-  systemPrompt: string;
-  emoji?: string;
-  accentColor?: string;
-  folderId?: string | null;
-}
+/** @deprecated Curators model is obsolete */
+export type CreateCuratorInput = Record<string, any>;
 
-export interface UpdateCuratorInput {
-  name?: string;
-  shortName?: string;
-  roleTitle?: string;
-  personality?: string;
-  systemPrompt?: string;
-  emoji?: string;
-  accentColor?: string;
-  folderId?: string | null;
-}
+/** @deprecated Curators model is obsolete */
+export type UpdateCuratorInput = Record<string, any>;
 
 export interface CreateAssistantInput {
   name: string;
@@ -963,7 +948,6 @@ export interface CreateChatThreadInput {
   title: string;
   type?: ChatType;
   folderId?: string | null;
-  curatorId?: string | null;
   assistantId?: string | null;
   targetAgent?: string;
   participantAgents?: string[];
@@ -974,7 +958,6 @@ export interface CreateChatThreadInput {
 export interface UpdateChatThreadInput {
   title?: string;
   folderId?: string | null;
-  curatorId?: string | null;
   assistantId?: string | null;
   targetAgent?: string;
   participantAgents?: string[];
@@ -1168,6 +1151,8 @@ export interface GDriveUpdateItem {
   summary?: string | null;
   folderPath?: string | null;
   fileSize?: number | null;
+  author?: string | null;
+  /** @deprecated Use author */
   curator?: string | null;
 }
 

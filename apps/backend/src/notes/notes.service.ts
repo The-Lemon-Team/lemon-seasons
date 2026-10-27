@@ -51,6 +51,14 @@ export class NotesService implements OnModuleInit {
       await this.prisma.$executeRawUnsafe(`
         UPDATE "Note" SET "privacy" = 'private' WHERE "privacy" IS NULL OR "privacy" = '';
       `);
+      // Ensure classic public calendar feeds default to public contour
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE "Note"
+        SET "privacy" = 'public', "status" = 'PUBLISHED'
+        WHERE "feedId" IN (
+          SELECT id FROM "Feed" WHERE "privacy" = 'public' AND slug NOT LIKE 'spark-%'
+        ) AND "privacy" != 'public';
+      `);
     } catch (e: any) {
       this.logger.warn(`Privacy column init skipped: ${e.message}`);
     }
@@ -176,7 +184,7 @@ export class NotesService implements OnModuleInit {
         metadata: createNoteDto.metadata || undefined,
         processingStatus: createNoteDto.processingStatus || 'COMPLETED',
         icon: createNoteDto.icon,
-        curator: createNoteDto.curator,
+        author: createNoteDto.author || createNoteDto.curator,
         resonanceScore: createNoteDto.resonanceScore,
         ...(createNoteDto.parentNoteId
           ? { parentNote: { connect: { id: createNoteDto.parentNoteId } } }
@@ -416,7 +424,7 @@ export class NotesService implements OnModuleInit {
         ...(updateNoteDto.metadata !== undefined ? { metadata: updateNoteDto.metadata } : {}),
         ...(updateNoteDto.processingStatus !== undefined ? { processingStatus: updateNoteDto.processingStatus } : {}),
         ...(updateNoteDto.icon !== undefined ? { icon: updateNoteDto.icon } : {}),
-        ...(updateNoteDto.curator !== undefined ? { curator: updateNoteDto.curator } : {}),
+        ...(updateNoteDto.author !== undefined ? { author: updateNoteDto.author } : (updateNoteDto.curator !== undefined ? { author: updateNoteDto.curator } : {})),
         ...(updateNoteDto.resonanceScore !== undefined ? { resonanceScore: updateNoteDto.resonanceScore } : {}),
         ...(updateNoteDto.parentNoteId !== undefined
           ? updateNoteDto.parentNoteId

@@ -139,6 +139,23 @@ export interface AdminTranslations {
   endDateLabel: string;
   folderInputLabel: string;
   selectFolderPlaceholder: string;
+  folderPrivacy: string;
+  folderPrivacyPrivate: string;
+  folderPrivacyPublic: string;
+  folderPrivacyPrivateDesc: string;
+  folderPrivacyPublicDesc: string;
+  makeFolderPublic: string;
+  makeFolderPrivate: string;
+  deleteFolderConfirm: string;
+  folderDeletedSuccess: string;
+  folderUpdatedSuccess: string;
+  filterAllFolders: string;
+  filterPublicFolders: string;
+  filterPrivateFolders: string;
+  folderNameOptional: string;
+  folderColorLabel: string;
+  folderIconLabel: string;
+  searchFoldersPlaceholder: string;
   tagsInputLabel: string;
   selectTagsPlaceholder: string;
   hashtagsInputLabel: string;
@@ -329,6 +346,23 @@ export const ruAdminTranslations: AdminTranslations = {
   endDateLabel: 'Дата окончания (для периодов)',
   folderInputLabel: 'Папка Obsidian',
   selectFolderPlaceholder: 'Выберите папку хранилища',
+  folderPrivacy: 'Приватность папки',
+  folderPrivacyPrivate: 'Приватная папка',
+  folderPrivacyPublic: 'Публичная папка',
+  folderPrivacyPrivateDesc: 'Доступна только в приватных контейнерах Obsidian и закрытых рабочих пространствах',
+  folderPrivacyPublicDesc: 'Может проецироваться и в публичные, и в приватные контейнеры Obsidian',
+  makeFolderPublic: 'Сделать публичной',
+  makeFolderPrivate: 'Сделать приватной',
+  deleteFolderConfirm: 'Удалить папку и все её подпапки?',
+  folderDeletedSuccess: 'Папка успешно удалена',
+  folderUpdatedSuccess: 'Папка успешно обновлена',
+  filterAllFolders: 'Все',
+  filterPublicFolders: 'Публ',
+  filterPrivateFolders: 'Прив',
+  folderNameOptional: 'Отображаемое имя (необязательно)',
+  folderColorLabel: 'Цветовой маркер',
+  folderIconLabel: 'Иконка',
+  searchFoldersPlaceholder: 'Поиск папок...',
   tagsInputLabel: 'Теги таксономии (Дерево)',
   selectTagsPlaceholder: 'Выберите категории...',
   hashtagsInputLabel: 'Хэштеги',
@@ -519,6 +553,23 @@ export const enAdminTranslations: AdminTranslations = {
   endDateLabel: 'End Date & Time (for periods)',
   folderInputLabel: 'Obsidian Folder',
   selectFolderPlaceholder: 'Select vault folder',
+  folderPrivacy: 'Folder Privacy',
+  folderPrivacyPrivate: 'Private Folder',
+  folderPrivacyPublic: 'Public Folder',
+  folderPrivacyPrivateDesc: 'Accessible only within private Obsidian containers and confidential workspaces',
+  folderPrivacyPublicDesc: 'Can be projected across both public and private Obsidian containers',
+  makeFolderPublic: 'Make Public',
+  makeFolderPrivate: 'Make Private',
+  deleteFolderConfirm: 'Delete folder and all its subfolders?',
+  folderDeletedSuccess: 'Folder deleted successfully',
+  folderUpdatedSuccess: 'Folder updated successfully',
+  filterAllFolders: 'All',
+  filterPublicFolders: 'Public',
+  filterPrivateFolders: 'Private',
+  folderNameOptional: 'Display Name (optional)',
+  folderColorLabel: 'Color Marker',
+  folderIconLabel: 'Icon',
+  searchFoldersPlaceholder: 'Search folders...',
   tagsInputLabel: 'Taxonomy Tags (Hierarchy)',
   selectTagsPlaceholder: 'Select categories...',
   hashtagsInputLabel: 'Hashtags',

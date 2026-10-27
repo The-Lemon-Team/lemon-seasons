@@ -49,9 +49,9 @@ async function main() {
     }
 
     // Собираем форматированный markdown-текст диалога
-    const curatorName = thread.curator?.name || thread.assistant?.name || 'AI Assistant';
+    const authorName = thread.curator?.name || thread.assistant?.name || 'AI Assistant';
     let markdownBody = `## Обсуждение: ${thread.title}\n\n`;
-    markdownBody += `**Куратор / Агент:** ${curatorName}\n`;
+    markdownBody += `**Автор / Агент:** ${authorName}\n`;
     markdownBody += `**Дата создания:** ${thread.createdAt.toISOString()}\n\n`;
     markdownBody += `---\n\n`;
 
@@ -75,6 +75,7 @@ async function main() {
         description: markdownBody,
         type: 'SINGLE',
         feedId: feed.id,
+        author: thread.curator?.name || null,
         curator: thread.curator?.name || null,
         sourceLink: `defi-chat://${thread.id}`,
         icon: thread.curator?.emoji || '💬',

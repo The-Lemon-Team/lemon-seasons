@@ -31,7 +31,7 @@ function computeFeedAppUrl(
 ): string {
   try {
     const cleanRoute = route.startsWith('/') ? route.slice(1) : route;
-    const url = new URL(cleanRoute === 'spark' || cleanRoute === '' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
+    const url = new URL(cleanRoute === 'all' || cleanRoute === '' ? '' : cleanRoute, `${feedAppBase.replace(/\/+$/, '')}/`);
     url.searchParams.set('embed', 'true');
     url.searchParams.set('layout', layoutMode);
     if (appMode) url.searchParams.set('appMode', appMode);
@@ -39,7 +39,7 @@ function computeFeedAppUrl(
     if (endDate) url.searchParams.set('endDate', endDate);
     return url.toString();
   } catch {
-    const cleanPath = route === 'spark' ? '' : route;
+    const cleanPath = route === 'all' ? '' : route;
     const separator = cleanPath.includes('?') ? '&' : '?';
     const modeParam = appMode ? `&appMode=${encodeURIComponent(appMode)}` : '';
     const dateParams = `${startDate ? `&startDate=${encodeURIComponent(startDate)}` : ''}${endDate ? `&endDate=${encodeURIComponent(endDate)}` : ''}`;
@@ -48,7 +48,7 @@ function computeFeedAppUrl(
 }
 
 export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
-  initialRoute = 'spark',
+  initialRoute = 'all',
   startDate,
   endDate,
   appMode,
@@ -135,7 +135,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
         const payload = event.data.payload || {};
         const cleanPath = (payload.pathname || '').replace(/^\/+/, '');
         const reported = `${cleanPath}${payload.noteId ? (cleanPath.includes('?') ? '&' : '?') + 'note=' + payload.noteId : ''}`;
-        lastReportedRouteRef.current = reported || 'spark';
+        lastReportedRouteRef.current = reported || 'all';
         onNavigate?.(payload);
       }
 
@@ -156,12 +156,12 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [feedAppBase, sendAuthSync, onNavigate, onHostNavigate]);
+  }, [feedAppBase, sendAuthSync, onNavigate, onHostNavigate, onAppModeChange]);
 
   // Synchronize changes to initialRoute coming from the host (browser back/forward) to child without iframe reload
   useEffect(() => {
-    const cleanRoute = (initialRoute || 'spark').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
-    const cleanLast = (lastReportedRouteRef.current || 'spark').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+    const cleanRoute = (initialRoute || 'all').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+    const cleanLast = (lastReportedRouteRef.current || 'all').replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
 
     if (cleanRoute !== cleanLast) {
       lastReportedRouteRef.current = cleanRoute;

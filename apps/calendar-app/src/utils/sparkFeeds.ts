@@ -37,8 +37,8 @@ export const PRIMARY_SPARK_FEEDS: Array<{
 }> = [
   {
     slug: 'spark-ai',
-    title: 'AI & Нейросети (Spark)',
-    shortTitle: 'Spark AI',
+    title: 'AI & Нейросети (daily)',
+    shortTitle: 'AI',
     emoji: '🤖',
     category: 'AI & Нейросети',
     accentColor: '#8b5cf6',
@@ -46,12 +46,12 @@ export const PRIMARY_SPARK_FEEDS: Array<{
     badgeTextLight: '#6d28d9',
     badgeBgDark: 'rgba(139, 92, 246, 0.25)',
     badgeTextDark: '#c4b5fd',
-    description: 'Релизы LLM, агентные вычисления, прорывы и локальный инференс',
+    description: 'Релизы LLM, агентные вычисления, прорывы и локальный инференс (daily sync)',
   },
   {
     slug: 'spark-habr',
-    title: 'Хабр & IT (Spark)',
-    shortTitle: 'Spark Хабр',
+    title: 'Хабр & IT (daily)',
+    shortTitle: 'Хабр',
     emoji: '💻',
     category: 'IT & Разработка',
     accentColor: '#0284c7',
@@ -59,7 +59,7 @@ export const PRIMARY_SPARK_FEEDS: Array<{
     badgeTextLight: '#0369a1',
     badgeBgDark: 'rgba(2, 132, 199, 0.25)',
     badgeTextDark: '#7dd3fc',
-    description: 'Инженерные статьи, архитектура ПО, DevOps и сообщество Хабр',
+    description: 'Инженерные статьи, архитектура ПО, DevOps и сообщество Хабр (daily sync)',
   },
 ];
 
@@ -179,32 +179,37 @@ export function resolveSparkFeeds(
 
   // 2. Discover additional feeds from backend that match spark-*
   for (const feed of allFeeds) {
+    const isFolderSpark =
+      isSparkSlug(feed.slug) ||
+      Boolean((feed as any).folderPaths?.some((fp: string) => fp.toLowerCase().startsWith('spark')));
+
     if (
       feed.slug &&
-      isSparkSlug(feed.slug) &&
+      isFolderSpark &&
       !processedSlugs.has(feed.slug) &&
       !feed.slug.startsWith('spark-changelogsfeed-') &&
       !feed.slug.startsWith('spark-notebooklmai-')
     ) {
       const palette = getDynamicPalette(feed.slug);
       const cleanTitle = feed.title
-        .replace(/\s*\(Spark\)/i, '')
-        .replace(/^Spark\s*[—–-]\s*/i, '')
+        .replace(/\s*\(Spark\)/gi, '')
+        .replace(/^Spark\s*[—–-]\s*/gi, '')
+        .replace(/\s*\(daily\)/gi, '')
         .trim();
 
       result.push({
         id: feed.id,
         slug: feed.slug,
-        title: feed.title,
+        title: `${cleanTitle} (daily)`,
         shortTitle: cleanTitle.length > 16 ? cleanTitle.slice(0, 16) + '...' : cleanTitle,
         emoji: feed.slug === 'spark-notebooklmai' ? '🎙️' : feed.slug === 'spark-changelogsfeed' ? '🚀' : palette.emoji,
-        category: cleanTitle,
+        category: `${cleanTitle} (daily)`,
         accentColor: palette.accent,
         badgeBgLight: palette.badgeBgLight,
         badgeTextLight: palette.badgeTextLight,
         badgeBgDark: palette.badgeBgDark,
         badgeTextDark: palette.badgeTextDark,
-        description: feed.description || `Тематическая лента ${cleanTitle}`,
+        description: feed.description || `Тематическая лента ${cleanTitle} (daily sync)`,
         notesCount: countsBySlug[feed.slug] || feed._count?.notes || 0,
         isCustomFolder: true,
       });
@@ -214,34 +219,40 @@ export function resolveSparkFeeds(
 
   // 3. Scan notes for dynamically ingested folders (e.g. note.folders: ["Spark/Crypto"])
   for (const n of notes) {
+    const rawPaths: string[] = [];
+    if (n.folderPath) rawPaths.push(n.folderPath);
     if (n.folders && Array.isArray(n.folders)) {
       for (const f of n.folders) {
-        const folderPath = f.folder?.path || f.folder?.name || '';
-        if (folderPath.toLowerCase().startsWith('spark/')) {
-          const subfolderName = folderPath.slice(6).split('/')[0].trim();
-          if (subfolderName) {
-            const dynamicSlug = `spark-${subfolderName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-')}`;
-            if (!processedSlugs.has(dynamicSlug)) {
-              const palette = getDynamicPalette(subfolderName);
-              result.push({
-                id: `dynamic-${dynamicSlug}`,
-                slug: dynamicSlug,
-                title: `${subfolderName} (Spark)`,
-                shortTitle: subfolderName,
-                emoji: palette.emoji,
-                category: subfolderName,
-                accentColor: palette.accent,
-                badgeBgLight: palette.badgeBgLight,
-                badgeTextLight: palette.badgeTextLight,
-                badgeBgDark: palette.badgeBgDark,
-                badgeTextDark: palette.badgeTextDark,
-                description: `Папка ${subfolderName} из каталога Spark`,
-                notesCount: 1,
-                isCustomFolder: true,
-                folderPath,
-              });
-              processedSlugs.add(dynamicSlug);
-            }
+        const fp = f.folder?.path || f.folder?.name;
+        if (fp) rawPaths.push(fp);
+      }
+    }
+
+    for (const folderPath of rawPaths) {
+      if (folderPath.toLowerCase().startsWith('spark/')) {
+        const subfolderName = folderPath.slice(6).split('/')[0].trim();
+        if (subfolderName) {
+          const dynamicSlug = `spark-${subfolderName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-')}`;
+          if (!processedSlugs.has(dynamicSlug)) {
+            const palette = getDynamicPalette(subfolderName);
+            result.push({
+              id: `dynamic-${dynamicSlug}`,
+              slug: dynamicSlug,
+              title: `${subfolderName} (daily)`,
+              shortTitle: subfolderName,
+              emoji: palette.emoji,
+              category: `${subfolderName} (daily)`,
+              accentColor: palette.accent,
+              badgeBgLight: palette.badgeBgLight,
+              badgeTextLight: palette.badgeTextLight,
+              badgeBgDark: palette.badgeBgDark,
+              badgeTextDark: palette.badgeTextDark,
+              description: `Папка ${subfolderName} из каталога Spark (daily)`,
+              notesCount: countsBySlug[dynamicSlug] || 1,
+              isCustomFolder: true,
+              folderPath,
+            });
+            processedSlugs.add(dynamicSlug);
           }
         }
       }

@@ -209,16 +209,20 @@ export const FeedSelector: React.FC<FeedSelectorProps> = ({
 
             <div className="flex items-center gap-2 text-[10px]">
               {onOpenFeedsHub && (
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    onOpenFeedsHub();
+                <a
+                  href="/feeds"
+                  onClick={(e) => {
+                    if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                      e.preventDefault();
+                      setIsOpen(false);
+                      onOpenFeedsHub();
+                    }
                   }}
-                  className="text-[#c9cd58] hover:underline flex items-center gap-1"
+                  className="text-[#c9cd58] hover:underline flex items-center gap-1 cursor-pointer no-underline"
                 >
                   <span>{t.newsFeeds}</span>
                   <ExternalLink className="w-2.5 h-2.5" />
-                </button>
+                </a>
               )}
             </div>
           </div>

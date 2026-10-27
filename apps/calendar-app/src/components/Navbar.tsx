@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { LemonLogo } from './LemonLogo';
 import { WorkstationSyncBar } from './WorkstationSyncBar';
 import { AppModeSwitcher } from './common/AppModeSwitcher';
+import { useAppMode } from '../context/AppModeContext';
 
 interface NavbarProps {
   startDate?: string;
@@ -37,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
+  const { isPublicEnv } = useAppMode();
   const [localSearch, setLocalSearch] = React.useState(search);
 
   React.useEffect(() => {
@@ -59,10 +61,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         <a
           href="/"
           onClick={(e) => {
-            e.preventDefault();
-            onSetView?.('timeline');
+            if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+              e.preventDefault();
+              onSetView?.('timeline');
+            }
           }}
-          className="flex md:hidden items-center gap-2 mr-1 shrink-0 hover:opacity-80 transition-opacity cursor-pointer"
+          className="flex md:hidden items-center gap-2 mr-1 shrink-0 hover:opacity-80 transition-opacity cursor-pointer no-underline"
           title={t.timeline || "Главная"}
         >
           <LemonLogo size={28} />
@@ -83,10 +87,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </div>
 
-      {/* Center: Global App Mode Switcher (Dev - Staging - Public) */}
-      <div className="flex items-center justify-center mx-1 sm:mx-2">
-        <AppModeSwitcher />
-      </div>
+      {/* Center: Global App Mode Switcher (Dev - Staging - Public) - Hidden in Public Mode */}
+      {!isPublicEnv && (
+        <div className="flex items-center justify-center mx-1 sm:mx-2">
+          <AppModeSwitcher />
+        </div>
+      )}
 
       {/* Right: Sync Status / Viewer Bar, Admin CMS Launcher & Profile */}
       <div className="flex items-center gap-2">

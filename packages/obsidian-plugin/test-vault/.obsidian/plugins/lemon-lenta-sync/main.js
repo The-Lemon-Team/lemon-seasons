@@ -4343,6 +4343,7 @@ var init_dist = __esm({
       endDate: external_exports.string().datetime().or(external_exports.string().min(1)).optional().nullable(),
       sourceLink: external_exports.string().url().optional().nullable(),
       icon: external_exports.string().optional().nullable(),
+      author: external_exports.string().optional().nullable(),
       curator: external_exports.string().optional().nullable(),
       parentNoteId: external_exports.string().optional().nullable(),
       tagIds: external_exports.array(external_exports.string()).optional(),
@@ -4360,6 +4361,7 @@ var init_dist = __esm({
       feedId: external_exports.string().optional(),
       feedSlug: external_exports.string().optional(),
       type: noteTypeSchema.optional(),
+      author: external_exports.string().optional(),
       curator: external_exports.string().optional(),
       startDateFrom: external_exports.string().optional(),
       startDateTo: external_exports.string().optional(),
@@ -4472,8 +4474,9 @@ var init_dist = __esm({
         if (note.icon) {
           lines.push(`icon: "${note.icon}"`);
         }
-        if (note.curator && note.curator !== "auto") {
-          lines.push(`curator: "${note.curator}"`);
+        const noteAuthor = note.author || note.curator;
+        if (noteAuthor && noteAuthor !== "auto") {
+          lines.push(`author: "${noteAuthor}"`);
         }
         if (note.parentNoteId) {
           lines.push(`parent_note_id: "${note.parentNoteId}"`);
@@ -5957,7 +5960,8 @@ var LentaSyncEngine = class {
     const noteType = parsed.frontmatter.type || "EVENT";
     const startDate = parsed.frontmatter.start_date || parsed.frontmatter.startDate || (/* @__PURE__ */ new Date()).toISOString();
     const noteId = parsed.lentaId || parsed.frontmatter.id;
-    const curatorVal = parsed.frontmatter.curator || void 0;
+    const authorVal = parsed.frontmatter.author || parsed.frontmatter.curator || void 0;
+    const curatorVal = authorVal;
     if (noteId) {
       const updated = await this.apiClient.updateNote(noteId, {
         title: parsed.title,
@@ -5967,7 +5971,8 @@ var LentaSyncEngine = class {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || null,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || null,
         icon: parsed.frontmatter.icon || null,
-        curator: curatorVal || null
+        author: authorVal || null,
+        curator: authorVal || null
       });
       if (processedBody !== parsed.body) {
         const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(updated);
@@ -6014,7 +6019,8 @@ var LentaSyncEngine = class {
         endDate: (parsed.frontmatter.end_date ?? parsed.frontmatter.endDate) || void 0,
         sourceLink: parsed.frontmatter.sourceLink || parsed.frontmatter.source_link || void 0,
         icon: parsed.frontmatter.icon || void 0,
-        curator: curatorVal
+        author: authorVal,
+        curator: authorVal
       });
       const newMarkdown = LentaFrontmatterUtil.serializeNoteToMarkdown(created);
       await vault.modify(file, newMarkdown);
@@ -6086,7 +6092,8 @@ var LentaSyncEngine = class {
         tags: [],
         hashtags: (parsed.hashtags || []).map((h) => ({ id: h, name: h, createdAt: "", updatedAt: "", deletedAt: null })),
         folders: relativeFolder ? [{ id: "", noteId: lentaId, folderId: "", isPrimary: true, order: 0, folder: { id: "", name: relativeFolder, path: relativeFolder, icon: null, color: null, createdAt: "", updatedAt: "", deletedAt: null } }] : [],
-        curator: parsed.frontmatter.curator || null,
+        author: parsed.frontmatter.author || parsed.frontmatter.curator || null,
+        curator: parsed.frontmatter.author || parsed.frontmatter.curator || null,
         createdAt: "",
         updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
         deletedAt: null

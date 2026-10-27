@@ -149,7 +149,7 @@ export class IngestNoteDto {
 
   @ApiPropertyOptional({
     description: 'Произвольные метаданные (автор, модель, ID треда и др.)',
-    example: { author: 'AI Curator', model: 'claude-3-7-sonnet' },
+    example: { author: 'AI Assistant', model: 'claude-3-7-sonnet' },
   })
   @IsOptional()
   metadata?: any;

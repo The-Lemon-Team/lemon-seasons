@@ -16,6 +16,7 @@ function getDefaultFilterState(): CalendarFilterState {
     hashtags: [],
     types: [],
     search: '',
+    author: undefined,
     curator: undefined,
   };
 }
@@ -110,7 +111,8 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     : [];
 
   const search = params.get('search') || '';
-  const curator = params.get('curator') || undefined;
+  const author = params.get('author') || params.get('curator') || undefined;
+  const curator = author;
 
   return {
     start,
@@ -147,7 +149,14 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
   if (state.search && state.search.trim()) params.set('search', state.search.trim());
-  if (state.curator) params.set('curator', state.curator);
+  if (state.author || state.curator) params.set('author', (state.author || state.curator)!);
+
+  // Preserve active environment mode in URL
+  const currentAppMode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('appMode') ||
+      localStorage.getItem('lenta_app_mode')
+    : null;
+  if (currentAppMode) params.set('appMode', currentAppMode);
 
   const str = params.toString();
   return str ? `?${str}` : '';
@@ -380,9 +389,10 @@ export function useCalendarState() {
     updateFilter({ start: bounds.start, end: bounds.end });
   }, [updateFilter]);
 
-  const setCurator = useCallback((curator?: string) => {
-    updateFilter({ curator: curator || undefined });
+  const setAuthor = useCallback((author?: string) => {
+    updateFilter({ author: author || undefined, curator: author || undefined });
   }, [updateFilter]);
+  const setCurator = setAuthor;
 
   const resetFilters = useCallback(() => {
     updateFilter({
@@ -393,7 +403,8 @@ export function useCalendarState() {
       hashtags: [],
       types: [],
       search: '',
-      curator: undefined,
+      author: undefined,
+    curator: undefined,
     });
   }, [updateFilter]);
 
@@ -431,6 +442,7 @@ export function useCalendarState() {
     setAllTypes,
     clearTypes,
     setSearch,
+    setAuthor,
     setCurator,
     prevMonth,
     nextMonth,

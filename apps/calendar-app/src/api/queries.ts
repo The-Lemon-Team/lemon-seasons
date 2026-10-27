@@ -13,6 +13,7 @@ export interface TimeSliceFilter {
   types?: NoteType[];
   search?: string;
   folder?: string;
+  author?: string;
   curator?: string;
   minResonance?: number;
   privacy?: string;
@@ -39,7 +40,13 @@ export const queryKeys = {
 export function useTimeSliceNotes(filter: TimeSliceFilter, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.timeSliceNotes(filter),
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) => {
+      const prevFilter = previousQuery?.queryKey?.[2] as TimeSliceFilter | undefined;
+      if (prevFilter?.appMode !== filter?.appMode) {
+        return undefined;
+      }
+      return previousData;
+    },
     enabled: options?.enabled ?? true,
     queryFn: async () => {
       const params: QueryNotesParams = {
@@ -69,17 +76,25 @@ export function useTimeSliceNotes(filter: TimeSliceFilter, options?: { enabled?:
         params.containers = filter.containers;
       }
 
-            if (filter.curator) {
-        params.curator = filter.curator;
-      }
+            const authorFilter = filter.author || filter.curator;
+    if (authorFilter) {
+      params.author = authorFilter;
+    }
 
       if (filter.appMode === 'public') {
+        params.appMode = 'public';
         params.privacy = 'public';
         params.status = 'PUBLISHED';
       } else if (filter.appMode === 'staging') {
+        params.appMode = 'staging';
         params.privacy = 'public';
       } else if (filter.appMode === 'dev') {
-        params.privacy = 'all';
+        params.appMode = 'dev';
+        if (filter.privacy && filter.privacy !== 'all') {
+          params.privacy = filter.privacy as any;
+        } else {
+          params.privacy = 'all';
+        }
       } else {
         if (filter.privacy) params.privacy = filter.privacy as any;
         if (filter.status) params.status = filter.status;
@@ -168,6 +183,17 @@ export function useTimeSliceNotes(filter: TimeSliceFilter, options?: { enabled?:
 
         return false;
       };
+
+      // Environment / App Mode filter refinement
+      if (filter.appMode === 'dev') {
+        if (filter.privacy && filter.privacy !== 'all') {
+          items = items.filter((n) => n.privacy === filter.privacy);
+        }
+      } else if (filter.appMode === 'staging') {
+        items = items.filter((n) => n.privacy === 'public' && n.status !== 'PUBLISHED');
+      } else if (filter.appMode === 'public') {
+        items = items.filter((n) => n.privacy === 'public' && n.status === 'PUBLISHED');
+      }
 
       // Client-side feed filter refinement
       if (filter.feed) {

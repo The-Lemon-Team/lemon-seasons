@@ -8,6 +8,7 @@ export interface PoliticalEventItem {
   type: NoteType;
   description: string;
   icon?: string;
+  author?: string;
   curator?: string;
   parentNoteId?: string;
   sourceLink?: string;

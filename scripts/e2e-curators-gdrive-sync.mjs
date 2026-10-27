@@ -182,7 +182,7 @@ async function run() {
 
       const created = await createRes.json();
       createdNoteIds.push(created.id);
-      console.log(`   ✅ Заметка успешно создана! ID: ${created.id} (Резонанс: ${created.resonanceScore}%, Куратор: ${created.curator})`);
+      console.log(`   ✅ Заметка успешно создана! ID: ${created.id} (Резонанс: ${created.resonanceScore}%, Автор: ${created.author || created.curator})`);
     }
 
     // =========================================================================

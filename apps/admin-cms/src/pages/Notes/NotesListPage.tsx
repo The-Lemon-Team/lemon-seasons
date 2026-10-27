@@ -8,14 +8,19 @@ import {
   useFolders,
   useDeleteNote,
   useRestoreNote,
+  useCreateFolder,
+  useUpdateFolder,
+  useDeleteFolder,
 } from '../../api/queries';
 import { FolderExplorer } from '../../components/FolderExplorer';
+import { FolderInspectorHeader } from '../../components/folders/FolderInspectorHeader';
+import { CreateFolderModal } from '../../components/folders/CreateFolderModal';
 import { NoteDetailModal } from '../../components/NoteDetailModal';
 import { EditNoteModal } from '../../components/EditNoteModal';
 import { PublishToStagingModal } from '../../components/PublishToStagingModal';
 import { CreateNoteModal } from '../../components/CreateNoteModal';
 import { NotesTableWithFilters } from './components/NotesTableWithFilters';
-import { NoteType } from '../../types';
+import { NoteType, Folder, FolderPrivacy, CreateFolderInput } from '../../types';
 import { useAdminI18n } from '../../i18n';
 
 export const NotesListPage: React.FC = () => {
@@ -32,13 +37,19 @@ export const NotesListPage: React.FC = () => {
   const [createNoteModalOpen, setCreateNoteModalOpen] = useState(false);
   const [createNoteFolder, setCreateNoteFolder] = useState<string | undefined>(undefined);
 
+  // Subfolder modal state
+  const [isSubfolderModalOpen, setIsSubfolderModalOpen] = useState(false);
+  const [subfolderParentPath, setSubfolderParentPath] = useState('');
+  const [subfolderDefaultPrivacy, setSubfolderDefaultPrivacy] = useState<FolderPrivacy>('public');
+
   // Query filters from URL params
   const feedId = searchParams.get('feedId') || undefined;
   const typeParam = (searchParams.get('type') as NoteType) || undefined;
   const hashtagParam = searchParams.get('hashtag') || undefined;
   const folderParam = searchParams.get('folder') || undefined;
   const unfiledParam = searchParams.get('unfiled') === 'true';
-  const curatorParam = searchParams.get('curator') || undefined;
+  const authorParam = searchParams.get('author') || searchParams.get('curator') || undefined;
+  const curatorParam = authorParam;
   const search = searchParams.get('search') || '';
   const includeDeleted = searchParams.get('includeDeleted') === 'true';
   const sortBy = (searchParams.get('sortBy') as 'startDate' | 'type' | 'folder' | 'title') || undefined;
@@ -63,6 +74,7 @@ export const NotesListPage: React.FC = () => {
     hashtag: hashtagParam,
     folder: folderParam,
     unfiled: unfiledParam || undefined,
+    author: authorParam,
     curator: curatorParam,
     search: search || undefined,
     includeDeleted,
@@ -73,6 +85,31 @@ export const NotesListPage: React.FC = () => {
     limit,
     offset,
   });
+
+  const createFolderMutation = useCreateFolder();
+  const updateFolderMutation = useUpdateFolder();
+  const deleteFolderMutation = useDeleteFolder();
+  const deleteNoteMutation = useDeleteNote();
+  const restoreNoteMutation = useRestoreNote();
+
+  // Find currently selected folder object
+  const selectedFolderObj = useMemo<Folder | null>(() => {
+    if (!folderParam) return null;
+    const normalized = folderParam.toLowerCase();
+    const found = folders.find((f) => f.path.toLowerCase() === normalized);
+    if (found) return found;
+    return {
+      id: '',
+      name: folderParam.split('/').filter(Boolean).pop() || folderParam,
+      path: folderParam,
+      privacy: 'public',
+      createdAt: '',
+      updatedAt: '',
+      icon: null,
+      color: null,
+      deletedAt: null,
+    };
+  }, [folderParam, folders]);
 
   const handleSortChange = (
     newSortBy?: 'startDate' | 'type' | 'folder' | 'title',
@@ -93,9 +130,6 @@ export const NotesListPage: React.FC = () => {
   // Query total count and unfiled count for explorer
   const { data: allNotesStats } = useNotes({ limit: 1 });
   const { data: unfiledNotesStats } = useNotes({ unfiled: true, limit: 1 });
-
-  const deleteNoteMutation = useDeleteNote();
-  const restoreNoteMutation = useRestoreNote();
 
   const handleFilterChange = (key: string, value?: string) => {
     const next = new URLSearchParams(searchParams);
@@ -126,6 +160,60 @@ export const NotesListPage: React.FC = () => {
     next.set('unfiled', 'true');
     setSearchParams(next);
     setOffset(0);
+  };
+
+  const handleToggleFolderPrivacy = async (folder: Folder) => {
+    const targetPrivacy: FolderPrivacy = folder.privacy === 'private' ? 'public' : 'private';
+    try {
+      if (folder.id) {
+        await updateFolderMutation.mutateAsync({
+          id: folder.id,
+          data: {
+            privacy: targetPrivacy,
+            color: targetPrivacy === 'private' ? '#a855f7' : '#c9cd58',
+          },
+        });
+      } else {
+        await createFolderMutation.mutateAsync({
+          path: folder.path,
+          name: folder.name,
+          privacy: targetPrivacy,
+          color: targetPrivacy === 'private' ? '#a855f7' : '#c9cd58',
+        });
+      }
+      message.success(
+        targetPrivacy === 'private'
+          ? `Папка "${folder.name}" теперь приватная`
+          : `Папка "${folder.name}" теперь публичная`
+      );
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error updating folder privacy');
+    }
+  };
+
+  const handleDeleteFolder = async (folder: Folder) => {
+    if (!folder.id) {
+      handleSelectFolder(undefined);
+      return;
+    }
+    try {
+      await deleteFolderMutation.mutateAsync(folder.id);
+      message.success(t.folderDeletedSuccess);
+      handleSelectFolder(undefined);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error deleting folder');
+    }
+  };
+
+  const handleCreateSubfolderSubmit = async (input: CreateFolderInput) => {
+    try {
+      await createFolderMutation.mutateAsync(input);
+      message.success(t.folderUpdatedSuccess);
+      handleSelectFolder(input.path);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error creating subfolder');
+      throw err;
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -213,43 +301,75 @@ export const NotesListPage: React.FC = () => {
           </div>
         )}
 
-        {/* Right: Unified Notes Table With Filters (Span 9 or 12) */}
-        <div className={`${showFolderSidebar ? 'lg:col-span-9' : 'lg:col-span-12'} h-[650px] lg:h-full min-w-0 min-h-0`}>
-          <NotesTableWithFilters
-            notes={items}
-            total={total}
-            limit={limit}
-            offset={offset}
-            isLoading={isLoading}
-            search={search}
-            feedId={feedId}
-            type={typeParam}
-            folder={folderParam}
-            unfiled={unfiledParam}
-            curator={curatorParam}
-            hashtag={hashtagParam}
-            includeDeleted={includeDeleted}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSortChange={handleSortChange}
-            feeds={feeds}
-            folders={folders}
-            hashtags={hashtags}
-            onFilterChange={handleFilterChange}
-            onSelectFolder={handleSelectFolder}
-            onSelectUnfiled={handleSelectUnfiled}
-            onResetFilters={() => setSearchParams(new URLSearchParams())}
-            onViewNote={setViewingNoteId}
-            onEditNote={setEditingNoteId}
-            onPublishStaging={setPublishingNoteId}
-            privacyFilter={privacyMode}
-            onDeleteNote={handleDelete}
-            onRestoreNote={handleRestore}
-            onPageChange={setOffset}
-            className="h-full shadow-sm"
-          />
+        {/* Right: Selected Folder Inspector + Unified Notes Table (Span 9 or 12) */}
+        <div className={`${showFolderSidebar ? 'lg:col-span-9' : 'lg:col-span-12'} h-[650px] lg:h-full min-w-0 min-h-0 flex flex-col gap-2`}>
+          {selectedFolderObj && (
+            <FolderInspectorHeader
+              folder={selectedFolderObj}
+              notesCount={total}
+              onCreateNote={() => {
+                setCreateNoteFolder(selectedFolderObj.path);
+                setCreateNoteModalOpen(true);
+              }}
+              onAddSubfolder={(parentPath, parentPrivacy) => {
+                setSubfolderParentPath(parentPath);
+                setSubfolderDefaultPrivacy(parentPrivacy);
+                setIsSubfolderModalOpen(true);
+              }}
+              onTogglePrivacy={handleToggleFolderPrivacy}
+              onDeleteFolder={handleDeleteFolder}
+              onClose={() => handleSelectFolder(undefined)}
+            />
+          )}
+
+          <div className="flex-1 min-h-0">
+            <NotesTableWithFilters
+              notes={items}
+              total={total}
+              limit={limit}
+              offset={offset}
+              isLoading={isLoading}
+              search={search}
+              feedId={feedId}
+              type={typeParam}
+              folder={folderParam}
+              unfiled={unfiledParam}
+              author={authorParam}
+              curator={curatorParam}
+              hashtag={hashtagParam}
+              includeDeleted={includeDeleted}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+              feeds={feeds}
+              folders={folders}
+              hashtags={hashtags}
+              onFilterChange={handleFilterChange}
+              onSelectFolder={handleSelectFolder}
+              onSelectUnfiled={handleSelectUnfiled}
+              onResetFilters={() => setSearchParams(new URLSearchParams())}
+              onViewNote={setViewingNoteId}
+              onEditNote={setEditingNoteId}
+              onPublishStaging={setPublishingNoteId}
+              privacyFilter={privacyMode}
+              onDeleteNote={handleDelete}
+              onRestoreNote={handleRestore}
+              onPageChange={setOffset}
+              className="h-full shadow-sm"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Subfolder Creation Modal */}
+      <CreateFolderModal
+        open={isSubfolderModalOpen}
+        onClose={() => setIsSubfolderModalOpen(false)}
+        parentPath={subfolderParentPath}
+        defaultPrivacy={subfolderDefaultPrivacy}
+        onSubmit={handleCreateSubfolderSubmit}
+        isLoading={createFolderMutation.isPending}
+      />
 
       {/* Quick View / Detail Modal */}
       <NoteDetailModal

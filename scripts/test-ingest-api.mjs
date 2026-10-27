@@ -44,7 +44,7 @@ async function main() {
     icon: '💎',
     metadata: {
       model: 'gemini-2.5-pro',
-      curator: 'ivan_white',
+      author: 'ivan_white',
       threadId: '42',
       confidence: 0.94,
     },

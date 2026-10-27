@@ -52,7 +52,7 @@ export class AddBookmarkHandler implements ICommandHandler<AddBookmarkPayload> {
       startDate: payload.targetDate || command.targetDate || new Date().toISOString(),
       sourceLink: payload.url,
       icon: 'bookmark',
-      curator: 'mobile',
+      author: 'mobile',
       containerId: payload.containerId || undefined,
       folders: payload.folders || ['Mobile/Bookmarks'],
       hashtags: payload.hashtags || ['bookmark', 'mobile'],

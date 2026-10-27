@@ -39,7 +39,7 @@ export class IngestAudioHandler implements ICommandHandler<IngestAudioPayload> {
       startDate: payload.targetDate || command.targetDate || new Date().toISOString(),
       sourceLink: audioUrl,
       icon: 'headphones',
-      curator: 'voice-recorder',
+      author: 'voice-recorder',
       containerId: payload.containerId || undefined,
       folders: ['Audio/Recordings'],
       hashtags: ['audio', 'voicememo', ...(payload.tags || [])],

@@ -81,9 +81,9 @@ export const RelatedNotesSection: React.FC<RelatedNotesSectionProps> = ({
                   <span>
                     {item.targetDate ? dayjs(item.targetDate).format('D MMM YYYY') : item.cleanTitle}
                   </span>
-                  {item.targetCurator && item.targetCurator !== 'auto' && (
+                  {((item as any).targetAuthor || item.targetCurator) && ((item as any).targetAuthor || item.targetCurator) !== 'auto' && (
                     <span className="text-[#c9c7b2] truncate max-w-[120px]">
-                      @{item.targetCurator}
+                      @{((item as any).targetAuthor || item.targetCurator)}
                     </span>
                   )}
                 </div>

@@ -8,12 +8,13 @@ All AI agents generating or modifying Spark notes in `C:\Users\Ilege\Мой ди
    - Never write yesterday's date into `start_date` when the file belongs to today's digest.
 
 2. **Tags & Labels:**
-   - Include topic tags and the mandatory daily digest tag `jmdaily`.
+   - Include topic tags.
+   - DO NOT include `jmdaily` tag; `jmdaily` is reserved exclusively for admin analytical curation.
    - Tags are YAML string arrays without `#` symbol.
 
 3. **Frontmatter Whitelist:**
    - Allowed: `title`, `type`, `start_date`, `end_date`, `tags`, `links`, `cover_image`, `podcast_audio`, `published`, `icon`, `resonance_score`.
-   - Forbidden: `curator`, `feed`, `process`, `taxonomy`, `folders`, `primary_folder`, `lenta_id`, `updated_at`, `deleted`.
+   - Forbidden: `feed`, `process`, `taxonomy`, `folders`, `primary_folder`, `lenta_id`, `updated_at`, `deleted`.
 
 4. **Typography & Spacing:**
    - Exactly two empty lines after frontmatter before `# Title`.

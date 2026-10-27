@@ -161,7 +161,7 @@ export class SparksParserService {
       rawContent: fileContent,
       summary,
       icon,
-      curator: (fm.curator as string) || (fm.author as string) || undefined,
+      author: (fm.author as string) || (fm.curator as string) || undefined,
       resonanceScore,
       hashtags: tags,
       links,
@@ -213,32 +213,42 @@ export class SparksParserService {
       }
     }
 
-    // 2. Check frontmatter dates
+    // 2. Check frontmatter end date first (to detect period notes)
+    const rawEnd = fm.end_date || fm.endDate;
+    if (rawEnd) {
+      const parsedEnd = new Date(rawEnd);
+      if (!isNaN(parsedEnd.getTime())) end = parsedEnd;
+    }
+
+    // 3. Check frontmatter start dates
     const rawStart = fm.start_date || fm.startDate || fm.date;
     if (rawStart) {
       const parsed = new Date(rawStart);
       if (!isNaN(parsed.getTime())) {
-        if (fileDatePrefix) {
-          // If filename specifies an explicit publication date, align calendar day with filename while preserving time
-          const hours = String(parsed.getUTCHours()).padStart(2, '0');
+        if (fileDatePrefix && (!end || end.getTime() <= parsed.getTime())) {
+          // If filename specifies an explicit publication date (DD.MM.YY in Moscow time),
+          // align calendar day with filename while preserving time.
+          // Note: In Moscow timezone (+03:00), UTC hours >= 21 roll over to the next day!
+          // We adjust hours >= 21 by -3 hours so the event remains in the evening of fileDatePrefix.
+          let hours = parsed.getUTCHours();
           const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
           const seconds = String(parsed.getUTCSeconds()).padStart(2, '0');
-          start = new Date(`${fileDatePrefix}T${hours}:${minutes}:${seconds}.000Z`);
+
+          if (hours >= 21) {
+            hours = hours - 3;
+          }
+
+          const hoursStr = String(hours).padStart(2, '0');
+          start = new Date(`${fileDatePrefix}T${hoursStr}:${minutes}:${seconds}.000Z`);
         } else {
           start = parsed;
         }
       }
     }
 
-    // 3. If no frontmatter start date, use filename date
+    // 4. If no frontmatter start date, use filename date
     if (!start && fileDatePrefix) {
       start = new Date(`${fileDatePrefix}T12:00:00.000Z`);
-    }
-
-    const rawEnd = fm.end_date || fm.endDate;
-    if (rawEnd) {
-      const parsed = new Date(rawEnd);
-      if (!isNaN(parsed.getTime())) end = parsed;
     }
 
     // Fallback to file mtime or now

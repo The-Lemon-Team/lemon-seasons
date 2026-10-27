@@ -23,6 +23,7 @@ export interface UnifiedFeedItem {
   timeSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING';
   resonanceScore?: number;
   sourceLink?: string | null;
+  author?: string | null;
   curator?: string | null;
   hashtags?: string[];
   rawPayload: Note | any;

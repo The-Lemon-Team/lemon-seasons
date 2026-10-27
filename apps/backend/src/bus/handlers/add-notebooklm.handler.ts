@@ -52,7 +52,7 @@ export class AddNotebookLmHandler implements ICommandHandler<AddNotebookLmPayloa
       startDate: payload.targetDate || command.targetDate || new Date().toISOString(),
       sourceLink: payload.audioPodcastUrl,
       icon: 'sparkles',
-      curator: 'notebooklm',
+      author: 'notebooklm',
       containerId,
       folders: ['NotebookLM/Podcasts'],
       hashtags: ['notebooklm', 'podcast', 'deepdive', 'ai'],

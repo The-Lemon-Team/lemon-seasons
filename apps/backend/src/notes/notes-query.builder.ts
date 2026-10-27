@@ -52,6 +52,7 @@ export class NotesQueryBuilder {
       feedSlug,
       publicFeedId,
       publicFeedSlug,
+      appMode,
       privacy,
       containerId,
       containers,
@@ -82,9 +83,17 @@ export class NotesQueryBuilder {
     ];
 
     // Privacy & Staging / Public contour gating:
-    // - Non-admin (public port 5176 / guest) strictly sees only privacy = 'public' AND status = 'PUBLISHED'
-    // - Admin / Staging Hub can filter by privacy='private' | 'public' | 'all'
-    if (!isAdmin) {
+    if (appMode === 'staging') {
+      andConditions.push({ privacy: 'public' });
+      andConditions.push({ status: { not: 'PUBLISHED' } });
+    } else if (appMode === 'public') {
+      andConditions.push({ privacy: 'public' });
+      andConditions.push({ status: 'PUBLISHED' });
+    } else if (appMode === 'dev') {
+      if (privacy && privacy !== 'all') {
+        andConditions.push({ privacy });
+      }
+    } else if (!isAdmin) {
       andConditions.push({ privacy: 'public' });
       andConditions.push({ status: 'PUBLISHED' });
     } else if (privacy && privacy !== 'all') {
@@ -153,16 +162,21 @@ export class NotesQueryBuilder {
     if (type) {
       andConditions.push({ type: type as any });
     }
-    if (query.status) {
-      andConditions.push({ status: query.status as any });
+    if (query.status && !appMode) {
+      if (query.status === 'staging' || query.status === 'NOT_PUBLISHED' || query.status === '!PUBLISHED') {
+        andConditions.push({ status: { not: 'PUBLISHED' } });
+      } else {
+        andConditions.push({ status: query.status as any });
+      }
     }
 
-    // Curator
-    if (query.curator) {
+    // Author / Curator
+    const authorFilter = query.author || query.curator;
+    if (authorFilter) {
       andConditions.push({
         OR: [
-          { curator: { equals: query.curator, mode: 'insensitive' } },
-          { curator: { contains: query.curator, mode: 'insensitive' } },
+          { author: { equals: authorFilter, mode: 'insensitive' } },
+          { author: { contains: authorFilter, mode: 'insensitive' } },
         ],
       });
     }
@@ -291,7 +305,7 @@ export class NotesQueryBuilder {
           { title: { contains: cleanSearch, mode: 'insensitive' } },
           { description: { contains: cleanSearch, mode: 'insensitive' } },
           { feed: { title: { contains: cleanSearch, mode: 'insensitive' } } },
-          { curator: { contains: cleanSearch, mode: 'insensitive' } },
+          { author: { contains: cleanSearch, mode: 'insensitive' } },
           ...(normalizedHashtagSearch
             ? [
                 {

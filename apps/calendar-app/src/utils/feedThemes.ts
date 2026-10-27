@@ -271,7 +271,7 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeConfig> = {
   'spark-xakep': {
     slug: 'spark-xakep',
     title: 'Журнал «Хакер» (Spark)',
-    shortTitle: 'Хакер',
+    shortTitle: 'Журнал «Хакер»',
     tagline: 'Разборы уязвимостей, reverse engineering и эксплойты',
     category: 'engineering',
     accentColor: '#22c55e', // Green
@@ -338,6 +338,20 @@ export const KNOWN_FEED_THEMES: Record<string, FeedThemeConfig> = {
     emoji: '🚀',
     iconName: 'Rocket',
   },
+  'spark-youtube-oneday': {
+    slug: 'spark-youtube-oneday',
+    title: 'YouTube • OneDay (Spark)',
+    shortTitle: 'YouTube',
+    tagline: 'Ежедневная политическая выжимка и аналитические разборы YouTube-канала OneDay',
+    category: 'general',
+    accentColor: '#ef4444', // Red
+    gradient: 'from-red-500/20 via-rose-500/10 to-transparent',
+    borderAccent: '#dc2626',
+    bgLight: 'rgba(239, 68, 68, 0.12)',
+    badgeBg: 'rgba(239, 68, 68, 0.25)',
+    emoji: '📺',
+    iconName: 'Tv',
+  },
 };
 
 // Curated dynamic palette for unmapped feeds
@@ -397,14 +411,14 @@ export const FEED_PRESET_OPTIONS: FeedPresetOption[] = [
   },
   {
     id: 'spark-ai',
-    name: 'Spark AI',
+    name: 'AI (daily)',
     emoji: '🤖',
     description: 'AI & Нейросети: релизы LLM, агентные вычисления и прорывы',
     slug: 'spark-ai',
   },
   {
     id: 'spark-habr',
-    name: 'Spark Хабр',
+    name: 'Хабр (daily)',
     emoji: '💻',
     description: 'Хабр & IT: архитектура ПО, разработка и статьи сообщества',
     slug: 'spark-habr',

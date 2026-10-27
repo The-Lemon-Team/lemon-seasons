@@ -95,7 +95,7 @@ export class ContainersService {
           combineWith: [],
         },
         agent: {
-          curatorId: 'wiki-historian',
+          agentId: 'wiki-historian',
           name: 'Архивариус Wiki',
           role: 'Хронограф исторических событий',
         },
@@ -116,7 +116,7 @@ export class ContainersService {
           combineWith: [],
         },
         agent: {
-          curatorId: 'notebooklm',
+          agentId: 'notebooklm',
           name: 'NotebookLM AI',
           role: 'Глубокий аналитический обзор и подкасты',
         },

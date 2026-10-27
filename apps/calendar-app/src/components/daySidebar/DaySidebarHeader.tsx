@@ -98,16 +98,21 @@ export const DaySidebarHeader: React.FC<DaySidebarHeaderProps> = ({
       {/* Action Toolbar */}
       <div className="flex items-center gap-2 pt-1">
         {onNavigateToTimeline && (
-          <button
-            type="button"
-            onClick={() => onNavigateToTimeline(dateKey)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-[#1f2323] hover:bg-[#2a2f2f] text-[#c9c7b2] hover:text-[#e5e971] border border-[#2e3333] hover:border-[#c9cd58]/50 transition-all group"
+          <a
+            href={`/?start=${encodeURIComponent(dateKey)}`}
+            onClick={(e) => {
+              if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                onNavigateToTimeline(dateKey);
+              }
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-[#1f2323] hover:bg-[#2a2f2f] text-[#c9c7b2] hover:text-[#e5e971] border border-[#2e3333] hover:border-[#c9cd58]/50 transition-all group no-underline cursor-pointer"
             title={t.openInTimeline}
           >
             <Sparkles className="w-3.5 h-3.5 text-[#c9cd58] group-hover:scale-110 transition-transform" />
             <span>{t.openInTimeline}</span>
             <ArrowUpRight className="w-3 h-3 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#c9cd58]" />
-          </button>
+          </a>
         )}
 
         <button

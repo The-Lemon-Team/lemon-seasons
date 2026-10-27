@@ -35,7 +35,7 @@ export async function runResolution() {
       type: true,
       startDate: true,
       icon: true,
-      curator: true,
+      author: true,
       description: true,
       rawContent: true,
       parentNoteId: true,
@@ -164,7 +164,8 @@ export async function runResolution() {
           targetTitle: target.title,
           targetType: target.type,
           targetIcon: target.icon || undefined,
-          targetCurator: target.curator || undefined,
+          targetAuthor: target.author || undefined,
+          targetCurator: target.author || undefined,
           targetDate: typeof target.startDate === 'string' ? target.startDate : target.startDate.toISOString(),
           isParent,
         };

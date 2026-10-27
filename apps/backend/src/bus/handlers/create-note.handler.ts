@@ -38,7 +38,7 @@ export class CreateNoteHandler implements ICommandHandler<CreateNotePayload> {
       containerId: payload.containerId || undefined,
       sourceLink: payload.sourceLink,
       icon: payload.icon,
-      curator: payload.curator || 'bus',
+      author: payload.author || payload.curator || 'bus',
       folders: payload.folders || [],
       hashtags: payload.hashtags || [],
       tagIds: [],

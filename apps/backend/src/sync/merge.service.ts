@@ -119,7 +119,7 @@ export class MergeService {
               endDate: data.endDate ? new Date(data.endDate) : null,
               sourceLink: data.sourceLink,
               icon: data.icon,
-              curator: data.curator,
+              author: data.author,
               resonanceScore: null,
               version: incomingNote.version || 1,
             },

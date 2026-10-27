@@ -165,7 +165,8 @@ export const SeasonsFeedAdapter: FeedAdapter = {
         timeSlot: (n.metadata as any)?.timeSlot,
         resonanceScore: (n.metadata as any)?.resonanceScore ?? (n as any).resonanceScore ?? 85,
         sourceLink: n.sourceLink,
-        curator: n.curator || 'Lemon Seasons',
+        author: (n as any).author || n.curator || 'Lemon Seasons',
+        curator: (n as any).author || n.curator || 'Lemon Seasons',
         hashtags: n.hashtags?.map((h) => h.name) || [],
         rawPayload: n,
       };

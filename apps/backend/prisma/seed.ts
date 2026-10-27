@@ -263,7 +263,16 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 21 Feeds (including Dev Hub: Changelogs, Google/OpenAI/Anthropic, Xakep, CyberSec, Spark AI & Habr)');
+  const feedSparkYoutube = await prisma.feed.create({
+    data: {
+      title: 'YouTube • OneDay (Spark)',
+      description: 'Ежедневная политическая выжимка и аналитические разборы YouTube-канала OneDay',
+      slug: 'spark-youtube-oneday',
+      folderPaths: ['Spark/youtube/oneday', 'Spark/youtube'],
+    },
+  });
+
+  console.log('✅ Created 22 Feeds (including Dev Hub: Changelogs, Google/OpenAI/Anthropic, Xakep, CyberSec, Spark AI & Habr, YouTube OneDay)');
 
   // 1.5 Seed Initial Vault Containers (Public & Private)
   await prisma.container.upsert({
@@ -475,6 +484,7 @@ async function main() {
     imageUrl?: string;
     imageCaption?: string;
     trailerUrl?: string;
+    author?: string;
     curator?: string;
     parentNoteId?: string;
     resonanceScore?: number;
@@ -496,7 +506,7 @@ async function main() {
         startDate: sDate,
         endDate: eDate,
         icon: item.icon,
-        curator: item.curator,
+        author: item.author || item.curator,
         resonanceScore: item.resonanceScore,
         parentNoteId: item.parentNoteId,
         sourceLink: item.sourceLink,
@@ -805,7 +815,7 @@ async function main() {
       hashtags: p.hashtags,
       imageUrl: p.imageUrl,
       imageCaption: p.imageCaption,
-      curator: p.curator,
+      author: p.author || p.curator,
     });
   }
   console.log(`✅ Seeded ${politicalEvents.length} Political Events 2026`);
@@ -878,6 +888,19 @@ async function main() {
     },
 
     // ── Dev Hub: AI & Habr ────────────────────────────────────────────
+    {
+      feedId: feedSparkYoutube.id,
+      containerId: 'main-vault',
+      title: 'OneDay #284 • Политический срез дня: переговоры по транзиту, саммит в Женеве и дебаты',
+      type: NoteType.SINGLE,
+      startDate: '2026-10-26T19:00:00.000Z',
+      icon: 'tv',
+      folderPath: 'Spark/youtube/oneday',
+      folders: ['Spark/youtube/oneday', 'Spark/youtube'],
+      hashtags: ['OneDay', 'YouTube', 'Политика', 'Геополитика', 'Дайджест'],
+      description: '### 📺 OneDay • Политическая выжимка дня\n\n- **Саммит в Женеве**: Ключевые заявления делегаций по энергетической безопасности и морским коридорам.\n- **Региональная повестка**: Анализ новых инициатив регулирования рынков и торговых соглашений.\n- **Экспертный разбор**: Влияние геополитических договоренностей на логистические цепочки поставок.',
+      sourceLink: 'https://youtube.com/@oneday-politics',
+    },
     {
       feedId: feedSparkAi.id,
       containerId: 'main-vault',

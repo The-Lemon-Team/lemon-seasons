@@ -24,6 +24,11 @@ export class QueryNotesDto {
   @IsOptional()
   publicFeedSlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by environment mode (dev | staging | public)' })
+  @IsString()
+  @IsOptional()
+  appMode?: string;
+
   @ApiPropertyOptional({ description: 'Filter by note privacy contour (private | public | all)' })
   @IsString()
   @IsOptional()
@@ -54,7 +59,12 @@ export class QueryNotesDto {
   @IsOptional()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by Curator or Persona name / ID' })
+  @ApiPropertyOptional({ description: 'Filter by Author or Persona name / ID' })
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by Curator (legacy fallback)' })
   @IsString()
   @IsOptional()
   curator?: string;

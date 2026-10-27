@@ -24,7 +24,7 @@ import { HierarchySelector } from './HierarchySelector';
 import { NoteTypeSelector } from './NoteTypeSelector';
 import { FeedSelector } from './FeedSelector';
 import { LemonLogo } from './LemonLogo';
-import { CuratorBadge } from './common/CuratorBadge';
+import { AuthorBadge } from './common/AuthorBadge';
 import { getFeedTheme } from '../utils/feedThemes';
 import { useI18n } from '../i18n';
 
@@ -33,6 +33,7 @@ interface TimelineViewProps {
   isLoading: boolean;
   onSelectNote: (note: Note) => void;
   filterState?: CalendarFilterState;
+  onSelectAuthor?: (author?: string) => void;
   onSelectCurator?: (curator?: string) => void;
   onToggleFeed?: (feedSlug: string) => void;
   onSelectOnlyFeed?: (feedSlug: string) => void;
@@ -61,6 +62,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   isLoading,
   onSelectNote,
   filterState,
+  onSelectAuthor,
   onSelectCurator,
   onToggleFeed,
   onSelectOnlyFeed,
@@ -186,12 +188,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
 
             {/* Active Author / Source Filter Pill */}
-            {filterState.curator && (
+            {(filterState.author || filterState.curator) && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-950/60 border border-sky-500/40 text-[11px] font-mono text-sky-300">
-                <span>Автор: {filterState.curator}</span>
+                <span>Автор: {(filterState.author || filterState.curator)}</span>
                 {onSelectCurator && (
                   <button
-                    onClick={() => onSelectCurator(undefined)}
+                    onClick={() => (onSelectAuthor || onSelectCurator)(undefined)}
                     className="hover:text-white transition-colors"
                   >
                     <X className="w-3 h-3" />
@@ -205,7 +207,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             (filterState.feed ||
               filterState.tags.length > 0 ||
               filterState.types.length > 0 ||
-              filterState.curator) && (
+              (filterState.author || filterState.curator)) && (
               <button
                 onClick={onResetFilters}
                 className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 transition-colors"
@@ -335,15 +337,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         })()}
 
                         {/* Curator / Persona Badge */}
-                        {note.curator && (
-                          <CuratorBadge
-                            curator={note.curator}
+                        {((note as any).author || note.curator) && (
+                          <AuthorBadge
+                            author={(note as any).author || ((note as any).author || note.curator)}
                             size="sm"
                             onClick={
                               onSelectCurator
                                 ? (e) => {
                                     e.stopPropagation();
-                                    onSelectCurator(note.curator || undefined);
+                                    (onSelectAuthor || onSelectCurator)(((note as any).author || note.curator) || undefined);
                                   }
                                 : undefined
                             }

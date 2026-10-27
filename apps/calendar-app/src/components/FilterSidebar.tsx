@@ -31,6 +31,7 @@ interface FilterSidebarProps {
   onToggleHashtag: (hashtag: string) => void;
   onToggleType: (type: NoteType) => void;
   onResetFilters: () => void;
+  onSelectAuthor?: (author?: string) => void;
   onSelectCurator?: (curator?: string) => void;
 }
 
@@ -47,6 +48,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onToggleHashtag,
   onToggleType,
   onResetFilters,
+  onSelectAuthor,
   onSelectCurator,
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
@@ -287,9 +289,9 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               <Bot className="w-3.5 h-3.5 text-sky-400" />
               <span>{lang === 'ru' ? 'Автор / Источник' : 'Author / Source'}</span>
             </div>
-            {filterState.curator && (
+            {(filterState.author || filterState.curator) && (
               <button
-                onClick={() => onSelectCurator?.(undefined)}
+                onClick={() => (onSelectAuthor || onSelectCurator)?.(undefined)}
                 className="text-[10px] font-mono text-sky-400 hover:text-sky-300 underline"
               >
                 {lang === 'ru' ? 'Сброс' : 'Clear'}
@@ -300,8 +302,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           <div className="space-y-2">
             <input
               type="text"
-              value={filterState.curator || ''}
-              onChange={(e) => onSelectCurator?.(e.target.value.trim() || undefined)}
+              value={(filterState.author || filterState.curator) || ''}
+              onChange={(e) => (onSelectAuthor || onSelectCurator)?.(e.target.value.trim() || undefined)}
               placeholder={lang === 'ru' ? 'Имя автора или источника...' : 'Author or source name...'}
               className="w-full bg-[#121414] border border-[#242828] rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:border-sky-500/50 transition-colors"
             />
@@ -310,11 +312,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 { label: '⚡ Gemini Sparks', value: 'Gemini Sparks' },
                 { label: '👑 ' + (lang === 'ru' ? 'Пользователь' : 'User'), value: 'User' },
               ].map((preset) => {
-                const isSelected = filterState.curator === preset.value;
+                const isSelected = (filterState.author || filterState.curator) === preset.value;
                 return (
                   <button
                     key={preset.value}
-                    onClick={() => onSelectCurator?.(isSelected ? undefined : preset.value)}
+                    onClick={() => (onSelectAuthor || onSelectCurator)?.(isSelected ? undefined : preset.value)}
                     className={`px-2 py-1 rounded-lg text-[11px] font-mono border transition-all ${
                       isSelected
                         ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-medium'

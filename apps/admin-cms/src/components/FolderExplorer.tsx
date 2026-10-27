@@ -1,11 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   ChevronDown,
-  Folder,
-  FolderOpen,
-  FolderPlus,
   FolderGit2,
   ChevronsUpDown,
   ChevronsDownUp,
@@ -14,12 +11,20 @@ import {
   X,
   Files,
   FileQuestion,
-  FilePlus,
+  Lock,
+  Globe,
 } from 'lucide-react';
-import { useFolderTree, useCreateFolder } from '../api/queries';
-import { FolderTreeNode } from '../types';
-import { message, Modal } from 'antd';
+import { useFolderTree, useCreateFolder, useUpdateFolder, useDeleteFolder } from '../api/queries';
+import { FolderTreeNode, FolderPrivacy, CreateFolderInput } from '../types';
+import { message } from 'antd';
 import { useAdminI18n } from '../i18n';
+import {
+  renderFolderIcon,
+  filterFolderTree,
+  calculateFolderCounts,
+} from './folders/folderTree.utils';
+import { FolderNodeActionDock } from './folders/FolderNodeActionDock';
+import { CreateFolderModal } from './folders/CreateFolderModal';
 
 interface FolderExplorerProps {
   selectedFolder?: string;
@@ -44,17 +49,23 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
 }) => {
   const { t } = useAdminI18n();
   const navigate = useNavigate();
+
   const { data: tree = [], isLoading } = useFolderTree();
   const createFolderMutation = useCreateFolder();
+  const updateFolderMutation = useUpdateFolder();
+  const deleteFolderMutation = useDeleteFolder();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set());
+
+  // Create folder modal state
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newFolderPath, setNewFolderPath] = useState('');
   const [parentForNew, setParentForNew] = useState<string>('');
+  const [defaultPrivacyForNew, setDefaultPrivacyForNew] = useState<FolderPrivacy>('public');
 
   // Expand parent paths when a folder is selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedFolder) {
       const parts = selectedFolder.split('/');
       const toExpand = new Set(expandedPaths);
@@ -66,6 +77,8 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       setExpandedPaths(toExpand);
     }
   }, [selectedFolder]);
+
+  const counts = useMemo(() => calculateFolderCounts(tree), [tree]);
 
   const toggleExpand = (path: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -96,62 +109,66 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
     setExpandedPaths(new Set());
   };
 
-  const handleOpenCreateModal = (parentPath = '') => {
+  const handleOpenCreateModal = (parentPath = '', defaultPrivacy: FolderPrivacy = 'public') => {
     setParentForNew(parentPath);
-    setNewFolderPath(parentPath ? `${parentPath}/` : '');
+    setDefaultPrivacyForNew(defaultPrivacy);
     setCreateModalOpen(true);
   };
 
-  const handleCreateFolder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanPath = newFolderPath.trim();
-    if (!cleanPath) {
-      message.error(t.folderInputLabel);
-      return;
-    }
+  const handleCreateFolderSubmit = async (input: CreateFolderInput) => {
     try {
-      await createFolderMutation.mutateAsync({
-        path: cleanPath,
-      });
-      message.success(`Folder '${cleanPath}' created`);
-      setCreateModalOpen(false);
-      setNewFolderPath('');
-      onSelectFolder(cleanPath);
+      await createFolderMutation.mutateAsync(input);
+      message.success(t.folderUpdatedSuccess);
+      onSelectFolder(input.path);
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Error');
+      const errMsg = err.response?.data?.message || err.message || 'Error creating folder';
+      message.error(errMsg);
+      throw err;
     }
   };
 
-  // Filter tree recursively if searching
-  const filterTree = (nodes: FolderTreeNode[], query: string): FolderTreeNode[] => {
-    if (!query) return nodes;
-    const lower = query.toLowerCase();
-    const result: FolderTreeNode[] = [];
-
-    for (const node of nodes) {
-      const matchesSelf =
-        node.name.toLowerCase().includes(lower) ||
-        node.path.toLowerCase().includes(lower);
-      const filteredChildren = filterTree(node.children, query);
-
-      if (matchesSelf || filteredChildren.length > 0) {
-        result.push({
-          ...node,
-          children: filteredChildren,
-        });
-      }
+  const handleTogglePrivacy = async (node: FolderTreeNode) => {
+    const targetPrivacy: FolderPrivacy = node.privacy === 'private' ? 'public' : 'private';
+    try {
+      await updateFolderMutation.mutateAsync({
+        id: node.id,
+        data: {
+          privacy: targetPrivacy,
+          color: targetPrivacy === 'private' ? '#a855f7' : '#c9cd58',
+        },
+      });
+      message.success(
+        targetPrivacy === 'private'
+          ? `Папка "${node.name}" теперь приватная`
+          : `Папка "${node.name}" теперь публичная`
+      );
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error updating folder privacy');
     }
-    return result;
+  };
+
+  const handleDeleteFolder = async (node: FolderTreeNode) => {
+    try {
+      await deleteFolderMutation.mutateAsync(node.id);
+      message.success(t.folderDeletedSuccess);
+      if (selectedFolder === node.path || selectedFolder?.startsWith(`${node.path}/`)) {
+        onSelectFolder(undefined);
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error deleting folder');
+    }
   };
 
   const displayedTree = useMemo(() => {
-    return filterTree(tree, searchQuery);
-  }, [tree, searchQuery]);
+    return filterFolderTree(tree, searchQuery, privacyFilter);
+  }, [tree, searchQuery, privacyFilter]);
 
   const renderNode = (node: FolderTreeNode, depth = 0) => {
     const isExpanded = expandedPaths.has(node.path) || Boolean(searchQuery);
     const isSelected = selectedFolder === node.path;
     const hasChildren = node.children.length > 0;
+    const isPrivate = node.privacy === 'private';
+    const folderColor = node.color || (isPrivate ? '#a855f7' : '#c9cd58');
 
     return (
       <div key={node.id} className="select-none text-xs">
@@ -184,20 +201,13 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               </span>
             )}
 
-            {/* Folder Icon */}
-            {isExpanded ? (
-              <FolderOpen
-                className={`w-4 h-4 shrink-0 ${
-                  isSelected ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
-                }`}
-              />
-            ) : (
-              <Folder
-                className={`w-4 h-4 shrink-0 ${
-                  isSelected ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
-                }`}
-              />
-            )}
+            {/* Folder Icon (Colorized) */}
+            <div
+              className="flex items-center justify-center shrink-0"
+              style={{ color: folderColor }}
+            >
+              {renderFolderIcon(node.icon || (isPrivate ? 'lock' : 'folder'), isExpanded, 'w-4 h-4')}
+            </div>
 
             {/* Name */}
             <span className="truncate font-mono text-[12px]" title={node.path}>
@@ -206,35 +216,32 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Quick add note inside this folder */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
+            {/* Hover Actions Dock */}
+            <FolderNodeActionDock
+              node={node}
+              onAddSubfolder={(path, priv) => handleOpenCreateModal(path, priv)}
+              onAddNote={(path) => {
                 if (onCreateNote) {
-                  onCreateNote(node.path);
+                  onCreateNote(path);
                 } else {
-                  navigate(`/notes/new?folder=${encodeURIComponent(node.path)}`);
+                  navigate(`/notes/new?folder=${encodeURIComponent(path)}`);
                 }
               }}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all cursor-pointer"
-              title={`Create note in ${node.path}`}
-            >
-              <FilePlus className="w-3.5 h-3.5" />
-            </button>
+              onTogglePrivacy={handleTogglePrivacy}
+              onDeleteFolder={handleDeleteFolder}
+            />
 
-            {/* Quick add subfolder button on hover */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenCreateModal(node.path);
-              }}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all cursor-pointer"
-              title={`Create subfolder inside ${node.path}`}
+            {/* Privacy indicator badge */}
+            <span
+              className={`text-[9px] font-mono px-1 py-0.5 rounded flex items-center gap-0.5 border ${
+                isPrivate
+                  ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                  : 'bg-primary/15 border-primary/30 text-primary'
+              }`}
+              title={isPrivate ? t.folderPrivacyPrivate : t.folderPrivacyPublic}
             >
-              <FolderPlus className="w-3.5 h-3.5" />
-            </button>
+              {isPrivate ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
+            </span>
 
             {/* Notes count badge */}
             <span
@@ -260,12 +267,10 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
   };
 
   return (
-    <div
-      className={`platform-tile flex flex-col h-full overflow-hidden ${className}`}
-    >
+    <div className={`platform-tile flex flex-col h-full overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="p-2.5 border-b border-tile-border bg-tile">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-2.5 border-b border-tile-border bg-tile space-y-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <FolderGit2 className="w-4 h-4 text-primary shrink-0" />
             <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
@@ -278,7 +283,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={expandAll}
               className="p-1 rounded hover:bg-tile-subtle text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-              title="Expand all"
+              title={t.expandAll}
             >
               <ChevronsUpDown className="w-3.5 h-3.5" />
             </button>
@@ -286,7 +291,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={collapseAll}
               className="p-1 rounded hover:bg-tile-subtle text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-              title="Collapse all"
+              title={t.collapseAll}
             >
               <ChevronsDownUp className="w-3.5 h-3.5" />
             </button>
@@ -294,21 +299,21 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               type="button"
               onClick={() => handleOpenCreateModal()}
               className="p-1 rounded hover:bg-primary/20 text-primary transition-colors cursor-pointer"
-              title="Add folder"
+              title={t.addFolderBtn}
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Search inside folder hierarchy */}
+        {/* Search input */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 w-3.5 h-3.5 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.selectFolderPlaceholder}
+            placeholder={t.searchFoldersPlaceholder}
             className="w-full bg-control border border-control-border rounded pl-7 pr-6 py-1 text-[11px] font-mono text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary outline-none"
           />
           {searchQuery && (
@@ -320,6 +325,45 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
               <X className="w-3 h-3" />
             </button>
           )}
+        </div>
+
+        {/* Privacy Filter Tabs matching calendar-app */}
+        <div className="flex items-center gap-1 p-0.5 bg-control rounded border border-control-border text-[10px] font-mono">
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('all')}
+            className={`flex-1 py-1 rounded transition-colors text-center cursor-pointer ${
+              privacyFilter === 'all'
+                ? 'bg-tile text-on-surface font-bold shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {t.filterAllFolders} ({counts.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('public')}
+            className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 cursor-pointer ${
+              privacyFilter === 'public'
+                ? 'bg-primary/20 text-primary font-bold shadow-xs'
+                : 'text-on-surface-variant hover:text-primary'
+            }`}
+          >
+            <Globe className="w-2.5 h-2.5" />
+            <span>{t.filterPublicFolders} ({counts.publicCount})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('private')}
+            className={`flex-1 py-1 rounded transition-colors text-center flex items-center justify-center gap-1 cursor-pointer ${
+              privacyFilter === 'private'
+                ? 'bg-purple-500/20 text-purple-300 font-bold shadow-xs'
+                : 'text-on-surface-variant hover:text-purple-300'
+            }`}
+          >
+            <Lock className="w-2.5 h-2.5" />
+            <span>{t.filterPrivateFolders} ({counts.privateCount})</span>
+          </button>
         </div>
       </div>
 
@@ -371,8 +415,8 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
         ) : displayedTree.length > 0 ? (
           displayedTree.map((node) => renderNode(node, 0))
         ) : (
-          <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60 space-y-2">
-            <p>—</p>
+          <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60">
+            {t.noNotesFound}
           </div>
         )}
       </div>
@@ -383,62 +427,18 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Obsidian Vault
         </span>
-        <span>{tree.length} папок</span>
+        <span>{counts.total} папок</span>
       </div>
 
-      {/* Create Folder Modal */}
-      <Modal
+      {/* Upgraded Create Folder Modal with Privacy selection */}
+      <CreateFolderModal
         open={createModalOpen}
-        onCancel={() => setCreateModalOpen(false)}
-        footer={null}
-        title={
-          <span className="font-sans font-bold text-base text-on-surface flex items-center gap-2">
-            <FolderPlus className="w-5 h-5 text-primary shrink-0" />
-            {t.folderInputLabel}
-          </span>
-        }
-        width={440}
-        styles={{
-          content: {
-            backgroundColor: '#292a2a',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          },
-        }}
-      >
-        <form onSubmit={handleCreateFolder} className="space-y-4 pt-3">
-          <div className="space-y-1.5">
-            <label className="block font-mono text-[11px] font-semibold text-on-surface-variant uppercase">
-              {t.folderInputLabel}
-            </label>
-            <input
-              type="text"
-              value={newFolderPath}
-              onChange={(e) => setNewFolderPath(e.target.value)}
-              placeholder="e.g. News/Tech or Projects"
-              className="w-full bg-surface-container-lowest border border-white/10 rounded px-3 py-2 text-on-surface font-mono text-xs focus:border-primary outline-none"
-              autoFocus
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-            <button
-              type="button"
-              onClick={() => setCreateModalOpen(false)}
-              className="px-3 py-1.5 text-xs text-on-surface-variant hover:text-on-surface rounded font-medium"
-            >
-              {t.cancel}
-            </button>
-            <button
-              type="submit"
-              disabled={createFolderMutation.isPending}
-              className="px-4 py-1.5 bg-primary text-on-primary hover:bg-primary-fixed-dim rounded font-semibold text-xs transition-all shadow disabled:opacity-50"
-            >
-              {createFolderMutation.isPending ? t.loading : t.add}
-            </button>
-          </div>
-        </form>
-      </Modal>
+        onClose={() => setCreateModalOpen(false)}
+        parentPath={parentForNew}
+        defaultPrivacy={defaultPrivacyForNew}
+        onSubmit={handleCreateFolderSubmit}
+        isLoading={createFolderMutation.isPending}
+      />
     </div>
   );
 };
-

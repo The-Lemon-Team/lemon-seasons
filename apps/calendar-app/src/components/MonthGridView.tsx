@@ -36,6 +36,7 @@ interface MonthGridViewProps {
   startDate: string; // ISO
   filterState: CalendarFilterState;
   onSelectNote: (note: Note) => void;
+  onSelectAuthor?: (author?: string) => void;
   onSelectCurator?: (curator?: string) => void;
   onSelectDay?: (dateKey: string) => void;
   onPrevMonth?: () => void;
@@ -63,6 +64,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   startDate,
   filterState,
   onSelectNote,
+  onSelectAuthor,
   onSelectCurator,
   onSelectDay,
   onPrevMonth,
@@ -113,7 +115,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
     filterState.tags.length +
     filterState.hashtags.length +
     filterState.types.length +
-    (filterState.curator ? 1 : 0) +
+    ((filterState.author || filterState.curator) ? 1 : 0) +
     (filterState.search ? 1 : 0);
 
   // Per-feed counts in current month notes
@@ -446,12 +448,12 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   ))}
 
                   {/* Author / Source Filter */}
-                  {filterState.curator && (
+                  {(filterState.author || filterState.curator) && (
                     <span className="shrink-0 inline-flex items-center gap-1.5 px-2 h-6 rounded bg-sky-950/60 border border-sky-500/40 text-sky-300 text-[11px] font-mono leading-none">
-                      <span>Автор: {filterState.curator}</span>
+                      <span>Автор: {(filterState.author || filterState.curator)}</span>
                       {onSelectCurator && (
                         <button
-                          onClick={() => onSelectCurator(undefined)}
+                          onClick={() => (onSelectAuthor || onSelectCurator)(undefined)}
                           className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-black/30 hover:text-white transition-colors ml-0.5 shrink-0"
                           title="Remove author filter"
                         >
@@ -544,7 +546,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 {visibleNotes.map((note) => {
                   const typeColor = NoteTypeColors[note.type] || NoteTypeColors.EVENT;
                   const startHour = dayjs(note.startDate).format('HH:mm');
-                  const curatorIcon = note.curator ? '👤' : null;
+                  const curatorIcon = ((note as any).author || note.curator) ? '👤' : null;
 
                   const feedTheme = note.feed ? getFeedTheme(note.feed.slug, note.feed.title) : null;
                   const feedIcon = feedTheme ? feedTheme.emoji : null;
@@ -562,7 +564,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                         color: typeColor.text,
                         borderColor: typeColor.border,
                       }}
-                      title={`${startHour} • ${note.title}${note.curator ? ` [${note.curator}]` : ''}${feedTheme ? ` • [${feedTheme.shortTitle}]` : ''}`}
+                      title={`${startHour} • ${note.title}${((note as any).author || note.curator) ? ` [${((note as any).author || note.curator)}]` : ''}${feedTheme ? ` • [${feedTheme.shortTitle}]` : ''}`}
                     >
                       <span className="opacity-75 text-[9px] font-mono flex-shrink-0">
                         {startHour}

@@ -21,6 +21,7 @@ export interface CreateNotePayload {
   containerId?: string | null;
   sourceLink?: string;
   icon?: string;
+  author?: string;
   curator?: string;
   taxonomyPath?: string;
   folders?: string[];

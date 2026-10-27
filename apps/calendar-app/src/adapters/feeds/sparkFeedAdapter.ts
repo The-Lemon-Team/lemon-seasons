@@ -202,7 +202,8 @@ export const SparkFeedAdapter: FeedAdapter = {
         timeSlot: (n.metadata as any)?.timeSlot,
         resonanceScore: (n.metadata as any)?.resonanceScore ?? (n as any).resonanceScore,
         sourceLink: n.sourceLink,
-        curator: n.curator,
+        author: (n as any).author || n.curator,
+        curator: (n as any).author || n.curator,
         hashtags: n.hashtags?.map((h) => h.name) || [],
         rawPayload: n,
       };

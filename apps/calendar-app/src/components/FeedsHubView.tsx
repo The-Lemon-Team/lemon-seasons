@@ -50,7 +50,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   const activeFeed = selectedFeed ?? (selectedFeeds && selectedFeeds.length > 0 ? selectedFeeds[0] : undefined);
 
   const initialRoute = useMemo(() => {
-    if (!activeFeed) return 'spark';
+    if (!activeFeed) return 'all';
     const clean = activeFeed.trim().replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
     if (clean.includes('/')) return clean;
     if (

@@ -47,7 +47,7 @@ export const NoteEditorPage: React.FC = () => {
   );
   const [endDate, setEndDate] = useState('');
   const [icon, setIcon] = useState('');
-  const [curator, setCurator] = useState('');
+  const [author, setAuthor] = useState('');
   const [assignedFolders, setAssignedFolders] = useState<FolderInputItem[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
@@ -67,7 +67,7 @@ export const NoteEditorPage: React.FC = () => {
       setStartDate(new Date(note.startDate).toISOString().slice(0, 16));
       setEndDate(note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '');
       setIcon(note.icon || '');
-      setCurator(note.curator || '');
+      setAuthor((note as any).author || note.curator || '');
       setDescription(note.description || '');
       setHashtags(note.hashtags?.map((h) => h.name) || []);
       setAssignedFolders(
@@ -107,7 +107,8 @@ export const NoteEditorPage: React.FC = () => {
           startDate: new Date(startDate).toISOString(),
           endDate: endDate ? new Date(endDate).toISOString() : undefined,
           icon: icon.trim() || undefined,
-          curator: curator.trim() || undefined,
+          author: author.trim() || undefined,
+            curator: author.trim() || undefined,
           description: description.trim() || undefined,
           hashtags,
           folders: assignedFolders,
@@ -147,7 +148,8 @@ export const NoteEditorPage: React.FC = () => {
             startDate: new Date(startDate).toISOString(),
             endDate: endDate ? new Date(endDate).toISOString() : undefined,
             icon: icon.trim() || undefined,
-            curator: curator.trim() || undefined,
+            author: author.trim() || undefined,
+            curator: author.trim() || undefined,
             description: description.trim() || undefined,
             hashtags,
             folders: assignedFolders,

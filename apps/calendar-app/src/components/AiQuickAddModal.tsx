@@ -186,7 +186,8 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         sourceLink: c.sourceLink,
         icon: c.icon,
         description: c.description,
-        curator: c.curator,
+        author: (c as any).author || c.curator,
+        curator: (c as any).author || c.curator,
       }));
 
       await calendarApi.createNotesBatch(payload);

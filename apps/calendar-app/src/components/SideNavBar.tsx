@@ -19,6 +19,7 @@ import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { useFoldersContext } from '../context/FoldersContext';
 import { LemonLogo } from './LemonLogo';
+import { getPathForView } from '../hooks/useCalendarState';
 
 interface SideNavBarProps {
   currentView: CalendarViewMode;
@@ -45,17 +46,35 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
   const { user, role, isAdmin, isAuthenticated, logout, switchDemoRole } = useAuth();
   const { folders } = useFoldersContext();
 
+  const getNavHref = (view: CalendarViewMode): string => {
+    const path = getPathForView(view);
+    if (typeof window !== 'undefined' && window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const appMode = params.get('appMode');
+      if (appMode) {
+        return `${path}?appMode=${encodeURIComponent(appMode)}`;
+      }
+    }
+    return path;
+  };
+
+  const handleNavClick = (view: CalendarViewMode) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If middle-clicked (wheel click) or clicked with modifier keys (Ctrl, Cmd, Shift, Alt),
+    // allow native browser action (opens link in new tab or window).
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    e.preventDefault();
+    onSetView(view);
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#1e2020] border-r border-[#242828] flex flex-col py-6 px-4 gap-2 z-20 hidden md:flex transition-all duration-200 ease-in-out">
       {/* Brand Header */}
       <a
-        href="/"
-        onClick={(e) => {
-          e.preventDefault();
-          onSetView('timeline');
-        }}
-        className="mb-5 flex flex-col gap-1 px-2 py-1.5 rounded-lg hover:bg-[#242828]/60 transition-all group cursor-pointer"
+        href={getNavHref('timeline')}
+        onClick={handleNavClick('timeline')}
+        className="mb-5 flex flex-col gap-1 px-2 py-1.5 rounded-lg hover:bg-[#242828]/60 transition-all group cursor-pointer no-underline"
         title={t.timeline || "Главная"}
       >
         <div className="flex items-center gap-3">
@@ -100,57 +119,62 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
       {/* Navigation Links */}
       <nav className="flex flex-col gap-1 flex-1">
         {/* Timeline View */}
-        <button
-          onClick={() => onSetView('timeline')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'timeline'
+        <a
+          href={getNavHref('timeline')}
+          onClick={handleNavClick('timeline')}
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r cursor-pointer no-underline ${currentView === 'timeline'
             ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
             : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
             }`}
         >
           <Home className="w-4 h-4" />
           <span>{t.timeline}</span>
-        </button>
+        </a>
 
         {/* Calendar Month View */}
-        <button
-          onClick={() => onSetView('month')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'month'
+        <a
+          href={getNavHref('month')}
+          onClick={handleNavClick('month')}
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r cursor-pointer no-underline ${currentView === 'month'
             ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
             : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
             }`}
         >
           <Calendar className="w-4 h-4" />
           <span>{t.calendar}</span>
-        </button>
+        </a>
 
         {/* Gantt Swimlane View */}
-        <button
-          onClick={() => onSetView('gantt')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'gantt'
+        <a
+          href={getNavHref('gantt')}
+          onClick={handleNavClick('gantt')}
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r cursor-pointer no-underline ${currentView === 'gantt'
             ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
             : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
             }`}
         >
           <GanttChartSquare className="w-4 h-4" />
           <span>{t.gantt}</span>
-        </button>
+        </a>
 
         {/* Feeds & Channels Hub View */}
-        <button
-          onClick={() => onSetView('feeds')}
-          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r ${currentView === 'feeds'
+        <a
+          href={getNavHref('feeds')}
+          onClick={handleNavClick('feeds')}
+          className={`px-3 py-2 flex items-center gap-3 transition-all duration-200 ease-in-out font-mono text-xs text-left rounded-r cursor-pointer no-underline ${currentView === 'feeds'
             ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold'
             : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
             }`}
         >
           <Radio className="w-4 h-4 text-[#c9cd58]" />
           <span>{t.feeds}</span>
-        </button>
+        </a>
 
         {/* Folder Manager View */}
-        <button
-          onClick={() => onSetView('folders')}
-          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r ${currentView === 'folders'
+        <a
+          href={getNavHref('folders')}
+          onClick={handleNavClick('folders')}
+          className={`px-3 py-2 flex items-center justify-between transition-all duration-200 ease-in-out font-mono text-xs rounded-r cursor-pointer no-underline ${currentView === 'folders'
             ? 'bg-[#c9cd58]/20 text-[#e5e971] border-l-4 border-[#c9cd58] font-semibold shadow-glow-lemon'
             : 'text-[#c9c7b2] hover:bg-[#333535] hover:text-[#e2e2e2]'
             }`}
@@ -165,7 +189,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
             }`}>
             {folders.length}
           </span>
-        </button>
+        </a>
 
 
 

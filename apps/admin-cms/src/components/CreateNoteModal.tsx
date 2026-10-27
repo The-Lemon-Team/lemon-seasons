@@ -53,7 +53,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [sourceLink, setSourceLink] = useState('');
-  const [curator, setCurator] = useState('');
+  const [author, setAuthor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize or reset form when modal opens or initialFolderPath changes
@@ -65,7 +65,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setStatus('PUBLISHED');
       setEndDate('');
       setSourceLink('');
-      setCurator('');
+      setAuthor('');
       setHashtags([]);
 
       const now = new Date();
@@ -117,7 +117,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         description: description.trim() || undefined,
         sourceLink: sourceLink.trim() || undefined,
-        curator: curator.trim() || undefined,
+        author: author.trim() || undefined,
+        curator: author.trim() || undefined,
         folderPath: primaryFld || undefined,
         folders: assignedFolders.length > 0 ? assignedFolders : undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
@@ -349,7 +350,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             />
           </div>
 
-          {/* Source Link & Curator */}
+          {/* Source Link & Author */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-mono text-on-surface-variant mb-1 flex items-center gap-1">
@@ -368,12 +369,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             <div>
               <label className="block text-xs font-mono text-on-surface-variant mb-1 flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-primary" />
-                <span>Куратор / Автор (Curator)</span>
+                <span>Автор / Источник (Author)</span>
               </label>
               <input
                 type="text"
-                value={curator}
-                onChange={(e) => setCurator(e.target.value)}
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
                 placeholder="e.g. ivan, chen, okatsiya..."
                 className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-xs font-mono text-on-surface outline-none"
               />

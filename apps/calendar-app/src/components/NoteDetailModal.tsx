@@ -28,7 +28,7 @@ import {
 import { useI18n } from '../i18n';
 import { Modal } from './Modal';
 import { EditNoteModal } from './EditNoteModal';
-import { CuratorBadge } from './common/CuratorBadge';
+import { AuthorBadge } from './common/AuthorBadge';
 import { RelatedNotesSection } from './common/RelatedNotesSection';
 import { calendarApi } from '../api/client';
 import { queryKeys } from '../api/queries';
@@ -50,7 +50,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editCurator, setEditCurator] = useState<string | undefined>(undefined);
+  const [editAuthor, setEditAuthor] = useState<string | undefined>(undefined);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -65,7 +65,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     if (current) {
       setEditTitle(current.title);
       setEditDescription(current.description || '');
-      setEditCurator(current.curator || undefined);
+      setEditAuthor(((current as any).author || current.curator) || undefined);
       setIsEditing(false);
       setEditError(null);
     }
@@ -138,11 +138,13 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
       const updated = await calendarApi.updateNote(current.id, {
         title: editTitle.trim(),
         description: editDescription.trim(),
-        curator: editCurator || undefined,
+        author: editAuthor || undefined,
+        curator: editAuthor || undefined,
       });
       current.title = updated.title;
       current.description = updated.description;
-      current.curator = updated.curator;
+      current.author = updated.author;
+      current.curator = updated.author || updated.curator;
       setActiveNote({ ...current, ...updated });
       await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
       setIsEditing(false);
@@ -208,9 +210,9 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               </span>
             )}
 
-            {current.curator && (
-              <CuratorBadge
-                curator={current.curator}
+            {((current as any).author || current.curator) && (
+              <AuthorBadge
+                author={(current as any).author || ((current as any).author || current.curator)}
                 size="sm"
               />
             )}

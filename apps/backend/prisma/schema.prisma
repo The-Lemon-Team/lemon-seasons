@@ -56,7 +56,7 @@ model Note {
   fieldClocks    Json?
   deletedHlc     String?
   attachments    NoteAttachment[]
-  curator        String?
+  author         String?
   parentNoteId   String?
   resonanceScore Int?
   container      Container?     @relation(fields: [containerId], references: [id], onDelete: Cascade)
@@ -81,7 +81,7 @@ model Note {
   @@index([feedId, deletedAt])
   @@index([deletedAt])
   @@index([type])
-  @@index([curator])
+  @@index([author])
   @@index([resonanceScore])
   @@index([parentNoteId])
   @@index([sourceType])

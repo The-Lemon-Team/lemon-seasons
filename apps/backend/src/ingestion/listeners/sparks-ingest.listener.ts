@@ -102,7 +102,10 @@ export class SparksIngestListener {
       const targetFeed = await this.resolveFeedForFolder(folderPath, filePath, parsed.noteDto.metadata?.feedSlug);
       if (targetFeed) {
         parsed.noteDto.feedId = parsed.noteDto.feedId || targetFeed.id;
-        parsed.noteDto.privacy = (targetFeed.privacy || 'public') as any;
+        // Keep note's privacy intact (defaults to 'private' unless frontmatter explicitly requests 'public')
+        if (!parsed.noteDto.privacy) {
+          parsed.noteDto.privacy = 'private';
+        }
       }
 
       // 5. Create or Update Note in Database
@@ -111,6 +114,12 @@ export class SparksIngestListener {
       let resultingNote: any;
 
       if (ingestionRecord.noteId) {
+        const cur = await this.prisma.note.findUnique({ where: { id: ingestionRecord.noteId }, select: { privacy: true, status: true, publicFeedId: true } });
+        if (cur?.publicFeedId) {
+          parsed.noteDto.publicFeedId = cur.publicFeedId;
+          parsed.noteDto.privacy = cur.privacy as any;
+          parsed.noteDto.status = cur.status as any;
+        }
         resultingNote = await this.notesService.update(ingestionRecord.noteId, parsed.noteDto);
         targetNoteId = resultingNote.id;
         this.logger.log(`🔄 Заметка "${resultingNote.title}" обновлена по событию шины`);
@@ -121,6 +130,11 @@ export class SparksIngestListener {
         });
 
         if (existingByExt) {
+          if (existingByExt.publicFeedId) {
+            parsed.noteDto.publicFeedId = existingByExt.publicFeedId;
+            parsed.noteDto.privacy = existingByExt.privacy as any;
+            parsed.noteDto.status = existingByExt.status as any;
+          }
           resultingNote = await this.notesService.update(existingByExt.id, parsed.noteDto);
           targetNoteId = resultingNote.id;
           this.logger.log(`🔄 Идемпотентное обновление заметки "${resultingNote.title}" (externalId: ${filePath})`);
@@ -188,6 +202,7 @@ export class SparksIngestListener {
     const isChangelogs = parts.length > 1 && parts[1].toLowerCase() === 'changelogsfeed';
     const isNotebooklm = parts.length > 1 && parts[1].toLowerCase() === 'notebooklmai';
     const isRuUkraine = lowerPath.includes('рф и украина') || lowerPath.includes('rf-and-ukraine');
+    const isYoutube = parts.length > 1 && parts[1].toLowerCase() === 'youtube';
     const subfolder = parts.length > 1 ? parts[1] : (parts[0] || 'AI');
 
     let targetSlug = 'spark-general';
@@ -198,6 +213,18 @@ export class SparksIngestListener {
       targetSlug = 'spark-рф-и-украина';
       targetTitle = 'РФ и Украина (Spark)';
       targetDesc = 'Хроника событий, дипломатии и военных сводок (РФ и Украина) от Spark';
+    } else if (isYoutube) {
+      if (parts.length > 2 && parts[2].toLowerCase() === 'oneday') {
+        targetSlug = 'spark-youtube-oneday';
+        targetTitle = 'YouTube • OneDay (Spark)';
+        targetDesc = 'Ежедневная политическая выжимка и аналитические разборы YouTube-канала OneDay';
+      } else {
+        const sub = parts.length > 2 ? parts[2] : 'oneday';
+        const cleanSub = sub.charAt(0).toUpperCase() + sub.slice(1);
+        targetSlug = `spark-youtube-${sub.toLowerCase()}`;
+        targetTitle = `YouTube • ${cleanSub} (Spark)`;
+        targetDesc = `Аналитические видео-обзоры и выжимки YouTube (${cleanSub})`;
+      }
     } else if (isChangelogs && parts.length > 2) {
       const subtopic = parts[2];
       const lowerSub = subtopic.toLowerCase();

@@ -80,7 +80,7 @@ export function cleanNoteMarkdown(
 
   // 3. Remove metadata blockquote lines (Источники, Тип записи, Резонанс, Оценка, Links, etc.)
   text = text.replace(
-    /^>\s*\*\*(?:Источники|Тип записи|Индекс резонанса|Резонанс|Оценка|Куратор|Теги|Категория)[^*]*\*\*:[^\n]*\n?/gmi,
+    /^>\s*\*\*(?:Источники|Тип записи|Индекс резонанса|Резонанс|Оценка|Автор|Куратор|Теги|Категория)[^*]*\*\*:[^\n]*\n?/gmi,
     ''
   );
   // Also strip any standalone blockquote lines that just refer to frontmatter or technical metadata

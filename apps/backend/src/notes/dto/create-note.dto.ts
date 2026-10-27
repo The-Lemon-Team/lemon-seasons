@@ -137,7 +137,12 @@ export class CreateNoteDto {
   @IsOptional()
   icon?: string;
 
-  @ApiPropertyOptional({ description: 'Curator, author, or creator assigned to this note', example: 'User' })
+  @ApiPropertyOptional({ description: 'Author or creator assigned to this note', example: 'User' })
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @ApiPropertyOptional({ description: 'Legacy curator field (deprecated)', example: 'User' })
   @IsString()
   @IsOptional()
   curator?: string;

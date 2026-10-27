@@ -40,7 +40,7 @@ export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
-  curator: true,
+  author: true,
   parentNoteId: true,
   resonanceScore: true,
   feed: true,

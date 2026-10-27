@@ -17,12 +17,14 @@ export interface NotesTableWithFiltersProps {
   type?: NoteType;
   folder?: string;
   unfiled?: boolean;
+  author?: string;
   curator?: string;
   hashtag?: string;
   includeDeleted?: boolean;
   feeds: Feed[];
   folders: Folder[];
   hashtags: Array<{ id: string; name: string; _count?: { notes?: number } }>;
+  availableAuthors?: string[];
   availableCurators?: string[];
   sortBy?: 'startDate' | 'type' | 'folder' | 'title';
   sortOrder?: 'asc' | 'desc';
@@ -52,6 +54,7 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
   type,
   folder,
   unfiled,
+  author,
   curator,
   hashtag,
   includeDeleted,
@@ -236,16 +239,16 @@ export const NotesTableWithFilters: React.FC<NotesTableWithFiltersProps> = ({
               </div>
             )}
 
-            {/* Active Curator Filter Chip */}
-            {curator && (
+            {/* Active Author Filter Chip */}
+            {(author || curator) && (
               <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-950/60 text-sky-300 border border-sky-600/50 rounded-full font-mono text-[11px] shadow-xs">
                 <span className="text-[11px] leading-none shrink-0">👤</span>
-                <span className="leading-none truncate max-w-[200px]" title={curator}>
-                  {curator}
+                <span className="leading-none truncate max-w-[200px]" title={author || curator}>
+                  {author || curator}
                 </span>
                 <button
                   type="button"
-                  onClick={() => onFilterChange('curator', undefined)}
+                  onClick={() => { onFilterChange('author', undefined); onFilterChange('curator', undefined); }}
                   className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-sky-300 hover:text-white hover:bg-sky-800/60 transition-colors cursor-pointer shrink-0 -mr-0.5"
                   title={t.reset}
                 >

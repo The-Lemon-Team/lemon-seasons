@@ -26,12 +26,13 @@ const KeyManagementModal = lazy(() => import('./components/KeyManagementModal').
 
 const CalendarAppInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const { appMode } = useAppMode();
+  const { appMode, setAppMode } = useAppMode();
   const {
     filters,
     setStartDate,
     setView,
     setSearch,
+    setAuthor,
     setCurator,
     selectFeed,
     toggleFeed,
@@ -126,7 +127,7 @@ const CalendarAppInner: React.FC = () => {
       filters.tags.length +
       filters.hashtags.length +
       filters.types.length +
-      (filters.curator ? 1 : 0) +
+      ((filters.author || filters.curator) ? 1 : 0) +
       (filters.search ? 1 : 0)
     : 0;
 
@@ -184,6 +185,7 @@ const CalendarAppInner: React.FC = () => {
                 isLoading={isNotesLoading}
                 onSelectNote={setSelectedNote}
                 filterState={filters}
+                onSelectAuthor={setAuthor}
                 onSelectCurator={setCurator}
                 onToggleFeed={toggleFeed}
                 onSelectOnlyFeed={selectOnlyFeed}
@@ -205,6 +207,7 @@ const CalendarAppInner: React.FC = () => {
                 startDate={filters.start}
                 filterState={filters}
                 onSelectNote={setSelectedNote}
+                onSelectAuthor={setAuthor}
                 onSelectCurator={setCurator}
                 onSelectDay={(dateKey) => {
                   setStartDate(dateKey);
@@ -245,6 +248,7 @@ const CalendarAppInner: React.FC = () => {
                 notes={notes}
                 isLoading={isNotesLoading}
                 appMode={appMode}
+                onAppModeChange={setAppMode}
                 selectedFeed={filters.feed}
                 startDate={filters.start}
                 endDate={filters.end}
@@ -278,7 +282,8 @@ const CalendarAppInner: React.FC = () => {
           isOpen={isFilterOpen}
           onClose={() => setIsFilterOpen(false)}
           filterState={filters}
-          onSelectCurator={setCurator}
+          onSelectAuthor={setAuthor}
+                onSelectCurator={setCurator}
           onSelectFeed={selectFeed}
           onToggleFeed={toggleFeed}
           onSelectOnlyFeed={selectOnlyFeed}
@@ -334,11 +339,11 @@ export const App: React.FC = () => {
     <I18nProvider>
       <AuthProvider>
         <UserKeysProvider>
-          <FoldersProvider>
-            <AppModeProvider>
+          <AppModeProvider>
+            <FoldersProvider>
               <CalendarAppInner />
-            </AppModeProvider>
-          </FoldersProvider>
+            </FoldersProvider>
+          </AppModeProvider>
         </UserKeysProvider>
       </AuthProvider>
     </I18nProvider>

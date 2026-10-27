@@ -410,6 +410,20 @@ export class FoldersService {
       }
     }
 
+    if (updateFolderDto.privacy !== undefined) {
+      const prefix = `${current.path}/`;
+      await this.prisma.folder.updateMany({
+        where: {
+          path: { startsWith: prefix },
+          deletedAt: null,
+        },
+        data: {
+          privacy: updateFolderDto.privacy,
+          ...(updateFolderDto.privacy === 'private' ? { color: '#a855f7' } : {}),
+        },
+      });
+    }
+
     return this.prisma.folder.update({
       where: { id },
       data: {
