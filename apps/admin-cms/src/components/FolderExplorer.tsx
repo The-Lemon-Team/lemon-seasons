@@ -235,7 +235,7 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <span
               className={`text-[9px] font-mono px-1 py-0.5 rounded flex items-center gap-0.5 border ${
                 isPrivate
-                  ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                  ? 'bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-300'
                   : 'bg-primary/15 border-primary/30 text-primary'
               }`}
               title={isPrivate ? t.folderPrivacyPrivate : t.folderPrivacyPublic}
@@ -245,10 +245,10 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
 
             {/* Notes count badge */}
             <span
-              className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${
+              className={`font-mono text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
                 isSelected
-                  ? 'bg-primary/30 text-primary font-bold'
-                  : 'bg-surface-container-highest text-on-surface-variant/70'
+                  ? 'bg-primary/25 text-primary font-bold border-primary/30'
+                  : 'bg-tile text-on-surface-variant border-tile-border font-medium'
               }`}
             >
               {node.notesCount}
@@ -382,7 +382,13 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <Files className="w-3.5 h-3.5 shrink-0" />
             <span className="font-sans text-[11px]">{t.allNotes}</span>
           </div>
-          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-tile text-on-surface-variant/80 border border-tile-border">
+          <span
+            className={`font-mono text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+              !selectedFolder && !isUnfiledSelected
+                ? 'bg-tile text-primary font-bold border-primary/30 shadow-xs'
+                : 'bg-tile text-on-surface-variant border-tile-border font-medium'
+            }`}
+          >
             {totalNotesCount}
           </span>
         </div>
@@ -400,7 +406,13 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
             <FileQuestion className="w-3.5 h-3.5 text-outline/70 shrink-0" />
             <span className="font-sans text-[11px]">Unfiled (Root)</span>
           </div>
-          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-tile text-on-surface-variant/80 border border-tile-border">
+          <span
+            className={`font-mono text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+              isUnfiledSelected
+                ? 'bg-tile text-primary font-bold border-primary/30 shadow-xs'
+                : 'bg-tile text-on-surface-variant border-tile-border font-medium'
+            }`}
+          >
             {unfiledNotesCount}
           </span>
         </div>
@@ -409,20 +421,20 @@ export const FolderExplorer: React.FC<FolderExplorerProps> = ({
       {/* Folders Tree List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
         {isLoading ? (
-          <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60">
+          <div className="p-4 text-center text-xs font-mono text-on-surface-variant">
             {t.loading}
           </div>
         ) : displayedTree.length > 0 ? (
           displayedTree.map((node) => renderNode(node, 0))
         ) : (
-          <div className="p-4 text-center text-xs font-mono text-on-surface-variant/60">
+          <div className="p-4 text-center text-xs font-mono text-on-surface-variant">
             {t.noNotesFound}
           </div>
         )}
       </div>
 
       {/* Obsidian Vault Status in Explorer Footer */}
-      <div className="p-2 border-t border-tile-border bg-tile-subtle flex items-center justify-between text-[10px] font-mono text-on-surface-variant/70">
+      <div className="p-2 border-t border-tile-border bg-tile-subtle flex items-center justify-between text-[10px] font-mono text-on-surface-variant">
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Obsidian Vault
