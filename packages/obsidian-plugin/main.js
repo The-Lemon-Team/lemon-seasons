@@ -246,7 +246,7 @@ function custom(check, _params = {}, fatal) {
     });
   return ZodAny.create();
 }
-var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, LentaFrontmatterUtil;
+var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, pinStatusSchema, createWorkspaceSchema, updateWorkspaceSchema, createTrackSchema, updateTrackSchema, createPinSchema, updatePinSchema, batchLinkNotesSchema, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -4422,6 +4422,56 @@ var init_dist = __esm({
       updated_at: external_exports.string().optional(),
       updatedAt: external_exports.string().optional(),
       deleted: external_exports.boolean().optional()
+    });
+    pinStatusSchema = external_exports.enum(["ACTIVE", "NEEDS_ATTENTION", "REVIEWED", "ARCHIVED"]);
+    createWorkspaceSchema = external_exports.object({
+      title: external_exports.string().min(1).max(255),
+      slug: external_exports.string().optional().nullable(),
+      icon: external_exports.string().optional().nullable(),
+      color: external_exports.string().optional().nullable(),
+      description: external_exports.string().optional().nullable(),
+      isDefault: external_exports.boolean().optional(),
+      order: external_exports.number().int().optional()
+    });
+    updateWorkspaceSchema = external_exports.object({
+      title: external_exports.string().min(1).max(255).optional(),
+      slug: external_exports.string().optional().nullable(),
+      icon: external_exports.string().optional().nullable(),
+      color: external_exports.string().optional().nullable(),
+      description: external_exports.string().optional().nullable(),
+      isDefault: external_exports.boolean().optional(),
+      order: external_exports.number().int().optional()
+    });
+    createTrackSchema = external_exports.object({
+      title: external_exports.string().min(1).max(255),
+      color: external_exports.string().optional().nullable(),
+      icon: external_exports.string().optional().nullable(),
+      periodNoteId: external_exports.string().optional().nullable(),
+      order: external_exports.number().int().optional()
+    });
+    updateTrackSchema = external_exports.object({
+      title: external_exports.string().min(1).max(255).optional(),
+      color: external_exports.string().optional().nullable(),
+      icon: external_exports.string().optional().nullable(),
+      periodNoteId: external_exports.string().optional().nullable(),
+      order: external_exports.number().int().optional()
+    });
+    createPinSchema = external_exports.object({
+      noteId: external_exports.string().min(1),
+      trackId: external_exports.string().optional().nullable(),
+      status: pinStatusSchema.optional().default("ACTIVE"),
+      comment: external_exports.string().optional().nullable(),
+      order: external_exports.number().int().optional()
+    });
+    updatePinSchema = external_exports.object({
+      trackId: external_exports.string().optional().nullable(),
+      status: pinStatusSchema.optional(),
+      comment: external_exports.string().optional().nullable(),
+      order: external_exports.number().int().optional()
+    });
+    batchLinkNotesSchema = external_exports.object({
+      parentNoteId: external_exports.string().min(1),
+      childNoteIds: external_exports.array(external_exports.string().min(1)).min(1)
     });
     LentaFrontmatterUtil = class {
       /**

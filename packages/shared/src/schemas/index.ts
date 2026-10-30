@@ -112,3 +112,67 @@ export const frontmatterSchema = z.object({
   updatedAt: z.string().optional(),
   deleted: z.boolean().optional(),
 });
+
+// ==========================================
+// WORKSPACES & TRACKS & PINNED NOTES SCHEMAS
+// ==========================================
+
+export const pinStatusSchema = z.enum(['ACTIVE', 'NEEDS_ATTENTION', 'REVIEWED', 'ARCHIVED']);
+
+export const createWorkspaceSchema = z.object({
+  title: z.string().min(1).max(255),
+  slug: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(),
+  color: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  isDefault: z.boolean().optional(),
+  order: z.number().int().optional(),
+});
+
+export const updateWorkspaceSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  slug: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(),
+  color: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  isDefault: z.boolean().optional(),
+  order: z.number().int().optional(),
+});
+
+export const createTrackSchema = z.object({
+  title: z.string().min(1).max(255),
+  color: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(),
+  periodNoteId: z.string().optional().nullable(),
+  order: z.number().int().optional(),
+});
+
+export const updateTrackSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  color: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(),
+  periodNoteId: z.string().optional().nullable(),
+  order: z.number().int().optional(),
+});
+
+export const createPinSchema = z.object({
+  noteId: z.string().min(1),
+  trackId: z.string().optional().nullable(),
+  isPinned: z.boolean().optional().default(false),
+  status: pinStatusSchema.optional().default('ACTIVE'),
+  comment: z.string().optional().nullable(),
+  order: z.number().int().optional(),
+});
+
+export const updatePinSchema = z.object({
+  trackId: z.string().optional().nullable(),
+  isPinned: z.boolean().optional(),
+  status: pinStatusSchema.optional(),
+  comment: z.string().optional().nullable(),
+  order: z.number().int().optional(),
+});
+
+export const batchLinkNotesSchema = z.object({
+  parentNoteId: z.string().min(1),
+  childNoteIds: z.array(z.string().min(1)).min(1),
+});

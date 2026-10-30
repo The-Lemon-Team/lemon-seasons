@@ -71,6 +71,7 @@ model Note {
   hashtags       Hashtag[]      @relation("HashtagToNote")
   tags           TaxonomyNode[] @relation("NoteToTaxonomyNode")
   ingestionFiles IngestionFile[]
+  workspacePins  WorkspacePin[]
 
   @@index([startDate, endDate])
   @@index([deletedAt, startDate(sort: Desc)])
@@ -375,4 +376,70 @@ model SyncEventLog {
 
   @@index([entityType, entityId])
   @@index([hlc])
+}
+
+model Workspace {
+  id          String           @id @default(uuid())
+  title       String
+  slug        String           @unique
+  icon        String?          @default("layout")
+  color       String?          @default("#2481cc")
+  description String?
+  isDefault   Boolean          @default(false)
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  tracks      WorkspaceTrack[]
+  pins        WorkspacePin[]
+
+  @@index([slug])
+  @@index([deletedAt])
+  @@index([order])
+}
+
+model WorkspaceTrack {
+  id           String         @id @default(uuid())
+  workspaceId  String
+  title        String
+  color        String?
+  icon         String?
+  periodNoteId String?
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pins         WorkspacePin[]
+
+  @@index([workspaceId])
+  @@index([periodNoteId])
+  @@index([deletedAt])
+  @@index([workspaceId, order])
+}
+
+model WorkspacePin {
+  id          String          @id @default(uuid())
+  workspaceId String
+  trackId     String?
+  noteId      String
+  isPinned    Boolean         @default(false)
+  status      String          @default("ACTIVE") // ACTIVE, NEEDS_ATTENTION, REVIEWED, ARCHIVED
+  comment     String?
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  track       WorkspaceTrack? @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  note        Note            @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, noteId])
+  @@index([workspaceId])
+  @@index([workspaceId, isPinned])
+  @@index([workspaceId, trackId])
+  @@index([noteId])
+  @@index([status])
 }

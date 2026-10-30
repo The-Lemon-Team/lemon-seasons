@@ -342,6 +342,121 @@ export interface UpdateFeedInput {
   hashtags?: string[];
 }
 
+// ==========================================
+// WORKSPACES & TRACKS & PINNED NOTES
+// ==========================================
+
+export type PinStatus = 'ACTIVE' | 'NEEDS_ATTENTION' | 'REVIEWED' | 'ARCHIVED';
+
+export interface WorkspaceTrack {
+  id: string;
+  workspaceId: string;
+  title: string;
+  color?: string | null;
+  icon?: string | null;
+  periodNoteId?: string | null;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  _count?: {
+    pins: number;
+  };
+}
+
+export interface WorkspacePin {
+  id: string;
+  workspaceId: string;
+  trackId?: string | null;
+  noteId: string;
+  isPinned: boolean;
+  status: PinStatus;
+  comment?: string | null;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  note?: Note;
+  track?: WorkspaceTrack | null;
+}
+
+export interface Workspace {
+  id: string;
+  title: string;
+  slug: string;
+  icon?: string | null;
+  color?: string | null;
+  description?: string | null;
+  isDefault: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  tracks?: WorkspaceTrack[];
+  pins?: WorkspacePin[];
+  _count?: {
+    tracks: number;
+    pins: number;
+  };
+}
+
+export interface CreateWorkspaceInput {
+  title: string;
+  slug?: string;
+  icon?: string;
+  color?: string;
+  description?: string;
+  isDefault?: boolean;
+  order?: number;
+}
+
+export interface UpdateWorkspaceInput {
+  title?: string;
+  slug?: string;
+  icon?: string;
+  color?: string;
+  description?: string;
+  isDefault?: boolean;
+  order?: number;
+}
+
+export interface CreateTrackInput {
+  title: string;
+  color?: string;
+  icon?: string;
+  periodNoteId?: string | null;
+  order?: number;
+}
+
+export interface UpdateTrackInput {
+  title?: string;
+  color?: string;
+  icon?: string;
+  periodNoteId?: string | null;
+  order?: number;
+}
+
+export interface CreatePinInput {
+  noteId: string;
+  trackId?: string | null;
+  isPinned?: boolean;
+  status?: PinStatus;
+  comment?: string | null;
+  order?: number;
+}
+
+export interface UpdatePinInput {
+  trackId?: string | null;
+  isPinned?: boolean;
+  status?: PinStatus;
+  comment?: string | null;
+  order?: number;
+}
+
+export interface BatchLinkNotesInput {
+  parentNoteId: string;
+  childNoteIds: string[];
+}
+
 export interface CreateFolderInput {
   name?: string;
   path: string;

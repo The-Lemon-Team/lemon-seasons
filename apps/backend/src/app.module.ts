@@ -17,6 +17,7 @@ import { HealthModule } from './health/health.module';
 import { ContainersModule } from './containers/containers.module';
 import { StatsModule } from './stats/stats.module';
 import { BusModule } from './bus/bus.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { BusModule } from './bus/bus.module';
     ContainersModule,
     StatsModule,
     BusModule,
+    WorkspacesModule,
   ],
 })
 export class AppModule implements NestModule {
