@@ -105,9 +105,10 @@ export function buildFeedGroups(feeds: Feed[], searchQuery = ''): FeedGroup[] {
     const matchTitle = feed.title.toLowerCase().includes(normalizedQuery);
     const matchSlug = feed.slug.toLowerCase().includes(normalizedQuery);
     const matchDesc = feed.description?.toLowerCase().includes(normalizedQuery) ?? false;
+    const matchPrivacy = feed.privacy?.toLowerCase().includes(normalizedQuery) ?? false;
     const matchFolders = feed.folderPaths?.some((fp) => fp.toLowerCase().includes(normalizedQuery)) ?? false;
     const matchHashtags = feed.hashtags?.some((h) => h.toLowerCase().includes(normalizedQuery)) ?? false;
-    return matchTitle || matchSlug || matchDesc || matchFolders || matchHashtags;
+    return matchTitle || matchSlug || matchDesc || matchPrivacy || matchFolders || matchHashtags;
   });
 
   const groupMap = new Map<string, FeedGroup>();

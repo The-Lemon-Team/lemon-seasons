@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, message } from 'antd';
-import { Feed } from '../../../types';
+import { Feed, FeedPrivacy, CreateFeedInput } from '../../../types';
 import { AdminTranslations } from '../../../i18n';
 import { useFolders, useHashtags } from '../../../api/queries';
 
@@ -44,15 +44,7 @@ interface FeedModalProps {
   editingFeed: Feed | null;
   initialGroup?: string;
   onClose: () => void;
-  onSave: (data: {
-    title: string;
-    description?: string;
-    slug?: string;
-    icon?: string;
-    color?: string;
-    folderPaths: string[];
-    hashtags: string[];
-  }) => Promise<void>;
+  onSave: (data: CreateFeedInput) => Promise<void>;
   isSubmitting: boolean;
   t: AdminTranslations;
 }
@@ -71,6 +63,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
   const [slug, setSlug] = useState('');
   const [icon, setIcon] = useState('dynamic_feed');
   const [color, setColor] = useState('#cacd58');
+  const [privacy, setPrivacy] = useState<FeedPrivacy>('public');
   const [folderPaths, setFolderPaths] = useState<string[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
 
@@ -103,6 +96,34 @@ export const FeedModal: React.FC<FeedModalProps> = ({
     return availableFolders.filter((f) => f.toLowerCase().includes(q));
   }, [availableFolders, folderFilterText]);
 
+  // Map existing folders to their privacy status
+  const folderPrivacyMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const f of existingFolders) {
+      if (f.path && f.privacy) {
+        map.set(f.path, f.privacy);
+      }
+    }
+    return map;
+  }, [existingFolders]);
+
+  const hasPrivateFolderInPublicFeed = useMemo(() => {
+    if (privacy !== 'public') return false;
+    return folderPaths.some((p) => folderPrivacyMap.get(p) === 'private');
+  }, [privacy, folderPaths, folderPrivacyMap]);
+
+  // Handle ESC key cleanly per Agent UX Standards
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   useEffect(() => {
     if (editingFeed) {
       setTitle(editingFeed.title || '');
@@ -110,6 +131,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       setSlug(editingFeed.slug || '');
       setIcon(editingFeed.icon || 'dynamic_feed');
       setColor(editingFeed.color || '#cacd58');
+      setPrivacy(editingFeed.privacy || 'public');
       setFolderPaths(editingFeed.folderPaths || []);
       setHashtags(editingFeed.hashtags || []);
     } else {
@@ -118,6 +140,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       setSlug(initialGroup ? `${initialGroup.toLowerCase()}-` : '');
       setIcon('dynamic_feed');
       setColor('#cacd58');
+      setPrivacy('public');
       setFolderPaths([]);
       setHashtags([]);
     }
@@ -175,12 +198,18 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       return;
     }
 
+    if (privacy === 'public' && hasPrivateFolderInPublicFeed) {
+      message.error('Публичная лента не может содержать приватные папки.');
+      return;
+    }
+
     await onSave({
       title: title.trim(),
       description: description.trim() || undefined,
       slug: slug.trim() || undefined,
       icon: icon.trim() || undefined,
       color: color.trim() || undefined,
+      privacy,
       folderPaths,
       hashtags,
     });
@@ -262,6 +291,52 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               placeholder="Краткое назначение и фокус ленты..."
               className="w-full bg-control border border-tile-border rounded px-2.5 py-1.5 text-text-main text-xs focus:border-primary outline-none resize-none transition-colors"
             />
+          </div>
+
+          {/* Privacy Level Selector */}
+          <div className="p-2.5 bg-tile-subtle rounded-lg border border-tile-border space-y-2">
+            <span className="font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider block">
+              {t.feedPrivacyLabel}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Public Option */}
+              <button
+                type="button"
+                onClick={() => setPrivacy('public')}
+                className={`p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer ${
+                  privacy === 'public'
+                    ? 'bg-primary/15 border-primary text-primary font-bold shadow-xs'
+                    : 'bg-control border-tile-border text-text-muted hover:bg-tile-subtle hover:text-text-main'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                  <span className="material-symbols-outlined text-[16px] text-primary">public</span>
+                  <span className="truncate">{t.feedPrivacyPublic}</span>
+                </div>
+                <p className="text-[10px] text-text-muted font-normal leading-tight">
+                  {t.feedPrivacyPublicDesc}
+                </p>
+              </button>
+
+              {/* Private Option */}
+              <button
+                type="button"
+                onClick={() => setPrivacy('private')}
+                className={`p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer ${
+                  privacy === 'private'
+                    ? 'bg-purple-500/15 border-purple-500 text-purple-300 font-bold shadow-xs'
+                    : 'bg-control border-tile-border text-text-muted hover:bg-tile-subtle hover:text-text-main'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                  <span className="material-symbols-outlined text-[16px] text-purple-400">lock</span>
+                  <span className="truncate">{t.feedPrivacyPrivate}</span>
+                </div>
+                <p className="text-[10px] text-text-muted font-normal leading-tight">
+                  {t.feedPrivacyPrivateDesc}
+                </p>
+              </button>
+            </div>
           </div>
 
           {/* Visual Identity: Icon & Accent Color */}
@@ -376,30 +451,47 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               <div className="max-h-28 overflow-y-auto space-y-0.5 pr-1 custom-scrollbar">
                 {filteredFolders.map((path) => {
                   const isChecked = folderPaths.includes(path);
+                  const isFolderPrivate = folderPrivacyMap.get(path) === 'private';
                   return (
                     <label
                       key={path}
-                      className={`flex items-center gap-2 px-2 py-0.5 rounded cursor-pointer transition-colors text-xs font-mono select-none ${
+                      className={`flex items-center justify-between px-2 py-0.5 rounded cursor-pointer transition-colors text-xs font-mono select-none ${
                         isChecked
                           ? 'bg-primary/10 text-primary font-medium'
                           : 'hover:bg-tile-subtle text-text-muted hover:text-text-main'
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleFolder(path)}
-                        className="rounded bg-control border-tile-border text-primary focus:ring-0 w-3.5 h-3.5"
-                      />
-                      <span className="material-symbols-outlined text-[14px]">
-                        {isChecked ? 'folder_open' : 'folder'}
-                      </span>
-                      <span>{path}</span>
+                      <div className="flex items-center gap-2 min-w-0 truncate">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleFolder(path)}
+                          className="rounded bg-control border-tile-border text-primary focus:ring-0 w-3.5 h-3.5"
+                        />
+                        <span className="material-symbols-outlined text-[14px]">
+                          {isChecked ? 'folder_open' : 'folder'}
+                        </span>
+                        <span className="truncate">{path}</span>
+                      </div>
+                      {isFolderPrivate && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-purple-400 font-mono px-1 rounded bg-purple-500/10 border border-purple-500/20 shrink-0 ml-1.5">
+                          <span className="material-symbols-outlined text-[10px]">lock</span>
+                          private
+                        </span>
+                      )}
                     </label>
                   );
                 })}
               </div>
             </div>
+
+            {/* Warning if private folder selected in public feed */}
+            {privacy === 'public' && hasPrivateFolderInPublicFeed && (
+              <div className="p-2 rounded bg-error/10 border border-error/20 text-error text-[11px] flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px] shrink-0">warning</span>
+                <span>В публичной ленте разрешены только публичные папки. Переключите ленту в «Приватная» или снимите выбор с приватных папок.</span>
+              </div>
+            )}
 
             {/* Add Custom Folder Path */}
             <div className="flex gap-2">

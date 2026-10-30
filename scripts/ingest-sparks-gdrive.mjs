@@ -168,6 +168,7 @@ async function run() {
       metadata: dto.metadata,
       processingStatus: 'COMPLETED',
       feedId: feed.id,
+      privacy: dto.privacy || 'private',
     };
 
     let noteId;

@@ -326,6 +326,7 @@ export interface CreateFeedInput {
   slug?: string;
   icon?: string;
   color?: string;
+  privacy?: FeedPrivacy;
   folderPaths?: string[];
   hashtags?: string[];
 }
@@ -336,6 +337,7 @@ export interface UpdateFeedInput {
   slug?: string;
   icon?: string;
   color?: string;
+  privacy?: FeedPrivacy;
   folderPaths?: string[];
   hashtags?: string[];
 }

@@ -151,7 +151,7 @@ export class SparksParserService {
       description: cleanedBody, // Cleaned description without the raw trailing markdown block
       type: type as any,
       status: status as any,
-      privacy: ((fm.privacy as string) || 'public') as any,
+      privacy: ((fm.privacy as string) || 'private') as any,
       publishAt,
       startDate: startDate.toISOString(),
       endDate: endDate ? endDate.toISOString() : undefined,

@@ -4387,7 +4387,8 @@ var init_dist = __esm({
     createFeedSchema = external_exports.object({
       title: external_exports.string().min(1).max(255),
       description: external_exports.string().optional().nullable(),
-      slug: external_exports.string().optional().nullable()
+      slug: external_exports.string().optional().nullable(),
+      privacy: external_exports.enum(["public", "private"]).optional()
     });
     createFolderSchema = external_exports.object({
       name: external_exports.string().optional(),

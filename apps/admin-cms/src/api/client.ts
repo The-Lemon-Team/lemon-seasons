@@ -82,6 +82,12 @@ export const feedsApi = {
     const res = await apiClient.get<Feed[]>('/feeds', {
       params: { includeDeleted, search },
     });
+    if (!Array.isArray(res.data)) {
+      console.error('Unexpected /feeds response (expected array):', res.data);
+      throw new Error(
+        `Некорректный ответ /feeds от ${API_BASE_URL}: ожидался массив. Проверьте VITE_API_URL и что бэкенд запущен.`,
+      );
+    }
     return res.data;
   },
   getOne: async (id: string): Promise<Feed> => {

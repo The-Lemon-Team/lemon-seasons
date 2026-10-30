@@ -55,6 +55,24 @@ export const FeedCardItem: React.FC<FeedCardItemProps> = ({
               /{feed.slug}
             </span>
 
+            {feed.privacy === 'private' ? (
+              <span
+                className="inline-flex items-center gap-0.5 bg-purple-500/15 text-purple-400 px-1.5 py-0.5 rounded font-mono text-[9px] font-semibold border border-purple-500/25"
+                title={t.feedPrivacyPrivate}
+              >
+                <span className="material-symbols-outlined text-[11px]">lock</span>
+                PRIVATE
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-0.5 bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-mono text-[9px] font-semibold border border-blue-500/25"
+                title={t.feedPrivacyPublic}
+              >
+                <span className="material-symbols-outlined text-[11px]">public</span>
+                PUBLIC
+              </span>
+            )}
+
             {isDeleted && (
               <span className="bg-error/20 text-error px-1.5 py-0.5 rounded font-mono text-[9px]">
                 DELETED

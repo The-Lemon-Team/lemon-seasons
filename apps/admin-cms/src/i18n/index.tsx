@@ -78,6 +78,11 @@ export interface AdminTranslations {
   feedTitleLabel: string;
   feedSlugLabel: string;
   feedDescriptionLabel: string;
+  feedPrivacyLabel: string;
+  feedPrivacyPublic: string;
+  feedPrivacyPrivate: string;
+  feedPrivacyPublicDesc: string;
+  feedPrivacyPrivateDesc: string;
   feedIconLabel: string;
   feedAccentColorLabel: string;
   feedDefaultFolderLabel: string;
@@ -285,6 +290,11 @@ export const ruAdminTranslations: AdminTranslations = {
   feedTitleLabel: 'Название ленты',
   feedSlugLabel: 'Слаг (идентификатор)',
   feedDescriptionLabel: 'Описание',
+  feedPrivacyLabel: 'Приватность ленты',
+  feedPrivacyPublic: 'Публичная лента',
+  feedPrivacyPrivate: 'Приватная лента',
+  feedPrivacyPublicDesc: 'Доступна всем посетителям календаря и публичного фида',
+  feedPrivacyPrivateDesc: 'Закрытая лента, доступна только для внутренних записей',
   feedIconLabel: 'Иконка',
   feedAccentColorLabel: 'Цвет акцента',
   feedDefaultFolderLabel: 'Папка по умолчанию в Obsidian',
@@ -492,6 +502,11 @@ export const enAdminTranslations: AdminTranslations = {
   feedTitleLabel: 'Feed Title',
   feedSlugLabel: 'Slug (Identifier)',
   feedDescriptionLabel: 'Description',
+  feedPrivacyLabel: 'Feed Privacy',
+  feedPrivacyPublic: 'Public Feed',
+  feedPrivacyPrivate: 'Private Feed',
+  feedPrivacyPublicDesc: 'Visible to all visitors in the calendar showcase and streams',
+  feedPrivacyPrivateDesc: 'Restricted feed, accessible only for internal workspace notes',
   feedIconLabel: 'Icon',
   feedAccentColorLabel: 'Accent Color',
   feedDefaultFolderLabel: 'Default Obsidian Folder',

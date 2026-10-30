@@ -8,7 +8,7 @@ import {
   useDeleteFeed,
   useRestoreFeed,
 } from '../../api/queries';
-import { Feed } from '../../types';
+import { Feed, CreateFeedInput } from '../../types';
 import { useAdminI18n } from '../../i18n';
 import { buildFeedGroups, FeedGroup } from './feeds.utils';
 import { FeedTreeView } from './components/FeedTreeView';
@@ -19,6 +19,7 @@ export const FeedsPage: React.FC = () => {
   const { t } = useAdminI18n();
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
   const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
@@ -32,23 +33,41 @@ export const FeedsPage: React.FC = () => {
   const deleteFeedMutation = useDeleteFeed();
   const restoreFeedMutation = useRestoreFeed();
 
+  // Counts by privacy
+  const publicCount = useMemo(
+    () => feeds.filter((f) => (f.privacy || 'public') === 'public').length,
+    [feeds]
+  );
+  const privateCount = useMemo(
+    () => feeds.filter((f) => f.privacy === 'private').length,
+    [feeds]
+  );
+
+  // Filter feeds by privacy
+  const filteredByPrivacy = useMemo(() => {
+    if (privacyFilter === 'all') return feeds;
+    return feeds.filter((f) => (f.privacy || 'public') === privacyFilter);
+  }, [feeds, privacyFilter]);
+
   // Group feeds for Tree View and filter for Cards View
   const feedGroups = useMemo(() => {
-    return buildFeedGroups(feeds, searchQuery);
-  }, [feeds, searchQuery]);
+    return buildFeedGroups(filteredByPrivacy, searchQuery);
+  }, [filteredByPrivacy, searchQuery]);
 
   const flatFilteredFeeds = useMemo(() => {
-    if (!searchQuery.trim()) return feeds;
+    let list = filteredByPrivacy;
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
-    return feeds.filter(
+    return list.filter(
       (f) =>
         f.title.toLowerCase().includes(q) ||
         f.slug.toLowerCase().includes(q) ||
         f.description?.toLowerCase().includes(q) ||
+        f.privacy?.toLowerCase().includes(q) ||
         f.folderPaths?.some((fp) => fp.toLowerCase().includes(q)) ||
         f.hashtags?.some((h) => h.toLowerCase().includes(q))
     );
-  }, [feeds, searchQuery]);
+  }, [filteredByPrivacy, searchQuery]);
 
   const openCreateModal = (group?: FeedGroup) => {
     setEditingFeed(null);
@@ -62,15 +81,7 @@ export const FeedsPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveFeed = async (data: {
-    title: string;
-    description?: string;
-    slug?: string;
-    icon?: string;
-    color?: string;
-    folderPaths: string[];
-    hashtags: string[];
-  }) => {
+  const handleSaveFeed = async (data: CreateFeedInput) => {
     try {
       if (editingFeed) {
         await updateFeedMutation.mutateAsync({
@@ -165,6 +176,48 @@ export const FeedsPage: React.FC = () => {
               <span className="material-symbols-outlined text-[13px]">close</span>
             </button>
           )}
+        </div>
+
+        {/* Privacy Filter Tabs */}
+        <div className="flex items-center gap-1 bg-control p-0.5 rounded-lg border border-control-border self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('all')}
+            className={`px-2.5 h-6 rounded-md text-[11px] font-mono font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              privacyFilter === 'all'
+                ? 'bg-tile-subtle text-text-main font-semibold border border-tile-border shadow-xs'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            <span>{t.filterFeedPlaceholder || 'Все'}</span>
+            <span className="text-[10px] opacity-70">({feeds.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('public')}
+            className={`px-2.5 h-6 rounded-md text-[11px] font-mono font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              privacyFilter === 'public'
+                ? 'bg-blue-500/20 text-blue-400 font-semibold border border-blue-500/30 shadow-xs'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">public</span>
+            <span>{t.feedPrivacyPublic || 'Публичные'}</span>
+            <span className="text-[10px] opacity-70">({publicCount})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrivacyFilter('private')}
+            className={`px-2.5 h-6 rounded-md text-[11px] font-mono font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              privacyFilter === 'private'
+                ? 'bg-purple-500/20 text-purple-400 font-semibold border border-purple-500/30 shadow-xs'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">lock</span>
+            <span>{t.feedPrivacyPrivate || 'Приватные'}</span>
+            <span className="text-[10px] opacity-70">({privateCount})</span>
+          </button>
         </div>
 
         {/* View Mode Toggle: Tree vs Cards */}

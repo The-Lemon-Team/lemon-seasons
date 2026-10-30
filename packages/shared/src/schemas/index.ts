@@ -74,6 +74,7 @@ export const createFeedSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
   slug: z.string().optional().nullable(),
+  privacy: z.enum(['public', 'private']).optional(),
 });
 
 export const createFolderSchema = z.object({
