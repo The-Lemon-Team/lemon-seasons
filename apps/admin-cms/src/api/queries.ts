@@ -9,6 +9,7 @@ import {
   statsApi,
   ingestionApi,
   busRelayApi,
+  macrosApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -18,6 +19,8 @@ import {
   UpdateFolderInput,
   QueryNotesParams,
   DriveBusEventsFilter,
+  CreateQuickAddMacroInput,
+  UpdateQuickAddMacroInput,
 } from '../types';
 
 // Feeds Queries & Mutations
@@ -720,6 +723,47 @@ export function usePublishTestBusEvent() {
       queryClient.invalidateQueries({ queryKey: ['drive-bus-status'] });
       queryClient.invalidateQueries({ queryKey: ['drive-bus-events'] });
       queryClient.invalidateQueries({ queryKey: ['sync-updates'] });
+    },
+  });
+}
+
+
+// Macros Queries & Mutations
+export function useMacros() {
+  return useQuery({
+    queryKey: ['macros'],
+    queryFn: () => macrosApi.getAll(),
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateMacro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateQuickAddMacroInput) => macrosApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['macros'] });
+    },
+  });
+}
+
+export function useUpdateMacro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateQuickAddMacroInput }) =>
+      macrosApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['macros'] });
+    },
+  });
+}
+
+export function useDeleteMacro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => macrosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['macros'] });
     },
   });
 }

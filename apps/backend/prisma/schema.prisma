@@ -443,3 +443,24 @@ model WorkspacePin {
   @@index([noteId])
   @@index([status])
 }
+
+
+model QuickAddMacro {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?  @default("zap")
+  color       String?  @default("#f59e0b")
+  feedId      String?
+  folderPath  String?
+  folderPaths String[] @default([])
+  noteType    String?  @default("SINGLE")
+  hashtags    String[] @default([])
+  order       Int      @default(0)
+  isDefault   Boolean  @default(false)
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}

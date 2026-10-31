@@ -24,6 +24,9 @@ export interface AdminTranslations {
   syncReady: string;
   notesSynced: (count: number) => string;
   syncStatus: string;
+  toCalendar: string;
+  toFeed: string;
+  feedAppTitle: string;
 
   // Common Actions
   add: string;
@@ -181,6 +184,15 @@ export interface AdminTranslations {
   quickAddModalTitle: string;
   quickAddModalSub: string;
   quickAddNoteCreated: string;
+  macroLabel: string;
+  noMacro: string;
+  saveAsMacro: string;
+  macroName: string;
+  macroSaved: string;
+  macroDeleted: string;
+  macroModified: string;
+  saveMacroTitle: string;
+  saveMacroDesc: string;
 
   // Note Preview Modal
   viewNoteModalTitle: string;
@@ -237,6 +249,9 @@ export const ruAdminTranslations: AdminTranslations = {
   syncReady: 'Синхронизация готова',
   notesSynced: (count: number) => `${pluralizeRu(count, 'запись синхронизирована', 'записи синхронизировано', 'записей синхронизировано')}`,
   syncStatus: 'Статус синхронизации',
+  toCalendar: 'В Календарь',
+  toFeed: 'В Ленту',
+  feedAppTitle: 'Лента Lemon Seasons',
 
   // Common Actions
   add: 'Добавить',
@@ -394,6 +409,15 @@ export const ruAdminTranslations: AdminTranslations = {
   quickAddModalTitle: 'Быстрое создание записи',
   quickAddModalSub: 'Быстро зафиксируйте мысль, событие или релиз с минимальным набором полей.',
   quickAddNoteCreated: 'Запись успешно создана!',
+  macroLabel: 'Пресет / Макрос',
+  noMacro: 'Без пресета',
+  saveAsMacro: 'Сохранить как пресет',
+  macroName: 'Название пресета',
+  macroSaved: 'Пресет успешно сохранен!',
+  macroDeleted: 'Пресет удален',
+  macroModified: '(изменено)',
+  saveMacroTitle: 'Сохранить пресет быстрого добавления',
+  saveMacroDesc: 'Текущие лента, папка и тип будут сохранены для быстрого применения в один клик.',
 
   // Note Preview Modal
   viewNoteModalTitle: 'Просмотр записи',
@@ -450,6 +474,9 @@ export const enAdminTranslations: AdminTranslations = {
   syncReady: 'Sync ready',
   notesSynced: (count: number) => `${count} ${count === 1 ? 'note synced' : 'notes synced'}`,
   syncStatus: 'Sync Status',
+  toCalendar: 'To Calendar',
+  toFeed: 'To Feed',
+  feedAppTitle: 'Lemon Seasons Feed',
 
   // Common Actions
   add: 'Add',
@@ -607,6 +634,15 @@ export const enAdminTranslations: AdminTranslations = {
   quickAddModalTitle: 'Quick Add Note',
   quickAddModalSub: 'Rapidly capture a thought, event, or release with essential fields.',
   quickAddNoteCreated: 'Note created successfully!',
+  macroLabel: 'Preset / Macro',
+  noMacro: 'No preset',
+  saveAsMacro: 'Save as preset',
+  macroName: 'Preset name',
+  macroSaved: 'Preset saved successfully!',
+  macroDeleted: 'Preset deleted',
+  macroModified: '(modified)',
+  saveMacroTitle: 'Save Quick-Add Preset',
+  saveMacroDesc: 'Current feed, folder and note type will be saved for one-click reuse.',
 
   // Note Preview Modal
   viewNoteModalTitle: 'View Note',

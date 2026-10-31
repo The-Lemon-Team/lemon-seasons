@@ -18,6 +18,7 @@ import { ContainersModule } from './containers/containers.module';
 import { StatsModule } from './stats/stats.module';
 import { BusModule } from './bus/bus.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
+import { MacrosModule } from './macros/macros.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     StatsModule,
     BusModule,
     WorkspacesModule,
+    MacrosModule,
   ],
 })
 export class AppModule implements NestModule {

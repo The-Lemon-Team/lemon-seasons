@@ -26,6 +26,9 @@ import {
   IngestionFile,
   GDriveRecentUpdatesResponse,
   GDriveUpdateItem,
+  QuickAddMacro,
+  CreateQuickAddMacroInput,
+  UpdateQuickAddMacroInput,
 } from '../types';
 
 
@@ -678,4 +681,28 @@ export const statsApi = {
     return res.data;
   },
 };
+
+export const macrosApi = {
+  getAll: async (): Promise<QuickAddMacro[]> => {
+    const res = await apiClient.get<QuickAddMacro[]>('/macros');
+    return res.data;
+  },
+  getById: async (id: string): Promise<QuickAddMacro> => {
+    const res = await apiClient.get<QuickAddMacro>(`/macros/${id}`);
+    return res.data;
+  },
+  create: async (data: CreateQuickAddMacroInput): Promise<QuickAddMacro> => {
+    const res = await apiClient.post<QuickAddMacro>('/macros', data);
+    return res.data;
+  },
+  update: async (id: string, data: UpdateQuickAddMacroInput): Promise<QuickAddMacro> => {
+    const res = await apiClient.patch<QuickAddMacro>(`/macros/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string): Promise<{ success: boolean; id: string }> => {
+    const res = await apiClient.delete<{ success: boolean; id: string }>(`/macros/${id}`);
+    return res.data;
+  },
+};
+
 
