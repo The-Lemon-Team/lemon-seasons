@@ -9,8 +9,25 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto/workspace.dto';
 import { CreateTrackDto, UpdateTrackDto } from './dto/track.dto';
-import { CreatePinDto, UpdatePinDto, BatchLinkNotesDto } from './dto/pin.dto';
+import { CreatePinDto, UpdatePinDto, ReorderPinsDto, BatchLinkNotesDto } from './dto/pin.dto';
 import { seedDefaultWorkspacesIfEmpty } from './workspaces.seed';
+
+const PIN_NOTE_SELECT = {
+  id: true,
+  title: true,
+  description: true,
+  type: true,
+  status: true,
+  privacy: true,
+  startDate: true,
+  endDate: true,
+  author: true,
+  parentNoteId: true,
+  feedId: true,
+  resonanceScore: true,
+  sourceLink: true,
+  feed: { select: { id: true, title: true, slug: true, icon: true, color: true } },
+} as const;
 
 function slugify(text: string): string {
   return text
@@ -168,11 +185,37 @@ export class WorkspacesService implements OnModuleInit {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.workspace.update({
-      where: { id },
+    const ws = await this.findOne(id);
+
+    // Soft-delete tracks belonging to this workspace
+    await this.prisma.workspaceTrack.updateMany({
+      where: { workspaceId: id, deletedAt: null },
       data: { deletedAt: new Date() },
     });
+
+    const updated = await this.prisma.workspace.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        isDefault: false,
+      },
+    });
+
+    // If deleted workspace was default, nominate another active workspace as default
+    if (ws.isDefault) {
+      const nextWs = await this.prisma.workspace.findFirst({
+        where: { deletedAt: null, id: { not: id } },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      });
+      if (nextWs) {
+        await this.prisma.workspace.update({
+          where: { id: nextWs.id },
+          data: { isDefault: true },
+        });
+      }
+    }
+
+    return updated;
   }
 
   // ==========================================
@@ -240,6 +283,9 @@ export class WorkspacesService implements OnModuleInit {
 
   async getAllMemberships() {
     return this.prisma.workspacePin.findMany({
+      where: {
+        workspace: { deletedAt: null },
+      },
       select: {
         workspaceId: true,
         noteId: true,
@@ -257,27 +303,10 @@ export class WorkspacesService implements OnModuleInit {
         trackId: trackId !== undefined ? trackId : undefined,
         status: status || undefined,
       },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       include: {
         track: true,
-        note: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            type: true,
-            status: true,
-            privacy: true,
-            startDate: true,
-            endDate: true,
-            author: true,
-            parentNoteId: true,
-            feedId: true,
-            resonanceScore: true,
-            sourceLink: true,
-            feed: { select: { id: true, title: true, slug: true, icon: true, color: true } },
-          },
-        },
+        note: { select: PIN_NOTE_SELECT },
       },
     });
   }
@@ -293,13 +322,24 @@ export class WorkspacesService implements OnModuleInit {
       throw new NotFoundException(`Note #${dto.noteId} not found`);
     }
 
-    if (dto.trackId) {
+    const normalizedTrackId = dto.trackId || null;
+
+    if (normalizedTrackId) {
       const track = await this.prisma.workspaceTrack.findFirst({
-        where: { id: dto.trackId, workspaceId, deletedAt: null },
+        where: { id: normalizedTrackId, workspaceId, deletedAt: null },
       });
       if (!track) {
-        throw new NotFoundException(`Track #${dto.trackId} not found in workspace #${workspaceId}`);
+        throw new NotFoundException(`Track #${normalizedTrackId} not found in workspace #${workspaceId}`);
       }
+    }
+
+    let createOrder = dto.order;
+    if (createOrder === undefined) {
+      const agg = await this.prisma.workspacePin.aggregate({
+        where: { workspaceId, trackId: normalizedTrackId },
+        _max: { order: true },
+      });
+      createOrder = (agg._max.order ?? -10) + 10;
     }
 
     return this.prisma.workspacePin.upsert({
@@ -312,11 +352,11 @@ export class WorkspacesService implements OnModuleInit {
       create: {
         workspaceId,
         noteId: dto.noteId,
-        trackId: dto.trackId || null,
+        trackId: normalizedTrackId,
         isPinned: dto.isPinned ?? false,
         status: dto.status || 'ACTIVE',
         comment: dto.comment?.trim(),
-        order: dto.order ?? 0,
+        order: createOrder,
       },
       update: {
         trackId: dto.trackId !== undefined ? dto.trackId : undefined,
@@ -327,16 +367,7 @@ export class WorkspacesService implements OnModuleInit {
       },
       include: {
         track: true,
-        note: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            status: true,
-            startDate: true,
-            endDate: true,
-          },
-        },
+        note: { select: PIN_NOTE_SELECT },
       },
     });
   }
@@ -367,8 +398,52 @@ export class WorkspacesService implements OnModuleInit {
         comment: dto.comment !== undefined ? dto.comment?.trim() : undefined,
         order: dto.order,
       },
-      include: { track: true },
+      include: {
+        track: true,
+        note: { select: PIN_NOTE_SELECT },
+      },
     });
+  }
+
+  async reorderPins(workspaceId: string, dto: ReorderPinsDto) {
+    const uniqueTrackIds = Array.from(
+      new Set(
+        dto.items
+          .map((item) => item.trackId)
+          .filter((trackId): trackId is string => typeof trackId === 'string' && trackId.length > 0),
+      ),
+    );
+
+    if (uniqueTrackIds.length > 0) {
+      const validTracks = await this.prisma.workspaceTrack.findMany({
+        where: {
+          id: { in: uniqueTrackIds },
+          workspaceId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (validTracks.length !== uniqueTrackIds.length) {
+        throw new NotFoundException(`One or more target tracks not found in workspace #${workspaceId}`);
+      }
+    }
+
+    await this.prisma.$transaction(
+      dto.items.map((item) =>
+        this.prisma.workspacePin.updateMany({
+          where: { id: item.id, workspaceId },
+          data: {
+            ...(item.trackId !== undefined ? { trackId: item.trackId } : {}),
+            order: item.order,
+          },
+        }),
+      ),
+    );
+
+    return {
+      success: true,
+      updatedCount: dto.items.length,
+    };
   }
 
   async unpinNote(workspaceId: string, pinIdOrNoteId: string) {

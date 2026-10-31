@@ -12,7 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { WorkspacesService } from './workspaces.service';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto/workspace.dto';
 import { CreateTrackDto, UpdateTrackDto } from './dto/track.dto';
-import { CreatePinDto, UpdatePinDto, BatchLinkNotesDto } from './dto/pin.dto';
+import { CreatePinDto, UpdatePinDto, ReorderPinsDto, BatchLinkNotesDto } from './dto/pin.dto';
 
 @ApiTags('Workspaces')
 @Controller('workspaces')
@@ -106,6 +106,12 @@ export class WorkspacesController {
   @ApiOperation({ summary: 'Запинить заметку в воркспейс (или обновить существующий пин)' })
   pinNote(@Param('id') workspaceId: string, @Body() dto: CreatePinDto) {
     return this.workspacesService.pinNote(workspaceId, dto);
+  }
+
+  @Patch(':id/pins/reorder')
+  @ApiOperation({ summary: 'Атомарное пакетное перемещение и сортировка пинов (DnD)' })
+  reorderPins(@Param('id') workspaceId: string, @Body() dto: ReorderPinsDto) {
+    return this.workspacesService.reorderPins(workspaceId, dto);
   }
 
   @Patch(':id/pins/:pinId')

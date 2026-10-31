@@ -1,5 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, IsNotEmpty, IsIn, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsNotEmpty,
+  IsIn,
+  IsBoolean,
+  IsArray,
+  ArrayMinSize,
+  ValidateNested,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreatePinDto {
   @ApiProperty({ description: 'ID заметки для закрепления', example: 'uuid' })
@@ -8,9 +20,10 @@ export class CreatePinDto {
   noteId: string;
 
   @ApiPropertyOptional({ description: 'ID трека (если не указан, заметка считается общей в воркспейсе)' })
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsString()
   @IsOptional()
-  trackId?: string;
+  trackId?: string | null;
 
   @ApiPropertyOptional({ description: 'Закреплена ли заметка в фокусные слоты воркспейса', default: false })
   @IsBoolean()
@@ -39,9 +52,10 @@ export class CreatePinDto {
 
 export class UpdatePinDto {
   @ApiPropertyOptional({ description: 'ID трека для перемещения (null для переноса в общие)' })
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsString()
   @IsOptional()
-  trackId?: string;
+  trackId?: string | null;
 
   @ApiPropertyOptional({ description: 'Закреплена ли заметка в фокусные слоты' })
   @IsBoolean()
@@ -65,6 +79,32 @@ export class UpdatePinDto {
   @IsInt()
   @IsOptional()
   order?: number;
+}
+
+export class ReorderPinItemDto {
+  @ApiProperty({ description: 'ID пина воркспейса' })
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @ApiPropertyOptional({ description: 'ID целевого трека (null для переноса в общие заметки)', nullable: true })
+  @ValidateIf((_, val) => val !== null && val !== undefined)
+  @IsString()
+  @IsOptional()
+  trackId?: string | null;
+
+  @ApiProperty({ description: 'Новый порядок сортировки' })
+  @IsInt()
+  order: number;
+}
+
+export class ReorderPinsDto {
+  @ApiProperty({ type: [ReorderPinItemDto], description: 'Пакетное обновление позиций и треков пинов' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ReorderPinItemDto)
+  items: ReorderPinItemDto[];
 }
 
 export class BatchLinkNotesDto {
