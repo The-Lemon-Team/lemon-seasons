@@ -23,7 +23,7 @@ export interface Feed {
 
 export type FeedPrivacy = 'public' | 'private';
 export type NotePrivacy = 'private' | 'public';
-export type FolderPrivacy = 'private' | 'public' | 'obsidian';
+export type FolderPrivacy = 'private' | 'public';
 export type FolderScope = 'external' | 'internal';
 
 export interface Folder {
@@ -450,6 +450,16 @@ export interface UpdatePinInput {
   status?: PinStatus;
   comment?: string | null;
   order?: number;
+}
+
+export interface ReorderPinItemInput {
+  id: string;
+  trackId?: string | null;
+  order: number;
+}
+
+export interface ReorderPinsInput {
+  items: ReorderPinItemInput[];
 }
 
 export interface BatchLinkNotesInput {
@@ -1294,3 +1304,55 @@ export * from './bus';
 
 
 
+
+
+// ==========================================
+// QUICK ADD MACROS / PRESETS
+// ==========================================
+
+export interface QuickAddMacro {
+  id: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  feedId?: string | null;
+  feedTitle?: string | null;
+  folderPath?: string | null;
+  folderPaths?: string[];
+  noteType?: NoteType | string | null;
+  hashtags?: string[];
+  order?: number;
+  isDefault?: boolean;
+  isSystem?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateQuickAddMacroInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  feedId?: string;
+  folderPath?: string;
+  folderPaths?: string[];
+  noteType?: NoteType | string;
+  hashtags?: string[];
+  order?: number;
+  isDefault?: boolean;
+}
+
+export interface UpdateQuickAddMacroInput {
+  name?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  feedId?: string;
+  folderPath?: string;
+  folderPaths?: string[];
+  noteType?: NoteType | string;
+  hashtags?: string[];
+  order?: number;
+  isDefault?: boolean;
+}
