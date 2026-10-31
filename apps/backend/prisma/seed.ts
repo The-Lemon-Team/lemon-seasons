@@ -531,7 +531,7 @@ async function main() {
           folderPath.startsWith('Core_Strategy') ||
           folderPath.startsWith('Financials');
         const cId = isInternal ? (item.containerId || 'cont-private-user-vault') : item.containerId || null;
-        const privacy = isInternal ? 'private' : item.containerId ? 'obsidian' : 'public';
+        const privacy = isInternal ? 'private' : 'public';
         const folderId = await getOrCreateFolder(folderPath, 'folder', cId, privacy as any);
         await prisma.noteFolder.create({
           data: {

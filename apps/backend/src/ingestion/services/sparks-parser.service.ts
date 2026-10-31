@@ -62,7 +62,9 @@ export class SparksParserService {
         ...slotTags,
         'gemini-spark',
       ]),
-    ).filter(Boolean);
+    )
+      .filter(Boolean)
+      .filter((t) => typeof t === 'string' && t.toLowerCase() !== 'jmdaily'); // jmdaily is strictly reserved for manual admin curation per AGENTS.md
 
     // 6. Resolve Summary (TL;DR)
     const summary = this.extractSummary(fm, parsedMd.body);
@@ -293,6 +295,26 @@ export class SparksParserService {
     start: Date,
     end?: Date,
   ): NoteType {
+    const lower = title.toLowerCase();
+    const isDigest =
+      lower.includes('дайджест') ||
+      lower.includes('сводка') ||
+      lower.includes('сводный') ||
+      lower.includes('digest');
+
+    // Daily digests and news summaries are ALWAYS SINGLE point-in-time publications per SPARK_GENERATION_RULES
+    if (isDigest) {
+      return NoteType.SINGLE;
+    }
+
+    // If explicitly marked as PERIOD in frontmatter, validate genuine multi-day span (> 24h) and valid endDate
+    if (fm.type === NoteType.PERIOD) {
+      if (end && end.getTime() - start.getTime() > 24 * 60 * 60 * 1000) {
+        return NoteType.PERIOD;
+      }
+      return NoteType.SINGLE;
+    }
+
     if (fm.type && Object.values(NoteType).includes(fm.type as NoteType)) {
       return fm.type as NoteType;
     }
@@ -302,7 +324,6 @@ export class SparksParserService {
       return NoteType.PERIOD;
     }
 
-    const lower = title.toLowerCase();
     if (lower.includes('митап') || lower.includes('конференция') || lower.includes('созвон') || lower.includes('вебинар')) {
       return NoteType.EVENT;
     }

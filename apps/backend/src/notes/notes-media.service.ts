@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService, ProcessedImageResult } from '../storage/storage.service';
 import { UpdateNoteImageDto, ImageOrderItemDto } from './dto/image.dto';
+import { NotePublishedEvent } from '../events';
 
 @Injectable()
 export class NotesMediaService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    @Optional() private eventEmitter?: EventEmitter2,
   ) {}
 
   /**
@@ -228,6 +231,37 @@ export class NotesMediaService {
         order: nextOrder,
       },
     });
+
+    // Touch parent Note updatedAt timestamp so live subscribers, sync orchestrator, and bus detect the update
+    const updatedNote = await this.prisma.note.update({
+      where: { id: noteId },
+      data: { updatedAt: new Date() },
+      include: {
+        folders: {
+          include: { folder: true },
+        },
+      },
+    });
+
+    if (this.eventEmitter && updatedNote) {
+      const primaryFolder = updatedNote.folders[0]?.folder;
+      this.eventEmitter.emit(
+        'note.published',
+        new NotePublishedEvent(
+          updatedNote.id,
+          updatedNote.title,
+          primaryFolder?.path || '',
+          updatedNote.status,
+          updatedNote.publishAt,
+          updatedNote.feedId,
+          false,
+          {
+            ...updatedNote,
+            images: [processed.url],
+          },
+        ),
+      );
+    }
 
     return noteImage;
   }

@@ -61,7 +61,7 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 
   const [path, setPath] = useState('');
   const [name, setName] = useState('');
-  const [privacy, setPrivacy] = useState<FolderPrivacy>(defaultPrivacy === 'obsidian' ? 'public' : defaultPrivacy);
+  const [privacy, setPrivacy] = useState<FolderPrivacy>(defaultPrivacy || 'public');
   const [color, setColor] = useState(defaultPrivacy === 'private' ? '#a855f7' : '#c9cd58');
   const [icon, setIcon] = useState(defaultPrivacy === 'private' ? 'lock' : 'folder');
   const [error, setError] = useState('');
@@ -71,7 +71,7 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       const initialPath = parentPath ? `${parentPath.replace(/\/+$/, '')}/` : '';
       setPath(initialPath);
       setName('');
-      const effectivePrivacy = defaultPrivacy === 'obsidian' ? 'public' : (defaultPrivacy || 'public');
+      const effectivePrivacy = defaultPrivacy || 'public';
       setPrivacy(effectivePrivacy);
       setColor(effectivePrivacy === 'private' ? '#a855f7' : '#c9cd58');
       setIcon(effectivePrivacy === 'private' ? 'lock' : 'folder');

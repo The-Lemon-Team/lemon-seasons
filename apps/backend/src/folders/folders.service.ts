@@ -16,7 +16,7 @@ export interface FolderTreeNode {
   path: string;
   icon: string | null;
   color: string | null;
-  privacy?: 'private' | 'public' | 'obsidian';
+  privacy?: 'private' | 'public';
   containerId?: string | null;
   scope?: 'external' | 'internal';
   notesCount: number;
@@ -65,8 +65,16 @@ export class FoldersService {
       await this.ensureContainerExists(targetContainerId);
     }
 
-    // Determine privacy: default to 'obsidian' if inside a container and not explicitly specified
-    const privacy = createFolderDto.privacy || (targetContainerId ? 'obsidian' : 'public');
+    let privacy: 'public' | 'private' = createFolderDto.privacy || 'public';
+    if (!createFolderDto.privacy && targetContainerId) {
+      const container = await this.prisma.container.findUnique({
+        where: { id: targetContainerId },
+        select: { visibility: true },
+      });
+      if (container?.visibility === 'private') {
+        privacy = 'private';
+      }
+    }
 
     // Case-insensitive lookup inside this container scope
     const existing = await this.prisma.folder.findFirst({
@@ -97,8 +105,8 @@ export class FoldersService {
       data: {
         name,
         path,
-        icon: createFolderDto.icon?.trim() || (privacy === 'obsidian' ? 'box' : null),
-        color: createFolderDto.color?.trim() || (privacy === 'obsidian' ? '#3b82f6' : null),
+        icon: createFolderDto.icon?.trim() || (privacy === 'private' ? 'lock' : null),
+        color: createFolderDto.color?.trim() || (privacy === 'private' ? '#a855f7' : null),
         privacy,
         containerId: targetContainerId,
       },
@@ -147,7 +155,7 @@ export class FoldersService {
   private async ensureParentFolders(
     childPath: string,
     containerId: string | null = null,
-    privacy: 'public' | 'private' | 'obsidian' = 'public',
+    privacy: 'public' | 'private' = 'public',
   ) {
     const parts = childPath.split('/');
     if (parts.length <= 1) return;
@@ -201,13 +209,8 @@ export class FoldersService {
         OR: [{ containerId: null }, { containerId }],
       };
     } else {
-      // Global scope: exclude internal 'obsidian' container folders from global view
-      containerCondition = {
-        OR: [
-          { containerId: null },
-          { privacy: { not: 'obsidian' } },
-        ],
-      };
+      // Global scope: external folders belonging to global root scope
+      containerCondition = { containerId: null };
     }
 
     const privacyCondition = isAdmin ? {} : { privacy: 'public' };
@@ -351,7 +354,7 @@ export class FoldersService {
     }
 
     // Enforce privacy rule:
-    // If setting privacy to private/obsidian from public, check if folder is used in any public feed
+    // If setting privacy to private from public, check if folder is used in any public feed
     if (
       updateFolderDto.privacy &&
       updateFolderDto.privacy !== 'public' &&
@@ -530,7 +533,16 @@ export class FoldersService {
       if (!folder && normalizedPath) {
         const isUuid = rawPath.length === 36 && rawPath.includes('-');
         if (!isUuid) {
-          const folderPrivacy = containerId ? 'obsidian' : 'public';
+          let folderPrivacy: 'public' | 'private' = 'public';
+          if (containerId) {
+            const container = await this.prisma.container.findUnique({
+              where: { id: containerId },
+              select: { visibility: true },
+            });
+            if (container?.visibility === 'private') {
+              folderPrivacy = 'private';
+            }
+          }
           await this.ensureParentFolders(normalizedPath, containerId || null, folderPrivacy);
 
           // Re-check right before create to avoid concurrent race duplicates

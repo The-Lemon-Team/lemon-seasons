@@ -94,11 +94,11 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [scopeFilter, setScopeFilter] = useState<'all' | 'external' | 'internal'>('all');
 
   const externalFolders = useMemo(() => {
-    return folders.filter((f) => (f.scope === 'external' || !f.containerId) && f.privacy !== 'obsidian');
+    return folders.filter((f) => f.scope === 'external' || !f.containerId);
   }, [folders]);
 
   const internalFolders = useMemo(() => {
-    return folders.filter((f) => f.scope === 'internal' || Boolean(f.containerId) || f.privacy === 'obsidian');
+    return folders.filter((f) => f.scope === 'internal' || Boolean(f.containerId));
   }, [folders]);
 
   const getInternalFoldersForContainer = useCallback(
@@ -147,7 +147,7 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addFolder = useCallback((input: CreateFolderInput): Folder => {
     const cleanPath = normalizeFolderPath(input.path);
     const name = input.name?.trim() || getFolderNameFromPath(cleanPath);
-    const privacy: FolderPrivacy = input.privacy || (input.containerId ? 'obsidian' : 'public');
+    const privacy: FolderPrivacy = input.privacy || 'public';
     const containerId = input.containerId || null;
     const scope = input.scope || (containerId ? 'internal' : 'external');
 
@@ -155,8 +155,8 @@ export const FoldersProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: `fld-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name,
       path: cleanPath,
-      icon: input.icon || (privacy === 'obsidian' ? 'box' : privacy === 'private' ? 'lock' : 'folder'),
-      color: input.color || (privacy === 'obsidian' ? '#3b82f6' : privacy === 'private' ? '#a855f7' : '#c9cd58'),
+      icon: input.icon || (privacy === 'private' ? 'lock' : 'folder'),
+      color: input.color || (privacy === 'private' ? '#a855f7' : '#c9cd58'),
       privacy,
       containerId,
       scope,

@@ -35,13 +35,13 @@ export class CreateFolderDto {
   color?: string;
 
   @ApiPropertyOptional({
-    description: 'Folder privacy setting (public, private, or obsidian container folder)',
+    description: 'Folder privacy setting (public or private)',
     example: 'public',
-    enum: ['public', 'private', 'obsidian'],
+    enum: ['public', 'private'],
   })
   @IsString()
   @IsOptional()
-  privacy?: 'public' | 'private' | 'obsidian';
+  privacy?: 'public' | 'private';
 
   @ApiPropertyOptional({
     description: 'ID of the Obsidian container for internal/scoped folders (null for global external folders)',

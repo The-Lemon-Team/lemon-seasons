@@ -291,12 +291,12 @@ export class NotesService implements OnModuleInit {
       if (note.feed && (note.feed as any).privacy && (note.feed as any).privacy !== 'public') {
         throw new ForbiddenException('Заметка принадлежит приватной ленте. Доступ запрещен.');
       }
-      if (note.folders?.some((f: any) => f.folder?.privacy && f.folder.privacy !== 'public')) {
+      if (note.folders?.some((f: any) => f.folder?.privacy === 'private')) {
         throw new ForbiddenException('Заметка находится в приватной папке. Доступ запрещен.');
       }
       if (note.folderPath) {
         const privateFolders = await this.prisma.folder.findMany({
-          where: { privacy: { not: 'public' }, deletedAt: null },
+          where: { privacy: 'private', deletedAt: null },
           select: { path: true },
         });
         const isPrivateFolder = privateFolders.some((pf) =>

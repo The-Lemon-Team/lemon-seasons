@@ -120,7 +120,7 @@ export class IngestionService {
         name,
         icon: icon || 'folder',
         containerId: containerId || null,
-        privacy: containerId ? 'obsidian' : 'public',
+        privacy: 'public',
       },
     });
   }
