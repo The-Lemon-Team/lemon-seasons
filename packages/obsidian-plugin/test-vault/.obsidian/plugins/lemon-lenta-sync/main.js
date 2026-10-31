@@ -4338,7 +4338,7 @@ var init_dist = __esm({
       feedId: external_exports.string().uuid().or(external_exports.string().min(1)),
       title: external_exports.string().min(1, "Title is required").max(500),
       description: external_exports.string().optional().nullable(),
-      type: noteTypeSchema.default("EVENT"),
+      type: noteTypeSchema.default("SINGLE"),
       startDate: external_exports.string().datetime().or(external_exports.string().min(1)),
       endDate: external_exports.string().datetime().or(external_exports.string().min(1)).optional().nullable(),
       sourceLink: external_exports.string().url().optional().nullable(),
@@ -4459,12 +4459,14 @@ var init_dist = __esm({
     createPinSchema = external_exports.object({
       noteId: external_exports.string().min(1),
       trackId: external_exports.string().optional().nullable(),
+      isPinned: external_exports.boolean().optional().default(false),
       status: pinStatusSchema.optional().default("ACTIVE"),
       comment: external_exports.string().optional().nullable(),
       order: external_exports.number().int().optional()
     });
     updatePinSchema = external_exports.object({
       trackId: external_exports.string().optional().nullable(),
+      isPinned: external_exports.boolean().optional(),
       status: pinStatusSchema.optional(),
       comment: external_exports.string().optional().nullable(),
       order: external_exports.number().int().optional()
