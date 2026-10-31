@@ -9,11 +9,12 @@ import {
   PanelLeftClose,
   PanelTopClose,
   BookOpen,
+  Radio,
 } from 'lucide-react';
 import { LemonLogo } from '../LemonLogo';
 import { useSyncChanges } from '../../api/queries';
 import { useAdminI18n } from '../../i18n';
-import { SIDEBAR_NAV_ITEMS } from './sidebar.constants';
+import { SIDEBAR_NAV_ITEMS, EXTERNAL_APP_URLS } from './sidebar.constants';
 import { AppSidebarProps } from './sidebar.types';
 
 export const SidebarExpanded: React.FC<AppSidebarProps> = ({
@@ -121,7 +122,7 @@ export const SidebarExpanded: React.FC<AppSidebarProps> = ({
             Внешние сервисы
           </p>
           <a
-            href="http://localhost:3000"
+            href={EXTERNAL_APP_URLS.defiChat}
             target="_blank"
             rel="noreferrer"
             className="px-2 py-1 h-6.5 flex items-center justify-between text-on-surface-variant hover:bg-tile-subtle hover:text-on-surface transition-all font-mono text-[10px] rounded-lg group"
@@ -136,17 +137,32 @@ export const SidebarExpanded: React.FC<AppSidebarProps> = ({
 
           {/* Symmetrical link to Calendar App */}
           <a
-            href="http://localhost:5174"
+            href={EXTERNAL_APP_URLS.calendarApp}
             target="_blank"
             rel="noreferrer"
             className="px-2 py-1 h-6.5 flex items-center justify-between bg-primary-container border border-primary-border hover:opacity-90 text-primary transition-all font-mono text-[10px] rounded-lg"
             title="Перейти в клиентское приложение Календаря"
           >
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3 h-3 text-primary" />
-              <span className="font-semibold">В Календарь</span>
+            <div className="flex items-center gap-1.5 truncate">
+              <Calendar className="w-3 h-3 text-primary shrink-0" />
+              <span className="font-semibold truncate">{t.toCalendar}</span>
             </div>
-            <ExternalLink className="w-2.5 h-2.5 text-primary" />
+            <ExternalLink className="w-2.5 h-2.5 text-primary shrink-0" />
+          </a>
+
+          {/* Symmetrical link to Lemon Seasons Feed App */}
+          <a
+            href={EXTERNAL_APP_URLS.feedApp}
+            target="_blank"
+            rel="noreferrer"
+            className="px-2 py-1 h-6.5 flex items-center justify-between bg-sky-500/10 border border-sky-500/25 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 transition-all font-mono text-[10px] rounded-lg group"
+            title="Перейти в умную ленту новостей Lemon Seasons"
+          >
+            <div className="flex items-center gap-1.5 truncate">
+              <Radio className="w-3 h-3 text-sky-500 shrink-0" />
+              <span className="font-semibold truncate">{t.feedAppTitle}</span>
+            </div>
+            <ExternalLink className="w-2.5 h-2.5 text-sky-500/70 group-hover:text-sky-500 shrink-0" />
           </a>
         </div>
       </nav>

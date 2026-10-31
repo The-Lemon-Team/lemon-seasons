@@ -7,10 +7,11 @@ import {
   PanelTopClose,
   Bot,
   Calendar,
+  Radio,
 } from 'lucide-react';
 import { LemonLogo } from '../LemonLogo';
 import { useAdminI18n } from '../../i18n';
-import { SIDEBAR_NAV_ITEMS } from './sidebar.constants';
+import { SIDEBAR_NAV_ITEMS, EXTERNAL_APP_URLS } from './sidebar.constants';
 import { AppSidebarProps } from './sidebar.types';
 
 export const SidebarRail: React.FC<AppSidebarProps> = ({
@@ -96,7 +97,7 @@ export const SidebarRail: React.FC<AppSidebarProps> = ({
       {/* External Integrations */}
       <Tooltip title="Defi Chat" placement="right">
         <a
-          href="http://localhost:3000"
+          href={EXTERNAL_APP_URLS.defiChat}
           target="_blank"
           rel="noreferrer"
           className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-tile-subtle hover:text-cyan-500 transition-colors"
@@ -105,14 +106,25 @@ export const SidebarRail: React.FC<AppSidebarProps> = ({
         </a>
       </Tooltip>
 
-      <Tooltip title="В Календарь" placement="right">
+      <Tooltip title={t.toCalendar} placement="right">
         <a
-          href="http://localhost:5174"
+          href={EXTERNAL_APP_URLS.calendarApp}
           target="_blank"
           rel="noreferrer"
           className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary-container border border-primary-border text-primary hover:opacity-90 transition-all shadow-xs"
         >
           <Calendar className="w-4 h-4" />
+        </a>
+      </Tooltip>
+
+      <Tooltip title={t.feedAppTitle} placement="right">
+        <a
+          href={EXTERNAL_APP_URLS.feedApp}
+          target="_blank"
+          rel="noreferrer"
+          className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-500/10 border border-sky-500/25 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all shadow-xs"
+        >
+          <Radio className="w-4 h-4" />
         </a>
       </Tooltip>
     </aside>

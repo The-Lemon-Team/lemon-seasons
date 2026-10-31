@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useRef } from 'react';
 import { Note, AppRuntimeMode } from '@lenta/shared';
 import { useAppMode } from '../context/AppModeContext';
 import { FeedAppMicrofrontend } from './feeds/FeedAppMicrofrontend';
@@ -48,6 +48,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   const onAppModeChange = propOnAppModeChange || appModeCtx.setAppMode;
 
   const activeFeed = selectedFeed ?? (selectedFeeds && selectedFeeds.length > 0 ? selectedFeeds[0] : undefined);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const initialRoute = useMemo(() => {
     if (!activeFeed) return 'all';
@@ -92,6 +93,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       if (onSelectFeed) {
         onSelectFeed(route || undefined);
       }
+      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [onSelectFeed]
   );
@@ -108,7 +110,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#121414] dark:bg-[#0e1621] overflow-y-auto transition-colors">
+    <div ref={containerRef} className="flex-1 flex flex-col h-full bg-[#121414] dark:bg-[#0e1621] overflow-y-auto transition-colors">
       <div className="max-w-6xl mx-auto w-full px-3 py-4 sm:px-5 sm:py-5">
         <FeedAppMicrofrontend
           initialRoute={initialRoute}
