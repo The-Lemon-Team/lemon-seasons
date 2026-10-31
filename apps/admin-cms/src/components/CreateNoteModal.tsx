@@ -28,6 +28,7 @@ export interface CreateNoteModalProps {
   onClose: () => void;
   onSuccess?: (createdNote?: Note) => void;
   initialFolderPath?: string;
+  initialFeedId?: string;
   onOpenFullPage?: (folderPath?: string) => void;
 }
 
@@ -36,6 +37,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   onClose,
   onSuccess,
   initialFolderPath,
+  initialFeedId,
   onOpenFullPage,
 }) => {
   const { t } = useAdminI18n();
@@ -86,20 +88,13 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         setAssignedFolders([]);
       }
 
-      if (feeds.length > 0) {
-        setFeedId((prev) => prev || feeds[0].id);
-      }
+      setFeedId(initialFeedId || '');
     }
-  }, [open, initialFolderPath, feeds]);
+  }, [open, initialFolderPath, initialFeedId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || isSubmitting) return;
-
-    if (!feedId) {
-      message.error(t.selectFeedPlaceholder);
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -110,7 +105,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
       const created = await createNoteMutation.mutateAsync({
         title: title.trim(),
-        feedId,
+        feedId: feedId ? feedId : undefined,
         type,
         status,
         startDate: new Date(startDate).toISOString(),
@@ -280,17 +275,24 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
             <div>
               <label className="block text-xs font-mono text-on-surface-variant mb-1">
-                {t.feedInputLabel} <span className="text-primary">*</span>
+                {t.feedInputLabel}
               </label>
               <AppSelect
                 value={feedId}
                 onChange={setFeedId}
                 placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
-                options={feeds.map((f) => ({
-                  value: f.id,
-                  label: f.title,
-                  icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
-                }))}
+                options={[
+                  {
+                    value: '',
+                    label: t.noFeedOption || 'Без ленты (общая база)',
+                    icon: <Radio className="w-3.5 h-3.5 text-text-muted/60" />,
+                  },
+                  ...feeds.map((f) => ({
+                    value: f.id,
+                    label: f.title,
+                    icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+                  })),
+                ]}
               />
             </div>
           </div>

@@ -52,7 +52,8 @@ export class SparksParserService {
     if (timeSlot === 'MORNING') slotTags.push('утро');
     if (timeSlot === 'AFTERNOON') slotTags.push('день');
     if (timeSlot === 'EVENING') slotTags.push('вечер');
-    if (type === NoteType.PERIOD) slotTags.push('сводка', 'дайджест');
+    const isDigest = title.toLowerCase().includes('дайджест') || title.toLowerCase().includes('свод') || fileName.toLowerCase().includes('digest');
+    if (type === NoteType.PERIOD || isDigest) slotTags.push('сводка', 'дайджест');
 
     const tags = Array.from(
       new Set([
@@ -296,16 +297,13 @@ export class SparksParserService {
       return fm.type as NoteType;
     }
 
-    if (end && end.getTime() > start.getTime()) {
+    // Only assign PERIOD if there is an explicit multi-day end date (> 24 hours span)
+    if (end && end.getTime() - start.getTime() > 24 * 60 * 60 * 1000) {
       return NoteType.PERIOD;
     }
 
     const lower = title.toLowerCase();
-    if (lower.includes('дайджест') || lower.includes('сводный') || lower.includes('обзор')) {
-      return NoteType.PERIOD;
-    }
-
-    if (lower.includes('митап') || lower.includes('конференция') || lower.includes('созвон')) {
+    if (lower.includes('митап') || lower.includes('конференция') || lower.includes('созвон') || lower.includes('вебинар')) {
       return NoteType.EVENT;
     }
 

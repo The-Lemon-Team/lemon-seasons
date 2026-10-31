@@ -14,9 +14,10 @@ import { LemonLogo } from './LemonLogo';
 interface QuickAddModalProps {
   open: boolean;
   onClose: () => void;
+  initialFeedId?: string;
 }
 
-export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) => {
+export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, initialFeedId }) => {
   const { t } = useAdminI18n();
   const { data: feeds = [] } = useFeeds();
   const createNoteMutation = useCreateNote();
@@ -32,12 +33,19 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
 
-  // Auto-select first feed if none selected
+  // Reset or initialize form when opened
   React.useEffect(() => {
-    if (!feedId && feeds.length > 0) {
-      setFeedId(feeds[0].id);
+    if (open) {
+      setTitle('');
+      setFeedId(initialFeedId || '');
+      setType('SINGLE');
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setEndDate('');
+      setFolders([]);
+      setHashtags([]);
+      setDescription('');
     }
-  }, [feeds, feedId]);
+  }, [open, initialFeedId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +53,10 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       message.error(t.titleInputLabel);
       return;
     }
-    if (!feedId) {
-      message.error(t.selectFeedPlaceholder);
-      return;
-    }
 
     try {
       await createNoteMutation.mutateAsync({
-        feedId,
+        feedId: feedId ? feedId : undefined,
         title: title.trim(),
         type,
         startDate: new Date(startDate).toISOString(),
@@ -65,6 +69,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
       message.success(t.quickAddNoteCreated);
       // Reset form
       setTitle('');
+      setFeedId('');
       setDescription('');
       setEndDate('');
       setFolders([]);
@@ -117,11 +122,18 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose }) =
                 onChange={setFeedId}
                 size="sm"
                 placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
-                options={feeds.map((f) => ({
-                  value: f.id,
-                  label: f.title,
-                  icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
-                }))}
+                options={[
+                  {
+                    value: '',
+                    label: t.noFeedOption || 'Без ленты (общая база)',
+                    icon: <Radio className="w-3.5 h-3.5 text-text-muted/60" />,
+                  },
+                  ...feeds.map((f) => ({
+                    value: f.id,
+                    label: f.title,
+                    icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+                  })),
+                ]}
               />
             </div>
 

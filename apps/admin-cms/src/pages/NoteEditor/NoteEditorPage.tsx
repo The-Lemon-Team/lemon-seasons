@@ -78,9 +78,6 @@ export const NoteEditorPage: React.FC = () => {
         })).filter((item) => Boolean(item.path)) || [],
       );
     } else if (isNew) {
-      if (feeds.length > 0 && !feedId) {
-        setFeedId(feeds[0].id);
-      }
       if (folderParam && assignedFolders.length === 0) {
         setAssignedFolders([{ path: folderParam, isPrimary: true, order: 0 }]);
       }
@@ -93,15 +90,10 @@ export const NoteEditorPage: React.FC = () => {
       message.error(t.titleInputLabel);
       return;
     }
-    if (!feedId) {
-      message.error(t.selectFeedPlaceholder);
-      return;
-    }
-
     try {
       if (isNew) {
         const created = await createNoteMutation.mutateAsync({
-          feedId,
+          feedId: feedId ? feedId : undefined,
           title: title.trim(),
           type,
           startDate: new Date(startDate).toISOString(),
@@ -142,7 +134,7 @@ export const NoteEditorPage: React.FC = () => {
         await updateNoteMutation.mutateAsync({
           id: id!,
           data: {
-            feedId,
+            feedId: feedId ? feedId : null,
             title: title.trim(),
             type,
             startDate: new Date(startDate).toISOString(),
@@ -311,11 +303,18 @@ export const NoteEditorPage: React.FC = () => {
               value={feedId}
               onChange={setFeedId}
               placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
-              options={feeds.map((f) => ({
-                value: f.id,
-                label: `${f.title} (/${f.slug})`,
-                icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
-              }))}
+              options={[
+                {
+                  value: '',
+                  label: t.noFeedOption || 'Без ленты (общая база)',
+                  icon: <Radio className="w-3.5 h-3.5 text-text-muted/60" />,
+                },
+                ...feeds.map((f) => ({
+                  value: f.id,
+                  label: `${f.title} (/${f.slug})`,
+                  icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+                })),
+              ]}
             />
           </div>
 

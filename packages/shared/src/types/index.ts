@@ -262,7 +262,7 @@ export interface NotesResponse {
 }
 
 export interface CreateNoteInput {
-  feedId?: string;
+  feedId?: string | null;
   containerId?: string | null;
   status?: NoteStatus;
   publishAt?: string | null;
@@ -302,7 +302,7 @@ export interface UpdateNoteInput {
   endDate?: string | null;
   sourceLink?: string;
   icon?: string;
-  feedId?: string;
+  feedId?: string | null;
   containerId?: string | null;
   author?: string | null;
   /** @deprecated Use author */

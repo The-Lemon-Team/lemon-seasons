@@ -113,11 +113,6 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
     e.preventDefault();
     if (!note || !title.trim() || isSubmitting) return;
 
-    if (!feedId) {
-      message.error(t.selectFeedPlaceholder);
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const meta = (note.metadata as any) || {};
@@ -131,7 +126,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         id: note.id,
         data: {
           title: title.trim(),
-          feedId,
+          feedId: feedId ? feedId : null,
           type,
           status,
           startDate: new Date(startDate).toISOString(),
@@ -309,17 +304,24 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
 
               <div>
                 <label className="block text-xs font-mono text-on-surface-variant mb-1">
-                  {t.feedInputLabel} <span className="text-primary">*</span>
+                  {t.feedInputLabel}
                 </label>
                 <AppSelect
                   value={feedId}
                   onChange={setFeedId}
                   placeholder={t.selectFeedPlaceholder || 'Выберите ленту...'}
-                  options={feeds.map((f) => ({
-                    value: f.id,
-                    label: f.title,
-                    icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
-                  }))}
+                  options={[
+                    {
+                      value: '',
+                      label: t.noFeedOption || 'Без ленты (общая база)',
+                      icon: <Radio className="w-3.5 h-3.5 text-text-muted/60" />,
+                    },
+                    ...feeds.map((f) => ({
+                      value: f.id,
+                      label: f.title,
+                      icon: <Radio className="w-3.5 h-3.5 text-primary/80" />,
+                    })),
+                  ]}
                 />
               </div>
             </div>

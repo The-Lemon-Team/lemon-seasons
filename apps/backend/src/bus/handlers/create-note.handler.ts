@@ -31,7 +31,7 @@ export class CreateNoteHandler implements ICommandHandler<CreateNotePayload> {
     const note = await this.notesService.create({
       title: payload.title,
       description: payload.description,
-      type: payload.type ? (payload.type as NoteType) : NoteType.EVENT,
+      type: payload.type ? (payload.type as NoteType) : NoteType.SINGLE,
       startDate: payload.startDate || command.targetDate || new Date().toISOString(),
       endDate: payload.endDate || undefined,
       feedId: targetFeedId,

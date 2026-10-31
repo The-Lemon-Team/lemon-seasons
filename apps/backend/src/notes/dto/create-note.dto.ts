@@ -32,7 +32,7 @@ export class CreateNoteDto {
   @ApiPropertyOptional({ description: 'Feed ID this note belongs to' })
   @IsString()
   @IsOptional()
-  feedId?: string;
+  feedId?: string | null;
 
   @ApiPropertyOptional({ description: 'Target Public/Staging Feed ID when publishing from Admin to Staging Hub' })
   @IsString()

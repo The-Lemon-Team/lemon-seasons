@@ -140,6 +140,7 @@ export interface AdminTranslations {
   typeInputLabel: string;
   feedInputLabel: string;
   selectFeedPlaceholder: string;
+  noFeedOption: string;
   startDateLabel: string;
   endDateLabel: string;
   folderInputLabel: string;
@@ -352,6 +353,7 @@ export const ruAdminTranslations: AdminTranslations = {
   typeInputLabel: 'Тип записи',
   feedInputLabel: 'Новостная лента / Канал',
   selectFeedPlaceholder: 'Выберите ленту (необязательно)',
+  noFeedOption: 'Без ленты (общая база)',
   startDateLabel: 'Дата начала',
   endDateLabel: 'Дата окончания (для периодов)',
   folderInputLabel: 'Папка Obsidian',
@@ -564,6 +566,7 @@ export const enAdminTranslations: AdminTranslations = {
   typeInputLabel: 'Note Type',
   feedInputLabel: 'Feed / Channel',
   selectFeedPlaceholder: 'Select feed (optional)',
+  noFeedOption: 'No feed (general vault)',
   startDateLabel: 'Start Date & Time',
   endDateLabel: 'End Date & Time (for periods)',
   folderInputLabel: 'Obsidian Folder',

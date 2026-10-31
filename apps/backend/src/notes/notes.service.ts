@@ -431,7 +431,11 @@ export class NotesService implements OnModuleInit {
             ? { parentNote: { connect: { id: updateNoteDto.parentNoteId } } }
             : { parentNote: { disconnect: true } }
           : {}),
-        ...(updateNoteDto.feedId ? { feed: { connect: { id: updateNoteDto.feedId } } } : {}),
+        ...(updateNoteDto.feedId !== undefined
+          ? updateNoteDto.feedId
+            ? { feed: { connect: { id: updateNoteDto.feedId } } }
+            : { feed: { disconnect: true } }
+          : {}),
         ...(updateNoteDto.publicFeedId !== undefined
           ? updateNoteDto.publicFeedId
             ? { publicFeed: { connect: { id: updateNoteDto.publicFeedId } } }

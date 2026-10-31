@@ -21,7 +21,7 @@ export const createNoteSchema = z.object({
   feedId: z.string().uuid().or(z.string().min(1)),
   title: z.string().min(1, 'Title is required').max(500),
   description: z.string().optional().nullable(),
-  type: noteTypeSchema.default('EVENT'),
+  type: noteTypeSchema.default('SINGLE'),
   startDate: z.string().datetime().or(z.string().min(1)),
   endDate: z.string().datetime().or(z.string().min(1)).optional().nullable(),
   sourceLink: z.string().url().optional().nullable(),
