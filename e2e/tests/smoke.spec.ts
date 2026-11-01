@@ -122,4 +122,71 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
   });
+
+  test('5. View note details in FeedDetailModal and edit title through FeedEditNoteModal', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. Locate the seeded note card in the stream and click it
+    const noteCard = page.getByRole('article').filter({ hasText: 'Seeded Smoke Note Welcome' }).first();
+    await expect(noteCard).toBeVisible({ timeout: 15000 });
+    await noteCard.click();
+
+    // 2. FeedDetailModal opens
+    const detailDialog = page.getByRole('dialog');
+    await expect(detailDialog).toBeVisible();
+    await expect(detailDialog.getByRole('heading', { name: 'Seeded Smoke Note Welcome' })).toBeVisible();
+
+    // 3. Click "Редактировать"
+    const editBtn = detailDialog.getByRole('button', { name: /Редактировать/ });
+    await editBtn.click();
+
+    // 4. FeedEditNoteModal opens
+    const editDialog = page.getByRole('dialog');
+    await expect(editDialog.getByText('Редактирование записи')).toBeVisible();
+
+    // 5. Update the title
+    const updatedTitle = `Updated Smoke Note ${Date.now()}`;
+    const titleInput = editDialog.getByPlaceholder(/Название новости/);
+    await titleInput.fill(updatedTitle);
+
+    // 6. Save changes
+    await editDialog.getByRole('button', { name: 'Сохранить правки' }).click();
+    await expect(editDialog.getByText(/Запись успешно обновлена/)).toBeVisible({ timeout: 10000 });
+    await expect(editDialog).not.toBeVisible({ timeout: 10000 });
+
+    // 7. Verify updated title appears in the feed stream
+    await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('6. [BUG-006] Binary Privacy Isolation: Private notes and admin controls hidden in Public mode (AGENTS.md §9)', async ({ page, request }) => {
+    // 1. Seed a strictly private note via API
+    const secretTitle = `Secret Internal Note ${Date.now()}`;
+    await request.post(`${BACKEND_URL}/notes`, {
+      headers: {
+        'x-admin-token': ADMIN_TOKEN,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        title: secretTitle,
+        description: 'Internal sensitive note that must never be visible in public mode.',
+        privacy: 'private',
+        status: 'PUBLISHED',
+        type: 'SINGLE',
+        feedId,
+        startDate: new Date().toISOString(),
+      },
+    });
+
+    // 2. Open app in dev mode -> private note is visible
+    await page.goto('/?mode=dev');
+    await expect(page.getByText(secretTitle)).toBeVisible({ timeout: 15000 });
+
+    // 3. Open app in public mode -> private note is completely isolated and hidden
+    await page.goto('/?mode=public');
+    await expect(page.getByText(secretTitle)).not.toBeVisible({ timeout: 10000 });
+
+    // 4. Administrative create note button is also suppressed in public mode
+    const createBtn = page.getByTitle('Создать новую запись в ленту');
+    await expect(createBtn).not.toBeVisible();
+  });
 });
