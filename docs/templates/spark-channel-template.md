@@ -7,7 +7,7 @@ icon: "⚡"                 # Emoji или идентификатор иконк
 type: "channel_config"     # Тип файла конфигурации канала
 version: "2.0.0"           # Версия схемы
 status: "active"           # Статус канала: active | paused | archived
-privacy: "public"          # Приватность фида: public | private (AGENTS.md §9)
+privacy: "private"         # Приватность фида: private (инкубатор сбора) | public (AGENTS.md §9)
 color: "#3b82f6"           # Акцентный HEX цвет для UI
 folder_path: "Spark/"      # Директория мониторинга на Диске (например: "Spark/AI")
 
@@ -87,8 +87,9 @@ feed_settings:
 - **Шаблоны и стандарты:**
   - Базовый шаблон заметки: `[[gem-news-template.md]]`
   - Спецификация генерации: `[[00 - ПРАВИЛА_ГЕНЕРАЦИИ_SPARK.md]]`
-- **Каноническое имя файла:** `ДД.ММ.ГГ - <Название>.md` (дата файла обязана строго совпадать со `start_date`).
-- **Обязательные поля заметки:** `title`, `type` (по умолчанию `"SINGLE"`), `start_date`, `end_date: null`, `tags`, `links`, `icon`, `resonance_score`.
+- **Каноническое имя файла:** `ДД.ММ.ГГ - <Название>.md` (дата файла обязана совпадать со `start_date`).
+- **Обязательные поля заметки:** `title`, `type` (по умолчанию `"SINGLE"`), `start_date`, `end_date: null`, `privacy: "private"`, `published: false`, `tags`, `links`, `icon`, `resonance_score`.
+- **Карантин и приватность:** все входящие заметки Spark создаются с `privacy: "private"` и `published: false` (инкубатор). Публикация в `public` осуществляется куратором после факт-чекинга.
 - **Запрещенные поля во frontmatter:** `feed`, `curator`, `process`, `taxonomy`, `folders`, `primary_folder`, `lenta_id`, `updated_at`, `deleted`.
 - **Запрещенные теги:** категорически запрещено автоматически ставить тег `jmdaily` (зарезервирован под ручную аналитику).
 - **Типографика и отступы:** ровно две пустые строки после `---` перед заголовком первого уровня `# {{title}}` и перед каждой секцией `## ...`.

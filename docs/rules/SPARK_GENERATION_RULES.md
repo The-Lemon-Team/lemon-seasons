@@ -67,7 +67,8 @@
 | `links` | `Array<{ url, title, is_source }>` | Первоисточники с атрибутом `is_source: true` |
 | `cover_image` | `string` | URL изображения или пустая строка `""` |
 | `podcast_audio` | `string` | Имя аудиофайла подкаста или `""` |
-| `published` | `boolean` | `false` (черновик) или `true` |
+| `privacy` | `"private" \| "public"` | Приватность заметки (всегда `"private"` для входящих черновиков) |
+| `published` | `boolean` | `false` (черновик для модерации) или `true` |
 | `icon` | `string` | Emoji (например: `"🤖"`, `"⚡"`, `"💡"`, `"🛡️"`) |
 | `resonance_score` | `number` (0-100) | Оценка резонанса события |
 
@@ -103,7 +104,7 @@
 2. Честная дата event_date: ОБЯЗАНА указывать реальную дату события/публикации в первоисточнике (например: event_date: "2026-10-24T18:30:00.000Z"). Если новость произошла накануне, указывай именно вчерашнюю дату! Поле start_date дублирует event_date.
 3. Тип записи type: ВСЕГДА "SINGLE" для точечных новостей, анонсов, релизов и регулярных дайджестов (end_date: null). "EVENT" — только для календарных конференций и митапов. "PERIOD" — только для многодневных процессов длительностью > 24ч с обязательным end_date.
 4. Теги: массив tags должен содержать тему канала (например: tags: ["ai", "нейросети", "llm"]). НЕ добавлять тег "jmdaily" (он зарезервирован под ручную аналитику). Записывать без символа #.
-5. Frontmatter: использовать только поля title, type, event_date, start_date, end_date, tags, links, cover_image, podcast_audio, published, icon, resonance_score. Не добавлять поля feed, curator, process, taxonomy, lenta_id.
+5. Frontmatter: использовать только поля title, type, event_date, start_date, end_date, privacy, published, tags, links, cover_image, podcast_audio, icon, resonance_score. По умолчанию ВСЕГДА ставить privacy: "private" и published: false (карантин/черновик инкубатора для модерации куратором). Не добавлять системные поля feed, curator, process, taxonomy, lenta_id.
 6. Структура текста:
    - Две пустые строки после frontmatter.
    - Заголовок # <Заголовок>
