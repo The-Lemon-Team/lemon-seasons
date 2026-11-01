@@ -16,7 +16,10 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
     "calendar:generate": "ts-node scripts/generate-calendar.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@lenta/shared": "workspace:*",
@@ -44,13 +47,19 @@
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^10.4.15",
+    "@swc/core": "^1.16.21",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.7",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "5.0.1",
     "prisma": "^6.3.1",
     "source-map-support": "^0.5.21",
+    "supertest": "^7.3.1",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "5.0.1"
   }
 }
