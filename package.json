@@ -10,6 +10,7 @@
     "dev:local": "turbo run dev --filter=lemon-lenta-backend --filter=@lenta/calendar-app --filter=lemon-seasons-admin --filter=@lenta/feed-app",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:int": "pnpm --filter lemon-lenta-backend run test:int",
     "test:map": "node scripts/generate-test-map.mjs",
     "stats": "curl.exe -s http://localhost:3001/stats",
     "db:up": "docker compose up -d",
