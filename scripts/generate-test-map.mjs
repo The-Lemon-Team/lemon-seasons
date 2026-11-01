@@ -19,7 +19,8 @@ const OUT = join(ROOT, 'docs', 'testing', 'TEST_MAP.md');
 
 /** Test suites included in the map. Add e2e/integration entries here as they appear. */
 const SUITES = [
-  { layer: 'Unit & component tests', package: '@lenta/feed-app', label: 'feed-app', cwd: 'apps/feed-app' },
+  { layer: 'Frontend unit & component tests', package: '@lenta/feed-app', label: 'feed-app', cwd: 'apps/feed-app' },
+  { layer: 'Backend unit tests', package: 'lemon-lenta-backend', label: 'backend', cwd: 'apps/backend' },
 ];
 
 /** Declarative file → domain routing. First match wins. */
@@ -36,9 +37,28 @@ const DOMAIN_RULES = [
   { match: /modalUxContract/, domain: 'Cross-cutting', area: 'Modal UX contract (AGENTS.md §7)' },
   { match: /appMode/, domain: 'App shell', area: 'Runtime mode (dev / staging / public)' },
   { match: /hostNavigation/, domain: 'App shell', area: 'Host navigation (iframe / standalone)' },
+  // Backend domains
+  { match: /notes-cache\.service/, domain: 'Backend / Note', area: 'Notes cache service' },
+  { match: /notes-query\.builder/, domain: 'Backend / Note', area: 'Notes query builder' },
+  { match: /auth-context\.middleware/, domain: 'Backend / Auth', area: 'Auth context middleware' },
+  { match: /sparks-parser\.service/, domain: 'Backend / Ingestion', area: 'Gemini Sparks parser' },
+  { match: /text-helpers\.spec/, domain: 'Backend / Taxonomy', area: 'Hashtags and folders normalization' },
+  { match: /note-state\.mapper/, domain: 'Backend / Sync', area: 'Note state mapper (HLC clocks)' },
 ];
 
-const DOMAIN_ORDER = ['Note', 'Feed', 'Workspace', 'App shell', 'Cross-cutting', 'Other'];
+const DOMAIN_ORDER = [
+  'Note',
+  'Feed',
+  'Workspace',
+  'App shell',
+  'Cross-cutting',
+  'Backend / Note',
+  'Backend / Auth',
+  'Backend / Ingestion',
+  'Backend / Taxonomy',
+  'Backend / Sync',
+  'Other',
+];
 const ICON = { passed: '✅', failed: '❌', pending: '⏸️', todo: '📝', skipped: '⏭️' };
 
 const classify = (file) =>
