@@ -11,6 +11,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:int": "pnpm --filter lemon-lenta-backend run test:int",
+    "test:e2e": "pnpm --filter @lenta/e2e test",
     "test:map": "node scripts/generate-test-map.mjs",
     "stats": "curl.exe -s http://localhost:3001/stats",
     "db:up": "docker compose up -d",

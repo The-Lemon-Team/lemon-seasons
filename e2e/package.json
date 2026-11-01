@@ -1,0 +1,16 @@
+{
+  "name": "@lenta/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack E2E smoke tests for Project Lenta (Frontend + Backend + PostgreSQL)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/node": "^22.13.1"
+  }
+}
