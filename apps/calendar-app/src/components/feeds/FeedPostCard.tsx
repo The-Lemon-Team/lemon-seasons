@@ -17,6 +17,7 @@ import {
 import { getThematicCategoryBadge } from '../../utils/sparkFeeds';
 
 import { UnifiedFeedItem } from '../../adapters/feeds/types';
+import { SymbolIcon } from '../common/SymbolIcon';
 
 export interface FeedPostCardProps {
   item?: UnifiedFeedItem;
@@ -34,16 +35,7 @@ function formatViews(score?: number | null): string {
 
 function getAvatarContent(note: Note, categoryBadge: { emoji: string }): string {
   if (note.icon) {
-    if (Array.from(note.icon).length <= 2) {
-      return note.icon;
-    }
-    const iconKey = note.icon.toLowerCase();
-    if (iconKey.includes('bot') || iconKey.includes('ai')) return '🤖';
-    if (iconKey.includes('code') || iconKey.includes('habr')) return '💻';
-    if (iconKey.includes('ghost')) return '👻';
-    if (iconKey.includes('palett')) return '🎨';
-    if (iconKey.includes('globe') || iconKey.includes('world')) return '🌐';
-    if (iconKey.includes('radio') || iconKey.includes('news')) return '📡';
+    return note.icon;
   }
   const slug = note.feed?.slug?.toLowerCase() || '';
   if (slug.includes('ai')) return '🤖';
@@ -111,7 +103,7 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Channel Avatar */}
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-500/10 via-sky-500/15 to-indigo-500/20 border border-slate-200 dark:border-white/10 flex items-center justify-center text-sm sm:text-base font-bold text-[#2481cc] dark:text-[#64b5f6] shadow-2xs">
-            {avatarChar}
+            <SymbolIcon icon={avatarChar} fallback="✨" className="text-base" />
           </div>
 
           <div className="min-w-0 leading-tight">
@@ -120,7 +112,7 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
                 {channelTitle}
               </span>
               <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                @{channelHandle}
+                @{channelHandle.replace(/^@+/, '')}
               </span>
             </div>
 

@@ -156,7 +156,7 @@ export const SeasonsFeedAdapter: FeedAdapter = {
         sourceType: 'seasons',
         feedSlug: n.feed?.slug || 'tech-strategy',
         channelTitle: preset?.title || n.feed?.title || 'Lemon Seasons',
-        channelHandle: `@${n.feed?.slug || 'lemon-seasons'}`,
+        channelHandle: n.feed?.slug || 'lemon-seasons',
         avatarIcon: preset?.emoji || '🍋',
         category: badge,
         title: n.title,

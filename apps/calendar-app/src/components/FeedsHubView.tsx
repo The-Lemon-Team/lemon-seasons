@@ -93,7 +93,9 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
       if (onSelectFeed) {
         onSelectFeed(route || undefined);
       }
-      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      if (!payload.noteId) {
+        containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     },
     [onSelectFeed]
   );
