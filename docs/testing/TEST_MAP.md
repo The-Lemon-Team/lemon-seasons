@@ -3,7 +3,21 @@
 > Generated automatically from test suite execution reports.
 > Regenerate anytime with `pnpm test:map`. Do not edit by hand.
 
-**Totals:** 386 passed, 0 failed, 3 todo/skipped (389 total across all suites)
+**Totals:** 408 passed, 0 failed, 3 todo/skipped (411 total across all suites)
+
+## 🛡️ Defect Shield & Regression Prevention
+
+> **Active Regression Guards:** 8 automated tests preventing known regressions.
+> See full defect register and root cause analysis in [DEFECT_LOG.md](DEFECT_LOG.md).
+
+- ✅ **[BUG-007] publication stage "dev" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
+- ✅ **[BUG-007] publication stage "staging" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
+- ✅ **[BUG-007] publication stage "public" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
+- ✅ **[BUG-004] auto-provisions missing folders when creating a feed** (`backend-int` → `test/folders-api.int.spec.ts`)
+- ✅ **[BUG-002] returns 200 OK and status in isolated test environment** (`backend-int` → `test/notes-api.int.spec.ts`)
+- ✅ **1. [BUG-001] App loads and renders seeded note in the chronological stream** (`e2e-smoke` → `../smoke.spec.ts`)
+- ✅ **2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)** (`e2e-smoke` → `../smoke.spec.ts`)
+- ✅ **4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)** (`e2e-smoke` → `../smoke.spec.ts`)
 
 ## Frontend unit & component tests — `feed-app`
 
@@ -84,9 +98,9 @@ _Source: `src/components/__tests__/FeedEditNoteModal.test.tsx`_
   - **Edit › special params** _(9)_
     - ✅ keeps the original startDate (with time) when the date is untouched
     - ✅ normalises edited hashtags
-    - ✅ publication stage "dev" maps to privacy/status
-    - ✅ publication stage "staging" maps to privacy/status
-    - ✅ publication stage "public" maps to privacy/status
+    - ✅ [BUG-007] publication stage "dev" maps to privacy/status
+    - ✅ [BUG-007] publication stage "staging" maps to privacy/status
+    - ✅ [BUG-007] publication stage "public" maps to privacy/status
     - ✅ publishing a draft sets publishAt; unpublishing clears it
     - ✅ preselects the stage from the item (public + PUBLISHED → Public)
     - ✅ "Сгенерировать выжимку" fills the summary from the description
@@ -480,20 +494,21 @@ _Source: `src/auth/auth-context.middleware.spec.ts`_
 
 ### Domain: Backend / Ingestion
 
-#### Gemini Sparks parser (48)
+#### Gemini Sparks parser (49)
 _Source: `src/ingestion/services/sparks-parser.service.spec.ts`_
 
-- **SparksParserService** _(48)_
+- **SparksParserService** _(49)_
   - **Spark › title** _(4)_
     - ✅ uses the first heading
     - ✅ falls back to the file name without the DD.MM.YY prefix and extension
     - ✅ also strips ISO date prefixes from file names
     - ✅ uses a generic title when nothing else is available
-  - **Spark › dates (filename date is canonical)** _(9)_
+  - **Spark › dates (filename date is canonical)** _(10)_
     - ✅ derives the start date from DD.MM.YY in the file name at noon UTC when frontmatter has none
     - ✅ supports 4-digit years in the file name
     - ✅ supports ISO dates in the file name
     - ✅ keeps the frontmatter time but aligns the calendar day with the file name
+    - ✅ preserves explicit event_date without aligning to filename
     - ✅ shifts late-evening UTC times back 3h so the Moscow calendar day matches the file name
     - ✅ uses the frontmatter start date as-is when the file name has no date
     - ✅ accepts startDate and date as aliases
@@ -597,22 +612,67 @@ _Source: `src/sync/note-state.mapper.spec.ts`_
     - ✅ the fallback grows with updatedAt so newer rows win over older unstamped ones
     - ✅ passes the tombstone through
 
+### Domain: Other
+
+#### src/ingestion/services/news-verification.service.spec.ts (10)
+_Source: `src/ingestion/services/news-verification.service.spec.ts`_
+
+- **DateExtractionUtil** _(7)_
+  - ✅ extracts date from Russian DD.MM.YY filename format
+  - ✅ extracts date from ISO YYYY-MM-DD filename format
+  - ✅ extracts date from URL path with ISO format
+  - ✅ extracts date from URL path with English month name
+  - ✅ extracts date from URL path with reverse month name
+  - ✅ parses publication date from HTML meta tags
+  - ✅ parses publication date from Schema.org JSON-LD
+- **NewsVerificationService** _(3)_
+  - ✅ prioritizes preserved frontmatter date over filename digest date
+  - ✅ extracts date from source URL regex when frontmatter matches digest date
+  - ✅ falls back to digest date when no external or earlier date is found
+
 
 ## Backend integration tests (PostgreSQL) — `backend-int`
 
 ### Domain: Backend / Integration
 
-#### Notes, feeds & privacy API (4)
+#### Folders API & Obsidian tree (PostgreSQL) (6)
+_Source: `test/folders-api.int.spec.ts`_
+
+- **Project Lenta Backend - Folders API Integration (PostgreSQL)** _(6)_
+  - **POST /folders - Creation & Path Normalization** _(3)_
+    - ✅ creates a root folder with binary privacy "public" and extracts name
+    - ✅ normalizes paths with slashes and whitespace
+    - ✅ [BUG-004] auto-provisions missing folders when creating a feed
+  - **GET /folders/tree - Hierarchical Obsidian Explorer** _(1)_
+    - ✅ builds a nested parent-child tree structure from flat paths
+  - **Binary Privacy & Scoping (AGENTS.md §9)** _(1)_
+    - ✅ enforces privacy visibility: anonymous sees only public folders, admin sees all
+  - **DELETE & Soft-Deletion Lifecycle** _(1)_
+    - ✅ soft deletes folder and sets deletedAt timestamp
+
+#### Notes, feeds & privacy API (PostgreSQL) (4)
 _Source: `test/notes-api.int.spec.ts`_
 
 - **Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)** _(4)_
   - **GET /health** _(1)_
-    - ✅ returns 200 OK and status
+    - ✅ [BUG-002] returns 200 OK and status in isolated test environment
   - **Feeds API & Binary Privacy Flow** _(1)_
     - ✅ creates a feed and retrieves it in the list
   - **Notes API & Unified Privacy Architecture (AGENTS.md rule 9)** _(2)_
     - ✅ creates public and private notes, enforcing privacy visibility filters
     - ✅ updates note fields and soft deletes via DELETE
+
+#### Sync engine & HLC merge (PostgreSQL) (5)
+_Source: `test/sync-api.int.spec.ts`_
+
+- **Project Lenta Backend - Sync Engine API Integration (PostgreSQL)** _(5)_
+  - **POST /sync/events - Apply Sync Events (Idempotency & Merge)** _(4)_
+    - ✅ applies an UPSERT note event, creating the note with HLC clocks in PostgreSQL
+    - ✅ guarantees event idempotency by eventId, returning DUPLICATE on re-delivery
+    - ✅ resolves concurrent updates using HLC Last-Write-Wins (LWW) per field
+    - ✅ soft deletes note on DELETE action and preserves tombstone
+  - **GET /sync/pull - Pull Changes with Cursor** _(1)_
+    - ✅ returns notes changed since cursor with their field clocks and deletion state
 
 
 ## End-to-End smoke tests (Frontend + Backend + PostgreSQL) — `e2e-smoke`
@@ -623,8 +683,8 @@ _Source: `test/notes-api.int.spec.ts`_
 _Source: `../smoke.spec.ts`_
 
 - **Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)** _(4)_
-  - ✅ 1. App loads and renders seeded note in the chronological stream
-  - ✅ 2. Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)
+  - ✅ 1. [BUG-001] App loads and renders seeded note in the chronological stream
+  - ✅ 2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)
   - ✅ 3. Create a new note through UI and verify it appears in the stream
-  - ✅ 4. Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)
+  - ✅ 4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)
 

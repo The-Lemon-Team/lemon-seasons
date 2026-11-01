@@ -64,7 +64,10 @@ const DOMAIN_RULES = [
   { match: /sparks-parser\.service/, domain: 'Backend / Ingestion', area: 'Gemini Sparks parser' },
   { match: /text-helpers\.spec/, domain: 'Backend / Taxonomy', area: 'Hashtags and folders normalization' },
   { match: /note-state\.mapper/, domain: 'Backend / Sync', area: 'Note state mapper (HLC clocks)' },
-  { match: /notes-api\.int/, domain: 'Backend / Integration', area: 'Notes, feeds & privacy API' },
+  // Backend integration domains
+  { match: /folders-api\.int/, domain: 'Backend / Integration', area: 'Folders API & Obsidian tree (PostgreSQL)' },
+  { match: /sync-api\.int/, domain: 'Backend / Integration', area: 'Sync engine & HLC merge (PostgreSQL)' },
+  { match: /notes-api\.int/, domain: 'Backend / Integration', area: 'Notes, feeds & privacy API (PostgreSQL)' },
   // E2E domains
   { match: /smoke\.spec/, domain: 'E2E / Smoke', area: 'Full-stack smoke tests' },
 ];
@@ -184,6 +187,7 @@ function renderNode(node, depth, lines) {
 function build() {
   const out = [];
   const totals = { passed: 0, failed: 0, other: 0 };
+  const defectGuards = [];
   const sections = [];
 
   for (const suite of SUITES) {
@@ -204,6 +208,16 @@ function build() {
         if (a.status === 'passed') totals.passed++;
         else if (a.status === 'failed') totals.failed++;
         else totals.other++;
+
+        // Track bug & regression guard tests
+        if (/\[(BUG|DEFECT|REGRESSION|FIX)[^\]]*\]/i.test(a.title)) {
+          defectGuards.push({
+            title: a.title,
+            suite: suite.label,
+            status: a.status,
+            file: rel,
+          });
+        }
       }
     }
 
@@ -241,12 +255,25 @@ function build() {
       `(${totals.passed + totals.failed + totals.other} total across all suites)`,
   );
   out.push('');
+
+  // 🛡️ Defect Shield Section
+  out.push('## 🛡️ Defect Shield & Regression Prevention');
+  out.push('');
+  out.push(`> **Active Regression Guards:** ${defectGuards.length} automated tests preventing known regressions.`);
+  out.push(`> See full defect register and root cause analysis in [DEFECT_LOG.md](DEFECT_LOG.md).`);
+  out.push('');
+  for (const g of defectGuards) {
+    out.push(`- ${ICON[g.status] ?? '❔'} **${g.title}** (\`${g.suite}\` → \`${g.file}\`)`);
+  }
+  out.push('');
+
   out.push(sections.join('\n\n'));
   out.push('');
 
   writeFileSync(OUT, out.join('\n'), 'utf8');
   console.log(`Wrote ${OUT}`);
   console.log(`Totals: ${totals.passed} passed, ${totals.failed} failed, ${totals.other} other.`);
+  console.log(`Defect guards tracked: ${defectGuards.length}.`);
 }
 
 build();

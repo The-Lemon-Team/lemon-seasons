@@ -16,6 +16,10 @@
     "test": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "**/*.test.ts", "**/*.spec.ts"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }

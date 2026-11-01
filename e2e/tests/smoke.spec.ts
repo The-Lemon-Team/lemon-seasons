@@ -47,14 +47,14 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
     });
   });
 
-  test('1. App loads and renders seeded note in the chronological stream', async ({ page }) => {
+  test('1. [BUG-001] App loads and renders seeded note in the chronological stream', async ({ page }) => {
     await page.goto('/');
 
     // Wait for the feed stream to render
     await expect(page.getByText('Seeded Smoke Note Welcome').first()).toBeVisible({ timeout: 15000 });
   });
 
-  test('2. Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)', async ({ page }) => {
+  test('2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)', async ({ page }) => {
     await page.goto('/');
 
     // Open create note modal (look for create button in header / toolbar)
@@ -95,7 +95,7 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
     await expect(page.getByText(uniqueTitle)).toBeVisible({ timeout: 10000 });
   });
 
-  test('4. Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)', async ({ page }) => {
+  test('4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)', async ({ page }) => {
     await page.goto('/');
 
     const createBtn = page.getByTitle('Создать новую запись в ленту').or(page.getByRole('button', { name: /Заметка/ })).first();
