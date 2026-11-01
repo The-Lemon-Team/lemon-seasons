@@ -21,6 +21,13 @@ const OUT = join(ROOT, 'docs', 'testing', 'TEST_MAP.md');
 const SUITES = [
   { layer: 'Frontend unit & component tests', package: '@lenta/feed-app', label: 'feed-app', cwd: 'apps/feed-app' },
   { layer: 'Backend unit tests', package: 'lemon-lenta-backend', label: 'backend', cwd: 'apps/backend' },
+  {
+    layer: 'Backend integration tests (PostgreSQL)',
+    package: 'lemon-lenta-backend',
+    label: 'backend-int',
+    cwd: 'apps/backend',
+    commandArgs: ['--config', 'vitest.integration.config.mts'],
+  },
 ];
 
 /** Declarative file → domain routing. First match wins. */
@@ -44,6 +51,7 @@ const DOMAIN_RULES = [
   { match: /sparks-parser\.service/, domain: 'Backend / Ingestion', area: 'Gemini Sparks parser' },
   { match: /text-helpers\.spec/, domain: 'Backend / Taxonomy', area: 'Hashtags and folders normalization' },
   { match: /note-state\.mapper/, domain: 'Backend / Sync', area: 'Note state mapper (HLC clocks)' },
+  { match: /notes-api\.int/, domain: 'Backend / Integration', area: 'Notes, feeds & privacy API' },
 ];
 
 const DOMAIN_ORDER = [
@@ -57,6 +65,7 @@ const DOMAIN_ORDER = [
   'Backend / Ingestion',
   'Backend / Taxonomy',
   'Backend / Sync',
+  'Backend / Integration',
   'Other',
 ];
 const ICON = { passed: '✅', failed: '❌', pending: '⏸️', todo: '📝', skipped: '⏭️' };
@@ -69,9 +78,10 @@ function runSuite(suite) {
   mkdirSync(dir, { recursive: true });
   const report = join(dir, `${suite.label}.json`);
   if (existsSync(report)) rmSync(report);
+  const extraArgs = suite.commandArgs || [];
   const res = spawnSync(
     'pnpm',
-    ['--filter', suite.package, 'exec', 'vitest', 'run', '--reporter=json', `--outputFile=${report}`],
+    ['--filter', suite.package, 'exec', 'vitest', 'run', ...extraArgs, '--reporter=json', `--outputFile=${report}`],
     { cwd: ROOT, stdio: ['ignore', 'ignore', 'inherit'], shell: true },
   );
   if (!existsSync(report)) {
