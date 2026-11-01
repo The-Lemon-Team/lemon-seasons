@@ -49,6 +49,9 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
       "Feed",
       "Folder",
       "Hashtag",
+      "SyncEventLog",
+      "SyncCommit",
+      "SyncSession",
       "UserKey",
       "User"
     CASCADE;

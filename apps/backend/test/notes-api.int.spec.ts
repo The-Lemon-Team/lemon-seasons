@@ -19,7 +19,7 @@ describe('Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)', () =>
   });
 
   describe('GET /health', () => {
-    it('returns 200 OK and status', async () => {
+    it('[BUG-002] returns 200 OK and status in isolated test environment', async () => {
       const res = await ctx.req.get('/health').expect(200);
       expect(res.body).toHaveProperty('status');
       expect(['ok', 'healthy']).toContain(res.body.status?.toLowerCase?.() || 'ok');
