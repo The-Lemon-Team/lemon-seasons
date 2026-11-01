@@ -10,9 +10,9 @@
 
 | Metric | Value |
 |---|---|
-| **Total Automated Tests** | 386 passing |
-| **Defects Caught & Prevented by Tests** | 7 |
-| **Critical / High Severity Prevented** | 4 |
+| **Total Automated Tests** | 426 passing |
+| **Defects Caught & Prevented by Tests** | 8 |
+| **Critical / High Severity Prevented** | 5 |
 | **Defect Escape to Production (Post-Test)** | 0 |
 | **Test Layers Active** | Frontend Unit/Component, Backend Unit, Postgres Integration, Full-Stack E2E |
 
@@ -108,6 +108,18 @@
   - `apps/feed-app/src/components/__tests__/FeedEditNoteModal.test.tsx` (marked `as const`)
   - `pnpm run lint` across all packages
 - **Status:** ✅ Fixed in commit `acd61b7`
+
+---
+
+### 8. `[BUG-008]` HTMLMediaElement Play Promise Crash in Audio Toggle
+- **Severity:** 🔴 High / Runtime Exception
+- **Component:** `apps/feed-app/src/components/FeedPostCard.tsx`
+- **Symptom:** Unhandled exception `TypeError: Cannot read properties of undefined (reading 'then')` when toggling audio playback on podcast notes in environments or browsers where `audioRef.current.play()` returns `undefined` (or rejects immediately).
+- **Root Cause:** Invoking `.then()` directly on `audioRef.current.play()` without verifying that the return value is defined and a thenable Promise object.
+- **Discovered By:** `FeedPostCard.test.tsx` component test suite.
+- **Preventing Tests:**
+  - `apps/feed-app/src/components/__tests__/FeedPostCard.test.tsx` (`[BUG-008] renders NotebookLM podcast widget and safely handles audio play promise`)
+- **Status:** ✅ Fixed in `FeedPostCard.tsx`
 
 ---
 

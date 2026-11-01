@@ -3,21 +3,23 @@
 > Generated automatically from test suite execution reports.
 > Regenerate anytime with `pnpm test:map`. Do not edit by hand.
 
-**Totals:** 408 passed, 0 failed, 3 todo/skipped (411 total across all suites)
+**Totals:** 442 passed, 0 failed, 3 todo/skipped (445 total across all suites)
 
 ## 🛡️ Defect Shield & Regression Prevention
 
-> **Active Regression Guards:** 8 automated tests preventing known regressions.
+> **Active Regression Guards:** 10 automated tests preventing known regressions.
 > See full defect register and root cause analysis in [DEFECT_LOG.md](DEFECT_LOG.md).
 
 - ✅ **[BUG-007] publication stage "dev" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
 - ✅ **[BUG-007] publication stage "staging" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
 - ✅ **[BUG-007] publication stage "public" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
+- ✅ **[BUG-008] renders NotebookLM podcast widget and safely handles audio play promise** (`feed-app` → `src/components/__tests__/FeedPostCard.test.tsx`)
 - ✅ **[BUG-004] auto-provisions missing folders when creating a feed** (`backend-int` → `test/folders-api.int.spec.ts`)
 - ✅ **[BUG-002] returns 200 OK and status in isolated test environment** (`backend-int` → `test/notes-api.int.spec.ts`)
 - ✅ **1. [BUG-001] App loads and renders seeded note in the chronological stream** (`e2e-smoke` → `../smoke.spec.ts`)
 - ✅ **2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)** (`e2e-smoke` → `../smoke.spec.ts`)
 - ✅ **4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)** (`e2e-smoke` → `../smoke.spec.ts`)
+- ✅ **6. [BUG-006] Binary Privacy Isolation: Private notes and admin controls hidden in Public mode (AGENTS.md §9)** (`e2e-smoke` → `../smoke.spec.ts`)
 
 ## Frontend unit & component tests — `feed-app`
 
@@ -114,6 +116,34 @@ _Source: `src/components/__tests__/FeedEditNoteModal.test.tsx`_
     - ✅ closes on backdrop click but not on dialog-card click
     - ✅ removes the Escape listener on unmount
 
+#### Post card (metrics, cover, snippet, audio) (18)
+_Source: `src/components/__tests__/FeedPostCard.test.tsx`_
+
+- **FeedPostCard** _(18)_
+  - **PostCard › rendering** _(6)_
+    - ✅ renders channel title, handle with single @, category badge and note title
+    - ✅ formats date and displays time in Russian locale
+    - ✅ shows views count and high resonance badge when score >= 80
+    - ✅ shows curator when provided and not "auto"
+    - ✅ shows up to 3 hashtags stripping leading #
+    - ✅ shows folder path badge in staging mode when provided
+  - **PostCard › cover image** _(3)_
+    - ✅ renders image banner with coverUrl
+    - ✅ falls back to rawPayload images when coverUrl is absent
+    - ✅ hides cover image when error occurs
+  - **PostCard › expand / collapse** _(2)_
+    - ✅ displays snippet for short text and does not show expand button
+    - ✅ shows "Читать далее" for long description and toggles full text
+  - **PostCard › actions and callbacks** _(5)_
+    - ✅ calls onOpenDetail when card is clicked
+    - ✅ calls onEditNote and stops propagation to onOpenDetail
+    - ✅ calls onAiCover and stops propagation to onOpenDetail
+    - ✅ calls onSelectTag and stops propagation to onOpenDetail
+    - ✅ copies link on share button click
+  - **PostCard › staging moderation & audio player** _(2)_
+    - ✅ renders StagingCardModerationBar in staging mode
+    - ✅ [BUG-008] renders NotebookLM podcast widget and safely handles audio play promise
+
 #### Update payload builder (5)
 _Source: `src/utils/__tests__/noteFormPayload.test.ts`_
 
@@ -199,6 +229,30 @@ _Source: `src/components/__tests__/FeedEntityModal.test.tsx`_
     - ✅ renders nothing when closed
     - ✅ closes on Escape and removes the listener on unmount
     - ✅ closes on backdrop click, not on card click; Cancel closes without API calls
+
+#### Feed stream view (loading, empty states, pagination) (14)
+_Source: `src/components/__tests__/FeedStreamView.test.tsx`_
+
+- **FeedStreamView** _(14)_
+  - **StreamView › loading state** _(1)_
+    - ✅ renders loading indicator when isLoading is true
+  - **StreamView › empty states** _(6)_
+    - ✅ renders default empty state when there are no items and no search query
+    - ✅ renders search empty state when searchQuery is present
+    - ✅ renders spark empty state and transition button when streamSource is spark
+    - ✅ renders month filter empty state and reset button when month filter is active
+    - ✅ renders "Создать первую запись" button in staging mode and handles click
+    - ✅ suppresses "Создать первую запись" in public mode
+  - **StreamView › feed items rendering** _(4)_
+    - ✅ renders list of feed items via FeedPostCard
+    - ✅ triggers onOpenDetail when an item is clicked in the stream
+    - ✅ suppresses edit and AI cover actions in public mode
+    - ✅ provides edit action in staging mode
+  - **StreamView › pagination sentinel** _(2)_
+    - ✅ renders pagination sentinel when visibleCount is less than feedItems.length
+    - ✅ does not render pagination sentinel when all items are visible
+  - **StreamView › telegram mode** _(1)_
+    - ✅ renders TelegramStreamView when streamSource is telegram
 
 #### Feed filters hook (4)
 _Source: `src/hooks/__tests__/useFeedFilters.test.ts`_
@@ -679,12 +733,14 @@ _Source: `test/sync-api.int.spec.ts`_
 
 ### Domain: E2E / Smoke
 
-#### Full-stack smoke tests (4)
+#### Full-stack smoke tests (6)
 _Source: `../smoke.spec.ts`_
 
-- **Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)** _(4)_
+- **Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)** _(6)_
   - ✅ 1. [BUG-001] App loads and renders seeded note in the chronological stream
   - ✅ 2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)
   - ✅ 3. Create a new note through UI and verify it appears in the stream
   - ✅ 4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)
+  - ✅ 5. View note details in FeedDetailModal and edit title through FeedEditNoteModal
+  - ✅ 6. [BUG-006] Binary Privacy Isolation: Private notes and admin controls hidden in Public mode (AGENTS.md §9)
 

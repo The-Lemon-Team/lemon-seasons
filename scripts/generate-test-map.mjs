@@ -41,10 +41,12 @@ const SUITES = [
 /** Declarative file → domain routing. First match wins. */
 const DOMAIN_RULES = [
   { match: /noteFormPayload/, domain: 'Note', area: 'Update payload builder' },
+  { match: /FeedPostCard/, domain: 'Note', area: 'Post card (metrics, cover, snippet, audio)' },
   { match: /FeedCreateNoteModal/, domain: 'Note', area: 'Create modal' },
   { match: /FeedEditNoteModal/, domain: 'Note', area: 'Edit modal' },
   { match: /FeedDetailModal/, domain: 'Note', area: 'Detail (read) modal' },
   { match: /periods\.test/, domain: 'Note', area: 'Periods (PERIOD notes, horizons, badges)' },
+  { match: /FeedStreamView/, domain: 'Feed', area: 'Feed stream view (loading, empty states, pagination)' },
   { match: /FeedEntityModal/, domain: 'Feed', area: 'Create / edit / delete feed modal' },
   { match: /adapters[\\/]feeds/, domain: 'Feed', area: 'Feed adapters' },
   { match: /useFeedFilters/, domain: 'Feed', area: 'Feed filters hook' },
