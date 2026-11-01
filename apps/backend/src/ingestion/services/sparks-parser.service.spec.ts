@@ -47,6 +47,15 @@ describe('SparksParserService', () => {
       expect(noteDto.startDate).toBe('2026-10-31T09:15:30.000Z');
     });
 
+    it('preserves explicit event_date without aligning to filename', () => {
+      const { noteDto } = parse(
+        '31.10.26 - A.md',
+        md('event_date: 2026-10-25T14:00:00.000Z\nstart_date: 2026-10-31T07:15:00.000Z')
+      );
+      expect(noteDto.startDate).toBe('2026-10-25T14:00:00.000Z');
+      expect((noteDto.metadata as any).digestDate).toBe('2026-10-31');
+    });
+
     it('shifts late-evening UTC times back 3h so the Moscow calendar day matches the file name', () => {
       const { noteDto } = parse('31.10.26 - A.md', md('start_date: 2026-10-30T22:00:00.000Z'));
       expect(noteDto.startDate).toBe('2026-10-31T19:00:00.000Z');

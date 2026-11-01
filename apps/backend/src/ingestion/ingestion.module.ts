@@ -15,6 +15,7 @@ import { SparksParserService } from './services/sparks-parser.service';
 import { RelatedNotesResolverService } from './services/related-notes-resolver.service';
 import { DriveWatcherService } from './services/drive-watcher.service';
 import { WikiEngineService } from './services/wiki-engine.service';
+import { NewsVerificationService } from './services/news-verification.service';
 import { SparksIngestListener } from './listeners/sparks-ingest.listener';
 
 @Module({
@@ -29,6 +30,7 @@ import { SparksIngestListener } from './listeners/sparks-ingest.listener';
     HolidaysEngineService,
     PoliticalEngineService,
     SparksParserService,
+    NewsVerificationService,
     RelatedNotesResolverService,
     DriveWatcherService,
     WikiEngineService,
@@ -43,6 +45,7 @@ import { SparksIngestListener } from './listeners/sparks-ingest.listener';
     HolidaysEngineService,
     PoliticalEngineService,
     SparksParserService,
+    NewsVerificationService,
     RelatedNotesResolverService,
     DriveWatcherService,
     WikiEngineService,

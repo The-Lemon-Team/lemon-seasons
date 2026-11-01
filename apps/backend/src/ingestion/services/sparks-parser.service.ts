@@ -39,7 +39,7 @@ export class SparksParserService {
     }
 
     // 2. Resolve Dates
-    const { startDate, endDate } = this.resolveDates(fm, fileName, fileStats?.mtime);
+    const { startDate, endDate, fileDatePrefix } = this.resolveDates(fm, fileName, fileStats?.mtime);
 
     // 3. Resolve Note Type
     const type = this.resolveNoteType(fm, title, startDate, endDate);
@@ -181,6 +181,7 @@ export class SparksParserService {
         ingestedAt: new Date().toISOString(),
         relatedNotes: relatedNotesData,
         rawRelatedSection,
+        digestDate: fileDatePrefix || undefined,
       },
     };
 
@@ -196,7 +197,7 @@ export class SparksParserService {
     fm: Record<string, any>,
     fileName: string,
     fallbackMtime?: Date,
-  ): { startDate: Date; endDate?: Date } {
+  ): { startDate: Date; endDate?: Date; fileDatePrefix?: string } {
     let start: Date | null = null;
     let end: Date | null = null;
 
@@ -223,28 +224,38 @@ export class SparksParserService {
       if (!isNaN(parsedEnd.getTime())) end = parsedEnd;
     }
 
-    // 3. Check frontmatter start dates
-    const rawStart = fm.start_date || fm.startDate || fm.date;
-    if (rawStart) {
-      const parsed = new Date(rawStart);
-      if (!isNaN(parsed.getTime())) {
-        if (fileDatePrefix && (!end || end.getTime() <= parsed.getTime())) {
-          // If filename specifies an explicit publication date (DD.MM.YY in Moscow time),
-          // align calendar day with filename while preserving time.
-          // Note: In Moscow timezone (+03:00), UTC hours >= 21 roll over to the next day!
-          // We adjust hours >= 21 by -3 hours so the event remains in the evening of fileDatePrefix.
-          let hours = parsed.getUTCHours();
-          const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
-          const seconds = String(parsed.getUTCSeconds()).padStart(2, '0');
+    // 3. Check frontmatter start dates & explicit event_date
+    const rawEventDate = fm.event_date || fm.eventDate;
+    if (rawEventDate) {
+      const parsedEvent = new Date(rawEventDate);
+      if (!isNaN(parsedEvent.getTime())) {
+        start = parsedEvent;
+      }
+    }
 
-          if (hours >= 21) {
-            hours = hours - 3;
+    if (!start) {
+      const rawStart = fm.start_date || fm.startDate || fm.date;
+      if (rawStart) {
+        const parsed = new Date(rawStart);
+        if (!isNaN(parsed.getTime())) {
+          if (fileDatePrefix && (!end || end.getTime() <= parsed.getTime())) {
+            // If filename specifies an explicit publication date (DD.MM.YY in Moscow time),
+            // align calendar day with filename while preserving time.
+            // Note: In Moscow timezone (+03:00), UTC hours >= 21 roll over to the next day!
+            // We adjust hours >= 21 by -3 hours so the event remains in the evening of fileDatePrefix.
+            let hours = parsed.getUTCHours();
+            const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(parsed.getUTCSeconds()).padStart(2, '0');
+
+            if (hours >= 21) {
+              hours = hours - 3;
+            }
+
+            const hoursStr = String(hours).padStart(2, '0');
+            start = new Date(`${fileDatePrefix}T${hoursStr}:${minutes}:${seconds}.000Z`);
+          } else {
+            start = parsed;
           }
-
-          const hoursStr = String(hours).padStart(2, '0');
-          start = new Date(`${fileDatePrefix}T${hoursStr}:${minutes}:${seconds}.000Z`);
-        } else {
-          start = parsed;
         }
       }
     }
@@ -262,6 +273,7 @@ export class SparksParserService {
     return {
       startDate: start,
       endDate: end || undefined,
+      fileDatePrefix: fileDatePrefix || undefined,
     };
   }
 
