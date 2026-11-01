@@ -4,8 +4,11 @@ import {
   ConflictException,
   BadRequestException,
   ForbiddenException,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FoldersService } from '../folders/folders.service';
 import { CreateFeedDto } from './dto/create-feed.dto';
 import { UpdateFeedDto } from './dto/update-feed.dto';
 
@@ -20,8 +23,62 @@ function slugify(text: string): string {
 }
 
 @Injectable()
-export class FeedsService {
-  constructor(private prisma: PrismaService) {}
+export class FeedsService implements OnModuleInit {
+  private readonly logger = new Logger(FeedsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private foldersService: FoldersService,
+  ) {}
+
+  async onModuleInit() {
+    try {
+      const feeds = await this.prisma.feed.findMany({
+        where: { deletedAt: null },
+        select: { slug: true, privacy: true, folderPaths: true },
+      });
+      for (const feed of feeds) {
+        if (feed.folderPaths && feed.folderPaths.length > 0) {
+          await this.ensureFoldersExist(feed.folderPaths, feed.privacy);
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`Failed to auto-provision feed folders on startup: ${err?.message || err}`);
+    }
+  }
+
+  /**
+   * Ensures all folder paths specified for a feed exist in the database.
+   * If any folder path does not exist, it is created with the feed's privacy level.
+   */
+  private async ensureFoldersExist(folderPaths: string[], feedPrivacy: string) {
+    if (!folderPaths || folderPaths.length === 0) return;
+    for (const rawPath of folderPaths) {
+      const path = FoldersService.normalizePath(rawPath);
+      if (!path) continue;
+
+      const existing = await this.prisma.folder.findFirst({
+        where: {
+          path: { equals: path, mode: 'insensitive' },
+          containerId: null,
+          deletedAt: null,
+        },
+      });
+
+      if (!existing) {
+        const folderPrivacy: 'public' | 'private' = feedPrivacy === 'private' ? 'private' : 'public';
+        try {
+          await this.foldersService.create({
+            path,
+            privacy: folderPrivacy,
+          });
+          this.logger.log(`Auto-created folder '${path}' with privacy '${folderPrivacy}' for feed`);
+        } catch (err: any) {
+          this.logger.warn(`Failed to auto-create folder '${path}': ${err?.message || err}`);
+        }
+      }
+    }
+  }
 
   /**
    * Enforces privacy rule:
@@ -61,6 +118,11 @@ export class FeedsService {
     const privacy = createFeedDto.privacy || 'public';
     if (privacy === 'public' && createFeedDto.folderPaths && createFeedDto.folderPaths.length > 0) {
       await this.validatePublicFeedFolderPaths(createFeedDto.folderPaths);
+    }
+
+    // Ensure all projected folder paths exist in the database
+    if (createFeedDto.folderPaths && createFeedDto.folderPaths.length > 0) {
+      await this.ensureFoldersExist(createFeedDto.folderPaths, privacy);
     }
 
     return this.prisma.feed.create({
@@ -177,6 +239,10 @@ export class FeedsService {
 
     if (targetPrivacy === 'public' && targetFolders.length > 0) {
       await this.validatePublicFeedFolderPaths(targetFolders);
+    }
+
+    if (targetFolders && targetFolders.length > 0) {
+      await this.ensureFoldersExist(targetFolders, targetPrivacy);
     }
 
     return this.prisma.feed.update({

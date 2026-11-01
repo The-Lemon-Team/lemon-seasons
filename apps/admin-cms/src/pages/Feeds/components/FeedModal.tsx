@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, message } from 'antd';
-import { Feed, FeedPrivacy, CreateFeedInput } from '../../../types';
+import { Feed, FeedPrivacy, CreateFeedInput, FolderPrivacy } from '../../../types';
 import { AdminTranslations } from '../../../i18n';
-import { useFolders, useHashtags } from '../../../api/queries';
+import { useFolders, useHashtags, useCreateFolder } from '../../../api/queries';
 
 const DEFAULT_SUGGESTED_FOLDERS = [
   'Spark/AI',
@@ -69,11 +69,14 @@ export const FeedModal: React.FC<FeedModalProps> = ({
 
   // Inputs
   const [customPathInput, setCustomPathInput] = useState('');
+  const [customFolderPrivacy, setCustomFolderPrivacy] = useState<FolderPrivacy>('public');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [folderFilterText, setFolderFilterText] = useState('');
   const [tagInput, setTagInput] = useState('');
 
   const { data: existingFolders = [] } = useFolders();
   const { data: existingHashtags = [] } = useHashtags();
+  const createFolderMutation = useCreateFolder();
 
   // Combine folders from DB and defaults into a distinct list
   const availableFolders = React.useMemo(() => {
@@ -134,6 +137,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       setPrivacy(editingFeed.privacy || 'public');
       setFolderPaths(editingFeed.folderPaths || []);
       setHashtags(editingFeed.hashtags || []);
+      setCustomFolderPrivacy(editingFeed.privacy === 'private' ? 'private' : 'public');
     } else {
       setTitle('');
       setDescription('');
@@ -143,6 +147,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       setPrivacy('public');
       setFolderPaths([]);
       setHashtags([]);
+      setCustomFolderPrivacy('public');
     }
     setCustomPathInput('');
     setFolderFilterText('');
@@ -155,7 +160,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
     );
   };
 
-  const handleAddCustomPath = () => {
+  const handleAddCustomPath = async () => {
     const clean = customPathInput
       .trim()
       .replace(/\\/g, '/')
@@ -163,13 +168,29 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       .replace(/^\/|\/$/g, '');
 
     if (!clean) return;
-    if (folderPaths.includes(clean)) {
-      message.info('Папка уже добавлена');
-      setCustomPathInput('');
+
+    if (privacy === 'public' && customFolderPrivacy === 'private') {
+      message.error('Публичная лента не может содержать приватные папки.');
       return;
     }
-    setFolderPaths((prev) => [...prev, clean]);
-    setCustomPathInput('');
+
+    try {
+      setIsCreatingFolder(true);
+      await createFolderMutation.mutateAsync({
+        path: clean,
+        privacy: customFolderPrivacy,
+      });
+
+      if (!folderPaths.includes(clean)) {
+        setFolderPaths((prev) => [...prev, clean]);
+      }
+      message.success(t.folderCreatedSuccess || `Папка "${clean}" создана и привязана`);
+      setCustomPathInput('');
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || 'Ошибка создания папки');
+    } finally {
+      setIsCreatingFolder(false);
+    }
   };
 
   const handleRemoveFolder = (path: string) => {
@@ -198,9 +219,39 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       return;
     }
 
-    if (privacy === 'public' && hasPrivateFolderInPublicFeed) {
-      message.error('Публичная лента не может содержать приватные папки.');
-      return;
+    const currentFolderPaths = [...folderPaths];
+    const pendingPath = customPathInput
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/\/+/g, '/')
+      .replace(/^\/|\/$/g, '');
+
+    if (pendingPath) {
+      if (privacy === 'public' && customFolderPrivacy === 'private') {
+        message.error('Публичная лента не может содержать приватные папки.');
+        return;
+      }
+      if (!currentFolderPaths.includes(pendingPath)) {
+        currentFolderPaths.push(pendingPath);
+      }
+      try {
+        await createFolderMutation.mutateAsync({
+          path: pendingPath,
+          privacy: customFolderPrivacy,
+        });
+      } catch {
+        // Fallback to backend ensureFoldersExist on save
+      }
+    }
+
+    if (privacy === 'public') {
+      const hasPrivate = currentFolderPaths.some(
+        (p) => folderPrivacyMap.get(p) === 'private' || (p === pendingPath && customFolderPrivacy === 'private')
+      );
+      if (hasPrivate) {
+        message.error('Публичная лента не может содержать приватные папки.');
+        return;
+      }
     }
 
     await onSave({
@@ -210,7 +261,7 @@ export const FeedModal: React.FC<FeedModalProps> = ({
       icon: icon.trim() || undefined,
       color: color.trim() || undefined,
       privacy,
-      folderPaths,
+      folderPaths: currentFolderPaths,
       hashtags,
     });
   };
@@ -302,7 +353,10 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               {/* Public Option */}
               <button
                 type="button"
-                onClick={() => setPrivacy('public')}
+                onClick={() => {
+                  setPrivacy('public');
+                  setCustomFolderPrivacy('public');
+                }}
                 className={`p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer ${
                   privacy === 'public'
                     ? 'bg-primary/15 border-primary text-primary font-bold shadow-xs'
@@ -321,7 +375,10 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               {/* Private Option */}
               <button
                 type="button"
-                onClick={() => setPrivacy('private')}
+                onClick={() => {
+                  setPrivacy('private');
+                  setCustomFolderPrivacy('private');
+                }}
                 className={`p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer ${
                   privacy === 'private'
                     ? 'bg-purple-500/15 border-purple-500 text-purple-300 font-bold shadow-xs'
@@ -493,28 +550,78 @@ export const FeedModal: React.FC<FeedModalProps> = ({
               </div>
             )}
 
-            {/* Add Custom Folder Path */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customPathInput}
-                onChange={(e) => setCustomPathInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCustomPath();
-                  }
-                }}
-                placeholder={t.feedFolderAddPlaceholder}
-                className="flex-1 bg-control border border-tile-border rounded px-2.5 py-1 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
-              />
-              <button
-                type="button"
-                onClick={handleAddCustomPath}
-                className="h-7 px-3 bg-tile-subtle hover:bg-tile-muted text-text-main rounded text-xs font-semibold border border-tile-border transition-colors cursor-pointer"
-              >
-                {t.addFolderBtn}
-              </button>
+            {/* Create & Link New Folder */}
+            <div className="space-y-1.5 pt-1.5 border-t border-tile-border/40">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-wider flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px] text-primary">create_new_folder</span>
+                  {t.addFolderBtn}
+                </span>
+
+                {/* Privacy Selector for New Folder */}
+                <div className="flex items-center gap-1 bg-control/60 p-0.5 rounded border border-tile-border/60">
+                  <button
+                    type="button"
+                    onClick={() => setCustomFolderPrivacy('public')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 transition-all cursor-pointer ${
+                      customFolderPrivacy === 'public'
+                        ? 'bg-primary/20 text-primary font-bold shadow-xs'
+                        : 'text-text-muted hover:text-text-main'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[12px]">public</span>
+                    <span>{t.filterPublicFolders}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={privacy === 'public'}
+                    onClick={() => setCustomFolderPrivacy('private')}
+                    title={
+                      privacy === 'public'
+                        ? 'В публичной ленте разрешены только публичные папки'
+                        : 'Сделать создаваемую папку приватной'
+                    }
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 transition-all ${
+                      privacy === 'public'
+                        ? 'opacity-40 cursor-not-allowed text-text-muted'
+                        : customFolderPrivacy === 'private'
+                        ? 'bg-purple-500/25 text-purple-300 font-bold shadow-xs cursor-pointer'
+                        : 'text-text-muted hover:text-text-main cursor-pointer'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[12px]">lock</span>
+                    <span>{t.filterPrivateFolders}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customPathInput}
+                  onChange={(e) => setCustomPathInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomPath();
+                    }
+                  }}
+                  placeholder={t.feedFolderAddPlaceholder}
+                  className="flex-1 bg-control border border-tile-border rounded px-2.5 py-1 text-text-main font-mono text-xs focus:border-primary outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomPath}
+                  disabled={isCreatingFolder || !customPathInput.trim()}
+                  className="h-7 px-3 bg-tile-subtle hover:bg-tile-muted disabled:opacity-40 disabled:cursor-not-allowed text-text-main rounded text-xs font-semibold border border-tile-border transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[14px]">
+                    {isCreatingFolder ? 'hourglass_empty' : 'add'}
+                  </span>
+                  <span>{t.addFolderBtn}</span>
+                </button>
+              </div>
             </div>
           </div>
 

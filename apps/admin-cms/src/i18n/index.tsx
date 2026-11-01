@@ -156,6 +156,7 @@ export interface AdminTranslations {
   makeFolderPublic: string;
   makeFolderPrivate: string;
   deleteFolderConfirm: string;
+  folderCreatedSuccess: string;
   folderDeletedSuccess: string;
   folderUpdatedSuccess: string;
   filterAllFolders: string;
@@ -381,6 +382,7 @@ export const ruAdminTranslations: AdminTranslations = {
   makeFolderPublic: 'Сделать публичной',
   makeFolderPrivate: 'Сделать приватной',
   deleteFolderConfirm: 'Удалить папку и все её подпапки?',
+  folderCreatedSuccess: 'Папка успешно создана и привязана',
   folderDeletedSuccess: 'Папка успешно удалена',
   folderUpdatedSuccess: 'Папка успешно обновлена',
   filterAllFolders: 'Все',
@@ -606,6 +608,7 @@ export const enAdminTranslations: AdminTranslations = {
   makeFolderPublic: 'Make Public',
   makeFolderPrivate: 'Make Private',
   deleteFolderConfirm: 'Delete folder and all its subfolders?',
+  folderCreatedSuccess: 'Folder created and linked successfully',
   folderDeletedSuccess: 'Folder deleted successfully',
   folderUpdatedSuccess: 'Folder updated successfully',
   filterAllFolders: 'All',

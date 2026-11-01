@@ -46,6 +46,8 @@ export function useCreateFeed() {
     mutationFn: (data: CreateFeedInput) => feedsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['folderTree'] });
     },
   });
 }
@@ -58,6 +60,8 @@ export function useUpdateFeed() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feeds'] });
       queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['folderTree'] });
     },
   });
 }
