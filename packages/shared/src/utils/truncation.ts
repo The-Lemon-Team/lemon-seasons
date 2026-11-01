@@ -68,30 +68,30 @@ export function cleanNoteMarkdown(
   let text = markdown;
 
   // 1. Remove YAML frontmatter if present
-  text = text.replace(/^---[\s\S]*?---\s*/m, '');
+  text = text.replace(/^---[\s\S]*?---\s*/mu, '');
 
   // 2. Strip leading heading if it duplicates or matches the note title
   if (options?.title) {
     const escaped = options.title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    text = text.replace(new RegExp(`^#+\\s*${escaped}\\s*\\n*`, 'i'), '');
+    text = text.replace(new RegExp(`^#+\\s*${escaped}\\s*[\\r\\n]*`, 'iu'), '');
   }
   // Strip generic top-level # title if present
-  text = text.replace(/^#\s+[^\n]+\n+/, '');
+  text = text.replace(/^#\s+[^\r\n]+[\r\n]*/u, '');
 
   // 3. Remove metadata blockquote lines (Источники, Тип записи, Резонанс, Оценка, Links, etc.)
   text = text.replace(
-    /^>\s*\*\*(?:Источники|Тип записи|Индекс резонанса|Резонанс|Оценка|Автор|Куратор|Теги|Категория)[^*]*\*\*:[^\n]*\n?/gmi,
+    /^>\s*\**\s*(?:Источники|Тип записи|Индекс резонанса|Резонанс|Оценка|Автор|Куратор|Теги|Категория)[^:\r\n]*:?\**[^\r\n]*\r?\n?/gmiu,
     ''
   );
   // Also strip any standalone blockquote lines that just refer to frontmatter or technical metadata
-  text = text.replace(/^>\s*(?:см\.?\s*`?links`?|см\.?\s*frontmatter)[^\n]*\n?/gmi, '');
+  text = text.replace(/^>\s*(?:см\.?\s*`?links`?|см\.?\s*frontmatter|тип записи|источники)[^\r\n]*\r?\n?/gmiu, '');
 
-  // 4. Remove horizontal rules
-  text = text.replace(/^---+\s*$/gm, '');
+  // 4. Remove leading horizontal rules
+  text = text.replace(/^---+\s*[\r\n]*/gmu, '');
 
   // 5. Remove leading section banners like "## 📌 Суть события" or "## Суть события"
   text = text.replace(
-    /^##+\s*(?:[📌🔎🧭💡⚡✨]\s*)?(?:Суть(?:\s*события)?|Ключевые факты|Главное|Детали|Контекст)\s*$/gmi,
+    /^##+\s*(?:[📌🔎🧭💡⚡✨]|\p{Extended_Pictographic})?\s*(?:Суть(?:\s*события)?|Ключевые факты|Главное|Детали|Контекст)[^\r\n]*\r?\n?/gmiu,
     ''
   );
 
@@ -110,13 +110,27 @@ export function extractCleanSnippet(
     title?: string | null;
   }
 ): string {
-  // If clean summary is available and informative, use it directly
+  // If clean summary is available and informative, check if it contains raw markdown
   if (options?.summary && options.summary.trim().length > 10) {
-    const summaryTrimmed = options.summary.trim();
-    if (summaryTrimmed.length <= maxLength) return summaryTrimmed;
-    const truncated = summaryTrimmed.slice(0, maxLength);
-    const lastSpace = truncated.lastIndexOf(' ');
-    return lastSpace > maxLength * 0.7 ? `${truncated.slice(0, lastSpace)}…` : `${truncated}…`;
+    let summaryTrimmed = options.summary.trim();
+
+    // If summary contains raw markdown headers, blockquotes, or dividers, sanitize it first
+    if (
+      summaryTrimmed.startsWith('#') ||
+      summaryTrimmed.startsWith('>') ||
+      summaryTrimmed.startsWith('---') ||
+      summaryTrimmed.includes('\n## ') ||
+      summaryTrimmed.includes('\n---')
+    ) {
+      summaryTrimmed = cleanNoteMarkdown(summaryTrimmed, { title: options?.title });
+    }
+
+    if (summaryTrimmed.length > 10) {
+      if (summaryTrimmed.length <= maxLength) return summaryTrimmed;
+      const truncated = summaryTrimmed.slice(0, maxLength);
+      const lastSpace = truncated.lastIndexOf(' ');
+      return lastSpace > maxLength * 0.7 ? `${truncated.slice(0, lastSpace)}…` : `${truncated}…`;
+    }
   }
 
   const cleaned = cleanNoteMarkdown(markdown, { title: options?.title });

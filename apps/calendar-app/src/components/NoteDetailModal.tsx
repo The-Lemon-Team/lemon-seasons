@@ -5,6 +5,7 @@ import {
   NoteTypeColors,
   NoteType,
   RelatedNoteItem,
+  cleanNoteMarkdown,
 } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -73,10 +74,11 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
 
   const cleanDescription = useMemo(() => {
     if (!current?.description) return '';
-    return current.description
+    const withoutRelated = current.description
       .replace(/(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i, '')
       .trim();
-  }, [current?.description]);
+    return cleanNoteMarkdown(withoutRelated, { title: current.title });
+  }, [current?.description, current?.title]);
 
   const relatedNotes: RelatedNoteItem[] = useMemo(() => {
     if (!current) return [];
