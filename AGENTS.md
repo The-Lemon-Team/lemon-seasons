@@ -34,7 +34,7 @@
 
 ### 6. Spark Content Generation & Ingestion Standards
 - All Spark notes in `spark/` and `docs/templates/` must comply with [SPARK_GENERATION_RULES.md](file:///c:/Users/Ilege/projects/lemon-calendarium/docs/rules/SPARK_GENERATION_RULES.md) and [.agents/rules/spark_generation.md](file:///c:/Users/Ilege/projects/lemon-calendarium/.agents/rules/spark_generation.md).
-- Filename format: `DD.MM.YY - <Title>.md`. The frontmatter `start_date` MUST strictly match the calendar day in the filename.
+- Filename format: `DD.MM.YY - <Title>.md` reflects digest issue day. Frontmatter `event_date` (and `start_date`) preserves the real occurrence/publication date.
 - Whitelist only user frontmatter fields; never emit system fields (`feed`, `lenta_id`).
 - DO NOT emit the `jmdaily` tag in automated generation; `jmdaily` is reserved exclusively for admin analytical curation.
 

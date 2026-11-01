@@ -4,8 +4,8 @@ All AI agents generating or modifying Spark notes in `C:\Users\Ilege\Мой ди
 
 1. **Filename & Date Matching:**
    - Format: `DD.MM.YY - <Title>.md` (e.g. `25.10.26 - Title.md`).
-   - `start_date` in frontmatter MUST strictly match the calendar day in the filename: `"2026-10-25T07:15:00.000Z"`.
-   - Never write yesterday's date into `start_date` when the file belongs to today's digest.
+   - `event_date` in frontmatter MUST reflect the real publication/occurrence date: `"2026-10-24T18:30:00.000Z"`.
+   - `start_date` duplicates `event_date`. The filename prefix reflects the digest release day.
 
 2. **Tags & Labels:**
    - Include topic tags.
@@ -13,7 +13,7 @@ All AI agents generating or modifying Spark notes in `C:\Users\Ilege\Мой ди
    - Tags are YAML string arrays without `#` symbol.
 
 3. **Frontmatter Whitelist:**
-   - Allowed: `title`, `type`, `start_date`, `end_date`, `tags`, `links`, `cover_image`, `podcast_audio`, `published`, `icon`, `resonance_score`.
+   - Allowed: `title`, `type`, `event_date`, `start_date`, `end_date`, `tags`, `links`, `cover_image`, `podcast_audio`, `published`, `icon`, `resonance_score`.
    - Forbidden: `feed`, `process`, `taxonomy`, `folders`, `primary_folder`, `lenta_id`, `updated_at`, `deleted`.
 
 4. **Typography & Spacing:**
