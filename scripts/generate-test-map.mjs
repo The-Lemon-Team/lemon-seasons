@@ -3,7 +3,7 @@
  * Generates docs/testing/TEST_MAP.md: a navigable tree of every test
  * (Layer → Domain → Component/Module → describe blocks → test).
  *
- * Source of truth is the Vitest JSON report, so the map can never drift from the tests.
+ * Source of truth is the Vitest / Playwright JSON reports, so the map can never drift from the tests.
  *
  *   pnpm test:map            # run the suites and regenerate the map
  *
@@ -17,16 +17,24 @@ import { join, relative, resolve, sep } from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..');
 const OUT = join(ROOT, 'docs', 'testing', 'TEST_MAP.md');
 
-/** Test suites included in the map. Add e2e/integration entries here as they appear. */
+/** Test suites included in the map. */
 const SUITES = [
-  { layer: 'Frontend unit & component tests', package: '@lenta/feed-app', label: 'feed-app', cwd: 'apps/feed-app' },
-  { layer: 'Backend unit tests', package: 'lemon-lenta-backend', label: 'backend', cwd: 'apps/backend' },
+  { layer: 'Frontend unit & component tests', package: '@lenta/feed-app', label: 'feed-app', cwd: 'apps/feed-app', runner: 'vitest' },
+  { layer: 'Backend unit tests', package: 'lemon-lenta-backend', label: 'backend', cwd: 'apps/backend', runner: 'vitest' },
   {
     layer: 'Backend integration tests (PostgreSQL)',
     package: 'lemon-lenta-backend',
     label: 'backend-int',
     cwd: 'apps/backend',
+    runner: 'vitest',
     commandArgs: ['--config', 'vitest.integration.config.mts'],
+  },
+  {
+    layer: 'End-to-End smoke tests (Frontend + Backend + PostgreSQL)',
+    package: '@lenta/e2e',
+    label: 'e2e-smoke',
+    cwd: 'e2e',
+    runner: 'playwright',
   },
 ];
 
@@ -39,10 +47,15 @@ const DOMAIN_RULES = [
   { match: /periods\.test/, domain: 'Note', area: 'Periods (PERIOD notes, horizons, badges)' },
   { match: /FeedEntityModal/, domain: 'Feed', area: 'Create / edit / delete feed modal' },
   { match: /adapters[\\/]feeds/, domain: 'Feed', area: 'Feed adapters' },
+  { match: /useFeedFilters/, domain: 'Feed', area: 'Feed filters hook' },
+  { match: /FeedCategoriesSheet/, domain: 'Navigation', area: 'Mobile categories bottom sheet' },
   { match: /Delete(Track|Workspace)|DeleteModals/, domain: 'Workspace', area: 'Delete track / workspace modals' },
   { match: /PinnedNotesDock/, domain: 'Workspace', area: 'Pinned notes dock' },
   { match: /modalUxContract/, domain: 'Cross-cutting', area: 'Modal UX contract (AGENTS.md §7)' },
+  { match: /useFeedModalsState/, domain: 'Cross-cutting', area: 'Modals coordination hook' },
   { match: /appMode/, domain: 'App shell', area: 'Runtime mode (dev / staging / public)' },
+  { match: /useFeedAppModeSync/, domain: 'App shell', area: 'App mode sync hook' },
+  { match: /useFeedTheme/, domain: 'App shell', area: 'Theme hook (light / dark / system)' },
   { match: /hostNavigation/, domain: 'App shell', area: 'Host navigation (iframe / standalone)' },
   // Backend domains
   { match: /notes-cache\.service/, domain: 'Backend / Note', area: 'Notes cache service' },
@@ -52,11 +65,14 @@ const DOMAIN_RULES = [
   { match: /text-helpers\.spec/, domain: 'Backend / Taxonomy', area: 'Hashtags and folders normalization' },
   { match: /note-state\.mapper/, domain: 'Backend / Sync', area: 'Note state mapper (HLC clocks)' },
   { match: /notes-api\.int/, domain: 'Backend / Integration', area: 'Notes, feeds & privacy API' },
+  // E2E domains
+  { match: /smoke\.spec/, domain: 'E2E / Smoke', area: 'Full-stack smoke tests' },
 ];
 
 const DOMAIN_ORDER = [
   'Note',
   'Feed',
+  'Navigation',
   'Workspace',
   'App shell',
   'Cross-cutting',
@@ -66,6 +82,7 @@ const DOMAIN_ORDER = [
   'Backend / Taxonomy',
   'Backend / Sync',
   'Backend / Integration',
+  'E2E / Smoke',
   'Other',
 ];
 const ICON = { passed: '✅', failed: '❌', pending: '⏸️', todo: '📝', skipped: '⏭️' };
@@ -73,11 +90,64 @@ const ICON = { passed: '✅', failed: '❌', pending: '⏸️', todo: '📝', sk
 const classify = (file) =>
   DOMAIN_RULES.find((r) => r.match.test(file)) ?? { domain: 'Other', area: file };
 
+function normalizePlaywrightReport(pwJson) {
+  const testResults = [];
+  function walkSuite(suiteNode, ancestors = []) {
+    const isFileRoot = suiteNode.file && suiteNode.title === suiteNode.file;
+    const currentAncestors = isFileRoot || !suiteNode.title ? ancestors : [...ancestors, suiteNode.title];
+
+    if (suiteNode.specs) {
+      for (const spec of suiteNode.specs) {
+        const file = spec.file;
+        let entry = testResults.find((r) => r.name === file);
+        if (!entry) {
+          entry = { name: file, assertionResults: [] };
+          testResults.push(entry);
+        }
+        for (const test of spec.tests) {
+          const status = test.results?.[0]?.status === 'passed' ? 'passed' :
+                         test.results?.[0]?.status === 'failed' ? 'failed' : 'skipped';
+          entry.assertionResults.push({
+            title: spec.title,
+            ancestorTitles: currentAncestors,
+            status,
+          });
+        }
+      }
+    }
+    if (suiteNode.suites) {
+      for (const s of suiteNode.suites) {
+        walkSuite(s, currentAncestors);
+      }
+    }
+  }
+  for (const s of pwJson.suites || []) {
+    walkSuite(s, []);
+  }
+  return { testResults };
+}
+
 function runSuite(suite) {
   const dir = join(tmpdir(), 'lenta-test-map');
   mkdirSync(dir, { recursive: true });
   const report = join(dir, `${suite.label}.json`);
   if (existsSync(report)) rmSync(report);
+
+  if (suite.runner === 'playwright') {
+    const res = spawnSync(
+      'pnpm',
+      ['--filter', suite.package, 'exec', 'playwright', 'test', '--reporter=json'],
+      { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'], shell: true },
+    );
+    try {
+      const parsed = JSON.parse(res.stdout.toString('utf8'));
+      return normalizePlaywrightReport(parsed);
+    } catch (e) {
+      console.error(`Failed to parse Playwright report for ${suite.label}:`, e);
+      process.exit(1);
+    }
+  }
+
   const extraArgs = suite.commandArgs || [];
   const res = spawnSync(
     'pnpm',
@@ -138,42 +208,45 @@ function build() {
     }
 
     const lines = [`## ${suite.layer} — \`${suite.label}\``, ''];
-    const domains = [...byDomain.keys()].sort((a, b) => DOMAIN_ORDER.indexOf(a) - DOMAIN_ORDER.indexOf(b));
-    for (const domain of domains) {
+
+    const sortedDomains = [...byDomain.keys()].sort((a, b) => {
+      const ia = DOMAIN_ORDER.indexOf(a);
+      const ib = DOMAIN_ORDER.indexOf(b);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || a.localeCompare(b);
+    });
+
+    for (const domain of sortedDomains) {
+      lines.push(`### Domain: ${domain}`);
+      lines.push('');
       const areas = byDomain.get(domain);
-      const domainTotal = [...areas.values()].reduce((s, a) => s + countTests(a.root), 0);
-      lines.push(`### ${domain} _(${domainTotal})_`, '');
-      for (const [area, { files, root }] of areas) {
-        lines.push(`#### ${area} _(${countTests(root)})_`, '');
-        lines.push(`Files: ${[...files].map((f) => `\`${f}\``).join(', ')}`, '');
-        renderNode(root, 0, lines);
+      for (const [area, data] of areas) {
+        const fileList = [...data.files].map((f) => `\`${f}\``).join(', ');
+        lines.push(`#### ${area} (${countTests(data.root)})`);
+        lines.push(`_Source: ${fileList}_`);
+        lines.push('');
+        renderNode(data.root, 0, lines);
         lines.push('');
       }
     }
     sections.push(lines.join('\n'));
   }
 
+  out.push('# Project Lenta — Test Map');
+  out.push('');
+  out.push('> Generated automatically from test suite execution reports.');
+  out.push(`> Regenerate anytime with \`pnpm test:map\`. Do not edit by hand.`);
+  out.push('');
   out.push(
-    '# Test Map',
-    '',
-    '> Generated by `pnpm test:map` from the real test results. **Do not edit by hand.**',
-    '> Legend: ✅ passing · ❌ failing · 📝 todo (known gap) · ⏭️ skipped',
-    '',
-    `**Totals:** ${totals.passed} passing, ${totals.failed} failing, ${totals.other} todo/skipped`,
-    '',
-    '## Layers',
-    '',
-    '| Layer | Tooling | Status |',
-    '|---|---|---|',
-    '| Unit & component | Vitest + Testing Library + MSW | active (`feed-app`) |',
-    '| Backend unit / integration | Vitest + supertest + Postgres | planned (Phase 3) |',
-    '| E2E smoke (UI + backend + DB) | Playwright | planned (Phase 4) |',
-    '',
-    ...sections,
+    `**Totals:** ${totals.passed} passed, ${totals.failed} failed, ${totals.other} todo/skipped ` +
+      `(${totals.passed + totals.failed + totals.other} total across all suites)`,
   );
-  return out.join('\n') + '\n';
+  out.push('');
+  out.push(sections.join('\n\n'));
+  out.push('');
+
+  writeFileSync(OUT, out.join('\n'), 'utf8');
+  console.log(`Wrote ${OUT}`);
+  console.log(`Totals: ${totals.passed} passed, ${totals.failed} failed, ${totals.other} other.`);
 }
 
-mkdirSync(join(ROOT, 'docs', 'testing'), { recursive: true });
-writeFileSync(OUT, build(), 'utf8');
-console.log(`Wrote ${relative(ROOT, OUT)}`);
+build();

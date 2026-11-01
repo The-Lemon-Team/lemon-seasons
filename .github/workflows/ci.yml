@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
 
 concurrency:
@@ -12,14 +12,57 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lemon
+          POSTGRES_PASSWORD: lemon_password
+          POSTGRES_DB: lemon_calendarium_test
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
+
       - run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client & Push Schema to Test DB
+        env:
+          DATABASE_URL: postgresql://lemon:lemon_password@localhost:5435/lemon_calendarium_test?schema=public
+        run: |
+          pnpm --filter lemon-lenta-backend exec prisma generate
+          pnpm --filter lemon-lenta-backend exec prisma db push
+
       - run: pnpm run build
       - run: pnpm run lint
       - run: pnpm run test
+
+      - name: Run Backend PostgreSQL Integration Tests
+        env:
+          DATABASE_URL: postgresql://lemon:lemon_password@localhost:5435/lemon_calendarium_test?schema=public
+          SPARKS_INCOMING_DIR: /tmp/empty-sparks
+        run: pnpm run test:int
+
+      - name: Install Playwright Browsers
+        run: pnpm --filter @lenta/e2e exec playwright install --with-deps chromium
+
+      - name: Run E2E Smoke Tests
+        env:
+          DATABASE_URL: postgresql://lemon:lemon_password@localhost:5435/lemon_calendarium_test?schema=public
+          SPARKS_INCOMING_DIR: /tmp/empty-sparks
+        run: pnpm run test:e2e
