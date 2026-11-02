@@ -246,7 +246,7 @@ function custom(check, _params = {}, fatal) {
     });
   return ZodAny.create();
 }
-var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, pinStatusSchema, createWorkspaceSchema, updateWorkspaceSchema, createTrackSchema, updateTrackSchema, createPinSchema, updatePinSchema, batchLinkNotesSchema, LentaFrontmatterUtil;
+var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, pinStatusSchema, createWorkspaceSchema, updateWorkspaceSchema, createTrackSchema, updateTrackSchema, createPinSchema, updatePinSchema, batchLinkNotesSchema, _a, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -4475,7 +4475,7 @@ var init_dist = __esm({
       parentNoteId: external_exports.string().min(1),
       childNoteIds: external_exports.array(external_exports.string().min(1)).min(1)
     });
-    LentaFrontmatterUtil = class {
+    LentaFrontmatterUtil = (_a = class {
       /**
        * Serializes a Note entity into a Markdown string with YAML frontmatter.
        * `lenta_id` is the primary identifier.
@@ -4704,12 +4704,15 @@ var init_dist = __esm({
         return tags;
       }
       /**
-       * Extracts related notes / wikilinks from frontmatter and from the trailing
-       * `## 🔗 Связанные записи` section of the Markdown body.
-       * Returns the cleaned body (without the trailing related block) and the array of raw links.
+       * Extracts related notes / wikilinks from frontmatter and from any trailing related section
+       * (`## 🔗 Источники и связи`, `## 🔗 Связи (Граф знаний)`, `## 🔗 Связанные материалы`, `## 🔗 Связанные записи`).
+       * Returns the cleaned body, the array of raw links, rich items with semantic roles/predicates,
+       * and optionally an extracted primary source link.
        */
       static extractRelatedLinks(body, frontmatter) {
         const linksSet = /* @__PURE__ */ new Set();
+        const richItems = [];
+        let extractedSourceLink = void 0;
         const fmLinks = [
           ...Array.isArray(frontmatter?.related_notes) ? frontmatter.related_notes : [],
           ...Array.isArray(frontmatter?.related_files) ? frontmatter.related_files : []
@@ -4719,32 +4722,88 @@ var init_dist = __esm({
             const clean = raw.replace(/^\[\[|\]\]$/g, "").trim();
             if (clean && !clean.toLowerCase().includes("\u0434\u0440\u0443\u0433\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430")) {
               linksSet.add(clean);
+              const pipeIdx = clean.indexOf("|");
+              const targetName = pipeIdx >= 0 ? clean.slice(0, pipeIdx).trim() : clean;
+              const alias = pipeIdx >= 0 ? clean.slice(pipeIdx + 1).trim() : void 0;
+              const cleanTitle = targetName.replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, "").replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, "").trim();
+              richItems.push({
+                raw: clean,
+                cleanTitle: cleanTitle || targetName,
+                alias,
+                role: "related",
+                isVaultDoc: targetName.startsWith("00 - ") || targetName.toLowerCase().includes("\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438")
+              });
             }
           }
         }
         let cleanedBody = body;
         let rawRelatedSection = void 0;
-        const sectionRegex = /(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i;
-        const match = body.match(sectionRegex);
+        const match = body.match(_a.RELATED_SECTION_REGEX);
         if (match) {
           rawRelatedSection = match[0].trim();
-          cleanedBody = body.replace(sectionRegex, "").trim();
+          cleanedBody = body.replace(_a.RELATED_SECTION_REGEX, "").trim();
           const sectionTextWithoutComments = rawRelatedSection.replace(/<!--[\s\S]*?-->/g, "");
-          const wikiMatches = [...sectionTextWithoutComments.matchAll(/\[\[(.*?)\]\]/g)];
-          for (const m of wikiMatches) {
-            const link = m[1].trim();
-            if (link && !link.toLowerCase().includes("\u0434\u0440\u0443\u0433\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430")) {
-              linksSet.add(link);
+          const lines = sectionTextWithoutComments.split(/\r?\n/);
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line)
+              continue;
+            const sourceMatch = line.match(
+              /(?:Первоисточник|Ссылка\s+на\s+первоисточник|Источник):\s*(?:\[(.*?)\]\((https?:\/\/[^\s\)]+)\)|(https?:\/\/[^\s\)]+))/i
+            );
+            if (sourceMatch && !extractedSourceLink) {
+              extractedSourceLink = sourceMatch[2] || sourceMatch[3];
+            }
+            const wikiMatches = [...line.matchAll(/\[\[(.*?)\]\]/g)];
+            if (wikiMatches.length === 0)
+              continue;
+            let role = "related";
+            let relation = void 0;
+            let isParent = false;
+            if (/Сводный\s+выпуск|Сводка/i.test(line)) {
+              role = "parent";
+              isParent = true;
+            } else if (/Сценарий\s+подкаста|Подкаст/i.test(line)) {
+              role = "podcast";
+            } else {
+              const kgMatch = line.match(/Связано\s+с\s+([^:]+):/i);
+              if (kgMatch) {
+                role = "knowledge_graph";
+                relation = kgMatch[1].trim();
+              }
+            }
+            for (const m of wikiMatches) {
+              const link = m[1].trim();
+              if (!link || link.toLowerCase().includes("\u0434\u0440\u0443\u0433\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430"))
+                continue;
+              if (!linksSet.has(link)) {
+                linksSet.add(link);
+                const pipeIdx = link.indexOf("|");
+                const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
+                const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : void 0;
+                const cleanTitle = targetName.replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, "").replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, "").trim();
+                richItems.push({
+                  raw: link,
+                  cleanTitle: cleanTitle || targetName,
+                  alias,
+                  role,
+                  relation,
+                  isParent,
+                  isVaultDoc: targetName.startsWith("00 - ") || targetName.toLowerCase().includes("\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438")
+                });
+              }
             }
           }
         }
         return {
           links: Array.from(linksSet),
           cleanedBody,
-          rawRelatedSection
+          rawRelatedSection,
+          extractedSourceLink,
+          richItems
         };
       }
-    };
+    }, __publicField(_a, "RELATED_SECTION_REGEX", /(?:(?:\r?\n|^)---)?\s*(?:(?:\r?\n|^)##\s*🔗?\s*(?:Связанные\s+(?:записи|файлы|заметки|материалы(?:[^\r\n]*)?)|Источники\s+и\s+(?:связи|материалы(?:[^\r\n]*)?)|Связи(?:\s*\(Граф\s+знаний\))?|Полный\s+перечень\s+заметок\s+выпуска))[\s\S]*$/i), _a);
   }
 });
 

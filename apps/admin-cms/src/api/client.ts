@@ -32,7 +32,7 @@ import {
 } from '../types';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'lenta_adm_master_permanent_7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c';
 
 export const apiClient = axios.create({
@@ -72,7 +72,7 @@ apiClient.interceptors.response.use(
     } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
       message.error('Таймаут соединения с сервером бэкенда (15 сек)');
     } else if (error.request) {
-      message.error('Нет связи с сервером бэкенда (http://localhost:3001)');
+      message.error('Нет связи с сервером бэкенда (http://localhost:3002)');
     }
 
     return Promise.reject(error);

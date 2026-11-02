@@ -11,7 +11,7 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
     const healthRes = await request.get(`${BACKEND_URL}/health`);
     expect(healthRes.ok()).toBeTruthy();
 
-    // 2. Provision a clean test feed via API
+    // 2. Provision or reuse clean test feed via API
     const feedRes = await request.post(`${BACKEND_URL}/feeds`, {
       headers: {
         'x-admin-token': ADMIN_TOKEN,
@@ -26,8 +26,17 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
         privacy: 'public',
       },
     });
-    const feedData = await feedRes.json();
-    feedId = feedData.id;
+    if (feedRes.status() === 409) {
+      const listRes = await request.get(`${BACKEND_URL}/feeds?search=smoke-channel`, {
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      const feeds = await listRes.json();
+      const existing = feeds.find((f: any) => f.slug === 'smoke-channel');
+      feedId = existing?.id;
+    } else {
+      const feedData = await feedRes.json();
+      feedId = feedData.id;
+    }
 
     // 3. Seed an initial published note
     await request.post(`${BACKEND_URL}/notes`, {
@@ -188,5 +197,34 @@ test.describe('Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)',
     // 4. Administrative create note button is also suppressed in public mode
     const createBtn = page.getByTitle('Создать новую запись в ленту');
     await expect(createBtn).not.toBeVisible();
+  });
+
+  test.afterAll(async ({ request }) => {
+    try {
+      const notesRes = await request.get(`${BACKEND_URL}/notes?search=Smoke`, {
+        headers: { 'x-admin-token': ADMIN_TOKEN },
+      });
+      if (notesRes.ok()) {
+        const notes = await notesRes.json();
+        for (const n of notes) {
+          if (
+            n.title?.includes('Smoke') ||
+            n.title?.includes('Secret Internal Note') ||
+            n.title?.includes('Live E2E Note')
+          ) {
+            await request.delete(`${BACKEND_URL}/notes/${n.id}`, {
+              headers: { 'x-admin-token': ADMIN_TOKEN },
+            });
+          }
+        }
+      }
+      if (feedId) {
+        await request.delete(`${BACKEND_URL}/feeds/${feedId}`, {
+          headers: { 'x-admin-token': ADMIN_TOKEN },
+        });
+      }
+    } catch {
+      // ignore cleanup errors
+    }
   });
 });

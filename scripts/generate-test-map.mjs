@@ -145,7 +145,13 @@ function runSuite(suite) {
       { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'], shell: true },
     );
     try {
-      const parsed = JSON.parse(res.stdout.toString('utf8'));
+      const raw = res.stdout.toString('utf8');
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start === -1 || end === -1 || end < start) {
+        throw new Error(`No JSON object found in stdout: ${raw.slice(0, 300)}`);
+      }
+      const parsed = JSON.parse(raw.slice(start, end + 1));
       return normalizePlaywrightReport(parsed);
     } catch (e) {
       console.error(`Failed to parse Playwright report for ${suite.label}:`, e);

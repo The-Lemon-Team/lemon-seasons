@@ -570,6 +570,8 @@ export interface RelatedNoteItem {
   targetDate?: string | null;
   isParent?: boolean;
   isVaultDoc?: boolean;
+  relation?: string;
+  role?: 'parent' | 'podcast' | 'knowledge_graph' | 'related' | string;
 }
 
 export interface ParsedMarkdownNote {

@@ -10,9 +10,9 @@
 
 | Metric | Value |
 |---|---|
-| **Total Automated Tests** | 426 passing |
-| **Defects Caught & Prevented by Tests** | 8 |
-| **Critical / High Severity Prevented** | 5 |
+| **Total Automated Tests** | 430 passing |
+| **Defects Caught & Prevented by Tests** | 9 |
+| **Critical / High Severity Prevented** | 6 |
 | **Defect Escape to Production (Post-Test)** | 0 |
 | **Test Layers Active** | Frontend Unit/Component, Backend Unit, Postgres Integration, Full-Stack E2E |
 
@@ -120,6 +120,18 @@
 - **Preventing Tests:**
   - `apps/feed-app/src/components/__tests__/FeedPostCard.test.tsx` (`[BUG-008] renders NotebookLM podcast widget and safely handles audio play promise`)
 - **Status:** ✅ Fixed in `FeedPostCard.tsx`
+
+---
+
+### 9. `[BUG-009]` Changelogs Nested Folder & Subtopic Binding Broken in Configured Feed Adapter
+- **Severity:** 🔴 High / Feature Regression
+- **Component:** `apps/feed-app/src/adapters/feeds/configuredFeedAdapter.ts` & `devFeedSubtopics.ts`
+- **Symptom:** After migrating to native configurable feed tabs, the `Changelogs` tab disappeared (or note count was 0), and selecting `changelogs` or vendor subtopics showed an empty stream.
+- **Root Cause:** Ingestion assigned notes to child feed slugs (`spark-changelogsfeed-google`), which did not match `spark-changelogsfeed` in configured feedSlugs. Child feeds were not rolled up into parent feed counts, route alias `changelogs` was rejected by vendor subfolder filters, and hashtags/frontmatter vendors were not inspected.
+- **Discovered By:** Manual review and automated unit tests in `configuredFeedAdapter.test.ts`.
+- **Preventing Tests:**
+  - `apps/feed-app/src/adapters/feeds/__tests__/configuredFeedAdapter.test.ts` (`generates rolled-up Changelogs & Релизы tab with nested subtopics for child folders`, `adapts notes for all changelogs general stream via spark-changelogsfeed or changelogs alias`, `filters notes by specific vendor subtopic`, `resolves changelog subtopic via frontmatter vendor metadata or hashtag`)
+- **Status:** ✅ Fixed in `configuredFeedAdapter.ts` and `devFeedSubtopics.ts`
 
 ---
 

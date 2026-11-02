@@ -229,6 +229,37 @@ describe('SparksParserService', () => {
     it('falls back to source / sourceLink / url frontmatter', () => {
       expect(parse('x.md', md('source: https://s.example')).noteDto.sourceLink).toBe('https://s.example');
     });
+
+    it('extracts primary source link from "## 🔗 Источники и связи" when frontmatter source is missing', () => {
+      const body = '# T\n\n## 📌 Суть события\n\nТекст.\n\n## 🔗 Источники и связи\n- Первоисточник: [ExplainX](https://explainx.ai/catch-up)\n- Сводный выпуск: [[02.11.26 - Сводный дайджест]]';
+      const { noteDto } = parse('02.11.26 - News.md', md('title: "News"', body));
+      expect(noteDto.sourceLink).toBe('https://explainx.ai/catch-up');
+      expect(noteDto.description).not.toContain('## 🔗 Источники и связи');
+      expect((noteDto.metadata as any)?.relatedNotes).toHaveLength(1);
+      expect((noteDto.metadata as any)?.relatedNotes[0]).toMatchObject({
+        raw: '02.11.26 - Сводный дайджест',
+        role: 'parent',
+        isParent: true,
+      });
+    });
+
+    it('extracts semantic relations from "## 🔗 Связи (Граф знаний)"', () => {
+      const body = '# T\n\n## 📌 Суть события\n\nТекст.\n\n## 🔗 Связи (Граф знаний)\n- Связано с транспортными узлами: [[Логистический хаб Жешув-Ясенка]]\n- Связано с диалогом: [[Отношения Польши и Украины]]';
+      const { noteDto } = parse('02.11.26 - Note.md', md('title: "Note"', body));
+      expect(noteDto.description).not.toContain('## 🔗 Связи (Граф знаний)');
+      const related = (noteDto.metadata as any)?.relatedNotes;
+      expect(related).toHaveLength(2);
+      expect(related[0]).toMatchObject({
+        raw: 'Логистический хаб Жешув-Ясенка',
+        role: 'knowledge_graph',
+        relation: 'транспортными узлами',
+      });
+      expect(related[1]).toMatchObject({
+        raw: 'Отношения Польши и Украины',
+        role: 'knowledge_graph',
+        relation: 'диалогом',
+      });
+    });
   });
 
   describe('Spark › summary', () => {

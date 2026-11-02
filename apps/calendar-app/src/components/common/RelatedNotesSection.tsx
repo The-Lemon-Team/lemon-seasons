@@ -55,6 +55,17 @@ export const RelatedNotesSection: React.FC<RelatedNotesSectionProps> = ({
                         <CornerDownRight className="w-2.5 h-2.5" />
                         Сводный дайджест
                       </span>
+                    ) : item.role === 'podcast' ? (
+                      <span className="text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1 shrink-0">
+                        🎧 Подкаст
+                      </span>
+                    ) : item.relation ? (
+                      <span
+                        className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shrink-0 truncate max-w-[140px]"
+                        title={item.relation}
+                      >
+                        {item.relation}
+                      </span>
                     ) : (
                       <span
                         className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border shrink-0"
@@ -101,18 +112,30 @@ export const RelatedNotesSection: React.FC<RelatedNotesSectionProps> = ({
                 <div className="flex items-center gap-1.5 text-xs text-[#93927e]">
                   <FileText className="w-3.5 h-3.5 text-[#93927e]" />
                   <span className="text-[10px] font-mono text-[#93927e] uppercase">
-                    {item.isVaultDoc ? 'Obsidian Vault Doc' : 'Внешняя ссылка'}
+                    {item.role === 'podcast'
+                      ? '🎧 Сценарий подкаста'
+                      : item.role === 'parent'
+                      ? '📑 Сводный выпуск'
+                      : item.relation
+                      ? `🔗 ${item.relation}`
+                      : item.isVaultDoc
+                      ? 'Obsidian Vault Doc'
+                      : 'Внешняя ссылка'}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-[#737575] bg-[#1a1c1c] px-1.5 py-0.5 rounded">
-                  [[wikilink]]
+                  {item.role === 'podcast' ? 'NotebookLM' : '[[wikilink]]'}
                 </span>
               </div>
               <div className="text-xs font-mono text-[#c9c7b2] line-clamp-2 leading-snug">
                 {item.raw}
               </div>
               <div className="text-[10px] font-mono text-[#737575] pt-1 border-t border-white/5">
-                Заметка в локальном хранилище Obsidian
+                {item.role === 'podcast'
+                  ? 'Сценарий аудиообзора NotebookLM'
+                  : item.relation
+                  ? `Связь в графе знаний: ${item.relation}`
+                  : 'Заметка в локальном хранилище Obsidian'}
               </div>
             </div>
           );

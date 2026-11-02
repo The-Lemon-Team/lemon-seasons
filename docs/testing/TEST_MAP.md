@@ -3,23 +3,19 @@
 > Generated automatically from test suite execution reports.
 > Regenerate anytime with `pnpm test:map`. Do not edit by hand.
 
-**Totals:** 442 passed, 0 failed, 3 todo/skipped (445 total across all suites)
+**Totals:** 445 passed, 0 failed, 18 todo/skipped (463 total across all suites)
 
 ## 🛡️ Defect Shield & Regression Prevention
 
-> **Active Regression Guards:** 10 automated tests preventing known regressions.
+> **Active Regression Guards:** 6 automated tests preventing known regressions.
 > See full defect register and root cause analysis in [DEFECT_LOG.md](DEFECT_LOG.md).
 
 - ✅ **[BUG-007] publication stage "dev" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
 - ✅ **[BUG-007] publication stage "staging" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
 - ✅ **[BUG-007] publication stage "public" maps to privacy/status** (`feed-app` → `src/components/__tests__/FeedEditNoteModal.test.tsx`)
 - ✅ **[BUG-008] renders NotebookLM podcast widget and safely handles audio play promise** (`feed-app` → `src/components/__tests__/FeedPostCard.test.tsx`)
-- ✅ **[BUG-004] auto-provisions missing folders when creating a feed** (`backend-int` → `test/folders-api.int.spec.ts`)
-- ✅ **[BUG-002] returns 200 OK and status in isolated test environment** (`backend-int` → `test/notes-api.int.spec.ts`)
-- ✅ **1. [BUG-001] App loads and renders seeded note in the chronological stream** (`e2e-smoke` → `../smoke.spec.ts`)
-- ✅ **2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)** (`e2e-smoke` → `../smoke.spec.ts`)
-- ✅ **4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)** (`e2e-smoke` → `../smoke.spec.ts`)
-- ✅ **6. [BUG-006] Binary Privacy Isolation: Private notes and admin controls hidden in Public mode (AGENTS.md §9)** (`e2e-smoke` → `../smoke.spec.ts`)
+- ⏭️ **[BUG-004] auto-provisions missing folders when creating a feed** (`backend-int` → `test/folders-api.int.spec.ts`)
+- ⏭️ **[BUG-002] returns 200 OK and status in isolated test environment** (`backend-int` → `test/notes-api.int.spec.ts`)
 
 ## Frontend unit & component tests — `feed-app`
 
@@ -53,10 +49,10 @@ _Source: `src/components/__tests__/FeedCreateNoteModal.test.tsx`_
     - ✅ resets the form when reopened
     - ✅ Cancel closes without calling the API
 
-#### Detail (read) modal (20)
+#### Detail (read) modal (24)
 _Source: `src/components/__tests__/FeedDetailModal.test.tsx`_
 
-- **FeedDetailModal** _(20)_
+- **FeedDetailModal** _(24)_
   - **Detail › rendering** _(5)_
     - ✅ renders nothing without an item
     - ✅ shows channel, handle (single @), category, title and markdown body
@@ -79,6 +75,11 @@ _Source: `src/components/__tests__/FeedDetailModal.test.tsx`_
     - ✅ closes on backdrop click, not on card click
     - ✅ closes via the X button
     - 📝 does not close when a drag that started inside the card is released on the backdrop (currently closes: the card stops mousedown propagation, so the overlay never records the origin)
+  - **Detail › related notes** _(4)_
+    - ✅ renders related notes when present in rawPayload metadata and navigates on click
+    - ✅ displays back button when navigating forward and navigates back on click
+    - ✅ shows parent breadcrumb banner on direct link entry
+    - ✅ applies Telegram-style slide animation classes on forward and backward navigation
   - **Detail › body scroll lock** _(2)_
     - ✅ locks page scroll while open and restores the previous value on close
     - ✅ does not touch scroll while there is no item
@@ -154,9 +155,13 @@ _Source: `src/utils/__tests__/noteFormPayload.test.ts`_
   - ✅ clears publishAt when unpublishing to DRAFT
   - ✅ updates startDate while preserving time if user explicitly changes eventDate
 
-#### Periods (PERIOD notes, horizons, badges) (27)
+#### Periods (PERIOD notes, horizons, badges) (31)
 _Source: `src/utils/__tests__/periods.test.ts`_
 
+- **calculatePeriodMetrics** _(3)_
+  - ✅ detects ending soon when 95% elapsed and hours remain
+  - ✅ detects ending soon when remaining time <= 72h even with lower percent
+  - ✅ not ending soon for early period
 - **getPeriodActivityStatus** _(6)_
   - ✅ is upcoming when start is on a later day
   - ✅ is active when it starts later today
@@ -164,9 +169,10 @@ _Source: `src/utils/__tests__/periods.test.ts`_
   - ✅ is active when endDate is today
   - ✅ open-ended period is finished after more than 10 idle days
   - ✅ open-ended period with recent metadata.lastActivityAt stays active
-- **extractPeriodItems** _(4)_
+- **extractPeriodItems** _(5)_
   - ✅ keeps only non-archived PERIOD notes
   - ✅ drops digests regardless of language/case
+  - ✅ preserves multi-day summary digests when endDate is specified
   - ✅ normalises hashtags (strings and objects, strips #, lowercases)
   - ✅ resolves emoji and color with fallbacks
 - **filterNotesByHorizon** _(4)_
@@ -263,16 +269,24 @@ _Source: `src/hooks/__tests__/useFeedFilters.test.ts`_
   - ✅ handles horizon switching
   - ✅ handles period selection and updates feed slug if matching period has feedSlug
 
-#### Feed adapters (6)
+#### Feed adapters (14)
 _Source: `src/adapters/feeds/__tests__/configuredFeedAdapter.test.ts`_
 
-- **createConfiguredFeedAdapter with DEFAULT_FEED_MODES** _(6)_
+- **createConfiguredFeedAdapter with DEFAULT_FEED_MODES** _(14)_
   - ✅ correctly adapts IT & Dev notes based on filterConfig
   - ✅ correctly adapts Seasons notes based on filterConfig
   - ✅ correctly adapts Entertainment notes based on filterConfig
   - ✅ correctly adapts Holidays notes based on filterConfig
   - ✅ strictly isolates Private notes when privacy=private filter is configured
   - ✅ generates thematic tabs for matching feeds
+  - ✅ generates rolled-up Changelogs & Релизы tab with nested subtopics for child folders
+  - ✅ adapts notes for all changelogs general stream via spark-changelogsfeed or changelogs alias
+  - ✅ filters notes by specific vendor subtopic (e.g. Google or OpenAI)
+  - ✅ resolves changelog subtopic via frontmatter vendor metadata or hashtag
+  - ✅ does not leak orphan notes without a feed into specific feed tabs (e.g. world-of-warcraft)
+  - ✅ creates a clean empty workspace tab by default when no source criteria are configured
+  - ✅ allows matching notes explicitly created with or tagged for the custom workspace tab
+  - ✅ excludes public feed notes when custom tab is configured with privacy=private
 
 ### Domain: Navigation
 
@@ -424,6 +438,24 @@ _Source: `src/hooks/__tests__/useFeedModalsState.test.ts`_
   - ✅ opens note detail modal immediately when initialNote is passed from workspace pin
   - ✅ fetches full note from API by ID when not found in memory
 
+### Domain: Other
+
+#### src/components/notifications/__tests__/FeedPeriodEndingSoonToast.test.tsx (4)
+_Source: `src/components/notifications/__tests__/FeedPeriodEndingSoonToast.test.tsx`_
+
+- **FeedPeriodEndingSoonToast** _(4)_
+  - ✅ renders notification when an active period is ending soon
+  - ✅ clicking action button calls onSelectPeriod and dismisses
+  - ✅ clicking close button dismisses and sets sessionStorage
+  - ✅ does not render if period is not ending soon or already finished
+
+#### src/components/workspace/__tests__/WorkspaceFloatingButton.test.tsx (2)
+_Source: `src/components/workspace/__tests__/WorkspaceFloatingButton.test.tsx`_
+
+- **WorkspaceFloatingButton** _(2)_
+  - ✅ renders with mobile clearance to prevent overlapping the bottom navigation menu
+  - ✅ renders default title and empty state gracefully
+
 
 ## Backend unit tests — `backend`
 
@@ -548,10 +580,10 @@ _Source: `src/auth/auth-context.middleware.spec.ts`_
 
 ### Domain: Backend / Ingestion
 
-#### Gemini Sparks parser (49)
+#### Gemini Sparks parser (51)
 _Source: `src/ingestion/services/sparks-parser.service.spec.ts`_
 
-- **SparksParserService** _(49)_
+- **SparksParserService** _(51)_
   - **Spark › title** _(4)_
     - ✅ uses the first heading
     - ✅ falls back to the file name without the DD.MM.YY prefix and extension
@@ -600,9 +632,11 @@ _Source: `src/ingestion/services/sparks-parser.service.spec.ts`_
     - ✅ parses publish_at and drops invalid values
     - ✅ reads resonance_score as number or numeric string
     - ✅ author falls back to curator
-  - **Spark › links and source** _(2)_
+  - **Spark › links and source** _(4)_
     - ✅ keeps only links with a url, flags the first as source, and uses it as sourceLink
     - ✅ falls back to source / sourceLink / url frontmatter
+    - ✅ extracts primary source link from "## 🔗 Источники и связи" when frontmatter source is missing
+    - ✅ extracts semantic relations from "## 🔗 Связи (Граф знаний)"
   - **Spark › summary** _(4)_
     - ✅ prefers frontmatter summary, then description
     - ✅ extracts the "Суть" section and strips markdown
@@ -694,53 +728,40 @@ _Source: `test/folders-api.int.spec.ts`_
 
 - **Project Lenta Backend - Folders API Integration (PostgreSQL)** _(6)_
   - **POST /folders - Creation & Path Normalization** _(3)_
-    - ✅ creates a root folder with binary privacy "public" and extracts name
-    - ✅ normalizes paths with slashes and whitespace
-    - ✅ [BUG-004] auto-provisions missing folders when creating a feed
+    - ⏭️ creates a root folder with binary privacy "public" and extracts name
+    - ⏭️ normalizes paths with slashes and whitespace
+    - ⏭️ [BUG-004] auto-provisions missing folders when creating a feed
   - **GET /folders/tree - Hierarchical Obsidian Explorer** _(1)_
-    - ✅ builds a nested parent-child tree structure from flat paths
+    - ⏭️ builds a nested parent-child tree structure from flat paths
   - **Binary Privacy & Scoping (AGENTS.md §9)** _(1)_
-    - ✅ enforces privacy visibility: anonymous sees only public folders, admin sees all
+    - ⏭️ enforces privacy visibility: anonymous sees only public folders, admin sees all
   - **DELETE & Soft-Deletion Lifecycle** _(1)_
-    - ✅ soft deletes folder and sets deletedAt timestamp
+    - ⏭️ soft deletes folder and sets deletedAt timestamp
 
 #### Notes, feeds & privacy API (PostgreSQL) (4)
 _Source: `test/notes-api.int.spec.ts`_
 
 - **Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)** _(4)_
   - **GET /health** _(1)_
-    - ✅ [BUG-002] returns 200 OK and status in isolated test environment
+    - ⏭️ [BUG-002] returns 200 OK and status in isolated test environment
   - **Feeds API & Binary Privacy Flow** _(1)_
-    - ✅ creates a feed and retrieves it in the list
+    - ⏭️ creates a feed and retrieves it in the list
   - **Notes API & Unified Privacy Architecture (AGENTS.md rule 9)** _(2)_
-    - ✅ creates public and private notes, enforcing privacy visibility filters
-    - ✅ updates note fields and soft deletes via DELETE
+    - ⏭️ creates public and private notes, enforcing privacy visibility filters
+    - ⏭️ updates note fields and soft deletes via DELETE
 
 #### Sync engine & HLC merge (PostgreSQL) (5)
 _Source: `test/sync-api.int.spec.ts`_
 
 - **Project Lenta Backend - Sync Engine API Integration (PostgreSQL)** _(5)_
   - **POST /sync/events - Apply Sync Events (Idempotency & Merge)** _(4)_
-    - ✅ applies an UPSERT note event, creating the note with HLC clocks in PostgreSQL
-    - ✅ guarantees event idempotency by eventId, returning DUPLICATE on re-delivery
-    - ✅ resolves concurrent updates using HLC Last-Write-Wins (LWW) per field
-    - ✅ soft deletes note on DELETE action and preserves tombstone
+    - ⏭️ applies an UPSERT note event, creating the note with HLC clocks in PostgreSQL
+    - ⏭️ guarantees event idempotency by eventId, returning DUPLICATE on re-delivery
+    - ⏭️ resolves concurrent updates using HLC Last-Write-Wins (LWW) per field
+    - ⏭️ soft deletes note on DELETE action and preserves tombstone
   - **GET /sync/pull - Pull Changes with Cursor** _(1)_
-    - ✅ returns notes changed since cursor with their field clocks and deletion state
+    - ⏭️ returns notes changed since cursor with their field clocks and deletion state
 
 
 ## End-to-End smoke tests (Frontend + Backend + PostgreSQL) — `e2e-smoke`
-
-### Domain: E2E / Smoke
-
-#### Full-stack smoke tests (6)
-_Source: `../smoke.spec.ts`_
-
-- **Project Lenta E2E Smoke Tests (Frontend + Backend + PostgreSQL)** _(6)_
-  - ✅ 1. [BUG-001] App loads and renders seeded note in the chronological stream
-  - ✅ 2. [BUG-006] Modal UX contract: closes on Escape and backdrop click (AGENTS.md §7)
-  - ✅ 3. Create a new note through UI and verify it appears in the stream
-  - ✅ 4. [BUG-006] Binary Privacy Toggle: switch between Private and Public (AGENTS.md §9)
-  - ✅ 5. View note details in FeedDetailModal and edit title through FeedEditNoteModal
-  - ✅ 6. [BUG-006] Binary Privacy Isolation: Private notes and admin controls hidden in Public mode (AGENTS.md §9)
 

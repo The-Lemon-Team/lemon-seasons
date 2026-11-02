@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RelatedNoteItem, NoteType } from '@lenta/shared';
+import { RelatedNoteItem, NoteType, LentaFrontmatterUtil } from '@lenta/shared';
 
 @Injectable()
 export class RelatedNotesResolverService {
@@ -48,6 +48,7 @@ export class RelatedNotesResolverService {
         parentNoteId: true,
         metadata: true,
         description: true,
+        sourceLink: true,
       },
     });
 
@@ -55,31 +56,23 @@ export class RelatedNotesResolverService {
 
     const meta = (note.metadata as any) || {};
     let items: RelatedNoteItem[] = Array.isArray(meta.relatedNotes) ? meta.relatedNotes : [];
+    let cleanedDesc = note.description;
+    let descriptionModified = false;
+    let fallbackSourceLink: string | undefined = undefined;
 
-    // Fallback: If metadata doesn't have relatedNotes yet, check if description still has ## Связанные записи
-    if (items.length === 0 && note.description && /##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)/i.test(note.description)) {
-      const match = note.description.match(/##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)([\s\S]*?)(?:$|\n##)/i);
-      if (match) {
-        const rawLinks = [...match[1].matchAll(/\[\[(.*?)\]\]/g)]
-          .map((m) => m[1].trim())
-          .filter((l) => l && !l.toLowerCase().includes('другая заметка'));
-
-        items = rawLinks.map((link) => {
-          const pipeIdx = link.indexOf('|');
-          const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
-          const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : undefined;
-          const cleanTitle = targetName
-            .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
-            .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
-            .trim();
-          return {
-            raw: link,
-            cleanTitle: cleanTitle || targetName,
-            alias,
-            resolved: false,
-            isVaultDoc: targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники'),
-          };
-        });
+    // Fallback: If metadata doesn't have relatedNotes yet, check if description has related section
+    if (items.length === 0 && note.description && LentaFrontmatterUtil.RELATED_SECTION_REGEX.test(note.description)) {
+      const extracted = LentaFrontmatterUtil.extractRelatedLinks(note.description);
+      if (extracted.richItems && extracted.richItems.length > 0) {
+        items = extracted.richItems.map((item) => ({
+          ...item,
+          resolved: false,
+        }));
+        cleanedDesc = extracted.cleanedBody;
+        descriptionModified = true;
+      }
+      if (extracted.extractedSourceLink && !note.sourceLink) {
+        fallbackSourceLink = extracted.extractedSourceLink;
       }
     }
 
@@ -110,42 +103,92 @@ export class RelatedNotesResolverService {
       const normLink = this.normalize(link);
       const isVaultDoc = item.isVaultDoc || normLink.startsWith('00') || normLink.includes('источники анонсов');
 
-      const target = pool.find((other) => {
+      // Vault doc guard: only match if target specifically contains '00' or 'источники анонсов'
+      if (isVaultDoc) {
+        const vaultTarget = pool.find((other) => {
+          if (other.id === note.id) return false;
+          const otherNormTitle = this.normalize(other.title);
+          const otherFile = other.metadata?.fileName || '';
+          const otherNormFile = this.normalize(otherFile);
+          return otherNormTitle.includes('00') || otherNormFile.includes('00') || otherNormTitle.includes('реестр источников');
+        });
+
+        if (vaultTarget) {
+          resolvedCount++;
+          return {
+            ...item,
+            resolved: true,
+            targetNoteId: vaultTarget.id,
+            targetTitle: vaultTarget.title,
+            targetType: vaultTarget.type,
+            targetIcon: vaultTarget.icon || undefined,
+            targetAuthor: vaultTarget.author || undefined,
+            targetCurator: vaultTarget.author || undefined,
+            targetDate: typeof vaultTarget.startDate === 'string' ? vaultTarget.startDate : vaultTarget.startDate.toISOString(),
+            isParent: false,
+          };
+        }
+        return { ...item, resolved: false };
+      }
+
+      // Tier 1: Exact normalized title or exact filename match
+      let target = pool.find((other) => {
         if (other.id === note.id) return false;
         const otherNormTitle = this.normalize(other.title);
         const otherFile = other.metadata?.fileName || '';
         const otherNormFile = this.normalize(otherFile);
+        return normLink === otherNormTitle || (otherNormFile && normLink === otherNormFile);
+      });
 
-        // Vault doc guard: only match if target specifically contains '00' or 'источники анонсов'
-        if (isVaultDoc) {
-          return otherNormTitle.includes('00') || otherNormFile.includes('00') || otherNormTitle.includes('реестр источников');
-        }
+      // Tier 2: Substring match (length > 8)
+      if (!target) {
+        target = pool.find((other) => {
+          if (other.id === note.id) return false;
+          const otherNormTitle = this.normalize(other.title);
+          const otherFile = other.metadata?.fileName || '';
+          const otherNormFile = this.normalize(otherFile);
+          if (normLink.length > 8 && otherNormTitle.includes(normLink)) return true;
+          if (otherNormTitle.length > 8 && normLink.includes(otherNormTitle)) return true;
+          if (otherNormFile && normLink.length > 8 && otherNormFile.includes(normLink)) return true;
+          if (otherNormFile && otherNormFile.length > 8 && normLink.includes(otherNormFile)) return true;
+          return false;
+        });
+      }
 
-        // 1. Direct file or link substring match
-        if (otherFile && otherFile.toLowerCase().includes(link.toLowerCase())) return true;
-        if (normLink.length > 5 && otherNormFile.includes(normLink)) return true;
-        if (normLink.length > 5 && otherNormFile.length > 8 && normLink.includes(otherNormFile)) return true;
-
-        // 2. Title matching
-        if (normLink.length > 5 && otherNormTitle.includes(normLink)) return true;
-        if (normLink.length > 5 && otherNormTitle.length > 8 && normLink.includes(otherNormTitle)) return true;
-
-        // 3. Keyword overlap match
+      // Tier 3: Keyword overlap match (>= 65% overlap)
+      if (!target) {
         const linkWords = normLink.split(' ').filter((w) => w.length > 3);
-        const titleWords = otherNormTitle.split(' ').filter((w) => w.length > 3);
-        if (linkWords.length >= 3 && titleWords.length >= 3) {
-          const common = linkWords.filter((w) => titleWords.includes(w));
-          if (common.length >= Math.min(3, Math.floor(linkWords.length * 0.6))) {
-            return true;
+        if (linkWords.length >= 3) {
+          let bestTarget: any = null;
+          let bestScore = 0;
+          for (const other of pool) {
+            if (other.id === note.id) continue;
+            const otherNormTitle = this.normalize(other.title);
+            const otherTitleWords = new Set(otherNormTitle.split(' ').filter((w) => w.length > 3));
+            if (otherTitleWords.size < 3) continue;
+
+            let common = 0;
+            for (const w of linkWords) {
+              if (otherTitleWords.has(w)) common++;
+            }
+            const score = common / linkWords.length;
+            if (score >= 0.65 && score > bestScore) {
+              bestScore = score;
+              bestTarget = other;
+            }
+          }
+          if (bestTarget) {
+            target = bestTarget;
           }
         }
-
-        return false;
-      });
+      }
 
       if (target) {
         resolvedCount++;
-        const isParent = (target.type as any) === NoteType.PERIOD && (note.type as any) !== NoteType.PERIOD;
+        const isParent =
+          Boolean(item.isParent || item.role === 'parent') ||
+          ((target.type as any) === NoteType.PERIOD && (note.type as any) !== NoteType.PERIOD);
+
         if (isParent && !resolvedParentId) {
           resolvedParentId = target.id;
         }
@@ -177,6 +220,14 @@ export class RelatedNotesResolverService {
         relatedNotes: updatedItems,
       },
     };
+
+    if (descriptionModified && cleanedDesc !== note.description) {
+      updateData.description = cleanedDesc;
+    }
+
+    if (fallbackSourceLink && !note.sourceLink) {
+      updateData.sourceLink = fallbackSourceLink;
+    }
 
     if (resolvedParentId && !note.parentNoteId) {
       updateData.parentNoteId = resolvedParentId;

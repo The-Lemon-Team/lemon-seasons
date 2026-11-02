@@ -275,10 +275,14 @@ export class LentaFrontmatterUtil {
     return tags;
   }
 
+  public static readonly RELATED_SECTION_REGEX =
+    /(?:(?:\r?\n|^)---)?\s*(?:(?:\r?\n|^)##\s*🔗?\s*(?:Связанные\s+(?:записи|файлы|заметки|материалы(?:[^\r\n]*)?)|Источники\s+и\s+(?:связи|материалы(?:[^\r\n]*)?)|Связи(?:\s*\(Граф\s+знаний\))?|Полный\s+перечень\s+заметок\s+выпуска))[\s\S]*$/i;
+
   /**
-   * Extracts related notes / wikilinks from frontmatter and from the trailing
-   * `## 🔗 Связанные записи` section of the Markdown body.
-   * Returns the cleaned body (without the trailing related block) and the array of raw links.
+   * Extracts related notes / wikilinks from frontmatter and from any trailing related section
+   * (`## 🔗 Источники и связи`, `## 🔗 Связи (Граф знаний)`, `## 🔗 Связанные материалы`, `## 🔗 Связанные записи`).
+   * Returns the cleaned body, the array of raw links, rich items with semantic roles/predicates,
+   * and optionally an extracted primary source link.
    */
   public static extractRelatedLinks(
     body: string,
@@ -287,8 +291,28 @@ export class LentaFrontmatterUtil {
     links: string[];
     cleanedBody: string;
     rawRelatedSection?: string;
+    extractedSourceLink?: string;
+    richItems?: Array<{
+      raw: string;
+      cleanTitle: string;
+      alias?: string;
+      role?: 'parent' | 'podcast' | 'knowledge_graph' | 'related' | string;
+      relation?: string;
+      isParent?: boolean;
+      isVaultDoc?: boolean;
+    }>;
   } {
     const linksSet = new Set<string>();
+    const richItems: Array<{
+      raw: string;
+      cleanTitle: string;
+      alias?: string;
+      role?: 'parent' | 'podcast' | 'knowledge_graph' | 'related' | string;
+      relation?: string;
+      isParent?: boolean;
+      isVaultDoc?: boolean;
+    }> = [];
+    let extractedSourceLink: string | undefined = undefined;
 
     // 1. From frontmatter
     const fmLinks = [
@@ -300,6 +324,20 @@ export class LentaFrontmatterUtil {
         const clean = raw.replace(/^\[\[|\]\]$/g, '').trim();
         if (clean && !clean.toLowerCase().includes('другая заметка')) {
           linksSet.add(clean);
+          const pipeIdx = clean.indexOf('|');
+          const targetName = pipeIdx >= 0 ? clean.slice(0, pipeIdx).trim() : clean;
+          const alias = pipeIdx >= 0 ? clean.slice(pipeIdx + 1).trim() : undefined;
+          const cleanTitle = targetName
+            .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
+            .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
+            .trim();
+          richItems.push({
+            raw: clean,
+            cleanTitle: cleanTitle || targetName,
+            alias,
+            role: 'related',
+            isVaultDoc: targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники'),
+          });
         }
       }
     }
@@ -308,21 +346,74 @@ export class LentaFrontmatterUtil {
     let cleanedBody = body;
     let rawRelatedSection: string | undefined = undefined;
 
-    const sectionRegex = /(?:(?:\r?\n|^)---)?\s*(?:\r?\n|^)##\s*🔗?\s*Связанные\s+(?:записи|файлы|заметки)[\s\S]*$/i;
-    const match = body.match(sectionRegex);
+    const match = body.match(LentaFrontmatterUtil.RELATED_SECTION_REGEX);
 
     if (match) {
       rawRelatedSection = match[0].trim();
-      cleanedBody = body.replace(sectionRegex, '').trim();
+      cleanedBody = body.replace(LentaFrontmatterUtil.RELATED_SECTION_REGEX, '').trim();
 
-      // Extract [[...]] links while ignoring html comments <!-- ... -->
+      // Extract [[...]] links and lines while ignoring html comments <!-- ... -->
       const sectionTextWithoutComments = rawRelatedSection.replace(/<!--[\s\S]*?-->/g, '');
-      const wikiMatches = [...sectionTextWithoutComments.matchAll(/\[\[(.*?)\]\]/g)];
-      for (const m of wikiMatches) {
-        const link = m[1].trim();
-        // Skip placeholders
-        if (link && !link.toLowerCase().includes('другая заметка')) {
-          linksSet.add(link);
+      const lines = sectionTextWithoutComments.split(/\r?\n/);
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        // Check for primary source link
+        const sourceMatch = line.match(
+          /(?:Первоисточник|Ссылка\s+на\s+первоисточник|Источник):\s*(?:\[(.*?)\]\((https?:\/\/[^\s\)]+)\)|(https?:\/\/[^\s\)]+))/i,
+        );
+        if (sourceMatch && !extractedSourceLink) {
+          extractedSourceLink = sourceMatch[2] || sourceMatch[3];
+        }
+
+        // Check for wikilinks
+        const wikiMatches = [...line.matchAll(/\[\[(.*?)\]\]/g)];
+        if (wikiMatches.length === 0) continue;
+
+        // Detect semantic role / predicate on this line
+        let role = 'related';
+        let relation: string | undefined = undefined;
+        let isParent = false;
+
+        if (/Сводный\s+выпуск|Сводка/i.test(line)) {
+          role = 'parent';
+          isParent = true;
+        } else if (/Сценарий\s+подкаста|Подкаст/i.test(line)) {
+          role = 'podcast';
+        } else {
+          const kgMatch = line.match(/Связано\s+с\s+([^:]+):/i);
+          if (kgMatch) {
+            role = 'knowledge_graph';
+            relation = kgMatch[1].trim();
+          }
+        }
+
+        for (const m of wikiMatches) {
+          const link = m[1].trim();
+          if (!link || link.toLowerCase().includes('другая заметка')) continue;
+
+          if (!linksSet.has(link)) {
+            linksSet.add(link);
+            const pipeIdx = link.indexOf('|');
+            const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
+            const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : undefined;
+            const cleanTitle = targetName
+              .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
+              .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
+              .trim();
+
+            richItems.push({
+              raw: link,
+              cleanTitle: cleanTitle || targetName,
+              alias,
+              role,
+              relation,
+              isParent,
+              isVaultDoc: targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники'),
+            });
+          }
         }
       }
     }
@@ -331,6 +422,8 @@ export class LentaFrontmatterUtil {
       links: Array.from(linksSet),
       cleanedBody,
       rawRelatedSection,
+      extractedSourceLink,
+      richItems,
     };
   }
 }

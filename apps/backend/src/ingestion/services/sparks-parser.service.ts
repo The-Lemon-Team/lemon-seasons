@@ -126,27 +126,34 @@ export class SparksParserService {
     }
 
     // 10.5. Extract & Clean Related Notes (Wikilinks)
-    const { links: relatedLinks, cleanedBody, rawRelatedSection } =
+    const { links: relatedLinks, cleanedBody, rawRelatedSection, extractedSourceLink, richItems } =
       LentaFrontmatterUtil.extractRelatedLinks(parsedMd.body, fm);
 
-    const relatedNotesData: RelatedNoteItem[] = relatedLinks.map((link) => {
-      const pipeIdx = link.indexOf('|');
-      const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
-      const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : undefined;
-      const cleanTitle = targetName
-        .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
-        .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
-        .trim();
-      const isVaultDoc = targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники');
+    const relatedNotesData: RelatedNoteItem[] = (richItems && richItems.length > 0)
+      ? richItems.map((item) => ({
+          ...item,
+          resolved: false,
+        }))
+      : relatedLinks.map((link) => {
+          const pipeIdx = link.indexOf('|');
+          const targetName = pipeIdx >= 0 ? link.slice(0, pipeIdx).trim() : link;
+          const alias = pipeIdx >= 0 ? link.slice(pipeIdx + 1).trim() : undefined;
+          const cleanTitle = targetName
+            .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
+            .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
+            .trim();
+          const isVaultDoc = targetName.startsWith('00 - ') || targetName.toLowerCase().includes('источники');
 
-      return {
-        raw: link,
-        cleanTitle: cleanTitle || targetName,
-        alias,
-        resolved: false,
-        isVaultDoc,
-      };
-    });
+          return {
+            raw: link,
+            cleanTitle: cleanTitle || targetName,
+            alias,
+            resolved: false,
+            isVaultDoc,
+          };
+        });
+
+    const finalSourceLink = sourceLink || extractedSourceLink;
 
     // 11. Build CreateNoteDto
     const noteDto: CreateNoteDto = {
@@ -160,7 +167,7 @@ export class SparksParserService {
       endDate: endDate ? endDate.toISOString() : undefined,
       sourceType: 'GOOGLE_DRIVE',
       externalId: filePath,
-      sourceLink,
+      sourceLink: finalSourceLink,
       rawContent: fileContent,
       summary,
       icon,
