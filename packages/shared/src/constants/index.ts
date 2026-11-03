@@ -135,11 +135,13 @@ export const ConflictStrategyLabelsRu: Record<ConflictStrategy, string> = {
 // Note Templates & Aliases Constants (Private Deterministic Engine)
 // ---------------------------------------------------------------------------
 
+export const NOTE_TEMPLATE_POINT_NOTE = 'point_note';
 export const NOTE_TEMPLATE_TRENDS_TODAY = 'trends_today';
 export const NOTE_TEMPLATE_TREND_PERIOD = 'trend_period';
 export const NOTE_TEMPLATE_EVENT = 'event';
 export const NOTE_TEMPLATE_DONE = 'done';
-export const NOTE_TEMPLATE_POINT_NOTE = 'point_note';
+export const NOTE_TEMPLATE_RELEASE = 'release';
+export const NOTE_TEMPLATE_PODCAST = 'podcast';
 
 export interface NoteTemplateDefinition {
   id: string;
@@ -150,9 +152,25 @@ export interface NoteTemplateDefinition {
   defaultFolder: string;
   defaultHashtags: string[];
   icon: string;
+  description?: string;
+  defaultMarkdown?: string;
+  defaultPrivacy?: 'private' | 'public';
 }
 
 export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
+  [NOTE_TEMPLATE_POINT_NOTE]: {
+    id: NOTE_TEMPLATE_POINT_NOTE,
+    name: 'Быстрая заметка',
+    aliases: ['заметка', 'мысль', 'note', 'point', 'факт', '/note', '!note'],
+    defaultType: NoteType.SINGLE,
+    defaultDisplayType: 'Point Note',
+    defaultFolder: 'Notes',
+    defaultHashtags: [],
+    icon: 'file-text',
+    description: 'Быстрая лаконичная заметка в личный журнал',
+    defaultMarkdown: '',
+    defaultPrivacy: 'private',
+  },
   [NOTE_TEMPLATE_TRENDS_TODAY]: {
     id: NOTE_TEMPLATE_TRENDS_TODAY,
     name: 'Тренды на сегодня',
@@ -176,6 +194,9 @@ export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
     defaultFolder: 'Trends',
     defaultHashtags: ['тренд'],
     icon: 'trending-up',
+    description: 'Список актуальных трендов дня с оценкой резонанса',
+    defaultMarkdown: '## 📈 Тренды дня\n- ...',
+    defaultPrivacy: 'private',
   },
   [NOTE_TEMPLATE_TREND_PERIOD]: {
     id: NOTE_TEMPLATE_TREND_PERIOD,
@@ -200,6 +221,9 @@ export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
     defaultFolder: 'Trends',
     defaultHashtags: ['тренд'],
     icon: 'trending-up',
+    description: 'Долгосрочный тренд, марафон или сезонный период',
+    defaultMarkdown: '## ⏳ Период тренда\n- Основные события:\n- Заметки:',
+    defaultPrivacy: 'private',
   },
   [NOTE_TEMPLATE_EVENT]: {
     id: NOTE_TEMPLATE_EVENT,
@@ -220,10 +244,13 @@ export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
     defaultFolder: 'Notes',
     defaultHashtags: ['событие'],
     icon: 'calendar',
+    description: 'Запланированное событие, митап или трансляция',
+    defaultMarkdown: '## 📅 Описание события\n- Время:\n- Место / Ссылка:\n- Повестка:',
+    defaultPrivacy: 'private',
   },
   [NOTE_TEMPLATE_DONE]: {
     id: NOTE_TEMPLATE_DONE,
-    name: 'Сделано',
+    name: 'Сделано (DONE)',
     aliases: [
       'сделано',
       'готово',
@@ -240,18 +267,39 @@ export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
     defaultFolder: 'Notes',
     defaultHashtags: ['done'],
     icon: 'check-circle',
+    description: 'Завершенная цель, результат или зафиксированный майлстоун',
+    defaultMarkdown: '## ✅ Результат\n- Что было сделано:\n- Ключевые метрики:',
+    defaultPrivacy: 'private',
   },
-  [NOTE_TEMPLATE_POINT_NOTE]: {
-    id: NOTE_TEMPLATE_POINT_NOTE,
-    name: 'Заметка',
-    aliases: ['заметка', 'мысль', 'note', 'point', 'факт', '/note', '!note'],
+  [NOTE_TEMPLATE_RELEASE]: {
+    id: NOTE_TEMPLATE_RELEASE,
+    name: 'Changelog / Релиз',
+    aliases: ['релиз', 'release', 'changelog', 'патч', 'обновление', '/release'],
     defaultType: NoteType.SINGLE,
-    defaultDisplayType: 'Point Note',
-    defaultFolder: 'Notes',
-    defaultHashtags: [],
-    icon: 'file-text',
+    defaultDisplayType: 'Release',
+    defaultFolder: 'Releases',
+    defaultHashtags: ['changelog', 'release'],
+    icon: 'rocket',
+    description: 'Сводка релиза, патч-ноут или архитектурные изменения',
+    defaultMarkdown: '## 🚀 Сводка релиза\n\n### ✨ Ключевые нововведения\n- ...\n\n### 🐛 Исправления\n- ...',
+    defaultPrivacy: 'private',
+  },
+  [NOTE_TEMPLATE_PODCAST]: {
+    id: NOTE_TEMPLATE_PODCAST,
+    name: 'IT / AI Дайджест',
+    aliases: ['подкаст', 'podcast', 'digest', 'дайджест', '/podcast'],
+    defaultType: NoteType.PERIOD,
+    defaultDisplayType: 'Digest',
+    defaultFolder: 'Digests',
+    defaultHashtags: ['ai', 'it-digest'],
+    icon: 'radio',
+    description: 'Шоу-ноуты подкаста или структурированный дайджест',
+    defaultMarkdown: '## 🎙️ О выпуске\n- Главные темы:\n- Таймкоды:\n- Ключевые ссылки:',
+    defaultPrivacy: 'private',
   },
 };
+
+export const NOTE_TEMPLATES_LIST: NoteTemplateDefinition[] = Object.values(DEFAULT_NOTE_TEMPLATES);
 
 export const METADATA_FIELD_ALIASES = {
   FOLDER: ['папка', 'folder', 'dir', 'п', 'ф'],
@@ -531,3 +579,4 @@ export function detectAllItSectors(text: string): ItSectorDefinition[] {
 
 
 
+export * from './testPrefixes';

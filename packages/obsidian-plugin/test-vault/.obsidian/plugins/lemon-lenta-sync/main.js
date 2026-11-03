@@ -246,7 +246,7 @@ function custom(check, _params = {}, fatal) {
     });
   return ZodAny.create();
 }
-var __defProp2, __export2, NoteType, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_POINT_NOTE, DEFAULT_NOTE_TEMPLATES, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, pinStatusSchema, createWorkspaceSchema, updateWorkspaceSchema, createTrackSchema, updateTrackSchema, createPinSchema, updatePinSchema, batchLinkNotesSchema, _a, LentaFrontmatterUtil;
+var __defProp2, __export2, NoteType, NOTE_TEMPLATE_POINT_NOTE, NOTE_TEMPLATE_TRENDS_TODAY, NOTE_TEMPLATE_TREND_PERIOD, NOTE_TEMPLATE_EVENT, NOTE_TEMPLATE_DONE, NOTE_TEMPLATE_RELEASE, NOTE_TEMPLATE_PODCAST, DEFAULT_NOTE_TEMPLATES, NOTE_TEMPLATES_LIST, IT_SECTOR_REGISTRY, IT_SECTOR_LIST, external_exports, util, objectUtil, ZodParsedType, getParsedType, ZodIssueCode, quotelessJson, ZodError, errorMap, en_default, overrideErrorMap, makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync, errorUtil, ParseInputLazyPath, handleResult, ZodType, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString, ZodNumber, ZodBigInt, ZodBoolean, ZodDate, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodArray, ZodObject, ZodUnion, getDiscriminator, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral, ZodEnum, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional, ZodNullable, ZodDefault, ZodCatch, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER, noteTypeSchema, createNoteLinkSchema, createNoteSchema, updateNoteSchema, queryNotesSchema, createFeedSchema, createFolderSchema, createTaxonomySchema, frontmatterSchema, pinStatusSchema, createWorkspaceSchema, updateWorkspaceSchema, createTrackSchema, updateTrackSchema, createPinSchema, updatePinSchema, batchLinkNotesSchema, _a, LentaFrontmatterUtil;
 var init_dist = __esm({
   "../shared/dist/index.mjs"() {
     "use strict";
@@ -263,12 +263,27 @@ var init_dist = __esm({
       MENTION: "MENTION",
       DONE: "DONE"
     };
+    NOTE_TEMPLATE_POINT_NOTE = "point_note";
     NOTE_TEMPLATE_TRENDS_TODAY = "trends_today";
     NOTE_TEMPLATE_TREND_PERIOD = "trend_period";
     NOTE_TEMPLATE_EVENT = "event";
     NOTE_TEMPLATE_DONE = "done";
-    NOTE_TEMPLATE_POINT_NOTE = "point_note";
+    NOTE_TEMPLATE_RELEASE = "release";
+    NOTE_TEMPLATE_PODCAST = "podcast";
     DEFAULT_NOTE_TEMPLATES = {
+      [NOTE_TEMPLATE_POINT_NOTE]: {
+        id: NOTE_TEMPLATE_POINT_NOTE,
+        name: "\u0411\u044B\u0441\u0442\u0440\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430",
+        aliases: ["\u0437\u0430\u043C\u0435\u0442\u043A\u0430", "\u043C\u044B\u0441\u043B\u044C", "note", "point", "\u0444\u0430\u043A\u0442", "/note", "!note"],
+        defaultType: NoteType.SINGLE,
+        defaultDisplayType: "Point Note",
+        defaultFolder: "Notes",
+        defaultHashtags: [],
+        icon: "file-text",
+        description: "\u0411\u044B\u0441\u0442\u0440\u0430\u044F \u043B\u0430\u043A\u043E\u043D\u0438\u0447\u043D\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430 \u0432 \u043B\u0438\u0447\u043D\u044B\u0439 \u0436\u0443\u0440\u043D\u0430\u043B",
+        defaultMarkdown: "",
+        defaultPrivacy: "private"
+      },
       [NOTE_TEMPLATE_TRENDS_TODAY]: {
         id: NOTE_TEMPLATE_TRENDS_TODAY,
         name: "\u0422\u0440\u0435\u043D\u0434\u044B \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
@@ -291,7 +306,10 @@ var init_dist = __esm({
         defaultDisplayType: "Trend",
         defaultFolder: "Trends",
         defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
-        icon: "trending-up"
+        icon: "trending-up",
+        description: "\u0421\u043F\u0438\u0441\u043E\u043A \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0445 \u0442\u0440\u0435\u043D\u0434\u043E\u0432 \u0434\u043D\u044F \u0441 \u043E\u0446\u0435\u043D\u043A\u043E\u0439 \u0440\u0435\u0437\u043E\u043D\u0430\u043D\u0441\u0430",
+        defaultMarkdown: "## \u{1F4C8} \u0422\u0440\u0435\u043D\u0434\u044B \u0434\u043D\u044F\n- ...",
+        defaultPrivacy: "private"
       },
       [NOTE_TEMPLATE_TREND_PERIOD]: {
         id: NOTE_TEMPLATE_TREND_PERIOD,
@@ -315,7 +333,10 @@ var init_dist = __esm({
         defaultDisplayType: "Trend",
         defaultFolder: "Trends",
         defaultHashtags: ["\u0442\u0440\u0435\u043D\u0434"],
-        icon: "trending-up"
+        icon: "trending-up",
+        description: "\u0414\u043E\u043B\u0433\u043E\u0441\u0440\u043E\u0447\u043D\u044B\u0439 \u0442\u0440\u0435\u043D\u0434, \u043C\u0430\u0440\u0430\u0444\u043E\u043D \u0438\u043B\u0438 \u0441\u0435\u0437\u043E\u043D\u043D\u044B\u0439 \u043F\u0435\u0440\u0438\u043E\u0434",
+        defaultMarkdown: "## \u23F3 \u041F\u0435\u0440\u0438\u043E\u0434 \u0442\u0440\u0435\u043D\u0434\u0430\n- \u041E\u0441\u043D\u043E\u0432\u043D\u044B\u0435 \u0441\u043E\u0431\u044B\u0442\u0438\u044F:\n- \u0417\u0430\u043C\u0435\u0442\u043A\u0438:",
+        defaultPrivacy: "private"
       },
       [NOTE_TEMPLATE_EVENT]: {
         id: NOTE_TEMPLATE_EVENT,
@@ -335,11 +356,14 @@ var init_dist = __esm({
         defaultDisplayType: "Scheduled Event",
         defaultFolder: "Notes",
         defaultHashtags: ["\u0441\u043E\u0431\u044B\u0442\u0438\u0435"],
-        icon: "calendar"
+        icon: "calendar",
+        description: "\u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u0441\u043E\u0431\u044B\u0442\u0438\u0435, \u043C\u0438\u0442\u0430\u043F \u0438\u043B\u0438 \u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0446\u0438\u044F",
+        defaultMarkdown: "## \u{1F4C5} \u041E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0441\u043E\u0431\u044B\u0442\u0438\u044F\n- \u0412\u0440\u0435\u043C\u044F:\n- \u041C\u0435\u0441\u0442\u043E / \u0421\u0441\u044B\u043B\u043A\u0430:\n- \u041F\u043E\u0432\u0435\u0441\u0442\u043A\u0430:",
+        defaultPrivacy: "private"
       },
       [NOTE_TEMPLATE_DONE]: {
         id: NOTE_TEMPLATE_DONE,
-        name: "\u0421\u0434\u0435\u043B\u0430\u043D\u043E",
+        name: "\u0421\u0434\u0435\u043B\u0430\u043D\u043E (DONE)",
         aliases: [
           "\u0441\u0434\u0435\u043B\u0430\u043D\u043E",
           "\u0433\u043E\u0442\u043E\u0432\u043E",
@@ -355,19 +379,39 @@ var init_dist = __esm({
         defaultDisplayType: "Done",
         defaultFolder: "Notes",
         defaultHashtags: ["done"],
-        icon: "check-circle"
+        icon: "check-circle",
+        description: "\u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u043D\u0430\u044F \u0446\u0435\u043B\u044C, \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u0438\u043B\u0438 \u0437\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u043C\u0430\u0439\u043B\u0441\u0442\u043E\u0443\u043D",
+        defaultMarkdown: "## \u2705 \u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\n- \u0427\u0442\u043E \u0431\u044B\u043B\u043E \u0441\u0434\u0435\u043B\u0430\u043D\u043E:\n- \u041A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u043C\u0435\u0442\u0440\u0438\u043A\u0438:",
+        defaultPrivacy: "private"
       },
-      [NOTE_TEMPLATE_POINT_NOTE]: {
-        id: NOTE_TEMPLATE_POINT_NOTE,
-        name: "\u0417\u0430\u043C\u0435\u0442\u043A\u0430",
-        aliases: ["\u0437\u0430\u043C\u0435\u0442\u043A\u0430", "\u043C\u044B\u0441\u043B\u044C", "note", "point", "\u0444\u0430\u043A\u0442", "/note", "!note"],
+      [NOTE_TEMPLATE_RELEASE]: {
+        id: NOTE_TEMPLATE_RELEASE,
+        name: "Changelog / \u0420\u0435\u043B\u0438\u0437",
+        aliases: ["\u0440\u0435\u043B\u0438\u0437", "release", "changelog", "\u043F\u0430\u0442\u0447", "\u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435", "/release"],
         defaultType: NoteType.SINGLE,
-        defaultDisplayType: "Point Note",
-        defaultFolder: "Notes",
-        defaultHashtags: [],
-        icon: "file-text"
+        defaultDisplayType: "Release",
+        defaultFolder: "Releases",
+        defaultHashtags: ["changelog", "release"],
+        icon: "rocket",
+        description: "\u0421\u0432\u043E\u0434\u043A\u0430 \u0440\u0435\u043B\u0438\u0437\u0430, \u043F\u0430\u0442\u0447-\u043D\u043E\u0443\u0442 \u0438\u043B\u0438 \u0430\u0440\u0445\u0438\u0442\u0435\u043A\u0442\u0443\u0440\u043D\u044B\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F",
+        defaultMarkdown: "## \u{1F680} \u0421\u0432\u043E\u0434\u043A\u0430 \u0440\u0435\u043B\u0438\u0437\u0430\n\n### \u2728 \u041A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u043D\u043E\u0432\u043E\u0432\u0432\u0435\u0434\u0435\u043D\u0438\u044F\n- ...\n\n### \u{1F41B} \u0418\u0441\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u044F\n- ...",
+        defaultPrivacy: "private"
+      },
+      [NOTE_TEMPLATE_PODCAST]: {
+        id: NOTE_TEMPLATE_PODCAST,
+        name: "IT / AI \u0414\u0430\u0439\u0434\u0436\u0435\u0441\u0442",
+        aliases: ["\u043F\u043E\u0434\u043A\u0430\u0441\u0442", "podcast", "digest", "\u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442", "/podcast"],
+        defaultType: NoteType.PERIOD,
+        defaultDisplayType: "Digest",
+        defaultFolder: "Digests",
+        defaultHashtags: ["ai", "it-digest"],
+        icon: "radio",
+        description: "\u0428\u043E\u0443-\u043D\u043E\u0443\u0442\u044B \u043F\u043E\u0434\u043A\u0430\u0441\u0442\u0430 \u0438\u043B\u0438 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442",
+        defaultMarkdown: "## \u{1F399}\uFE0F \u041E \u0432\u044B\u043F\u0443\u0441\u043A\u0435\n- \u0413\u043B\u0430\u0432\u043D\u044B\u0435 \u0442\u0435\u043C\u044B:\n- \u0422\u0430\u0439\u043C\u043A\u043E\u0434\u044B:\n- \u041A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0441\u0441\u044B\u043B\u043A\u0438:",
+        defaultPrivacy: "private"
       }
     };
+    NOTE_TEMPLATES_LIST = Object.values(DEFAULT_NOTE_TEMPLATES);
     IT_SECTOR_REGISTRY = {
       ai: {
         id: "ai",
@@ -4339,6 +4383,7 @@ var init_dist = __esm({
       title: external_exports.string().min(1, "Title is required").max(500),
       description: external_exports.string().optional().nullable(),
       type: noteTypeSchema.default("SINGLE"),
+      privacy: external_exports.enum(["public", "private"]).optional().default("private"),
       startDate: external_exports.string().datetime().or(external_exports.string().min(1)),
       endDate: external_exports.string().datetime().or(external_exports.string().min(1)).optional().nullable(),
       sourceLink: external_exports.string().url().optional().nullable(),
@@ -4360,6 +4405,7 @@ var init_dist = __esm({
     queryNotesSchema = external_exports.object({
       feedId: external_exports.string().optional(),
       feedSlug: external_exports.string().optional(),
+      privacy: external_exports.enum(["public", "private", "all"]).optional(),
       type: noteTypeSchema.optional(),
       author: external_exports.string().optional(),
       curator: external_exports.string().optional(),

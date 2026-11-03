@@ -1,4 +1,5 @@
 import { NoteType } from '../constants';
+import { NotePrivacy } from './index';
 
 export type CommandType =
   | 'CREATE_NOTE'
@@ -15,6 +16,7 @@ export interface CreateNotePayload {
   title: string;
   description?: string;
   type?: NoteType;
+  privacy?: NotePrivacy;
   startDate?: string;
   endDate?: string | null;
   feedSlug?: string;

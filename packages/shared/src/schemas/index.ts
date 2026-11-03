@@ -22,6 +22,7 @@ export const createNoteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
   description: z.string().optional().nullable(),
   type: noteTypeSchema.default('SINGLE'),
+  privacy: z.enum(['public', 'private']).optional().default('private'),
   startDate: z.string().datetime().or(z.string().min(1)),
   endDate: z.string().datetime().or(z.string().min(1)).optional().nullable(),
   sourceLink: z.string().url().optional().nullable(),
@@ -45,6 +46,7 @@ export const updateNoteSchema = createNoteSchema.partial().extend({
 export const queryNotesSchema = z.object({
   feedId: z.string().optional(),
   feedSlug: z.string().optional(),
+  privacy: z.enum(['public', 'private', 'all']).optional(),
   type: noteTypeSchema.optional(),
   author: z.string().optional(),
   curator: z.string().optional(),
