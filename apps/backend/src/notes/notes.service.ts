@@ -4,7 +4,10 @@ import {
   ForbiddenException,
   Logger,
   OnModuleInit,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotePublishedEvent } from '../events';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
@@ -38,6 +41,7 @@ export class NotesService implements OnModuleInit {
     private notesShareService: NotesShareService,
     private notesCacheService: NotesCacheService,
     private notesQueryBuilder: NotesQueryBuilder,
+    @Optional() private eventEmitter?: EventEmitter2,
   ) {}
 
   async onModuleInit() {
@@ -202,6 +206,21 @@ export class NotesService implements OnModuleInit {
     });
 
     this.logger.log(`Created note "${note.title}" [id: ${note.id}]`);
+    if (this.eventEmitter) {
+      this.eventEmitter.emit(
+        'note.published',
+        new NotePublishedEvent(
+          note.id,
+          note.title,
+          note.folderPath,
+          note.status,
+          note.publishAt,
+          note.feedId,
+          true,
+          note,
+        ),
+      );
+    }
     return note;
   }
 
@@ -456,6 +475,21 @@ export class NotesService implements OnModuleInit {
     });
 
     this.logger.log(`Updated note "${updatedNote.title}" [id: ${updatedNote.id}]`);
+    if (this.eventEmitter) {
+      this.eventEmitter.emit(
+        'note.published',
+        new NotePublishedEvent(
+          updatedNote.id,
+          updatedNote.title,
+          updatedNote.folderPath,
+          updatedNote.status,
+          updatedNote.publishAt,
+          updatedNote.feedId,
+          false,
+          updatedNote,
+        ),
+      );
+    }
     return updatedNote;
   }
 
@@ -467,6 +501,9 @@ export class NotesService implements OnModuleInit {
       data: { deletedAt: new Date() },
     });
     this.logger.log(`Soft-deleted note [id: ${id}]`);
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('note.deleted', { noteId: id });
+    }
     return deleted;
   }
 
