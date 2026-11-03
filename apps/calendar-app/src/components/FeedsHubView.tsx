@@ -29,7 +29,7 @@ export interface FeedsHubViewProps {
 }
 
 /**
- * FeedsHubView renders the dedicated microfrontend feed stream (@lenta/feed-app :5175).
+ * FeedsHubView renders the dedicated microfrontend feed stream (@lenta/feed-app :5180).
  * Synchronizes 3-level route state and modal overlays with the calendar host URL.
  */
 export const FeedsHubView: React.FC<FeedsHubViewProps> = ({

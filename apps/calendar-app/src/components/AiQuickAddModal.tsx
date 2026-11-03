@@ -111,7 +111,12 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       if (parsedCards.length === 0) {
         setErrorMessage('Не удалось выделить карточки. Попробуйте другой формат или список.');
       } else {
-        setCards(parsedCards.map((c, i) => ({ ...c, selected: true, tempId: c.tempId || `card-${i + 1}` })));
+        setCards(parsedCards.map((c, i) => ({
+          ...c,
+          privacy: (c.privacy as any) || 'private',
+          selected: true,
+          tempId: c.tempId || `card-${i + 1}`,
+        })));
       }
     } catch (err: any) {
       setErrorMessage(`Ошибка распознавания: ${err?.message || err}`);
@@ -163,6 +168,7 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       hashtags: ['тренд'],
       icon: 'trending-up',
       description: '',
+      privacy: 'private',
       selected: true,
     };
     setCards((prev) => [...prev, newCard]);
@@ -178,6 +184,7 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       const payload: CreateNoteInput[] = selectedCards.map((c) => ({
         title: c.title.trim(),
         type: c.type as NoteType,
+        privacy: (c.privacy as any) || 'private',
         startDate: c.startDate.includes('T') ? c.startDate : new Date(`${c.startDate}T12:00:00.000Z`).toISOString(),
         endDate: c.endDate ? (c.endDate.includes('T') ? c.endDate : new Date(`${c.endDate}T23:59:59.000Z`).toISOString()) : undefined,
         folder: c.folder || 'Notes',
@@ -418,6 +425,23 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
                               />
                             </div>
                           )}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateCard(card.tempId, {
+                                privacy: card.privacy === 'public' ? 'private' : 'public',
+                              })
+                            }
+                            className={`flex items-center gap-1 border rounded px-2 py-0.5 text-[10px] font-mono transition-colors cursor-pointer ${
+                              card.privacy === 'public'
+                                ? 'bg-blue-950/40 text-blue-300 border-blue-500/50'
+                                : 'bg-amber-950/40 text-amber-300 border-amber-500/50'
+                            }`}
+                            title="Переключить контур приватности карточки (по умолчанию Private)"
+                          >
+                            {card.privacy === 'public' ? '🌐 Public' : '🔒 Private'}
+                          </button>
 
                           <div className="flex items-center gap-1 bg-[#121414] border border-[#2b2e2e] rounded px-2 py-0.5">
                             <Folder className="w-3 h-3 text-[#808070]" />

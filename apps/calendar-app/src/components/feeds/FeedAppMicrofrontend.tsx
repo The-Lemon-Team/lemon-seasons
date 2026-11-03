@@ -65,8 +65,8 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   const { user, token } = useAuth();
   const { keys } = useUserKeys();
 
-  // In local browser, feed-app runs on 5175
-  const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175';
+  // In local browser, feed-app runs on 5180 (previously 5175)
+  const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5180';
 
   // Last route synchronized between iframe and host to prevent redundant re-renders or infinite loops
   const lastReportedRouteRef = useRef<string>(initialRoute);
@@ -249,7 +249,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
         <div className="flex items-center gap-2 text-slate-300">
           <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
           <span className="font-semibold text-white">Микрофронтенд: Lenta Feed App</span>
-          <span className="text-[#8292a2] hidden sm:inline">• :5175</span>
+          <span className="text-[#8292a2] hidden sm:inline">• :5180</span>
 
           {isAuthSynced && user && (
             <span

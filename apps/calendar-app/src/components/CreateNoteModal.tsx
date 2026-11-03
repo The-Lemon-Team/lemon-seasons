@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppMode } from '../context/AppModeContext';
-import { NoteType } from '@lenta/shared';
+import { NoteType, NotePrivacy, NoteTemplateDefinition } from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
 import { useFoldersContext } from '../context/FoldersContext';
 import { Folder as FolderType } from '@lenta/shared';
+import { NotePrivacySelector } from './notes/NotePrivacySelector';
+import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
 import {
   X,
   Calendar,
@@ -56,6 +58,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<NoteType>('SINGLE');
+  const [privacy, setPrivacy] = useState<NotePrivacy>('private');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState('');
   const [feedId, setFeedId] = useState('');
@@ -67,12 +71,38 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Apply template helper
+  const handleApplyTemplate = (tpl: NoteTemplateDefinition) => {
+    setActiveTemplateId(tpl.id);
+    setType(tpl.defaultType);
+    if (tpl.defaultFolder && (!folderPath || folderPath === 'Notes' || folderPath === 'Trends')) {
+      setFolderPath(tpl.defaultFolder);
+      setIsCustomFolder(false);
+    }
+    if (tpl.defaultHashtags && tpl.defaultHashtags.length > 0) {
+      setHashtagsInput((prev) => {
+        const existing = prev
+          .split(/[,\s]+/)
+          .map((h) => h.trim().replace(/^#/, ''))
+          .filter(Boolean);
+        const combined = Array.from(new Set([...existing, ...tpl.defaultHashtags]));
+        return combined.map((h) => `#${h}`).join(' ');
+      });
+    }
+    if (tpl.defaultMarkdown && !description.trim()) {
+      setDescription(tpl.defaultMarkdown);
+    }
+    setPrivacy(tpl.defaultPrivacy || 'private');
+  };
+
   // Set initial folder path when opened or prop changes
   React.useEffect(() => {
     if (isOpen) {
       setFolderPath(initialFolderPath || '');
       setIsCustomFolder(false);
       setErrorMessage(null);
+      setPrivacy('private');
+      setActiveTemplateId(null);
     }
   }, [initialFolderPath, isOpen]);
 
@@ -108,6 +138,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
         author: author.trim() || undefined,
+        privacy,
       });
 
       // Invalidate queries so that the newly created note is immediately displayed on the calendar & folder views
@@ -123,6 +154,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         setHashtagsInput('');
         setFolderPath('');
         setAuthor('');
+        setPrivacy('private');
+        setActiveTemplateId(null);
         setIsCustomFolder(false);
         onSuccess?.();
         onClose();
@@ -178,6 +211,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             </div>
           ) : (
             <>
+              {/* Note Templates Toolbar */}
+              <NoteTemplateSelector
+                onSelectTemplate={handleApplyTemplate}
+                activeTemplateId={activeTemplateId}
+              />
+
               {/* Title */}
               <div>
                 <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1">
@@ -193,6 +232,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
                 />
               </div>
+
+              {/* Privacy Contour Selector */}
+              <NotePrivacySelector
+                value={privacy}
+                onChange={setPrivacy}
+              />
 
               {/* Grid 1: Type & Feed */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

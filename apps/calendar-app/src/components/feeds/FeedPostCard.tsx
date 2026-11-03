@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Eye,
   Tag,
   Clock,
   Flame,
@@ -24,13 +23,6 @@ export interface FeedPostCardProps {
   note?: Note;
   onSelectNote?: (note: Note) => void;
   className?: string;
-}
-
-function formatViews(score?: number | null): string {
-  if (!score) return '1.2K';
-  if (score < 1000) return `${score}`;
-  if (score < 1000000) return `${(score / 1000).toFixed(1)}K`;
-  return `${(score / 1000000).toFixed(1)}M`;
 }
 
 function getAvatarContent(note: Note, categoryBadge: { emoji: string }): string {
@@ -217,17 +209,9 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
         )}
       </div>
 
-      {/* 4. Footer: Views, Resonance, Tags & Open Detail CTA */}
+      {/* 4. Footer: Resonance, Tags & Open Detail CTA */}
       <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[11px] text-slate-500 dark:text-[#708499] flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          {/* Views count */}
-          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-            <Eye className="w-3.5 h-3.5 opacity-80" />
-            <span className="font-mono text-xs font-semibold">
-              {formatViews(resonance)}
-            </span>
-          </div>
-
           {/* High Resonance Indicator */}
           {isHighResonance && (
             <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold text-[10px] bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-300/70 dark:border-amber-800/40">
