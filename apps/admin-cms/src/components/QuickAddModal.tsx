@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { message, Modal } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
-import { NoteType, FolderInputItem } from '../types';
+import { NoteType, FolderInputItem, NotePrivacy } from '../types';
+import { NoteTemplateDefinition } from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
 import { AppSelect } from './common/AppSelect';
+import { NotePrivacySelector } from './notes/NotePrivacySelector';
+import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
 import { Radio } from 'lucide-react';
 import { useAdminI18n } from '../i18n';
 import { LemonLogo } from './LemonLogo';
@@ -30,6 +33,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
   const [title, setTitle] = useState('');
   const [feedId, setFeedId] = useState('');
   const [type, setType] = useState<NoteType>('SINGLE');
+  const [privacy, setPrivacy] = useState<NotePrivacy>('private');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split('T')[0],
   );
@@ -65,12 +70,30 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
     },
   });
 
+  // Шаблоны заметок
+  const handleApplyTemplate = (tpl: NoteTemplateDefinition) => {
+    setActiveTemplateId(tpl.id);
+    setType(tpl.defaultType as NoteType);
+    if (tpl.defaultFolder && folders.length === 0) {
+      setFolders([{ path: tpl.defaultFolder, isPrimary: true, order: 0 }]);
+    }
+    if (tpl.defaultHashtags && tpl.defaultHashtags.length > 0) {
+      setHashtags((prev) => Array.from(new Set([...prev, ...tpl.defaultHashtags])));
+    }
+    if (tpl.defaultMarkdown && !description.trim()) {
+      setDescription(tpl.defaultMarkdown);
+    }
+    setPrivacy((tpl.defaultPrivacy as NotePrivacy) || 'private');
+  };
+
   // Инициализация при открытии модалки
   useEffect(() => {
     if (open) {
       setTitle('');
       setFeedId(initialFeedId || '');
       setType('SINGLE');
+      setPrivacy('private');
+      setActiveTemplateId(null);
       setStartDate(new Date().toISOString().split('T')[0]);
       setEndDate('');
       setFolders([]);
@@ -93,6 +116,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
         feedId: feedId ? feedId : undefined,
         title: title.trim(),
         type,
+        privacy,
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         description: description.trim() || undefined,
@@ -107,6 +131,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       setEndDate('');
       setFolders([]);
       setHashtags([]);
+      setPrivacy('private');
+      setActiveTemplateId(null);
       onClose();
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Error');
@@ -155,6 +181,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
 
           {/* Form Body */}
           <form onSubmit={handleSubmit} className="p-4 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            {/* Note Templates Selector */}
+            <NoteTemplateSelector
+              onSelectTemplate={handleApplyTemplate}
+              activeTemplateId={activeTemplateId}
+            />
+
             {/* Macro / Presets Strip */}
             <QuickAddMacroBar
               macros={macros}
@@ -212,6 +244,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
                 className="w-full bg-control border border-tile-border rounded px-2.5 py-1 text-text-main font-sans text-xs placeholder:text-text-muted/60 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
               />
             </div>
+
+            {/* Privacy Selector */}
+            <NotePrivacySelector
+              value={privacy}
+              onChange={setPrivacy}
+            />
 
             {/* Date Range */}
             <div className="space-y-1">

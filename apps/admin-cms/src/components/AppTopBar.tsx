@@ -117,7 +117,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-1.5 h-6.5 px-2 rounded-lg text-[10px] font-mono font-semibold bg-sky-500/10 border border-sky-500/25 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all cursor-pointer shadow-xs"
-          title="Открыть умную ленту новостей Lemon Seasons (порт 5175)"
+          title="Открыть умную ленту новостей Lemon Seasons (порт 5180)"
         >
           <Radio className="w-3 h-3 shrink-0 text-sky-500" />
           <span className="hidden sm:inline">{t.toFeed}</span>

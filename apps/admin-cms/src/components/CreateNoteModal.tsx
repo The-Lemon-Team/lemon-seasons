@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, message } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
-import { NoteType, NoteStatus, FolderInputItem, Note } from '../types';
+import { NoteType, NoteStatus, FolderInputItem, Note, NotePrivacy } from '../types';
+import { NoteTemplateDefinition } from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
 import { AppSelect } from './common/AppSelect';
+import { NotePrivacySelector } from './notes/NotePrivacySelector';
+import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
 import { useAdminI18n } from '../i18n';
 import {
   Calendar,
@@ -49,6 +52,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [feedId, setFeedId] = useState('');
   const [type, setType] = useState<NoteType>('SINGLE');
   const [status, setStatus] = useState<NoteStatus>('PUBLISHED');
+  const [privacy, setPrivacy] = useState<NotePrivacy>('private');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [assignedFolders, setAssignedFolders] = useState<FolderInputItem[]>([]);
@@ -58,6 +63,22 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [author, setAuthor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Template apply helper
+  const handleApplyTemplate = (tpl: NoteTemplateDefinition) => {
+    setActiveTemplateId(tpl.id);
+    setType(tpl.defaultType as NoteType);
+    if (tpl.defaultFolder && assignedFolders.length === 0) {
+      setAssignedFolders([{ path: tpl.defaultFolder, isPrimary: true, order: 0 }]);
+    }
+    if (tpl.defaultHashtags && tpl.defaultHashtags.length > 0) {
+      setHashtags((prev) => Array.from(new Set([...prev, ...tpl.defaultHashtags])));
+    }
+    if (tpl.defaultMarkdown && !description.trim()) {
+      setDescription(tpl.defaultMarkdown);
+    }
+    setPrivacy((tpl.defaultPrivacy as NotePrivacy) || 'private');
+  };
+
   // Initialize or reset form when modal opens or initialFolderPath changes
   useEffect(() => {
     if (open) {
@@ -65,6 +86,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setDescription('');
       setType('SINGLE');
       setStatus('PUBLISHED');
+      setPrivacy('private');
+      setActiveTemplateId(null);
       setEndDate('');
       setSourceLink('');
       setAuthor('');
@@ -108,6 +131,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         feedId: feedId ? feedId : undefined,
         type,
         status,
+        privacy,
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         description: description.trim() || undefined,
@@ -214,6 +238,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
         {/* Form Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-4">
+          {/* Templates Toolbar */}
+          <NoteTemplateSelector
+            onSelectTemplate={handleApplyTemplate}
+            activeTemplateId={activeTemplateId}
+          />
+
           {/* Title */}
           <div>
             <label className="block text-xs font-mono text-on-surface-variant mb-1">
@@ -229,6 +259,12 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-sm text-on-surface placeholder-outline outline-none"
             />
           </div>
+
+          {/* Privacy Contour Selector */}
+          <NotePrivacySelector
+            value={privacy}
+            onChange={setPrivacy}
+          />
 
           {/* Status, Type & Feed Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

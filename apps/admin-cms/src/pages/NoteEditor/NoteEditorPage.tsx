@@ -9,7 +9,8 @@ import {
   useDeleteNote,
 } from '../../api/queries';
 import { notesApi } from '../../api/client';
-import { NoteType, CreateNoteLinkInput, FolderInputItem } from '../../types';
+import { NoteType, CreateNoteLinkInput, FolderInputItem, NotePrivacy } from '../../types';
+import { NoteTemplateDefinition } from '@lenta/shared';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
@@ -19,6 +20,8 @@ import { LinkManager } from '../../components/LinkManager';
 import { HashtagInput } from '../../components/HashtagInput';
 import { FolderSelect } from '../../components/FolderSelect';
 import { AppSelect } from '../../components/common/AppSelect';
+import { NotePrivacySelector } from '../../components/notes/NotePrivacySelector';
+import { NoteTemplateSelector } from '../../components/notes/NoteTemplateSelector';
 import { Radio } from 'lucide-react';
 import { useAdminI18n } from '../../i18n';
 
@@ -42,6 +45,8 @@ export const NoteEditorPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [feedId, setFeedId] = useState('');
   const [type, setType] = useState<NoteType>('SINGLE');
+  const [privacy, setPrivacy] = useState<NotePrivacy>('private');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(
     new Date().toISOString().slice(0, 16),
   );
@@ -58,12 +63,29 @@ export const NoteEditorPage: React.FC = () => {
   const [pendingLinks, setPendingLinks] = useState<CreateNoteLinkInput[]>([]);
   const [pendingSourceIndex, setPendingSourceIndex] = useState(0);
 
+  // Template apply helper
+  const handleApplyTemplate = (tpl: NoteTemplateDefinition) => {
+    setActiveTemplateId(tpl.id);
+    setType(tpl.defaultType as NoteType);
+    if (tpl.defaultFolder && assignedFolders.length === 0) {
+      setAssignedFolders([{ path: tpl.defaultFolder, isPrimary: true, order: 0 }]);
+    }
+    if (tpl.defaultHashtags && tpl.defaultHashtags.length > 0) {
+      setHashtags((prev) => Array.from(new Set([...prev, ...tpl.defaultHashtags])));
+    }
+    if (tpl.defaultMarkdown && !description.trim()) {
+      setDescription(tpl.defaultMarkdown);
+    }
+    setPrivacy((tpl.defaultPrivacy as NotePrivacy) || 'private');
+  };
+
   // Populate data when editing
   useEffect(() => {
     if (note && !isNew) {
       setTitle(note.title);
       setFeedId(note.feedId);
       setType(note.type);
+      setPrivacy(note.privacy || 'private');
       setStartDate(new Date(note.startDate).toISOString().slice(0, 16));
       setEndDate(note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '');
       setIcon(note.icon || '');
@@ -78,6 +100,7 @@ export const NoteEditorPage: React.FC = () => {
         })).filter((item) => Boolean(item.path)) || [],
       );
     } else if (isNew) {
+      setPrivacy('private');
       if (folderParam && assignedFolders.length === 0) {
         setAssignedFolders([{ path: folderParam, isPrimary: true, order: 0 }]);
       }
@@ -96,6 +119,7 @@ export const NoteEditorPage: React.FC = () => {
           feedId: feedId ? feedId : undefined,
           title: title.trim(),
           type,
+          privacy,
           startDate: new Date(startDate).toISOString(),
           endDate: endDate ? new Date(endDate).toISOString() : undefined,
           icon: icon.trim() || undefined,
@@ -137,6 +161,7 @@ export const NoteEditorPage: React.FC = () => {
             feedId: feedId ? feedId : null,
             title: title.trim(),
             type,
+            privacy,
             startDate: new Date(startDate).toISOString(),
             endDate: endDate ? new Date(endDate).toISOString() : undefined,
             icon: icon.trim() || undefined,
@@ -229,6 +254,15 @@ export const NoteEditorPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-3.5">
           {/* Main Content Box */}
           <div className="space-y-3 platform-tile p-3 sm:p-3.5">
+            {/* Note Templates (For new note) */}
+            {isNew && (
+              <NoteTemplateSelector
+                onSelectTemplate={handleApplyTemplate}
+                activeTemplateId={activeTemplateId}
+                className="pb-2 border-b border-tile-border/40"
+              />
+            )}
+
             {/* Note Title */}
             <div className="space-y-1">
               <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
@@ -293,6 +327,12 @@ export const NoteEditorPage: React.FC = () => {
           <h3 className="font-sans font-bold text-xs text-on-surface border-b border-tile-border pb-1.5">
             {t.datesCol}
           </h3>
+
+          {/* Privacy Contour Selector */}
+          <NotePrivacySelector
+            value={privacy}
+            onChange={setPrivacy}
+          />
 
           {/* Target Feed */}
           <div className="space-y-1">

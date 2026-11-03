@@ -18,7 +18,7 @@ export interface SidebarNavItem {
 export const EXTERNAL_APP_URLS = {
   defiChat: import.meta.env.VITE_DEFI_CHAT_URL || 'http://localhost:3000',
   calendarApp: import.meta.env.VITE_CALENDAR_APP_URL || 'http://localhost:5174',
-  feedApp: import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5175',
+  feedApp: import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5180',
 };
 
 export const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
