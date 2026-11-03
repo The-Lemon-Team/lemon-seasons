@@ -217,6 +217,7 @@ export interface IngestionFile {
 
 export interface QueryNotesParams {
   appMode?: AppRuntimeMode;
+  streamSource?: string;
   feedId?: string;
   feedSlug?: string;
   publicFeedId?: string;

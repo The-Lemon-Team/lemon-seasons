@@ -5,12 +5,61 @@ import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
 
+export const STREAM_SOURCE_SLUGS: Record<string, string[]> = {
+  entertainment: [
+    'marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe',
+    'cinema', 'movies', 'tmdb', 'films', 'series',
+    'music', 'soundtrack', 'albums', 'музыка', 'my-music',
+    'gaming', 'games', 'игры',
+  ],
+  'it-dev': [
+    'spark-ai', 'ai-models', 'ai',
+    'spark-habr', 'habr', 'community', 'dev-articles',
+    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
+    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
+    'spark-xakep', 'xakep', 'hacker',
+    'spark-cyber-security', 'cybersec', 'security',
+    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
+  ],
+  dev: [
+    'spark-ai', 'ai-models', 'ai',
+    'spark-habr', 'habr', 'community', 'dev-articles',
+    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
+    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
+    'spark-xakep', 'xakep', 'hacker',
+    'spark-cyber-security', 'cybersec', 'security',
+    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
+  ],
+  holidays: [
+    'russian-holidays', 'russian-official', 'russian-military',
+    'orthodox-holidays', 'christian-holidays',
+    'world-holidays', 'world-religions', 'catholic-holidays', 'islamic-holidays',
+  ],
+  seasons: [
+    'seasons', 'lemon-seasons', 'seasons-hub', 'diary', 'journal',
+  ],
+};
+
 export const LEGACY_FEED_SLUG_ALIASES: Record<string, string[]> = {
   'russian-holidays': ['russian-holidays', 'russian-official', 'russian-military'],
   'christian-holidays': ['christian-holidays', 'orthodox-holidays'],
   'orthodox-holidays': ['christian-holidays', 'orthodox-holidays'],
+  'world-holidays': ['world-holidays', 'world-religions', 'catholic-holidays', 'islamic-holidays'],
   'wiki': ['wiki', 'wiki-history', 'wikipedia'],
   'wiki-history': ['wiki', 'wiki-history', 'wikipedia'],
+  'marvel': ['marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe'],
+  'cinema': ['cinema', 'movies', 'tmdb', 'films', 'series'],
+  'music': ['music', 'soundtrack', 'albums', 'музыка', 'my-music'],
+  'gaming': ['gaming', 'games', 'игры'],
+  'spark-ai': ['spark-ai', 'ai-models', 'ai'],
+  'spark-habr': ['spark-habr', 'habr', 'community', 'dev-articles'],
+  'spark-changelogsfeed': ['spark-changelogsfeed', 'changelogs', 'releases', 'changelog'],
+  'changelogs': ['spark-changelogsfeed', 'changelogs', 'releases', 'changelog'],
+  'spark-notebooklmai': ['spark-notebooklmai', 'notebooklm-ai', 'notebooklm'],
+  'notebooklm': ['spark-notebooklmai', 'notebooklm-ai', 'notebooklm'],
+  'spark-xakep': ['spark-xakep', 'xakep', 'hacker'],
+  'spark-cyber-security': ['spark-cyber-security', 'cybersec', 'security'],
+  'spark-youtube-oneday': ['spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday'],
 };
 
 @Injectable()
@@ -141,6 +190,19 @@ export class NotesQueryBuilder {
         } else {
           andConditions.push({ feed: { slug: feedSlug, deletedAt: null } });
         }
+      }
+    } else if (query.streamSource && query.streamSource !== 'all') {
+      const allowedSlugs = STREAM_SOURCE_SLUGS[query.streamSource];
+      if (allowedSlugs && allowedSlugs.length > 0) {
+        andConditions.push({
+          OR: [
+            { feed: { slug: { in: allowedSlugs }, deletedAt: null } },
+            { publicFeed: { slug: { in: allowedSlugs }, deletedAt: null } },
+            ...allowedSlugs.map((s) => ({
+              folderPath: { contains: s, mode: 'insensitive' as const },
+            })),
+          ],
+        });
       }
     }
 

@@ -29,6 +29,11 @@ export class QueryNotesDto {
   @IsOptional()
   appMode?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by stream source (all, entertainment, it-dev, holidays, seasons)' })
+  @IsString()
+  @IsOptional()
+  streamSource?: string;
+
   @ApiPropertyOptional({ description: 'Filter by note privacy contour (private | public | all)' })
   @IsString()
   @IsOptional()

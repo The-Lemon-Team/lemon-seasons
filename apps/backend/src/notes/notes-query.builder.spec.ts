@@ -101,6 +101,19 @@ describe('NotesQueryBuilder', () => {
       expect(has(and, { feed: { slug: 'whatever', deletedAt: null } })).toBe(true);
     });
 
+    it('scopes by streamSource when no feedId or feedSlug is specified', async () => {
+      const { and } = await build({ streamSource: 'entertainment' }, true);
+      const streamCond = and.find((c) => Array.isArray(c.OR) && c.OR.some((o: any) => o.feed?.slug?.in));
+      expect(streamCond).toBeDefined();
+      expect(streamCond.OR[0].feed.slug.in).toContain('marvel');
+      expect(streamCond.OR[0].feed.slug.in).toContain('cinema');
+    });
+
+    it('prefers explicit feedSlug over streamSource scoping', async () => {
+      const { and } = await build({ streamSource: 'entertainment', feedSlug: 'marvel' }, true);
+      expect(has(and, { feed: { slug: { in: ['marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe'] }, deletedAt: null } })).toBe(true);
+    });
+
     it('feedId takes precedence over feedSlug', async () => {
       const { prisma } = await build({ feedId: 'f1', feedSlug: 's' }, true);
       expect(prisma.feed.findFirst).not.toHaveBeenCalled();
