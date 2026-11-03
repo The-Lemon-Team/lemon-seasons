@@ -5,6 +5,14 @@ import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
 
+export const LEGACY_FEED_SLUG_ALIASES: Record<string, string[]> = {
+  'russian-holidays': ['russian-holidays', 'russian-official', 'russian-military'],
+  'christian-holidays': ['christian-holidays', 'orthodox-holidays'],
+  'orthodox-holidays': ['christian-holidays', 'orthodox-holidays'],
+  'wiki': ['wiki', 'wiki-history', 'wikipedia'],
+  'wiki-history': ['wiki', 'wiki-history', 'wikipedia'],
+};
+
 @Injectable()
 export class NotesQueryBuilder {
   constructor(private readonly prisma: PrismaService) {}
@@ -127,20 +135,12 @@ export class NotesQueryBuilder {
       if (targetFeed) {
         andConditions.push(this.buildFeedCondition(targetFeed));
       } else {
-        const legacySlugFilter: Prisma.NoteWhereInput =
-          feedSlug === 'russian-holidays'
-            ? {
-                feed: {
-                  slug: { in: ['russian-holidays', 'russian-official', 'russian-military'] },
-                  deletedAt: null,
-                },
-              }
-            : feedSlug === 'christian-holidays' || feedSlug === 'orthodox-holidays'
-            ? { feed: { slug: { in: ['christian-holidays', 'orthodox-holidays'] }, deletedAt: null } }
-            : feedSlug === 'wiki' || feedSlug === 'wiki-history'
-            ? { feed: { slug: { in: ['wiki', 'wiki-history', 'wikipedia'] }, deletedAt: null } }
-            : { feed: { slug: feedSlug, deletedAt: null } };
-        andConditions.push(legacySlugFilter);
+        const matchingSlugs = LEGACY_FEED_SLUG_ALIASES[feedSlug];
+        if (matchingSlugs) {
+          andConditions.push({ feed: { slug: { in: matchingSlugs }, deletedAt: null } });
+        } else {
+          andConditions.push({ feed: { slug: feedSlug, deletedAt: null } });
+        }
       }
     }
 

@@ -31,7 +31,6 @@ export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   sourceLink: true,
   sourceType: true,
   externalId: true,
-  rawContent: true,
   summary: true,
   metadata: true,
   processingStatus: true,

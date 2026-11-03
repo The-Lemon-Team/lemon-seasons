@@ -75,13 +75,6 @@ export class NotesService implements OnModuleInit {
     }
   }
 
-  /**
-   * @deprecated Taxonomy tags are retired in favor of Folders and Hashtags.
-   */
-  private async resolveTagIds(_tagIdentifiers?: string[]): Promise<string[]> {
-    return [];
-  }
-
   async create(createNoteDto: CreateNoteDto) {
     this.notesCacheService.invalidateAll();
 
@@ -242,7 +235,10 @@ export class NotesService implements OnModuleInit {
       return cached;
     }
 
-    const { limit = 50, offset = 0 } = query;
+    const numLimit = Number(query.limit);
+    const safeLimit = Number.isFinite(numLimit) ? Math.max(1, Math.min(numLimit, 500)) : 50;
+    const numOffset = Number(query.offset);
+    const safeOffset = Number.isFinite(numOffset) ? Math.max(0, numOffset) : 0;
     const where = await this.notesQueryBuilder.buildWhereClause(query, isAdmin);
     const orderBy = this.notesQueryBuilder.buildOrderBy(query);
 
@@ -251,8 +247,8 @@ export class NotesService implements OnModuleInit {
       this.prisma.note.count({ where }),
       this.prisma.note.findMany({
         where,
-        take: Number(limit),
-        skip: Number(offset),
+        take: safeLimit,
+        skip: safeOffset,
         orderBy,
         select: NOTE_SELECT_FIELDS,
       }),
@@ -260,17 +256,25 @@ export class NotesService implements OnModuleInit {
 
     const queryDuration = Date.now() - queryStartTime;
     if (queryDuration > 200) {
-      this.logger.warn(`Slow notes query (${queryDuration}ms) for feedSlug=${query.feedSlug || 'all'}, limit=${limit}, total=${total}`);
+      this.logger.warn(`Slow notes query (${queryDuration}ms) for feedSlug=${query.feedSlug || 'all'}, limit=${safeLimit}, total=${total}`);
     }
+
+    const cleanedItems = items.map((item) => {
+      if (item.metadata && (item.metadata as any).rawRelatedSection) {
+        const { rawRelatedSection, ...restMeta } = item.metadata as any;
+        return { ...item, metadata: restMeta };
+      }
+      return item;
+    });
 
     const result = {
       total,
-      limit: Number(limit),
-      offset: Number(offset),
-      items,
+      limit: safeLimit,
+      offset: safeOffset,
+      items: cleanedItems,
     };
 
-    this.notesCacheService.set(cacheKey, result);
+    this.notesCacheService.set(cacheKey, result, 60_000);
     return result;
   }
 

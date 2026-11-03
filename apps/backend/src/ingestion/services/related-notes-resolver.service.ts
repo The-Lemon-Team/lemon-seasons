@@ -2,6 +2,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RelatedNoteItem, NoteType, LentaFrontmatterUtil } from '@lenta/shared';
 
+export interface NormalizedPoolItem {
+  id: string;
+  title: string;
+  type: NoteType | string;
+  startDate: Date | string;
+  icon: string | null;
+  author: string | null;
+  metadata: any;
+  externalId: string | null;
+  normTitle: string;
+  normFile: string;
+  titleWords: Set<string>;
+}
+
 @Injectable()
 export class RelatedNotesResolverService {
   private readonly logger = new Logger(RelatedNotesResolverService.name);
@@ -18,7 +32,7 @@ export class RelatedNotesResolverService {
       .replace(/^\d{2}\.\d{2}\.\d{2,4}\s*[-_—–]?\s*/, '')
       .replace(/^\d{4}-\d{2}-\d{2}\s*[-_—–]?\s*/, '')
       .replace(/\.md$/i, '')
-      .replace(/[\s\-_—–\.:,()\[\]«»""'']/g, ' ')
+      .replace(/[\s\-_—–\.:,()\[\]«»""''!?]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -98,6 +112,23 @@ export class RelatedNotesResolverService {
     let resolvedCount = 0;
     let resolvedParentId: string | undefined = undefined;
 
+    // Pre-normalize pool once to eliminate tens of millions of repetitive regex executions
+    const normalizedPool: NormalizedPoolItem[] = (pool as any)._isNormalized
+      ? (pool as NormalizedPoolItem[])
+      : pool.map((other) => {
+          const normTitle = this.normalize(other.title);
+          const otherMeta = (other.metadata as any) || {};
+          const otherFile = otherMeta.fileName || '';
+          const normFile = this.normalize(otherFile);
+          const titleWords = new Set(normTitle.split(' ').filter((w) => w.length > 3));
+          return {
+            ...other,
+            normTitle,
+            normFile,
+            titleWords,
+          };
+        });
+
     const updatedItems: RelatedNoteItem[] = items.map((item) => {
       const link = item.raw || item.cleanTitle;
       const normLink = this.normalize(link);
@@ -105,12 +136,9 @@ export class RelatedNotesResolverService {
 
       // Vault doc guard: only match if target specifically contains '00' or 'источники анонсов'
       if (isVaultDoc) {
-        const vaultTarget = pool.find((other) => {
+        const vaultTarget = normalizedPool.find((other) => {
           if (other.id === note.id) return false;
-          const otherNormTitle = this.normalize(other.title);
-          const otherFile = other.metadata?.fileName || '';
-          const otherNormFile = this.normalize(otherFile);
-          return otherNormTitle.includes('00') || otherNormFile.includes('00') || otherNormTitle.includes('реестр источников');
+          return other.normTitle.includes('00') || other.normFile.includes('00') || other.normTitle.includes('реестр источников');
         });
 
         if (vaultTarget) {
@@ -132,25 +160,19 @@ export class RelatedNotesResolverService {
       }
 
       // Tier 1: Exact normalized title or exact filename match
-      let target = pool.find((other) => {
+      let target = normalizedPool.find((other) => {
         if (other.id === note.id) return false;
-        const otherNormTitle = this.normalize(other.title);
-        const otherFile = other.metadata?.fileName || '';
-        const otherNormFile = this.normalize(otherFile);
-        return normLink === otherNormTitle || (otherNormFile && normLink === otherNormFile);
+        return normLink === other.normTitle || (other.normFile && normLink === other.normFile);
       });
 
       // Tier 2: Substring match (length > 8)
       if (!target) {
-        target = pool.find((other) => {
+        target = normalizedPool.find((other) => {
           if (other.id === note.id) return false;
-          const otherNormTitle = this.normalize(other.title);
-          const otherFile = other.metadata?.fileName || '';
-          const otherNormFile = this.normalize(otherFile);
-          if (normLink.length > 8 && otherNormTitle.includes(normLink)) return true;
-          if (otherNormTitle.length > 8 && normLink.includes(otherNormTitle)) return true;
-          if (otherNormFile && normLink.length > 8 && otherNormFile.includes(normLink)) return true;
-          if (otherNormFile && otherNormFile.length > 8 && normLink.includes(otherNormFile)) return true;
+          if (normLink.length > 8 && other.normTitle.includes(normLink)) return true;
+          if (other.normTitle.length > 8 && normLink.includes(other.normTitle)) return true;
+          if (other.normFile && normLink.length > 8 && other.normFile.includes(normLink)) return true;
+          if (other.normFile && other.normFile.length > 8 && normLink.includes(other.normFile)) return true;
           return false;
         });
       }
@@ -161,15 +183,13 @@ export class RelatedNotesResolverService {
         if (linkWords.length >= 3) {
           let bestTarget: any = null;
           let bestScore = 0;
-          for (const other of pool) {
+          for (const other of normalizedPool) {
             if (other.id === note.id) continue;
-            const otherNormTitle = this.normalize(other.title);
-            const otherTitleWords = new Set(otherNormTitle.split(' ').filter((w) => w.length > 3));
-            if (otherTitleWords.size < 3) continue;
+            if (other.titleWords.size < 3) continue;
 
             let common = 0;
             for (const w of linkWords) {
-              if (otherTitleWords.has(w)) common++;
+              if (other.titleWords.has(w)) common++;
             }
             const score = common / linkWords.length;
             if (score >= 0.65 && score > bestScore) {
@@ -273,8 +293,24 @@ export class RelatedNotesResolverService {
     let totalLinks = 0;
     let resolvedLinks = 0;
 
+    // Pre-normalize the pool ONCE for the entire batch reconciliation
+    const normalizedPool: NormalizedPoolItem[] = allNotes.map((other) => {
+      const normTitle = this.normalize(other.title);
+      const otherMeta = (other.metadata as any) || {};
+      const otherFile = otherMeta.fileName || '';
+      const normFile = this.normalize(otherFile);
+      const titleWords = new Set(normTitle.split(' ').filter((w) => w.length > 3));
+      return {
+        ...other,
+        normTitle,
+        normFile,
+        titleWords,
+      };
+    });
+    (normalizedPool as any)._isNormalized = true;
+
     for (const n of allNotes) {
-      const res = await this.resolveNoteRelatedLinks(n.id, allNotes);
+      const res = await this.resolveNoteRelatedLinks(n.id, normalizedPool);
       if (res.totalCount > 0) {
         processedNotes++;
         totalLinks += res.totalCount;

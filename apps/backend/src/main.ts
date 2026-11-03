@@ -12,8 +12,14 @@ async function bootstrap() {
   // Enable graceful shutdown hooks for Prisma, Chokidar watchers, and container SIGTERM
   app.enableShutdownHooks();
 
-  // Enable HTTP response compression for JSON APIs & static assets
-  app.use(compression());
+  // Enable HTTP response compression with fast chunking to avoid event loop stalls
+  app.use(
+    compression({
+      threshold: 2048,
+      level: 1, // Fastest compression level: avoids CPU throttling and event loop starvation
+      chunkSize: 64 * 1024, // 64KB buffer prevents micro-chunk streaming delays
+    }),
+  );
 
   // Static Assets Upload Serving
   app.useStaticAssets(join(process.cwd(), 'uploads'), {

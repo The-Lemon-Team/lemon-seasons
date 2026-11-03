@@ -79,12 +79,20 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
     this.logger.log(`👁️ Запуск слушателя Gemini Sparks в папке: ${this.watchedDir}`);
 
     this.watcher = chokidar.watch(this.watchedDir, {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
+      ignored: (filePath: string, stats?: fs.Stats) => {
+        const base = path.basename(filePath);
+        if (base.startsWith('.')) return true;
+        // Ignore non-markdown files to prevent thousands of unnecessary FSWatcher handles on cloud drives
+        if (stats && !stats.isDirectory() && !base.toLowerCase().endsWith('.md')) {
+          return true;
+        }
+        return false;
+      },
       persistent: true,
       ignoreInitial: true,
       awaitWriteFinish: {
-        stabilityThreshold: 600,
-        pollInterval: 150,
+        stabilityThreshold: 1000,
+        pollInterval: 300,
       },
     });
 

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsDateString, IsNumber } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsDateString, IsNumber, Min, Max } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { NoteType } from './create-note.dto';
 
@@ -166,15 +166,18 @@ export class QueryNotesDto {
   @IsOptional()
   includeDeleted?: boolean;
 
-  @ApiPropertyOptional({ description: 'Number of records to return', default: 50 })
+  @ApiPropertyOptional({ description: 'Number of records to return (1-500)', default: 50, maximum: 500, minimum: 1 })
   @Type(() => Number)
   @IsNumber()
+  @Min(1)
+  @Max(500)
   @IsOptional()
   limit?: number;
 
-  @ApiPropertyOptional({ description: 'Offset pagination start', default: 0 })
+  @ApiPropertyOptional({ description: 'Offset pagination start', default: 0, minimum: 0 })
   @Type(() => Number)
   @IsNumber()
+  @Min(0)
   @IsOptional()
   offset?: number;
 

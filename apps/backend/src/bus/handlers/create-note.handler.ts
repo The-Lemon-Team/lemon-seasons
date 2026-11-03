@@ -32,6 +32,7 @@ export class CreateNoteHandler implements ICommandHandler<CreateNotePayload> {
       title: payload.title,
       description: payload.description,
       type: payload.type ? (payload.type as NoteType) : NoteType.SINGLE,
+      privacy: payload.privacy || 'private',
       startDate: payload.startDate || command.targetDate || new Date().toISOString(),
       endDate: payload.endDate || undefined,
       feedId: targetFeedId,

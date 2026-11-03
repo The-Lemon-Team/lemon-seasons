@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp, cleanDatabase, ADMIN_AUTH_HEADER, TestContext } from './test-context';
+import {
+  TEST_RESERVED_PREFIX,
+  createTestFeedSlug,
+  createTestFeedTitle,
+  createTestNoteTitle,
+} from '@lenta/shared';
 
 describe('Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)', () => {
   let ctx: TestContext;
@@ -55,6 +61,78 @@ describe('Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)', () =>
           expect.objectContaining({ slug: 'it-dev' }),
         ]),
       );
+    });
+
+    it('updates feed parameters (title, icon, color) and persists them in DB with test prefix isolation', async () => {
+      const feedSlug = createTestFeedSlug('stream');
+      const initialTitle = createTestFeedTitle('Stream Initial');
+      const updatedTitle = createTestFeedTitle('Stream Renamed');
+
+      // 1. Create initial feed with test prefix
+      const createRes = await ctx.req
+        .post('/feeds')
+        .set(ADMIN_AUTH_HEADER)
+        .send({
+          title: initialTitle,
+          slug: feedSlug,
+          description: 'Feed before renaming',
+          icon: '📁',
+          color: '#2481cc',
+          privacy: 'public',
+        })
+        .expect(201);
+
+      const feedId = createRes.body.id;
+      expect(feedId).toBeDefined();
+
+      // 2. Create note attached to this feed
+      const noteTitle = createTestNoteTitle('Post attached to stream');
+      const noteRes = await ctx.req
+        .post('/notes')
+        .set(ADMIN_AUTH_HEADER)
+        .send({
+          title: noteTitle,
+          description: 'Note body inside stream',
+          feedId,
+          type: 'SINGLE',
+          startDate: new Date().toISOString(),
+          privacy: 'public',
+          status: 'PUBLISHED',
+        })
+        .expect(201);
+
+      expect(noteRes.body.feedId).toBe(feedId);
+
+      // 3. Update the feed (title, icon, color) via PATCH /feeds/:id
+      const patchRes = await ctx.req
+        .patch(`/feeds/${feedId}`)
+        .set(ADMIN_AUTH_HEADER)
+        .send({
+          title: updatedTitle,
+          icon: '🚀',
+          color: '#f97316',
+        })
+        .expect(200);
+
+      expect(patchRes.body).toMatchObject({
+        id: feedId,
+        title: updatedTitle,
+        slug: feedSlug,
+        icon: '🚀',
+        color: '#f97316',
+      });
+
+      // 4. Verify list endpoint reflects updated title
+      const listRes = await ctx.req.get('/feeds').expect(200);
+      const updatedFeedInList = listRes.body.find((f: any) => f.id === feedId);
+      expect(updatedFeedInList).toBeDefined();
+      expect(updatedFeedInList.title).toBe(updatedTitle);
+      expect(updatedFeedInList.icon).toBe('🚀');
+
+      // 5. Verify notes query retains relation to updated feed
+      const notesRes = await ctx.req.get(`/notes?feedId=${feedId}`).expect(200);
+      expect(notesRes.body.items).toHaveLength(1);
+      expect(notesRes.body.items[0].feed.title).toBe(updatedTitle);
     });
   });
 
@@ -178,6 +256,51 @@ describe('Project Lenta Backend - Notes & Feeds Integration (PostgreSQL)', () =>
       // Check DB directly: deletedAt is set
       const dbNote = await ctx.prisma.note.findUnique({ where: { id: noteId } });
       expect(dbNote?.deletedAt).not.toBeNull();
+    });
+
+    it('payload projection contract: GET /notes omits rawContent, while GET /notes/:id returns full rawContent', async () => {
+      const createRes = await ctx.req
+        .post('/notes')
+        .set(ADMIN_AUTH_HEADER)
+        .send({
+          title: 'Article With Massive Raw Content',
+          description: 'A brief description',
+          rawContent: '# Full Article\n\nThis is a 20KB markdown article body that must not bloat feed list queries.',
+          privacy: 'public',
+          status: 'PUBLISHED',
+          type: 'SINGLE',
+          startDate: new Date('2026-11-01T10:00:00Z').toISOString(),
+        })
+        .expect(201);
+
+      const noteId = createRes.body.id;
+
+      // 1. GET /notes list MUST NOT include rawContent
+      const listRes = await ctx.req.get('/notes').expect(200);
+      const createdInList = listRes.body.items?.find((n: any) => n.id === noteId);
+      expect(createdInList).toBeDefined();
+      expect(createdInList.rawContent).toBeUndefined();
+
+      // 2. GET /notes/:id detail MUST include rawContent for reader modals
+      const detailRes = await ctx.req
+        .get(`/notes/${noteId}`)
+        .set(ADMIN_AUTH_HEADER)
+        .expect(200);
+      expect(detailRes.body.rawContent).toContain('This is a 20KB markdown article body');
+
+      // 3. Validation contract: GET /notes?limit=9999 is rejected by ValidationPipe with 400 Bad Request
+      const rejectedList = await ctx.req
+        .get('/notes?limit=9999')
+        .set(ADMIN_AUTH_HEADER)
+        .expect(400);
+      expect(JSON.stringify(rejectedList.body)).toContain('limit must not be greater than 500');
+
+      // 4. Valid max limit=500 returns 200 with limit: 500
+      const validMaxList = await ctx.req
+        .get('/notes?limit=500')
+        .set(ADMIN_AUTH_HEADER)
+        .expect(200);
+      expect(validMaxList.body.limit).toBe(500);
     });
   });
 });
