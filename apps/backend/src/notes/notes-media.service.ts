@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Optional } from '@n
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService, ProcessedImageResult } from '../storage/storage.service';
-import { UpdateNoteImageDto, ImageOrderItemDto } from './dto/image.dto';
+import { UpdateNoteImageDto, ImageOrderItemDto, ExternalImageItemDto } from './dto/image.dto';
+import { SerperImageSearchService, SerperSearchOptions } from './services/serper-image-search.service';
 import { NotePublishedEvent } from '../events';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class NotesMediaService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private serperSearchService: SerperImageSearchService,
     @Optional() private eventEmitter?: EventEmitter2,
   ) {}
 
@@ -264,6 +266,109 @@ export class NotesMediaService {
     }
 
     return noteImage;
+  }
+
+  /**
+   * Search Google Images via Serper.dev
+   */
+  async searchWebImages(query: string, options?: SerperSearchOptions) {
+    return this.serperSearchService.searchImages(query, options);
+  }
+
+  /**
+   * Ingest and attach multiple images from web URLs to a note
+   */
+  async attachImagesFromUrls(noteId: string, items: ExternalImageItemDto[]) {
+    if (!items || items.length === 0) {
+      throw new BadRequestException('No image URLs provided');
+    }
+
+    const note = await this.prisma.note.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note) {
+      throw new NotFoundException(`Note '${noteId}' not found`);
+    }
+
+    const existingImages = await this.prisma.noteImage.findMany({
+      where: { noteId },
+      orderBy: { order: 'desc' },
+    });
+
+    const hasMain = existingImages.some((img) => img.isMain);
+    const hasAnyMainRequested = items.some((item) => item.isMain);
+
+    if (hasAnyMainRequested && hasMain) {
+      await this.prisma.noteImage.updateMany({
+        where: { noteId },
+        data: { isMain: false },
+      });
+    }
+
+    let nextOrder = existingImages.length > 0 ? existingImages[0].order + 1 : 0;
+    const downloadedImages = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      try {
+        const processed = await this.storageService.downloadAndSaveImageFromUrl(
+          item.url,
+          item.caption,
+        );
+
+        const shouldBeMain = item.isMain !== undefined
+          ? item.isMain
+          : (!hasMain && !hasAnyMainRequested && i === 0);
+
+        const noteImage = await this.prisma.noteImage.create({
+          data: {
+            noteId,
+            url: processed.url,
+            thumbnailUrl: processed.thumbnailUrl,
+            filename: processed.filename,
+            mimeType: processed.mimeType,
+            sizeBytes: processed.sizeBytes,
+            width: processed.width,
+            height: processed.height,
+            isMain: shouldBeMain,
+            caption: item.caption,
+            alt: item.alt || item.caption,
+            order: nextOrder++,
+          },
+        });
+
+        downloadedImages.push(noteImage);
+      } catch (err: any) {
+        // Continue downloading other images if one fails
+        continue;
+      }
+    }
+
+    if (downloadedImages.length === 0) {
+      throw new BadRequestException('Не удалось загрузить ни одно из выбранных изображений');
+    }
+
+    // Touch note updatedAt
+    await this.prisma.note.update({
+      where: { id: noteId },
+      data: { updatedAt: new Date() },
+    });
+
+    return this.prisma.noteImage.findMany({
+      where: { noteId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  /**
+   * Standalone download from external URL for pending note creation
+   */
+  async downloadExternalMedia(url: string, title?: string) {
+    if (!url) {
+      throw new BadRequestException('No image URL provided');
+    }
+    return this.storageService.downloadAndSaveImageFromUrl(url, title);
   }
 }
 

@@ -11,10 +11,12 @@ import { NotesMediaService } from './notes-media.service';
 import { NotesShareService } from './notes-share.service';
 import { NotesCacheService } from './notes-cache.service';
 import { NotesQueryBuilder } from './notes-query.builder';
+import { SerperImageSearchService } from './services/serper-image-search.service';
 import { KeysModule } from '../keys/keys.module';
+import { StreamsModule } from '../streams/streams.module';
 
 @Module({
-  imports: [StorageModule, HashtagsModule, FoldersModule, KeysModule],
+  imports: [StorageModule, HashtagsModule, FoldersModule, KeysModule, StreamsModule],
   controllers: [NotesController],
   providers: [
     NotesService,
@@ -25,6 +27,7 @@ import { KeysModule } from '../keys/keys.module';
     NotesShareService,
     NotesCacheService,
     NotesQueryBuilder,
+    SerperImageSearchService,
   ],
   exports: [
     NotesService,
@@ -35,6 +38,7 @@ import { KeysModule } from '../keys/keys.module';
     NotesShareService,
     NotesCacheService,
     NotesQueryBuilder,
+    SerperImageSearchService,
   ],
 })
 export class NotesModule {}

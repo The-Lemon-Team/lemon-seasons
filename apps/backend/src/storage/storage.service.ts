@@ -42,11 +42,21 @@ export class StorageService implements OnModuleInit {
    * Process and save note image with WebP optimization and thumbnail generation
    */
   async processAndSaveNoteImage(file: Express.Multer.File): Promise<ProcessedImageResult> {
+    return this.processAndSaveBuffer(file.buffer, file.originalname);
+  }
+
+  /**
+   * Process and save note image from buffer with WebP optimization and thumbnail generation
+   */
+  async processAndSaveBuffer(
+    buffer: Buffer,
+    originalFilename?: string,
+  ): Promise<ProcessedImageResult> {
     await this.ensureDirectories();
     const fileId = `${Date.now()}-${randomUUID()}`;
     const filename = `${fileId}.webp`;
 
-    const sharpInstance = sharp(file.buffer).rotate();
+    const sharpInstance = sharp(buffer).rotate();
     const metadata = await sharpInstance.metadata();
 
     // 1. Process and save optimized main image
@@ -58,7 +68,7 @@ export class StorageService implements OnModuleInit {
     await fs.writeFile(mainFilePath, optimizedBuffer);
 
     // 2. Generate and save 400px thumbnail
-    const thumbBuffer = await sharp(file.buffer)
+    const thumbBuffer = await sharp(buffer)
       .rotate()
       .resize({ width: 400, height: 400, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 80 })
@@ -70,12 +80,55 @@ export class StorageService implements OnModuleInit {
     return {
       url: `/uploads/notes/${filename}`,
       thumbnailUrl: `/uploads/notes/thumbs/${filename}`,
-      filename: file.originalname || filename,
+      filename: originalFilename || filename,
       mimeType: 'image/webp',
       sizeBytes: optimizedBuffer.length,
       width: metadata.width || null,
       height: metadata.height || null,
     };
+  }
+
+  /**
+   * Download image from a web URL and process into WebP + thumbnail
+   */
+  async downloadAndSaveImageFromUrl(
+    imageUrl: string,
+    fallbackName?: string,
+  ): Promise<ProcessedImageResult> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(imageUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch image: HTTP ${res.status} ${res.statusText}`);
+      }
+
+      const arrayBuffer = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      let filename = fallbackName;
+      if (!filename) {
+        try {
+          const parsedPath = new URL(imageUrl).pathname;
+          filename = path.basename(parsedPath) || 'downloaded-poster.webp';
+        } catch {
+          filename = 'downloaded-poster.webp';
+        }
+      }
+
+      return this.processAndSaveBuffer(buffer, filename);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   /**

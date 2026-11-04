@@ -41,3 +41,44 @@ export class ReorderNoteImagesDto {
   @Type(() => ImageOrderItemDto)
   items: ImageOrderItemDto[];
 }
+
+export class ExternalImageItemDto {
+  @ApiProperty({ description: 'External image URL' })
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+
+  @ApiPropertyOptional({ description: 'Image caption / title' })
+  @IsString()
+  @IsOptional()
+  caption?: string;
+
+  @ApiPropertyOptional({ description: 'Accessibility alt text' })
+  @IsString()
+  @IsOptional()
+  alt?: string;
+
+  @ApiPropertyOptional({ description: 'Set as main/cover photo' })
+  @IsBoolean()
+  @IsOptional()
+  isMain?: boolean;
+}
+
+export class AttachImagesFromUrlsDto {
+  @ApiProperty({ description: 'List of external image URLs to download and attach', type: [ExternalImageItemDto] })
+  @IsArray()
+  @Type(() => ExternalImageItemDto)
+  items: ExternalImageItemDto[];
+}
+
+export class FetchExternalMediaDto {
+  @ApiProperty({ description: 'External image URL to download and save' })
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+
+  @ApiPropertyOptional({ description: 'Optional fallback title/name' })
+  @IsString()
+  @IsOptional()
+  title?: string;
+}

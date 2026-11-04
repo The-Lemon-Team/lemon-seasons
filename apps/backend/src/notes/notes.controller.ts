@@ -21,7 +21,12 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { QuickShareNoteDto } from './dto/quick-share-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
-import { UpdateNoteImageDto, ReorderNoteImagesDto } from './dto/image.dto';
+import {
+  UpdateNoteImageDto,
+  ReorderNoteImagesDto,
+  AttachImagesFromUrlsDto,
+  FetchExternalMediaDto,
+} from './dto/image.dto';
 import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 import { IngestNoteDto } from './dto/ingest-note.dto';
@@ -100,6 +105,24 @@ export class NotesController {
     return this.notesService.findAll(query, user?.isAdmin ?? false);
   }
 
+  @Get('media/search-images')
+  @ApiOperation({ summary: 'Search web images via Serper.dev (Google Images)' })
+  searchImages(
+    @Query('q') q: string,
+    @Query('gl') gl?: string,
+    @Query('hl') hl?: string,
+    @Query('num') num?: number,
+  ) {
+    if (!q || !q.trim()) {
+      return [];
+    }
+    return this.notesService.searchWebImages(q, {
+      gl,
+      hl,
+      num: num ? Number(num) : 20,
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific note by ID' })
   findOne(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
@@ -151,6 +174,18 @@ export class NotesController {
       throw new BadRequestException('At least one file must be provided');
     }
     return this.notesService.uploadImages(id, files);
+  }
+
+  @Post(':id/images/from-urls')
+  @ApiOperation({ summary: 'Attach multiple external images from URLs to a note' })
+  attachImagesFromUrls(
+    @Param('id') id: string,
+    @Body() dto: AttachImagesFromUrlsDto,
+  ) {
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('At least one image item must be provided');
+    }
+    return this.notesService.attachImagesFromUrls(id, dto.items);
   }
 
   @Patch(':id/images/:imageId/main')
@@ -260,5 +295,14 @@ export class NotesController {
       throw new BadRequestException('A file must be provided');
     }
     return this.notesService.uploadStandaloneMedia(file);
+  }
+
+  @Post('media/fetch-external')
+  @ApiOperation({ summary: 'Download external image to server storage for preview/draft attachment' })
+  fetchExternalMedia(@Body() dto: FetchExternalMediaDto) {
+    if (!dto.url) {
+      throw new BadRequestException('Image URL must be provided');
+    }
+    return this.notesService.downloadExternalMedia(dto.url, dto.title);
   }
 }

@@ -16,8 +16,8 @@ export class GenerateNoteAiDto {
   title: string;
 
   @IsString()
-  @IsNotEmpty()
-  category: string;
+  @IsOptional()
+  category?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -26,6 +26,10 @@ export class GenerateNoteAiDto {
   @IsString()
   @IsOptional()
   context?: string;
+
+  @IsString()
+  @IsOptional()
+  noteType?: string;
 }
 
 export class GenerateImageAiDto {

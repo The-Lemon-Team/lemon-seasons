@@ -15,7 +15,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { QuickShareNoteDto } from './dto/quick-share-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { QueryNotesDto } from './dto/query-notes.dto';
-import { UpdateNoteImageDto, ImageOrderItemDto } from './dto/image.dto';
+import { UpdateNoteImageDto, ImageOrderItemDto, ExternalImageItemDto } from './dto/image.dto';
 import { CreateNoteLinkDto, UpdateNoteLinkDto, LinkOrderItemDto } from './dto/link.dto';
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 import { AiQuickAddService } from './ai-quick-add.service';
@@ -582,6 +582,19 @@ export class NotesService implements OnModuleInit {
 
   uploadStandaloneMedia(file: Express.Multer.File) {
     return this.notesMediaService.uploadStandaloneMedia(file);
+  }
+
+  searchWebImages(query: string, options?: { gl?: string; hl?: string; num?: number }) {
+    return this.notesMediaService.searchWebImages(query, options);
+  }
+
+  attachImagesFromUrls(noteId: string, items: ExternalImageItemDto[]) {
+    this.notesCacheService.invalidateAll();
+    return this.notesMediaService.attachImagesFromUrls(noteId, items);
+  }
+
+  downloadExternalMedia(url: string, title?: string) {
+    return this.notesMediaService.downloadExternalMedia(url, title);
   }
 
   // ==========================================

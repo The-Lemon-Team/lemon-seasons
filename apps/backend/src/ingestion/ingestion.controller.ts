@@ -82,7 +82,7 @@ export class IngestionController {
     description: 'Использует Gemini 2.5 / 1.5 для составления структурированного очерка, подбора хештегов и цитат.',
   })
   async generateAiContent(@Body() dto: GenerateNoteAiDto): Promise<GeneratedNoteEnrichment> {
-    return this.geminiService.generateNoteContent(dto.title, dto.category, dto.dateStr, dto.context);
+    return this.geminiService.generateNoteContent(dto.title, dto.category, dto.dateStr, dto.context, dto.noteType);
   }
 
   @Post('ai/generate-image')
