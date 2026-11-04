@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { message, Modal } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
-import { NoteType, FolderInputItem, NotePrivacy } from '../types';
+import { notesApi } from '../api/client';
+import { NoteType, FolderInputItem, NotePrivacy, PendingPosterItem } from '../types';
 import { NoteTemplateDefinition } from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
@@ -10,6 +11,7 @@ import { FolderSelect } from './FolderSelect';
 import { AppSelect } from './common/AppSelect';
 import { NotePrivacySelector } from './notes/NotePrivacySelector';
 import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
+import { NotePosterPicker } from './notes/NotePosterPicker';
 import { Radio } from 'lucide-react';
 import { useAdminI18n } from '../i18n';
 import { LemonLogo } from './LemonLogo';
@@ -42,6 +44,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
   const [folders, setFolders] = useState<FolderInputItem[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
+  const [pendingPosters, setPendingPosters] = useState<PendingPosterItem[]>([]);
 
   // Интеграция пресетов / макросов быстрого добавления
   const {
@@ -112,7 +115,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
     }
 
     try {
-      await createNoteMutation.mutateAsync({
+      const created = await createNoteMutation.mutateAsync({
         feedId: feedId ? feedId : undefined,
         title: title.trim(),
         type,
@@ -124,6 +127,37 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
         folders: folders.length > 0 ? folders : undefined,
       });
 
+      // Attach any selected web posters or local files
+      if (pendingPosters.length > 0) {
+        const webItems = pendingPosters
+          .filter((p) => !p.file && p.url.startsWith('http'))
+          .map((p) => ({
+            url: p.url,
+            caption: p.title,
+            isMain: p.isMain,
+          }));
+
+        if (webItems.length > 0) {
+          try {
+            await notesApi.attachImagesFromUrls(created.id, webItems);
+          } catch (uploadErr) {
+            console.error('Failed to attach web posters', uploadErr);
+          }
+        }
+
+        const localFiles = pendingPosters
+          .filter((p) => Boolean(p.file))
+          .map((p) => p.file as File);
+
+        if (localFiles.length > 0) {
+          try {
+            await notesApi.uploadImages(created.id, localFiles);
+          } catch (uploadErr) {
+            console.error('Failed to upload local files', uploadErr);
+          }
+        }
+      }
+
       message.success(t.quickAddNoteCreated);
       setTitle('');
       setFeedId('');
@@ -131,6 +165,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       setEndDate('');
       setFolders([]);
       setHashtags([]);
+      setPendingPosters([]);
       setPrivacy('private');
       setActiveTemplateId(null);
       onClose();
@@ -292,6 +327,15 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
               onChange={setHashtags}
               placeholder={t.hashtagsPlaceholder}
             />
+
+            {/* Quick Posters & Media */}
+            <div className="bg-surface-container/60 border border-white/5 rounded-xl p-2.5">
+              <NotePosterPicker
+                noteTitle={title}
+                pendingPosters={pendingPosters}
+                onPendingPostersChange={setPendingPosters}
+              />
+            </div>
 
             {/* Markdown Description */}
             <MarkdownEditor

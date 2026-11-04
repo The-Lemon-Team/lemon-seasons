@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { message, Popconfirm, Modal, Tooltip, Spin } from 'antd';
-import { Sparkles, Cpu } from 'lucide-react';
-import { NoteImage } from '../types';
+import { Sparkles, Cpu, Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { NoteImage, WebImageResult } from '../types';
+import { notesApi } from '../api/client';
 import {
   useUploadNoteImages,
   useSetMainNoteImage,
@@ -10,6 +12,7 @@ import {
 } from '../api/queries';
 import { useAdminI18n } from '../i18n';
 import { AiCoverStudioModal } from './AiCoverStudioModal';
+import { WebPosterSearchModal } from './notes/WebPosterSearchModal';
 import { IT_WORKFLOW_TEMPLATES } from './cover-studio/coverStudio.constants';
 
 interface ImageManagerProps {
@@ -43,8 +46,10 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   const [previewTitle, setPreviewTitle] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isAiStudioOpen, setIsAiStudioOpen] = useState(false);
+  const [isWebSearchOpen, setIsWebSearchOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
 
+  const queryClient = useQueryClient();
   const uploadMutation = useUploadNoteImages();
   const setMainMutation = useSetMainNoteImage();
   const reorderMutation = useReorderNoteImages();
@@ -59,6 +64,26 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
   const openAiStudioWithTemplate = (templateId?: string) => {
     setSelectedTemplateId(templateId);
     setIsAiStudioOpen(true);
+  };
+
+  const handleAttachWebImages = async (webImages: WebImageResult[]) => {
+    if (webImages.length === 0) return;
+    if (isExistingNote && noteId) {
+      try {
+        const items = webImages.map((img, idx) => ({
+          url: img.imageUrl,
+          caption: img.title,
+          alt: img.title,
+          isMain: images.length === 0 && idx === 0,
+        }));
+        await notesApi.attachImagesFromUrls(noteId, items);
+        queryClient.invalidateQueries({ queryKey: ['notes', noteId] });
+        queryClient.invalidateQueries({ queryKey: ['notes'] });
+        message.success(t.feedSavedSuccess);
+      } catch (err: any) {
+        message.error(err?.response?.data?.message || 'Error');
+      }
+    }
   };
 
   const handleFilesAdded = async (filesList: FileList | File[]) => {
@@ -166,11 +191,20 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => openAiStudioWithTemplate(undefined)}
+              onClick={() => setIsWebSearchOpen(true)}
               className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Studio (IT Covers)</span>
+              <Search className="w-3.5 h-3.5" />
+              <span>Поиск постеров (Google)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAiStudioWithTemplate(undefined)}
+              className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-white/10 hover:border-primary/40 text-on-surface rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>AI Studio</span>
             </button>
 
             <button
@@ -478,6 +512,13 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
         initialDescription={noteDescription}
         initialTemplateId={selectedTemplateId}
         onInsertMarkdown={onInsertMarkdown}
+      />
+
+      <WebPosterSearchModal
+        open={isWebSearchOpen}
+        onClose={() => setIsWebSearchOpen(false)}
+        initialQuery={noteTitle}
+        onSelectImages={handleAttachWebImages}
       />
     </div>
   );

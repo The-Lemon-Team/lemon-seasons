@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, message, Spin } from 'antd';
-import { useNote, useFeeds, useUpdateNote } from '../api/queries';
+import { Modal, Popconfirm, message, Spin } from 'antd';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNote, useFeeds, useUpdateNote, useDeleteNote } from '../api/queries';
 import { NoteType, NoteStatus, FolderInputItem } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
+import { AiDescriptionAssistant } from './notes/AiDescriptionAssistant';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
 import { FolderSelect } from './FolderSelect';
 import { AppSelect } from './common/AppSelect';
 import { NoteCoverBanner } from './NoteCoverBanner';
+import { NotePosterPicker } from './notes/NotePosterPicker';
 import { AiCoverStudioModal } from './AiCoverStudioModal';
 import { useAdminI18n } from '../i18n';
 import {
@@ -22,6 +25,7 @@ import {
   Lock,
   Archive,
   Radio,
+  Trash2,
 } from 'lucide-react';
 
 export interface EditNoteModalProps {
@@ -40,9 +44,12 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
   onOpenFullPage,
 }) => {
   const { t } = useAdminI18n();
+  const queryClient = useQueryClient();
   const { data: note, isLoading } = useNote(noteId || '');
   const { data: feeds = [] } = useFeeds();
   const updateNoteMutation = useUpdateNote();
+  const deleteNoteMutation = useDeleteNote();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -149,6 +156,21 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!note) return;
+    setIsDeleting(true);
+    try {
+      await deleteNoteMutation.mutateAsync(note.id);
+      message.success(t.noteDeletedSuccess);
+      onClose();
+      onSuccess?.();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || 'Ошибка удаления записи');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -243,6 +265,19 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
               title={title}
               onOpenStudio={() => setIsAiStudioOpen(true)}
             />
+
+            {/* Poster & Multi-image Management Strip */}
+            <div className="bg-surface-container/60 border border-white/5 rounded-xl p-3">
+              <NotePosterPicker
+                noteId={note.id}
+                noteTitle={title}
+                existingImages={note.images || []}
+                onImagesUpdated={() => {
+                  queryClient.invalidateQueries({ queryKey: ['notes', note.id] });
+                  queryClient.invalidateQueries({ queryKey: ['notes'] });
+                }}
+              />
+            </div>
 
             {/* Title */}
             <div>
@@ -370,9 +405,24 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
 
             {/* Description (Markdown) */}
             <div>
-              <label className="block text-xs font-mono text-on-surface-variant mb-1">
-                {t.contentLabel} (Markdown)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-on-surface-variant">
+                  {t.contentLabel} (Markdown)
+                </label>
+              </div>
+
+              <AiDescriptionAssistant
+                title={title}
+                startDate={startDate}
+                noteType={type}
+                category={assignedFolders[0]?.path || undefined}
+                currentDescription={description}
+                onDescriptionGenerated={setDescription}
+                onHashtagsSuggested={(newTags) => {
+                  setHashtags((prev) => Array.from(new Set([...prev, ...newTags])));
+                }}
+              />
+
               <MarkdownEditor
                 value={description}
                 onChange={setDescription}
@@ -422,9 +472,29 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
 
           {/* Footer Actions */}
           <div className="px-5 py-2.5 border-t border-tile-border bg-tile-subtle flex items-center justify-between">
-            <span className="text-[11px] font-mono text-text-muted">
-              ID: {note.id}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] font-mono text-text-muted">
+                ID: {note.id}
+              </span>
+
+              <Popconfirm
+                title={t.confirmDeleteNote}
+                onConfirm={handleDelete}
+                okText={t.delete}
+                cancelText={t.cancel}
+                okButtonProps={{ danger: true }}
+              >
+                <button
+                  type="button"
+                  disabled={isSubmitting || isDeleting || deleteNoteMutation.isPending}
+                  className="flex items-center gap-1.5 h-6 px-2.5 rounded bg-error/10 border border-error/30 text-error hover:bg-error/20 text-xs font-mono transition-colors cursor-pointer"
+                  title={t.deleteNoteBtn}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{t.delete}</span>
+                </button>
+              </Popconfirm>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -436,7 +506,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !title.trim()}
+                disabled={isSubmitting || isDeleting || !title.trim()}
                 className="flex items-center gap-1.5 h-7 px-4 rounded bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary-fixed-dim transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <Check className="w-4 h-4" />

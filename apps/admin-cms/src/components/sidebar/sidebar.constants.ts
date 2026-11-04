@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Rss, Sparkles, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, FileText, Rss, Radio, CalendarRange, Sparkles, RefreshCw } from 'lucide-react';
 import { AdminTranslations } from '../../i18n';
 
 export type AdminStringKey = {
@@ -37,6 +37,19 @@ export const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     to: '/feeds',
     labelKey: 'feeds',
     icon: Rss,
+  },
+  {
+    to: '/streams',
+    labelKey: 'streams',
+    icon: Radio,
+    badge: 'Hub',
+    iconClassName: 'text-indigo-400',
+  },
+  {
+    to: '/periods',
+    labelKey: 'periodsHubTitle',
+    icon: CalendarRange,
+    iconClassName: 'text-emerald-400',
   },
   {
     to: '/generators',

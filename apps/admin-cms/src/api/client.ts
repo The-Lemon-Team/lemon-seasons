@@ -4,6 +4,8 @@ import {
   Feed,
   Note,
   NoteImage,
+  WebImageResult,
+  ExternalImageItem,
   NoteLink,
   CreateNoteLinkInput,
   UpdateNoteLinkInput,
@@ -29,6 +31,9 @@ import {
   QuickAddMacro,
   CreateQuickAddMacroInput,
   UpdateQuickAddMacroInput,
+  Stream,
+  CreateStreamPayload,
+  UpdateStreamPayload,
 } from '../types';
 
 
@@ -171,6 +176,32 @@ export const notesApi = {
   deleteImage: async (noteId: string, imageId: string): Promise<{ success: boolean; newMainId?: string }> => {
     const res = await apiClient.delete<{ success: boolean; newMainId?: string }>(
       `/notes/${noteId}/images/${imageId}`,
+    );
+    return res.data;
+  },
+  searchWebImages: async (
+    query: string,
+    options?: { gl?: string; hl?: string; num?: number },
+  ): Promise<WebImageResult[]> => {
+    const res = await apiClient.get<WebImageResult[]>('/notes/media/search-images', {
+      params: { q: query, ...options },
+    });
+    return res.data;
+  },
+  attachImagesFromUrls: async (
+    noteId: string,
+    items: ExternalImageItem[],
+  ): Promise<NoteImage[]> => {
+    const res = await apiClient.post<NoteImage[]>(`/notes/${noteId}/images/from-urls`, { items });
+    return res.data;
+  },
+  fetchExternalMedia: async (
+    url: string,
+    title?: string,
+  ): Promise<{ url: string; thumbnailUrl: string; filename: string }> => {
+    const res = await apiClient.post<{ url: string; thumbnailUrl: string; filename: string }>(
+      '/notes/media/fetch-external',
+      { url, title },
     );
     return res.data;
   },
@@ -540,7 +571,13 @@ export const ingestionApi = {
     const res = await apiClient.post<{ success: boolean; result: IngestionResult }>(`/ingestion/sync/${slug}`);
     return res.data;
   },
-  generateAiContent: async (data: { title: string; category: string; dateStr: string; context?: string }): Promise<GeneratedNoteEnrichment> => {
+  generateAiContent: async (data: {
+    title: string;
+    category?: string;
+    dateStr: string;
+    context?: string;
+    noteType?: string;
+  }): Promise<GeneratedNoteEnrichment> => {
     const res = await apiClient.post<GeneratedNoteEnrichment>('/ingestion/ai/generate-content', data);
     return res.data;
   },
@@ -704,5 +741,39 @@ export const macrosApi = {
     return res.data;
   },
 };
+
+export const streamsApi = {
+  getAll: async (includePrivate = true): Promise<Stream[]> => {
+    const res = await apiClient.get<Stream[]>('/streams', {
+      params: includePrivate ? { includePrivate: 'true' } : undefined,
+    });
+    return res.data;
+  },
+  getBySlug: async (slug: string): Promise<Stream> => {
+    const res = await apiClient.get<Stream>(`/streams/${slug}`);
+    return res.data;
+  },
+  create: async (data: CreateStreamPayload): Promise<Stream> => {
+    const res = await apiClient.post<Stream>('/streams', data);
+    return res.data;
+  },
+  update: async (id: string, data: UpdateStreamPayload): Promise<Stream> => {
+    const res = await apiClient.patch<Stream>(`/streams/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string): Promise<{ id: string }> => {
+    const res = await apiClient.delete<{ id: string }>(`/streams/${id}`);
+    return res.data;
+  },
+  attachFeed: async (streamId: string, feedId: string): Promise<Stream> => {
+    const res = await apiClient.post<Stream>(`/streams/${streamId}/feeds/${feedId}`);
+    return res.data;
+  },
+  detachFeed: async (streamId: string, feedId: string): Promise<Stream> => {
+    const res = await apiClient.delete<Stream>(`/streams/${streamId}/feeds/${feedId}`);
+    return res.data;
+  },
+};
+
 
 

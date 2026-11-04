@@ -10,6 +10,7 @@ import {
   ingestionApi,
   busRelayApi,
   macrosApi,
+  streamsApi,
 } from './client';
 import {
   CreateFeedInput,
@@ -17,10 +18,13 @@ import {
   CreateTaxonomyInput,
   CreateFolderInput,
   UpdateFolderInput,
+  ExternalImageItem,
   QueryNotesParams,
   DriveBusEventsFilter,
   CreateQuickAddMacroInput,
   UpdateQuickAddMacroInput,
+  CreateStreamPayload,
+  UpdateStreamPayload,
 } from '../types';
 
 // Feeds Queries & Mutations
@@ -159,6 +163,18 @@ export function useRestoreNote() {
       queryClient.invalidateQueries({ queryKey: ['hashtags'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['folder-tree'] });
+    },
+  });
+}
+
+export function useAttachImagesFromUrls() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, items }: { noteId: string; items: ExternalImageItem[] }) =>
+      notesApi.attachImagesFromUrls(noteId, items),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.noteId] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
   });
 }
@@ -769,5 +785,88 @@ export function useDeleteMacro() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['macros'] });
     },
+  });
+}
+
+// ==========================================
+// Streams Queries & Mutations
+// ==========================================
+
+export function useStreams(includePrivate = true) {
+  return useQuery({
+    queryKey: ['streams', { includePrivate }],
+    queryFn: () => streamsApi.getAll(includePrivate),
+    staleTime: 60_000,
+  });
+}
+
+export function useStream(slug: string) {
+  return useQuery({
+    queryKey: ['streams', slug],
+    queryFn: () => streamsApi.getBySlug(slug),
+    enabled: Boolean(slug),
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateStream() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateStreamPayload) => streamsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+  });
+}
+
+export function useUpdateStream() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateStreamPayload }) =>
+      streamsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+  });
+}
+
+export function useDeleteStream() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => streamsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+  });
+}
+
+export function useAttachFeedToStream() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ streamId, feedId }: { streamId: string; feedId: string }) =>
+      streamsApi.attachFeed(streamId, feedId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+  });
+}
+
+export function useDetachFeedFromStream() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ streamId, feedId }: { streamId: string; feedId: string }) =>
+      streamsApi.detachFeed(streamId, feedId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+  });
+}
+
+// All Periods Query (for Periods Hub)
+export function useAllPeriods() {
+  return useQuery({
+    queryKey: ['notes', { type: 'PERIOD', limit: 100 }],
+    queryFn: () => notesApi.getAll({ type: 'PERIOD', limit: 100, privacy: 'all' }),
+    staleTime: 60_000,
   });
 }

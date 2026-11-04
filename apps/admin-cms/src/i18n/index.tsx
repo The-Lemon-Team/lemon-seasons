@@ -110,6 +110,20 @@ export interface AdminTranslations {
   noFeedsFound: string;
   notesCountBadge: (count: number) => string;
 
+  // Streams & Periods Hub
+  streams: string;
+  streamsPageTitle: string;
+  streamsPageSubtitle: string;
+  createStreamBtn: string;
+  editStreamTitle: string;
+  createStreamTitle: string;
+  streamAnalyticsTitle: string;
+  streamSavedSuccess: string;
+  streamDeletedSuccess: string;
+  periodsHubTitle: string;
+  periodsHubSubtitle: string;
+  periodsBroadcastSuccess: string;
+
   // Notes List Page
   notesListPageTitle: string;
   notesListPageSubtitle: string;
@@ -336,6 +350,20 @@ export const ruAdminTranslations: AdminTranslations = {
   noFeedsFound: 'Ленты не найдены',
   notesCountBadge: (count: number) => pluralizeRu(count, 'заметка', 'заметки', 'заметок'),
 
+  // Streams & Periods Hub
+  streams: 'Стримы',
+  streamsPageTitle: 'Каталог стримов',
+  streamsPageSubtitle: 'Конфигурация сквозных потоков контента, привязка фидов и аналитика шины.',
+  createStreamBtn: 'Создать стрим',
+  editStreamTitle: 'Редактировать стрим',
+  createStreamTitle: 'Новый стрим',
+  streamAnalyticsTitle: 'Аналитика стрима',
+  streamSavedSuccess: 'Стрим успешно сохранен',
+  streamDeletedSuccess: 'Стрим удален',
+  periodsHubTitle: 'Хаб периодов',
+  periodsHubSubtitle: 'Все актуальные глобальные и локальные периоды, прогресс и шина событий.',
+  periodsBroadcastSuccess: 'Период успешно транслирован в шину событий',
+
   // Notes List Page
   notesListPageTitle: 'Все заметки',
   notesListPageSubtitle: 'Просмотр, фильтрация, поиск и управление хронологическими записями.',
@@ -561,6 +589,20 @@ export const enAdminTranslations: AdminTranslations = {
   feedSavedSuccess: 'Feed saved successfully',
   noFeedsFound: 'No feeds found',
   notesCountBadge: (count: number) => `${count} ${count === 1 ? 'note' : 'notes'}`,
+
+  // Streams & Periods Hub
+  streams: 'Streams',
+  streamsPageTitle: 'Streams Catalog',
+  streamsPageSubtitle: 'Configure end-to-end content streams, bind feeds, and monitor the event bus.',
+  createStreamBtn: 'Create Stream',
+  editStreamTitle: 'Edit Stream',
+  createStreamTitle: 'New Stream',
+  streamAnalyticsTitle: 'Stream Analytics',
+  streamSavedSuccess: 'Stream saved successfully',
+  streamDeletedSuccess: 'Stream deleted',
+  periodsHubTitle: 'Periods Hub',
+  periodsHubSubtitle: 'All active global and local periods, timeline progress and event bus broadcasts.',
+  periodsBroadcastSuccess: 'Period broadcast to event bus successfully',
 
   // Notes List Page
   notesListPageTitle: 'All Notes',

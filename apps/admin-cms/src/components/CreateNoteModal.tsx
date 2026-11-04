@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, message } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
-import { NoteType, NoteStatus, FolderInputItem, Note, NotePrivacy } from '../types';
+import { notesApi } from '../api/client';
+import { NoteType, NoteStatus, FolderInputItem, Note, NotePrivacy, PendingPosterItem } from '../types';
 import { NoteTemplateDefinition } from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
@@ -10,6 +11,8 @@ import { FolderSelect } from './FolderSelect';
 import { AppSelect } from './common/AppSelect';
 import { NotePrivacySelector } from './notes/NotePrivacySelector';
 import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
+import { NotePosterPicker } from './notes/NotePosterPicker';
+import { AiDescriptionAssistant } from './notes/AiDescriptionAssistant';
 import { useAdminI18n } from '../i18n';
 import {
   Calendar,
@@ -61,6 +64,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [description, setDescription] = useState('');
   const [sourceLink, setSourceLink] = useState('');
   const [author, setAuthor] = useState('');
+  const [pendingPosters, setPendingPosters] = useState<PendingPosterItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Template apply helper
@@ -92,6 +96,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setSourceLink('');
       setAuthor('');
       setHashtags([]);
+      setPendingPosters([]);
 
       const now = new Date();
       const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -142,6 +147,37 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         folders: assignedFolders.length > 0 ? assignedFolders : undefined,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
       });
+
+      // Attach any selected web posters or local files
+      if (pendingPosters.length > 0) {
+        const webItems = pendingPosters
+          .filter((p) => !p.file && p.url.startsWith('http'))
+          .map((p) => ({
+            url: p.url,
+            caption: p.title,
+            isMain: p.isMain,
+          }));
+
+        if (webItems.length > 0) {
+          try {
+            await notesApi.attachImagesFromUrls(created.id, webItems);
+          } catch (uploadErr) {
+            console.error('Failed to attach web posters', uploadErr);
+          }
+        }
+
+        const localFiles = pendingPosters
+          .filter((p) => Boolean(p.file))
+          .map((p) => p.file as File);
+
+        if (localFiles.length > 0) {
+          try {
+            await notesApi.uploadImages(created.id, localFiles);
+          } catch (uploadErr) {
+            console.error('Failed to upload local files', uploadErr);
+          }
+        }
+      }
 
       message.success(t.quickAddNoteCreated);
       onSuccess?.(created);
@@ -257,6 +293,15 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t.titleInputPlaceholder}
               className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-sm text-on-surface placeholder-outline outline-none"
+            />
+          </div>
+
+          {/* Quick Poster & Media Picker */}
+          <div className="bg-surface-container/60 border border-white/5 rounded-xl p-3">
+            <NotePosterPicker
+              noteTitle={title}
+              pendingPosters={pendingPosters}
+              onPendingPostersChange={setPendingPosters}
             />
           </div>
 
@@ -377,9 +422,24 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
           {/* Description (Markdown) */}
           <div>
-            <label className="block text-xs font-mono text-on-surface-variant mb-1">
-              {t.contentLabel} (Markdown)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-mono text-on-surface-variant">
+                {t.contentLabel} (Markdown)
+              </label>
+            </div>
+
+            <AiDescriptionAssistant
+              title={title}
+              startDate={startDate}
+              noteType={type}
+              category={assignedFolders[0]?.path || undefined}
+              currentDescription={description}
+              onDescriptionGenerated={setDescription}
+              onHashtagsSuggested={(newTags) => {
+                setHashtags((prev) => Array.from(new Set([...prev, ...newTags])));
+              }}
+            />
+
             <MarkdownEditor
               value={description}
               onChange={setDescription}
