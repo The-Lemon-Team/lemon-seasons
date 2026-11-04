@@ -1,6 +1,9 @@
 import axios from 'axios';
 import {
   Note,
+  NoteImage,
+  WebImageResult,
+  ExternalImageItem,
   Feed,
   TaxonomyTreeNode,
   TaxonomyNode,
@@ -21,6 +24,8 @@ import {
   GDriveRecentUpdatesResponse,
   GDriveUpdateItem,
   AppRuntimeMode,
+  GenerateNoteAiInput,
+  GeneratedNoteEnrichment,
 } from '@lenta/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
@@ -65,6 +70,12 @@ apiClient.interceptors.response.use(
 );
 
 export const calendarApi = {
+  // AI Note Description & Content Generation
+  generateAiContent: async (data: GenerateNoteAiInput): Promise<GeneratedNoteEnrichment> => {
+    const res = await apiClient.post<GeneratedNoteEnrichment>('/ingestion/ai/generate-content', data);
+    return res.data;
+  },
+
   // AI Quick Add & Parse
   parseAiNotes: async (text: string, context?: ParseNotesContext): Promise<{ cards: ParsedNoteCard[] }> => {
     const res = await apiClient.post<{ cards: ParsedNoteCard[] }>('/notes/ai/parse', { text, context });
@@ -87,6 +98,46 @@ export const calendarApi = {
   // Update Note
   updateNote: async (id: string, input: UpdateNoteInput): Promise<Note> => {
     const res = await apiClient.patch<Note>(`/notes/${id}`, input);
+    return res.data;
+  },
+
+  // Images & Posters API
+  searchWebImages: async (
+    query: string,
+    options?: { gl?: string; hl?: string; num?: number },
+  ): Promise<WebImageResult[]> => {
+    const res = await apiClient.get<WebImageResult[]>('/notes/media/search-images', {
+      params: { q: query, ...options },
+    });
+    return res.data;
+  },
+
+  attachImagesFromUrls: async (
+    noteId: string,
+    items: ExternalImageItem[],
+  ): Promise<NoteImage[]> => {
+    const res = await apiClient.post<NoteImage[]>(`/notes/${noteId}/images/from-urls`, { items });
+    return res.data;
+  },
+
+  uploadImages: async (id: string, files: File[]): Promise<NoteImage[]> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const res = await apiClient.post<NoteImage[]>(`/notes/${id}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  setMainImage: async (noteId: string, imageId: string): Promise<NoteImage> => {
+    const res = await apiClient.patch<NoteImage>(`/notes/${noteId}/images/${imageId}/main`);
+    return res.data;
+  },
+
+  deleteImage: async (noteId: string, imageId: string): Promise<{ success: boolean; newMainId?: string }> => {
+    const res = await apiClient.delete<{ success: boolean; newMainId?: string }>(
+      `/notes/${noteId}/images/${imageId}`,
+    );
     return res.data;
   },
 

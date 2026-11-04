@@ -19,6 +19,7 @@ import { useI18n } from '../../i18n';
 import { calendarApi } from '../../api/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../api/queries';
+import { NoteDeleteButton } from '../notes/NoteDeleteButton';
 
 interface DayFeedStreamProps {
   notes: Note[];
@@ -231,6 +232,13 @@ export const DayFeedStream: React.FC<DayFeedStreamProps> = ({
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
+
+                    <NoteDeleteButton
+                      noteId={note.id}
+                      noteTitle={note.title}
+                      variant="icon"
+                      confirmPlacement="top"
+                    />
 
                     <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-[#c9cd58] transition-colors" />
                   </div>

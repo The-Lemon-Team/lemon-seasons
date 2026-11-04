@@ -8,7 +8,10 @@ import { calendarApi } from '../api/client';
 import { useFoldersContext } from '../context/FoldersContext';
 import { Folder as FolderType } from '@lenta/shared';
 import { NotePrivacySelector } from './notes/NotePrivacySelector';
+import { NotePosterPicker } from './notes/NotePosterPicker';
+import { PendingPosterItem } from '@lenta/shared';
 import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
+import { AiDescriptionAssistant } from './notes/AiDescriptionAssistant';
 import {
   X,
   Calendar,
@@ -36,6 +39,8 @@ interface CreateNoteModalProps {
   initialFolderPath?: string;
 }
 
+const EMPTY_FEEDS: any[] = [];
+
 export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   isOpen,
   onClose,
@@ -45,7 +50,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { appMode } = useAppMode();
-  const { data: feeds = [] } = useFeeds();
+  const { data: feeds = EMPTY_FEEDS } = useFeeds();
 
   let folders: FolderType[] = [];
   try {
@@ -67,6 +72,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [author, setAuthor] = useState('');
+  const [pendingPosters, setPendingPosters] = useState<PendingPosterItem[]>([]);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -103,6 +109,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setErrorMessage(null);
       setPrivacy('private');
       setActiveTemplateId(null);
+      setPendingPosters([]);
     }
   }, [initialFolderPath, isOpen]);
 
@@ -127,7 +134,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         .filter(Boolean);
 
       const cleanFolder = folderPath.trim();
-      await calendarApi.createNote({
+      const created = await calendarApi.createNote({
         title: title.trim(),
         description: description.trim(),
         type,
@@ -140,6 +147,37 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         author: author.trim() || undefined,
         privacy,
       });
+
+      // Attach any selected web posters or local files
+      if (pendingPosters.length > 0) {
+        const webItems = pendingPosters
+          .filter((p) => !p.file && p.url.startsWith('http'))
+          .map((p) => ({
+            url: p.url,
+            caption: p.title,
+            isMain: p.isMain,
+          }));
+
+        if (webItems.length > 0) {
+          try {
+            await calendarApi.attachImagesFromUrls(created.id, webItems);
+          } catch (uploadErr) {
+            console.error('Failed to attach web posters', uploadErr);
+          }
+        }
+
+        const localFiles = pendingPosters
+          .filter((p) => Boolean(p.file))
+          .map((p) => p.file as File);
+
+        if (localFiles.length > 0) {
+          try {
+            await calendarApi.uploadImages(created.id, localFiles);
+          } catch (uploadErr) {
+            console.error('Failed to upload local files', uploadErr);
+          }
+        }
+      }
 
       // Invalidate queries so that the newly created note is immediately displayed on the calendar & folder views
       await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
@@ -230,6 +268,15 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t.noteTitlePlaceholder}
                   className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] placeholder-[#93927e] outline-none"
+                />
+              </div>
+
+              {/* Note Posters Picker */}
+              <div className="bg-[#121414]/60 border border-[#242828] rounded-xl p-3">
+                <NotePosterPicker
+                  noteTitle={title}
+                  pendingPosters={pendingPosters}
+                  onPendingPostersChange={setPendingPosters}
                 />
               </div>
 
@@ -392,10 +439,32 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
               {/* Markdown Body */}
               <div>
-                <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-[#c9cd58]" />
-                  Описание в формате Markdown
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-mono text-[#c9c7b2] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#c9cd58]" />
+                    Описание в формате Markdown
+                  </label>
+                </div>
+
+                <AiDescriptionAssistant
+                  title={title}
+                  startDate={startDate}
+                  noteType={type}
+                  category={folderPath || undefined}
+                  currentDescription={description}
+                  onDescriptionGenerated={setDescription}
+                  onHashtagsSuggested={(newTags) => {
+                    setHashtagsInput((prev) => {
+                      const existing = prev
+                        .split(/[,\s]+/)
+                        .map((h) => h.trim().replace(/^#/, ''))
+                        .filter(Boolean);
+                      const combined = Array.from(new Set([...existing, ...newTags]));
+                      return combined.map((h) => `#${h}`).join(' ');
+                    });
+                  }}
+                />
+
                 <textarea
                   rows={5}
                   data-testid="note-desc-input"

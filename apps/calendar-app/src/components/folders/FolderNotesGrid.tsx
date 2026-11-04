@@ -3,6 +3,7 @@ import { Note } from '@lenta/shared';
 import { FileText, Search, Calendar, Tag } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useI18n } from '../../i18n';
+import { NoteDeleteButton } from '../notes/NoteDeleteButton';
 
 export interface FolderNotesGridProps {
   notes: Note[];
@@ -86,11 +87,19 @@ export const FolderNotesGrid: React.FC<FolderNotesGridProps> = ({
                     <span className="px-2 py-0.5 rounded bg-[#121414] text-[#c9cd58] border border-[#2d3030]">
                       {note.type}
                     </span>
-                    {note.feed && (
-                      <span className="text-[#93927e] truncate max-w-[120px]">
-                        {note.feed.title}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {note.feed && (
+                        <span className="text-[#93927e] truncate max-w-[120px]">
+                          {note.feed.title}
+                        </span>
+                      )}
+                      <NoteDeleteButton
+                        noteId={note.id}
+                        noteTitle={note.title}
+                        variant="icon"
+                        confirmPlacement="top"
+                      />
+                    </div>
                   </div>
 
                   <h4 className="font-semibold text-xs text-[#e2e2e2] group-hover:text-[#e5e971] transition-colors line-clamp-2">

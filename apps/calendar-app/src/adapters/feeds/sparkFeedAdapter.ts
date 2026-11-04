@@ -135,11 +135,15 @@ export const SparkFeedAdapter: FeedAdapter = {
         matched = matched.filter((n) => {
           if (n.feed?.slug === activeFeedSlug) return true;
           const sub = activeFeedSlug.replace(/^spark-/, '').toLowerCase();
-          if (n.folderPath && n.folderPath.toLowerCase().includes(sub)) return true;
+          const subWithSpaces = sub.replace(/-/g, ' ');
+          if (n.folderPath) {
+            const fp = n.folderPath.toLowerCase();
+            if (fp.includes(sub) || fp.includes(subWithSpaces)) return true;
+          }
           if (n.folders && Array.isArray(n.folders)) {
             return n.folders.some((f) => {
               const p = (f.folder?.path || f.folder?.name || '').toLowerCase();
-              return p.includes(sub);
+              return p.includes(sub) || p.includes(subWithSpaces);
             });
           }
           return false;

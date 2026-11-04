@@ -31,6 +31,7 @@ import { Modal } from './Modal';
 import { EditNoteModal } from './EditNoteModal';
 import { AuthorBadge } from './common/AuthorBadge';
 import { RelatedNotesSection } from './common/RelatedNotesSection';
+import { NoteDeleteButton } from './notes/NoteDeleteButton';
 import { calendarApi } from '../api/client';
 import { queryKeys } from '../api/queries';
 
@@ -54,6 +55,19 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
   const [editAuthor, setEditAuthor] = useState<string | undefined>(undefined);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setLightboxUrl(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxUrl]);
 
   useEffect(() => {
     setActiveNote(note);
@@ -173,7 +187,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
     <Modal
       isOpen={Boolean(current)}
       onClose={onClose}
-      closeOnEsc={!isEditModalOpen}
+      closeOnEsc={!isEditModalOpen && !lightboxUrl}
       showDefaultHeader={false}
       maxWidth="max-w-3xl"
       containerClassName="bg-[#1b1e1e] border-[#323636]"
@@ -264,6 +278,17 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>CMS</span>
                 </a>
+
+                {/* Quick Delete Note */}
+                <NoteDeleteButton
+                  noteId={current.id}
+                  noteTitle={current.title}
+                  variant="button"
+                  confirmPlacement="bottom"
+                  onDeleted={() => {
+                    onClose();
+                  }}
+                />
               </>
             )}
 
@@ -290,11 +315,23 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
 
           {/* Main Cover Banner if available */}
           {mainImage?.url && (
-            <div className="w-full h-56 rounded-md overflow-hidden bg-[#121414] border border-[#242828] relative">
+            <div
+              onClick={() => setLightboxUrl(mainImage.url)}
+              className="w-full h-72 sm:h-88 rounded-md overflow-hidden bg-[#121414] border border-[#242828] relative group cursor-pointer flex items-center justify-center"
+              title="Нажмите для увеличения"
+            >
+              {/* Ambient Blurred Backdrop */}
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 pointer-events-none"
+                style={{ backgroundImage: `url("${mainImage.url}")` }}
+                aria-hidden="true"
+              />
+              <div className="absolute inset-0 bg-black/30 pointer-events-none" aria-hidden="true" />
+
               <img
                 src={mainImage.url}
                 alt={mainImage.alt || current.title}
-                className="w-full h-full object-cover"
+                className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain drop-shadow-md group-hover:scale-[1.01] transition-transform duration-300"
               />
             </div>
           )}
@@ -451,19 +488,18 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {current.images.map((img) => (
-                  <a
+                  <div
                     key={img.id}
-                    href={img.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-28 rounded overflow-hidden bg-[#121414] border border-[#242828] group hover:border-[#c9cd58] transition-colors"
+                    onClick={() => setLightboxUrl(img.url)}
+                    className="h-28 rounded overflow-hidden bg-[#121414] border border-[#242828] group hover:border-[#c9cd58] transition-colors cursor-pointer"
+                    title="Нажмите для увеличения"
                   >
                     <img
                       src={img.thumbnailUrl || img.url}
                       alt={img.alt || current.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
-                  </a>
+                  </div>
                 ))}
               </div>
             </div>
@@ -485,6 +521,27 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
             setIsEditModalOpen(false);
           }}
         />
+    {/* Lightbox Zoom Overlay */}
+        {lightboxUrl && (
+          <div
+            className="fixed inset-0 bg-black/95 z-[1300] flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxUrl(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={lightboxUrl}
+              alt="Zoomed Poster"
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
     </Modal>
   );
 };

@@ -256,6 +256,9 @@ export interface Translations {
   regenerateTokenConfirm: string;
   deleteContainer: string;
   deleteContainerConfirm: string;
+  deleteNote: string;
+  deleteNoteConfirm: string;
+  deleteNoteSuccess: string;
   filterAll: string;
   filterPrivate: string;
   filterPublic: string;
@@ -581,6 +584,9 @@ export const ruTranslations: Translations = {
   regenerateTokenConfirm: 'Сгенерировать новый ключ? Старый ключ перестанет работать.',
   deleteContainer: 'Удалить контейнер',
   deleteContainerConfirm: 'Вы уверены, что хотите удалить этот контейнер Obsidian?',
+  deleteNote: 'Удалить заметку',
+  deleteNoteConfirm: 'Вы уверены, что хотите удалить эту заметку?',
+  deleteNoteSuccess: 'Заметка успешно удалена',
   filterAll: 'Все',
   filterPrivate: 'Приватные',
   filterPublic: 'Публичные',
@@ -907,6 +913,9 @@ export const enTranslations: Translations = {
   regenerateTokenConfirm: 'Regenerate API token? Old token will be invalidated.',
   deleteContainer: 'Delete Container',
   deleteContainerConfirm: 'Are you sure you want to delete this Obsidian container?',
+  deleteNote: 'Delete note',
+  deleteNoteConfirm: 'Are you sure you want to delete this note?',
+  deleteNoteSuccess: 'Note deleted successfully',
   filterAll: 'All',
   filterPrivate: 'Private',
   filterPublic: 'Public',

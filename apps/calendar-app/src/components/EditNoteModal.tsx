@@ -27,6 +27,8 @@ import {
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
 import { AppSelect } from './common/AppSelect';
+import { NotePosterPicker } from './notes/NotePosterPicker';
+import { NoteDeleteButton } from './notes/NoteDeleteButton';
 
 interface EditNoteModalProps {
   note: Note | null;
@@ -34,6 +36,8 @@ interface EditNoteModalProps {
   onClose: () => void;
   onSuccess?: (updated: Note) => void;
 }
+
+const EMPTY_FEEDS: any[] = [];
 
 export const EditNoteModal: React.FC<EditNoteModalProps> = ({
   note,
@@ -43,7 +47,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
 }) => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const { data: feeds = [] } = useFeeds();
+  const { data: feeds = EMPTY_FEEDS } = useFeeds();
 
   let folders: FolderType[] = [];
   try {
@@ -175,6 +179,18 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-sm text-[#e2e2e2] outline-none"
+          />
+        </div>
+
+        {/* Posters & Multi-image Management Strip */}
+        <div className="bg-[#121414]/60 border border-[#242828] rounded-xl p-3">
+          <NotePosterPicker
+            noteId={note.id}
+            noteTitle={title}
+            existingImages={note.images || []}
+            onImagesUpdated={() => {
+              queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+            }}
           />
         </div>
 
@@ -348,22 +364,37 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         </div>
 
         {/* Modal Action Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#242828]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded bg-[#121414] border border-[#2d3030] text-[#c9c7b2] hover:bg-[#242828] transition-colors"
-          >
-            {t.cancel}
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || !title.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-bold transition-colors disabled:opacity-50"
-          >
-            <Check className="w-4 h-4" />
-            <span>{isSubmitting ? 'Сохранение...' : t.save}</span>
-          </button>
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#242828]">
+          <div>
+            {note && (
+              <NoteDeleteButton
+                noteId={note.id}
+                noteTitle={note.title}
+                variant="button"
+                confirmPlacement="top"
+                onDeleted={() => {
+                  onClose();
+                }}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded bg-[#121414] border border-[#2d3030] text-[#c9c7b2] hover:bg-[#242828] transition-colors"
+            >
+              {t.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !title.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-bold transition-colors disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" />
+              <span>{isSubmitting ? 'Сохранение...' : t.save}</span>
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

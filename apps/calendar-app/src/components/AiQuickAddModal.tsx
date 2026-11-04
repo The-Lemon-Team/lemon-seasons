@@ -15,9 +15,11 @@ import {
   CheckCircle,
   FileText,
   Film,
+  Search,
 } from 'lucide-react';
-import { ParsedNoteCard, NoteType, CreateNoteInput } from '@lenta/shared';
+import { ParsedNoteCard, NoteType, CreateNoteInput, WebImageResult } from '@lenta/shared';
 import { calendarApi } from '../api/client';
+import { WebPosterSearchModal } from './notes/WebPosterSearchModal';
 
 interface AiQuickAddModalProps {
   isOpen: boolean;
@@ -68,14 +70,20 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cards, setCards] = useState<ParsedNoteCard[]>([]);
+  const [cards, setCards] = useState<(ParsedNoteCard & { pendingPosters?: WebImageResult[] })[]>([]);
+  const [posterCardId, setPosterCardId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (posterCardId) {
+          e.stopPropagation();
+          setPosterCardId(null);
+        } else {
+          onClose();
+        }
       }
     };
 
@@ -83,7 +91,7 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, posterCardId, onClose]);
 
   if (!isOpen) return null;
 
@@ -197,7 +205,27 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         curator: (c as any).author || c.curator,
       }));
 
-      await calendarApi.createNotesBatch(payload);
+      const batchRes = await calendarApi.createNotesBatch(payload);
+
+      // Attach any selected web posters to the created notes
+      if (batchRes && Array.isArray(batchRes.notes)) {
+        for (let i = 0; i < selectedCards.length; i++) {
+          const card = selectedCards[i];
+          const created = batchRes.notes[i];
+          if (created && card.pendingPosters && card.pendingPosters.length > 0) {
+            try {
+              const items = card.pendingPosters.map((p, idx) => ({
+                url: p.imageUrl,
+                caption: p.title,
+                isMain: idx === 0,
+              }));
+              await calendarApi.attachImagesFromUrls(created.id, items);
+            } catch (err) {
+              console.error('Failed to attach posters for card', card.title, err);
+            }
+          }
+        }
+      }
 
       // Invalidate queries so timeline, month view, and calendar refresh
       await queryClient.invalidateQueries({ queryKey: ['notes'] });
@@ -394,6 +422,24 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
 
                           <button
                             type="button"
+                            onClick={() => setPosterCardId(card.tempId)}
+                            className={`px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
+                              card.pendingPosters && card.pendingPosters.length > 0
+                                ? 'bg-[#c9cd58]/20 border-[#c9cd58]/50 text-[#c9cd58] font-bold'
+                                : 'bg-[#121414] border-[#2b2e2e] hover:border-[#c9cd58]/40 text-[#a0a090] hover:text-[#f1f1f1]'
+                            }`}
+                            title="Найти постер в Google"
+                          >
+                            <Search className="w-3 h-3" />
+                            <span>
+                              {card.pendingPosters && card.pendingPosters.length > 0
+                                ? `Постер (${card.pendingPosters.length})`
+                                : 'Постер'}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => removeCard(card.tempId)}
                             className="p-1 rounded text-[#707060] hover:text-red-400 hover:bg-red-950/20 transition-colors"
                             title="Удалить"
@@ -508,6 +554,23 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Poster Search Modal for Parsed Card */}
+      {posterCardId && (
+        <WebPosterSearchModal
+          isOpen={Boolean(posterCardId)}
+          onClose={() => setPosterCardId(null)}
+          initialQuery={cards.find((c) => c.tempId === posterCardId)?.title || ''}
+          onSelectImages={(images) => {
+            setCards((prev) =>
+              prev.map((c) =>
+                c.tempId === posterCardId ? { ...c, pendingPosters: images } : c,
+              ),
+            );
+          }}
+          zIndex={1300}
+        />
+      )}
     </div>
   );
 };
