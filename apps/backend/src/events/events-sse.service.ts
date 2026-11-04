@@ -42,6 +42,8 @@ export class EventsSseService {
         type: event.isNew ? 'NOTE_CREATED' : 'NOTE_UPDATED',
         noteId: event.noteId,
         title: event.title,
+        noteType: payload.type || undefined,
+        isPromoted: Boolean(payload.metadata?.isPromoted || payload.metadata?.promoted || payload.metadata?.broadcastToBus),
         feedId: event.feedId || null,
         feedSlug: feedSlug || null,
         feedTitle: feedTitle || null,
@@ -73,6 +75,22 @@ export class EventsSseService {
     };
     this.addToBuffer(noteEvent);
     this.event$.next(noteEvent);
+  }
+
+  @OnEvent('stream.created')
+  @OnEvent('stream.updated')
+  @OnEvent('stream.deleted')
+  handleStreamChanged(data: any) {
+    const streamEvent: LiveFeedNoteEvent = {
+      id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      type: 'STREAM_UPDATED',
+      title: `Обновление стрима ${data?.title || data?.slug || ''}`,
+      streamSlug: data?.slug,
+      privacy: data?.privacy === 'private' ? 'private' : 'public',
+      timestamp: Date.now(),
+    };
+    this.addToBuffer(streamEvent);
+    this.event$.next(streamEvent);
   }
 
   private addToBuffer(event: LiveFeedNoteEvent) {

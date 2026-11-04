@@ -1,18 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashtagsService } from '../hashtags/hashtags.service';
 import { FoldersService } from '../folders/folders.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
+import { StreamsService } from '../streams/streams.service';
 
 export const STREAM_SOURCE_SLUGS: Record<string, string[]> = {
   entertainment: [
     'marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe',
-    'cinema', 'movies', 'tmdb', 'films', 'series',
+    'cinema', 'movies', 'tmdb', 'films', 'series', 'my-films', 'my-movies',
     'music', 'soundtrack', 'albums', 'музыка', 'my-music',
     'gaming', 'games', 'игры',
   ],
+  js_interview: [
+    'daily-questions', 'advanced-react', 'advanced-reactx',
+    'interesting-questions', 'react', 'javascript', 'interview',
+  ],
+  'js-interview': [
+    'daily-questions', 'advanced-react', 'advanced-reactx',
+    'interesting-questions', 'react', 'javascript', 'interview',
+  ],
   'it-dev': [
+    'spark-ai', 'ai-models', 'ai',
+    'spark-habr', 'habr', 'community', 'dev-articles',
+    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
+    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
+    'spark-xakep', 'xakep', 'hacker',
+    'spark-cyber-security', 'cybersec', 'security',
+    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
+  ],
+  it_dev: [
     'spark-ai', 'ai-models', 'ai',
     'spark-habr', 'habr', 'community', 'dev-articles',
     'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
@@ -60,11 +78,28 @@ export const LEGACY_FEED_SLUG_ALIASES: Record<string, string[]> = {
   'spark-xakep': ['spark-xakep', 'xakep', 'hacker'],
   'spark-cyber-security': ['spark-cyber-security', 'cybersec', 'security'],
   'spark-youtube-oneday': ['spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday'],
+  'hot-daily': [
+    'spark-ai', 'spark-habr', 'spark-changelogsfeed', 'spark-notebooklmai',
+    'spark-xakep', 'spark-cyber-security', 'spark-youtube-oneday', 'spark-general',
+    'spark-ai-economy', 'spark-news-and-frontier', 'spark-world-of-warcraft',
+    'spark-политика', 'spark-рф-и-украина',
+  ],
+  'it-tech': [
+    'spark-ai', 'ai-models', 'ai', 'spark-habr', 'habr', 'spark-changelogsfeed',
+    'changelogs', 'spark-notebooklmai', 'spark-xakep', 'spark-cyber-security',
+    'spark-youtube-oneday',
+  ],
+  'seasons-hub': ['seasons', 'lemon-seasons', 'daily-logs', 'tech-strategy', 'product-milestones', 'community-stories'],
+  'entertainment-hub': ['marvel', 'mcu', 'mcu-radar', 'cinema', 'movies', 'films', 'my-films', 'music', 'my-music', 'games'],
+  'holidays-hub': ['russian-holidays', 'orthodox-holidays', 'world-holidays', 'world-religions', 'christian-holidays'],
 };
 
 @Injectable()
 export class NotesQueryBuilder {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly streamsService?: StreamsService,
+  ) {}
 
   private buildFeedCondition(targetFeed: { id: string; folderPaths: string[]; hashtags: string[] }): Prisma.NoteWhereInput {
     const hasFolders = targetFeed.folderPaths && targetFeed.folderPaths.length > 0;
@@ -192,17 +227,68 @@ export class NotesQueryBuilder {
         }
       }
     } else if (query.streamSource && query.streamSource !== 'all') {
-      const allowedSlugs = STREAM_SOURCE_SLUGS[query.streamSource];
-      if (allowedSlugs && allowedSlugs.length > 0) {
-        andConditions.push({
-          OR: [
-            { feed: { slug: { in: allowedSlugs }, deletedAt: null } },
-            { publicFeed: { slug: { in: allowedSlugs }, deletedAt: null } },
-            ...allowedSlugs.map((s) => ({
-              folderPath: { contains: s, mode: 'insensitive' as const },
-            })),
-          ],
-        });
+      if (query.streamSource === 'private_feeds') {
+        andConditions.push({ privacy: 'private' });
+      } else {
+        let matchedDynamic = false;
+        if (this.streamsService) {
+          const dynamicCriteria = await this.streamsService.resolveCriteriaForStream(query.streamSource);
+          if (dynamicCriteria) {
+            matchedDynamic = true;
+            if (dynamicCriteria.privacy === 'private') {
+              andConditions.push({ privacy: 'private' });
+            }
+            const orClauses: Prisma.NoteWhereInput[] = [];
+            if (dynamicCriteria.feedIds && dynamicCriteria.feedIds.length > 0) {
+              orClauses.push({ feedId: { in: dynamicCriteria.feedIds } });
+              orClauses.push({ publicFeedId: { in: dynamicCriteria.feedIds } });
+            }
+            if (dynamicCriteria.feedSlugs && dynamicCriteria.feedSlugs.length > 0) {
+              orClauses.push({ feed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
+              orClauses.push({ publicFeed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
+              orClauses.push(
+                ...dynamicCriteria.feedSlugs.map((s) => ({
+                  folderPath: { contains: s, mode: 'insensitive' as const },
+                }))
+              );
+            }
+            if (dynamicCriteria.folderPaths && dynamicCriteria.folderPaths.length > 0) {
+              for (const fp of dynamicCriteria.folderPaths) {
+                orClauses.push({ folderPath: { contains: fp, mode: 'insensitive' as const } });
+              }
+            }
+            if (dynamicCriteria.tags && dynamicCriteria.tags.length > 0) {
+              orClauses.push({
+                hashtags: {
+                  some: {
+                    name: { in: dynamicCriteria.tags, mode: 'insensitive' as const },
+                  },
+                },
+              });
+            }
+            if (orClauses.length > 0) {
+              andConditions.push({ OR: orClauses });
+            } else {
+              // Newly created custom stream with no feeds, tags, or folders attached yet should return empty notes list
+              andConditions.push({ id: '__empty_stream_empty_notes__' });
+            }
+          }
+        }
+
+        if (!matchedDynamic) {
+          const allowedSlugs = STREAM_SOURCE_SLUGS[query.streamSource];
+          if (allowedSlugs && allowedSlugs.length > 0) {
+            andConditions.push({
+              OR: [
+                { feed: { slug: { in: allowedSlugs }, deletedAt: null } },
+                { publicFeed: { slug: { in: allowedSlugs }, deletedAt: null } },
+                ...allowedSlugs.map((s) => ({
+                  folderPath: { contains: s, mode: 'insensitive' as const },
+                })),
+              ],
+            });
+          }
+        }
       }
     }
 

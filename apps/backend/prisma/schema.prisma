@@ -464,3 +464,27 @@ model QuickAddMacro {
 
   @@index([order])
 }
+
+model Stream {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  title       String
+  description String?
+  icon        String?   @default("📁")
+  color       String?   @default("#2481cc")
+  badge       String?
+  privacy     String    @default("public")
+  order       Int       @default(0)
+  isBuiltin   Boolean   @default(false)
+  feedIds     String[]  @default([])
+  tags        String[]  @default([])
+  folderPaths String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([privacy])
+  @@index([order])
+  @@index([slug])
+  @@index([deletedAt])
+}

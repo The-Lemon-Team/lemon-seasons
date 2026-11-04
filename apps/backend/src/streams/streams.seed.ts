@@ -1,0 +1,140 @@
+export interface DefaultStreamSeedConfig {
+  slug: string;
+  title: string;
+  icon: string;
+  color: string;
+  description: string;
+  privacy: 'public' | 'private';
+  order: number;
+  isBuiltin: boolean;
+  feedSlugs: string[];
+  tags: string[];
+  folderPaths: string[];
+}
+
+export const DEFAULT_STREAMS_SEED: DefaultStreamSeedConfig[] = [
+  {
+    slug: 'all',
+    title: 'Все ленты',
+    icon: '🌐',
+    color: '#2481cc',
+    description: 'Сводный поток всех публичных каналов и лент проекта',
+    privacy: 'public',
+    order: 0,
+    isBuiltin: true,
+    feedSlugs: [],
+    tags: [],
+    folderPaths: [],
+  },
+  {
+    slug: 'it_dev',
+    title: 'IT & Dev',
+    icon: '💻',
+    color: '#0ea5e9',
+    description: 'IT-новости, релизы моделей, статьи с Хабра, безопасность и код',
+    privacy: 'public',
+    order: 1,
+    isBuiltin: false,
+    feedSlugs: [
+      'spark-ai',
+      'spark-habr',
+      'spark-changelogsfeed',
+      'spark-notebooklmai',
+      'spark-xakep',
+      'spark-cyber-security',
+      'spark-youtube-oneday',
+      'spark-ai-economy',
+    ],
+    tags: ['ai', 'dev', 'habr', 'changelog', 'security'],
+    folderPaths: ['spark/'],
+  },
+  {
+    slug: 'js_interview',
+    title: 'JS Interview',
+    icon: '💡',
+    color: '#eab308',
+    description: 'Подготовка к собеседованиям по JavaScript, React, архитектуре и алгоритмам',
+    privacy: 'public',
+    order: 2,
+    isBuiltin: false,
+    feedSlugs: [
+      'daily-questions',
+      'advanced-react',
+      'advanced-reactx',
+      'interesting-questions',
+    ],
+    tags: ['js', 'javascript', 'react', 'interview', 'questions'],
+    folderPaths: ['interview/', 'questions/'],
+  },
+  {
+    slug: 'entertainment',
+    title: 'Развлечения',
+    icon: '🍿',
+    color: '#ec4899',
+    description: 'Киновселенная Marvel, игры, киноновинки и музыкальные релизы',
+    privacy: 'public',
+    order: 3,
+    isBuiltin: false,
+    feedSlugs: [
+      'mcu-radar',
+      'marvel',
+      'cinema',
+      'films',
+      'my-films',
+      'my-movies',
+      'music',
+      'my-music',
+      'gaming',
+      'games',
+    ],
+    tags: ['marvel', 'cinema', 'films', 'games', 'кино', 'игры', 'музыка'],
+    folderPaths: ['entertainment/', 'myfilms/'],
+  },
+  {
+    slug: 'seasons',
+    title: 'Seasons',
+    icon: '🍋',
+    color: '#f59e0b',
+    description: 'Хроники Lemon Seasons, ежедневные логи, стратегия и майлстоуны',
+    privacy: 'public',
+    order: 4,
+    isBuiltin: false,
+    feedSlugs: ['daily-logs', 'tech-strategy', 'product-milestones', 'community-stories'],
+    tags: ['season', 'seasons', 'daily', 'strategy'],
+    folderPaths: ['01_daily_logs/', 'seasons/'],
+  },
+  {
+    slug: 'holidays',
+    title: 'Праздники',
+    icon: '🎉',
+    color: '#ef4444',
+    description: 'Официальные, православные, международные и необычные праздники',
+    privacy: 'public',
+    order: 5,
+    isBuiltin: false,
+    feedSlugs: [
+      'russian-official',
+      'russian-military',
+      'russian-holidays',
+      'orthodox-holidays',
+      'christian-holidays',
+      'world-holidays',
+      'world-religions',
+    ],
+    tags: ['holiday', 'праздник'],
+    folderPaths: ['holidays/', 'calendar/'],
+  },
+  {
+    slug: 'private_feeds',
+    title: 'Private feeds',
+    icon: '🔮',
+    color: '#8b5cf6',
+    description: 'Только приватные ленты и защищенный контур',
+    privacy: 'private',
+    order: 6,
+    isBuiltin: false,
+    feedSlugs: [],
+    tags: [],
+    folderPaths: ['private/'],
+  },
+];

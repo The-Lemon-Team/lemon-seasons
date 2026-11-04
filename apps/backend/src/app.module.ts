@@ -20,6 +20,7 @@ import { BusModule } from './bus/bus.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { MacrosModule } from './macros/macros.module';
 import { EventsModule } from './events/events.module';
+import { StreamsModule } from './streams/streams.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { EventsModule } from './events/events.module';
     WorkspacesModule,
     MacrosModule,
     EventsModule,
+    StreamsModule,
   ],
 })
 export class AppModule implements NestModule {
