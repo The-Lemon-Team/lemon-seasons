@@ -21,6 +21,62 @@ export interface Feed {
   notes?: Note[];
 }
 
+export type StreamPrivacy = 'public' | 'private';
+
+export interface Stream {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  icon?: string | null;
+  color?: string | null;
+  badge?: string | null;
+  privacy: StreamPrivacy;
+  order: number;
+  isBuiltin: boolean;
+  feedIds: string[];
+  tags: string[];
+  folderPaths: string[];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  feeds?: Feed[];
+  _count?: {
+    notes?: number;
+    feeds?: number;
+  };
+}
+
+export interface CreateStreamPayload {
+  slug?: string;
+  title: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  badge?: string;
+  privacy?: StreamPrivacy;
+  order?: number;
+  isBuiltin?: boolean;
+  feedIds?: string[];
+  tags?: string[];
+  folderPaths?: string[];
+}
+
+export interface UpdateStreamPayload {
+  slug?: string;
+  title?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  badge?: string;
+  privacy?: StreamPrivacy;
+  order?: number;
+  isBuiltin?: boolean;
+  feedIds?: string[];
+  tags?: string[];
+  folderPaths?: string[];
+}
+
 export type FeedPrivacy = 'public' | 'private';
 export type NotePrivacy = 'private' | 'public';
 export type FolderPrivacy = 'private' | 'public';
@@ -124,6 +180,37 @@ export interface NoteImage {
   order: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WebImageResult {
+  title: string;
+  imageUrl: string;
+  thumbnailUrl: string;
+  source: string;
+  domain: string;
+  link: string;
+  width?: number;
+  height?: number;
+  position?: number;
+}
+
+export interface ExternalImageItem {
+  url: string;
+  caption?: string;
+  alt?: string;
+  isMain?: boolean;
+}
+
+export interface PendingPosterItem {
+  id: string;
+  url: string;
+  thumbnailUrl: string;
+  title: string;
+  isMain: boolean;
+  width?: number;
+  height?: number;
+  source?: string;
+  file?: File;
 }
 
 export interface NoteLink {
@@ -1359,3 +1446,19 @@ export interface UpdateQuickAddMacroInput {
   order?: number;
   isDefault?: boolean;
 }
+
+export interface GenerateNoteAiInput {
+  title: string;
+  category?: string;
+  dateStr: string;
+  context?: string;
+  noteType?: string;
+}
+
+export interface GeneratedNoteEnrichment {
+  description: string;
+  hashtags: string[];
+  suggestedTags?: string[];
+  keyQuote?: string;
+}
+
