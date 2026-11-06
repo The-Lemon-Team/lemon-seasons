@@ -34,6 +34,7 @@ const CalendarAppInner: React.FC = () => {
     setSearch,
     setAuthor,
     setCurator,
+    setPrivacy,
     selectFeed,
     toggleFeed,
     selectOnlyFeed,
@@ -293,6 +294,7 @@ const CalendarAppInner: React.FC = () => {
           onToggleHashtag={toggleHashtag}
           onToggleType={toggleType}
           onResetFilters={resetFilters}
+          onSetPrivacy={setPrivacy}
         />
       )}
 

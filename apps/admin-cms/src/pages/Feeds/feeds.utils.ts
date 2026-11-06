@@ -38,8 +38,8 @@ const DECLARATIVE_GROUP_RULES: GroupRule[] = [
   },
   {
     match: (f) =>
-      ['mcu-radar', 'politics-2026'].includes(f.slug) ||
-      Boolean(f.folderPaths?.some((fp) => fp.toLowerCase().includes('media') || fp.toLowerCase().includes('news'))),
+      ['mcu-radar', 'politics-2026', 'my-films', 'my-movies', 'my-music'].includes(f.slug) ||
+      Boolean(f.folderPaths?.some((fp) => fp.toLowerCase().includes('media') || fp.toLowerCase().includes('news') || fp.toLowerCase().includes('film'))),
     groupId: 'media-radar',
     groupName: 'Медиа & Радары',
     icon: 'radar',

@@ -12,6 +12,9 @@ import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { StreamsService } from './streams.service';
 import { CreateStreamDto } from './dto/create-stream.dto';
 import { UpdateStreamDto } from './dto/update-stream.dto';
+import { ReorderStreamsDto } from './dto/reorder-streams.dto';
+import { ReorderTabsDto } from './dto/reorder-tabs.dto';
+import { UpdateStreamTabDto } from './dto/update-stream-tab.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { RequestUser } from '../auth/auth.types';
 
@@ -42,6 +45,24 @@ export class StreamsController {
   @ApiOperation({ summary: 'Get a stream by slug or ID with populated feeds' })
   findOne(@Param('slug') slug: string, @CurrentUser() user?: RequestUser) {
     return this.streamsService.findOne(slug, user?.isAdmin ?? false);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Reorder streams' })
+  reorder(@Body() dto: ReorderStreamsDto) {
+    return this.streamsService.reorder(dto.items);
+  }
+
+  @Patch('tabs/:tabId')
+  @ApiOperation({ summary: 'Update stream tab overlay settings (custom title, icon, badge, isHidden)' })
+  updateTab(@Param('tabId') tabId: string, @Body() dto: UpdateStreamTabDto) {
+    return this.streamsService.updateTab(tabId, dto);
+  }
+
+  @Patch(':id/tabs/reorder')
+  @ApiOperation({ summary: 'Reorder tabs inside a stream' })
+  reorderTabs(@Param('id') id: string, @Body() dto: ReorderTabsDto) {
+    return this.streamsService.reorderTabs(id, dto.items);
   }
 
   @Patch(':id')

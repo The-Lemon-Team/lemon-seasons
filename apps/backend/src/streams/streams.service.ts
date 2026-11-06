@@ -9,6 +9,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStreamDto } from './dto/create-stream.dto';
 import { UpdateStreamDto } from './dto/update-stream.dto';
+import { UpdateStreamTabDto } from './dto/update-stream-tab.dto';
 import { DEFAULT_STREAMS_SEED, DefaultStreamSeedConfig } from './streams.seed';
 
 const CYRILLIC_MAP: Record<string, string> = {
@@ -54,9 +55,60 @@ export class StreamsService implements OnModuleInit {
   async onModuleInit() {
     try {
       await this.seedDefaultStreamsIfEmpty();
+      await this.syncStreamTabsIfEmpty();
     } catch (err: any) {
-      this.logger.warn(`Failed to seed default streams: ${err?.message || err}`);
+      this.logger.warn(`Failed to seed default streams or tabs: ${err?.message || err}`);
     }
+  }
+
+  /**
+   * Initializes StreamTab records from existing streams and their feedIds if StreamTab is empty
+   */
+  async syncStreamTabsIfEmpty(): Promise<void> {
+    const tabCount = await this.prisma.streamTab.count();
+    if (tabCount > 0) return;
+
+    this.logger.log('Initializing StreamTab records from existing streams and feed associations...');
+    const streams = await this.prisma.stream.findMany({
+      where: { deletedAt: null },
+    });
+
+    const feeds = await this.prisma.feed.findMany({
+      where: { deletedAt: null },
+      select: { id: true, slug: true, title: true, icon: true },
+    });
+    const feedMap = new Map<string, (typeof feeds)[0]>();
+    for (const f of feeds) feedMap.set(f.id, f);
+
+    for (const stream of streams) {
+      if (stream.feedIds && stream.feedIds.length > 0) {
+        for (let i = 0; i < stream.feedIds.length; i++) {
+          const feedId = stream.feedIds[i];
+          const feed = feedMap.get(feedId);
+          if (feed) {
+            await this.prisma.streamTab.upsert({
+              where: {
+                streamId_feedId: {
+                  streamId: stream.id,
+                  feedId: feed.id,
+                },
+              },
+              create: {
+                streamId: stream.id,
+                feedId: feed.id,
+                type: 'feed',
+                targetSlug: feed.slug,
+                order: i,
+              },
+              update: {
+                order: i,
+              },
+            });
+          }
+        }
+      }
+    }
+    this.logger.log('StreamTab records initialized successfully.');
   }
 
   /**
@@ -64,10 +116,11 @@ export class StreamsService implements OnModuleInit {
    * Matches feed slugs with existing feeds to resolve their UUIDs.
    */
   async seedDefaultStreamsIfEmpty(): Promise<void> {
-    const count = await this.prisma.stream.count();
-    if (count > 0) return;
+    const existingStreams = await this.prisma.stream.findMany({
+      select: { slug: true },
+    });
+    const existingSlugs = new Set(existingStreams.map((s) => s.slug));
 
-    this.logger.log('Seeding initial default streams (all, it_dev, js_interview, entertainment, seasons, holidays)...');
     const allFeeds = await this.prisma.feed.findMany({
       where: { deletedAt: null },
       select: { id: true, slug: true },
@@ -77,7 +130,18 @@ export class StreamsService implements OnModuleInit {
       feedMap.set(f.slug.toLowerCase(), f.id);
     }
 
-    for (const item of DEFAULT_STREAMS_SEED) {
+    const shouldSeedAll = existingStreams.length === 0;
+    const itemsToSeed = shouldSeedAll
+      ? DEFAULT_STREAMS_SEED
+      : DEFAULT_STREAMS_SEED.filter((item) => item.isBuiltin && !existingSlugs.has(item.slug));
+
+    if (itemsToSeed.length === 0) return;
+
+    this.logger.log(
+      `Seeding default streams (${itemsToSeed.map((i) => i.slug).join(', ')})...`
+    );
+
+    for (const item of itemsToSeed) {
       const resolvedFeedIds: string[] = [];
       for (const fs of item.feedSlugs) {
         const id = feedMap.get(fs.toLowerCase());
@@ -118,6 +182,24 @@ export class StreamsService implements OnModuleInit {
     const streams = await this.prisma.stream.findMany({
       where,
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        tabs: {
+          orderBy: { order: 'asc' },
+          include: {
+            feed: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                icon: true,
+                color: true,
+                privacy: true,
+                _count: { select: { notes: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     const allFeeds = await this.prisma.feed.findMany({
@@ -139,7 +221,22 @@ export class StreamsService implements OnModuleInit {
     }
 
     return streams.map((s) => {
-      const feeds = (s.feedIds || []).map((id) => feedMap.get(id)).filter(Boolean);
+      let feeds: any[] = [];
+      if (s.tabs && s.tabs.length > 0) {
+        feeds = s.tabs
+          .filter((t) => !t.isHidden && t.feed)
+          .map((t) => ({
+            ...t.feed,
+            customTitle: t.customTitle || undefined,
+            customIcon: t.customIcon || undefined,
+            badge: t.badge || undefined,
+            tabId: t.id,
+            tabOrder: t.order,
+          }));
+      } else {
+        feeds = (s.feedIds || []).map((id) => feedMap.get(id)).filter(Boolean);
+      }
+
       const totalNotes = feeds.reduce((sum, f) => sum + (f._count?.notes || 0), 0);
       return {
         ...s,
@@ -158,6 +255,16 @@ export class StreamsService implements OnModuleInit {
         OR: [{ id: idOrSlug }, { slug: idOrSlug }],
         deletedAt: null,
       },
+      include: {
+        tabs: {
+          orderBy: { order: 'asc' },
+          include: {
+            feed: {
+              include: { _count: { select: { notes: true } } },
+            },
+          },
+        },
+      },
     });
 
     if (!stream) {
@@ -168,10 +275,24 @@ export class StreamsService implements OnModuleInit {
       throw new NotFoundException(`Stream '${idOrSlug}' not found`);
     }
 
-    const feeds = await this.prisma.feed.findMany({
-      where: { id: { in: stream.feedIds }, deletedAt: null },
-      include: { _count: { select: { notes: true } } },
-    });
+    let feeds: any[] = [];
+    if (stream.tabs && stream.tabs.length > 0) {
+      feeds = stream.tabs
+        .filter((t) => !t.isHidden && t.feed)
+        .map((t) => ({
+          ...t.feed,
+          customTitle: t.customTitle || undefined,
+          customIcon: t.customIcon || undefined,
+          badge: t.badge || undefined,
+          tabId: t.id,
+          tabOrder: t.order,
+        }));
+    } else {
+      feeds = await this.prisma.feed.findMany({
+        where: { id: { in: stream.feedIds }, deletedAt: null },
+        include: { _count: { select: { notes: true } } },
+      });
+    }
 
     return {
       ...stream,
@@ -255,12 +376,52 @@ export class StreamsService implements OnModuleInit {
     return updated;
   }
 
+  async reorder(items: Array<{ id: string; order: number }>) {
+    if (!items || items.length === 0) return { success: true };
+
+    await this.prisma.$transaction(
+      items.map((item) =>
+        this.prisma.stream.updateMany({
+          where: {
+            OR: [{ id: item.id }, { slug: item.id }],
+            deletedAt: null,
+          },
+          data: { order: item.order },
+        })
+      )
+    );
+
+    this.invalidateCache();
+    this.eventEmitter.emit('stream.reordered', items);
+    return { success: true };
+  }
+
   async attachFeed(streamId: string, feedId: string) {
     const stream = await this.prisma.stream.findUnique({ where: { id: streamId } });
     if (!stream || stream.deletedAt) throw new NotFoundException('Stream not found');
 
     const feed = await this.prisma.feed.findUnique({ where: { id: feedId } });
     if (!feed || feed.deletedAt) throw new NotFoundException('Feed not found');
+
+    const currentTabsCount = await this.prisma.streamTab.count({
+      where: { streamId },
+    });
+
+    await this.prisma.streamTab.upsert({
+      where: {
+        streamId_feedId: { streamId, feedId },
+      },
+      create: {
+        streamId,
+        feedId,
+        type: 'feed',
+        targetSlug: feed.slug,
+        order: currentTabsCount,
+      },
+      update: {
+        isHidden: false,
+      },
+    });
 
     if (!stream.feedIds.includes(feedId)) {
       const updated = await this.prisma.stream.update({
@@ -278,12 +439,94 @@ export class StreamsService implements OnModuleInit {
     const stream = await this.prisma.stream.findUnique({ where: { id: streamId } });
     if (!stream || stream.deletedAt) throw new NotFoundException('Stream not found');
 
+    await this.prisma.streamTab.deleteMany({
+      where: { streamId, feedId },
+    });
+
     const updated = await this.prisma.stream.update({
       where: { id: streamId },
       data: { feedIds: stream.feedIds.filter((id) => id !== feedId) },
     });
     this.invalidateCache();
     this.eventEmitter.emit('stream.updated', updated);
+    return updated;
+  }
+
+  async reorderTabs(streamIdOrSlug: string, items: Array<{ tabId: string; order: number }>) {
+    const stream = await this.prisma.stream.findFirst({
+      where: {
+        OR: [{ id: streamIdOrSlug }, { slug: streamIdOrSlug }],
+        deletedAt: null,
+      },
+    });
+
+    if (!stream) {
+      throw new NotFoundException(`Stream '${streamIdOrSlug}' not found`);
+    }
+
+    if (!items || items.length === 0) return { success: true };
+
+    await this.prisma.$transaction(
+      items.map((item) =>
+        this.prisma.streamTab.updateMany({
+          where: {
+            streamId: stream.id,
+            OR: [
+              { id: item.tabId },
+              { feedId: item.tabId },
+              { targetSlug: item.tabId },
+            ],
+          },
+          data: { order: item.order },
+        })
+      )
+    );
+
+    // Re-sync stream.feedIds to preserve deterministic ordering in DB (only if stream had explicit feedIds)
+    if (stream.feedIds && stream.feedIds.length > 0) {
+      const updatedTabs = await this.prisma.streamTab.findMany({
+        where: { streamId: stream.id },
+        orderBy: { order: 'asc' },
+      });
+      const reorderedFeedIds = updatedTabs
+        .map((t) => t.feedId)
+        .filter((id): id is string => Boolean(id));
+
+      if (reorderedFeedIds.length > 0) {
+        const remainingIds = stream.feedIds.filter((id) => !reorderedFeedIds.includes(id));
+        await this.prisma.stream.update({
+          where: { id: stream.id },
+          data: { feedIds: [...reorderedFeedIds, ...remainingIds] },
+        });
+      }
+    }
+
+    this.invalidateCache();
+    this.eventEmitter.emit('stream.tabs.reordered', { streamId: stream.id, items });
+    return { success: true };
+  }
+
+  async updateTab(tabId: string, dto: UpdateStreamTabDto) {
+    const tab = await this.prisma.streamTab.findUnique({
+      where: { id: tabId },
+    });
+    if (!tab) {
+      throw new NotFoundException(`Stream tab #${tabId} not found`);
+    }
+
+    const updated = await this.prisma.streamTab.update({
+      where: { id: tabId },
+      data: {
+        customTitle: dto.customTitle !== undefined ? dto.customTitle?.trim() || null : undefined,
+        customIcon: dto.customIcon !== undefined ? dto.customIcon?.trim() || null : undefined,
+        badge: dto.badge !== undefined ? dto.badge?.trim() || null : undefined,
+        order: dto.order ?? undefined,
+        isHidden: dto.isHidden ?? undefined,
+      },
+    });
+
+    this.invalidateCache();
+    this.eventEmitter.emit('stream.tab.updated', updated);
     return updated;
   }
 

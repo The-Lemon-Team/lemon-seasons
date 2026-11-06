@@ -88,7 +88,7 @@ export const DEFAULT_STREAMS_SEED: DefaultStreamSeedConfig[] = [
       'games',
     ],
     tags: ['marvel', 'cinema', 'films', 'games', 'кино', 'игры', 'музыка'],
-    folderPaths: ['entertainment/', 'myfilms/'],
+    folderPaths: ['entertainment/', 'myfilms/', 'MyFilms/'],
   },
   {
     slug: 'seasons',
@@ -126,15 +126,15 @@ export const DEFAULT_STREAMS_SEED: DefaultStreamSeedConfig[] = [
   },
   {
     slug: 'private_feeds',
-    title: 'Private feeds',
+    title: 'Все приватные',
     icon: '🔮',
     color: '#8b5cf6',
-    description: 'Только приватные ленты и защищенный контур',
+    description: 'Сводный хаб всех приватных заметок, лент и защищенного контура',
     privacy: 'private',
     order: 6,
-    isBuiltin: false,
+    isBuiltin: true,
     feedSlugs: [],
     tags: [],
-    folderPaths: ['private/'],
+    folderPaths: [],
   },
 ];

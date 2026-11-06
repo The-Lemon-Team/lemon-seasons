@@ -33,6 +33,7 @@ interface FilterSidebarProps {
   onResetFilters: () => void;
   onSelectAuthor?: (author?: string) => void;
   onSelectCurator?: (curator?: string) => void;
+  onSetPrivacy?: (privacy?: 'all' | 'public' | 'private') => void;
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -50,6 +51,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onResetFilters,
   onSelectAuthor,
   onSelectCurator,
+  onSetPrivacy,
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
   const { data: feeds = [] } = useFeeds();
@@ -139,6 +141,53 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        {/* 0. Privacy Contour (Публичный / Приватный / Все контуры) */}
+        <div>
+          <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-purple-400" />
+              <span>{lang === 'ru' ? 'Контур приватности' : 'Privacy Contour'}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-1 bg-[#121414] p-1 rounded-xl border border-[#242828] text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => onSetPrivacy?.(filterState.privacy === 'public' ? 'all' : 'public')}
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                filterState.privacy === 'public'
+                  ? 'bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 shadow-xs'
+                  : 'text-neutral-400 hover:text-white hover:bg-[#202424]'
+              }`}
+            >
+              <Globe className="w-3 h-3 text-sky-400" />
+              <span>{lang === 'ru' ? 'Паблик' : 'Public'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetPrivacy?.(filterState.privacy === 'private' ? 'all' : 'private')}
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                filterState.privacy === 'private'
+                  ? 'bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40 shadow-xs'
+                  : 'text-neutral-400 hover:text-white hover:bg-[#202424]'
+              }`}
+            >
+              <Lock className="w-3 h-3 text-purple-400" />
+              <span>{lang === 'ru' ? 'Приват' : 'Private'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetPrivacy?.('all')}
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                !filterState.privacy || filterState.privacy === 'all'
+                  ? 'bg-[#c9cd58]/20 text-[#e5e971] font-bold border border-[#c9cd58]/40 shadow-xs'
+                  : 'text-neutral-400 hover:text-white hover:bg-[#202424]'
+              }`}
+            >
+              <span>{lang === 'ru' ? 'Все' : 'All'}</span>
+            </button>
+          </div>
+        </div>
+
         {/* 1. Taxonomy & Folder Hierarchy */}
         <div>
           <div className="flex items-center justify-between gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#e5e971] mb-3">

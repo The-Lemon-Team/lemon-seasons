@@ -23,6 +23,30 @@ export interface Feed {
 
 export type StreamPrivacy = 'public' | 'private';
 
+export interface StreamTab {
+  id: string;
+  streamId: string;
+  feedId?: string | null;
+  feed?: Feed | null;
+  type: string;
+  targetSlug?: string | null;
+  customTitle?: string | null;
+  customIcon?: string | null;
+  badge?: string | null;
+  order: number;
+  isHidden: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StreamFeedItem extends Feed {
+  customTitle?: string | null;
+  customIcon?: string | null;
+  badge?: string | null;
+  tabId?: string;
+  tabOrder?: number;
+}
+
 export interface Stream {
   id: string;
   slug: string;
@@ -40,7 +64,8 @@ export interface Stream {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  feeds?: Feed[];
+  feeds?: StreamFeedItem[];
+  tabs?: StreamTab[];
   _count?: {
     notes?: number;
     feeds?: number;
@@ -721,6 +746,7 @@ export interface CalendarFilterState {
   author?: string;
   /** @deprecated Use author */
   curator?: string;
+  privacy?: 'public' | 'private' | 'all';
 }
 
 // User & Privacy Access Types

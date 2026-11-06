@@ -22,6 +22,7 @@ model Feed {
   deletedAt   DateTime?
   notes       Note[]
   publicNotes Note[]    @relation("NotePublicFeed")
+  streamTabs  StreamTab[]
 
   @@index([privacy])
 }
@@ -479,6 +480,7 @@ model Stream {
   feedIds     String[]  @default([])
   tags        String[]  @default([])
   folderPaths String[]  @default([])
+  tabs        StreamTab[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -487,4 +489,29 @@ model Stream {
   @@index([order])
   @@index([slug])
   @@index([deletedAt])
+}
+
+model StreamTab {
+  id          String    @id @default(uuid())
+  streamId    String
+  stream      Stream    @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  feedId      String?
+  feed        Feed?     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+
+  type        String    @default("feed")
+  targetSlug  String?
+
+  customTitle String?
+  customIcon  String?
+  badge       String?
+  order       Int       @default(0)
+  isHidden    Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([streamId, feedId])
+  @@index([streamId, order])
+  @@index([feedId])
 }

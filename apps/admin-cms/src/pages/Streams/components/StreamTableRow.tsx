@@ -54,6 +54,17 @@ export const StreamTableRow: React.FC<StreamTableRowProps> = ({
             <span className="font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
               {stream.title}
             </span>
+            {isPublic ? (
+              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                <Globe className="w-2.5 h-2.5" />
+                <span>Public</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                <Lock className="w-2.5 h-2.5" />
+                <span>Private</span>
+              </span>
+            )}
             {stream.badge && (
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-primary/15 text-primary border border-primary/30 uppercase">
                 {stream.badge}

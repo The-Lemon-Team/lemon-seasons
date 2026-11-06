@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Image as ImageIcon, Check, X, Loader2, ZoomIn } from 'lucide-react';
 import { WebImageResult } from '@lenta/shared';
 import { calendarApi } from '../../api/client';
@@ -34,12 +35,15 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
   const [zoomedUrl, setZoomedUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isTargetInsideRef = useRef(false);
+  const isZoomTargetInsideRef = useRef(false);
 
   // Keyboard Escape handler
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.stopImmediatePropagation();
         e.stopPropagation();
         if (zoomedUrl) {
           setZoomedUrl(null);
@@ -48,8 +52,8 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, zoomedUrl, onClose]);
 
   // Reset or run initial search
@@ -85,6 +89,7 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     performSearch(query);
   };
 
@@ -126,15 +131,40 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
   const selectedCount = selectedMap.size;
   const selectedArray = Array.from(selectedMap.keys());
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
       style={{ zIndex }}
-      onClick={onClose}
+      onMouseDownCapture={(e) => {
+        isTargetInsideRef.current = e.target !== e.currentTarget;
+      }}
+      onMouseUpCapture={(e) => {
+        if (e.target !== e.currentTarget) {
+          isTargetInsideRef.current = true;
+        }
+      }}
+      onTouchStartCapture={(e) => {
+        isTargetInsideRef.current = e.target !== e.currentTarget;
+      }}
+      onTouchEndCapture={(e) => {
+        if (e.target !== e.currentTarget) {
+          isTargetInsideRef.current = true;
+        }
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget && !isTargetInsideRef.current) {
+          onClose();
+        }
+        isTargetInsideRef.current = false;
+      }}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         className="bg-[#181a1a] border border-[#323636] rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-mono text-xs"
         onClick={(e) => e.stopPropagation()}
+        onSubmit={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-[#242828] bg-[#121414]/70 flex items-center justify-between gap-3">
@@ -173,6 +203,13 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    performSearch(query);
+                  }
+                }}
                 placeholder="Введите название фильма, игры или события..."
                 className="w-full bg-[#1b1e1e] border border-[#323636] focus:border-[#c9cd58] rounded-xl pl-9 pr-8 py-2 text-xs text-[#f5f2e9] placeholder-[#93927e]/60 outline-none transition-colors"
               />
@@ -373,7 +410,21 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
       {zoomedUrl && (
         <div
           className="fixed inset-0 bg-black/90 z-[1300] flex items-center justify-center p-4"
-          onClick={() => setZoomedUrl(null)}
+          onMouseDownCapture={(e) => {
+            isZoomTargetInsideRef.current = e.target !== e.currentTarget;
+          }}
+          onMouseUpCapture={(e) => {
+            if (e.target !== e.currentTarget) {
+              isZoomTargetInsideRef.current = true;
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget && !isZoomTargetInsideRef.current) {
+              setZoomedUrl(null);
+            }
+            isZoomTargetInsideRef.current = false;
+          }}
         >
           <button
             type="button"
@@ -390,6 +441,7 @@ export const WebPosterSearchModal: React.FC<WebPosterSearchModalProps> = ({
           />
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };

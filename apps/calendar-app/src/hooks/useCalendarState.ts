@@ -18,6 +18,7 @@ function getDefaultFilterState(): CalendarFilterState {
     search: '',
     author: undefined,
     curator: undefined,
+    privacy: undefined,
   };
 }
 
@@ -113,6 +114,8 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
   const search = params.get('search') || '';
   const author = params.get('author') || params.get('curator') || undefined;
   const curator = author;
+  const privacyRaw = (params.get('privacy') || params.get('notesPrivacy') || '').toLowerCase();
+  const privacy = (privacyRaw === 'private' || privacyRaw === 'public') ? (privacyRaw as 'public' | 'private') : undefined;
 
   return {
     start,
@@ -126,6 +129,7 @@ export function parseUrlSearch(pathname: string = window.location.pathname, sear
     types,
     search,
     curator,
+    privacy,
   };
 }
 
@@ -149,6 +153,7 @@ export function serializeFilterToUrl(state: CalendarFilterState): string {
   if (state.hashtags && state.hashtags.length > 0) params.set('hashtags', state.hashtags.join(','));
   if (state.types && state.types.length > 0) params.set('types', state.types.join(','));
   if (state.search && state.search.trim()) params.set('search', state.search.trim());
+  if (state.privacy) params.set('privacy', state.privacy);
   if (state.author || state.curator) params.set('author', (state.author || state.curator)!);
 
   // Preserve active environment mode in URL
@@ -394,6 +399,10 @@ export function useCalendarState() {
   }, [updateFilter]);
   const setCurator = setAuthor;
 
+  const setPrivacy = useCallback((privacy?: 'all' | 'public' | 'private') => {
+    updateFilter({ privacy: privacy === 'all' ? undefined : privacy });
+  }, [updateFilter]);
+
   const resetFilters = useCallback(() => {
     updateFilter({
       feed: undefined,
@@ -444,6 +453,7 @@ export function useCalendarState() {
     setSearch,
     setAuthor,
     setCurator,
+    setPrivacy,
     prevMonth,
     nextMonth,
     setToday,

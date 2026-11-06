@@ -56,6 +56,18 @@ export const STREAM_SOURCE_SLUGS: Record<string, string[]> = {
   seasons: [
     'seasons', 'lemon-seasons', 'seasons-hub', 'diary', 'journal',
   ],
+  private_feeds: [
+    'private-notes', 'work-vault', 'diary-logs', 'secure-vault',
+  ],
+  personal_notes: [
+    'private-notes', 'diary-logs', 'personal-notes',
+  ],
+  work_vault: [
+    'work-vault', 'confidential',
+  ],
+  secure_vault: [
+    'secure-vault',
+  ],
 };
 
 export const LEGACY_FEED_SLUG_ALIASES: Record<string, string[]> = {

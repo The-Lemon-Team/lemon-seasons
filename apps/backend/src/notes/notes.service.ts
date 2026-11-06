@@ -205,6 +205,7 @@ export class NotesService implements OnModuleInit {
       include: NOTE_INCLUDE_DEFAULT,
     });
 
+    this.notesCacheService.invalidateAll();
     this.logger.log(`Created note "${note.title}" [id: ${note.id}]`);
     if (this.eventEmitter) {
       this.eventEmitter.emit(
@@ -474,6 +475,7 @@ export class NotesService implements OnModuleInit {
       include: NOTE_INCLUDE_DEFAULT,
     });
 
+    this.notesCacheService.invalidateAll();
     this.logger.log(`Updated note "${updatedNote.title}" [id: ${updatedNote.id}]`);
     if (this.eventEmitter) {
       this.eventEmitter.emit(
@@ -500,6 +502,7 @@ export class NotesService implements OnModuleInit {
       where: { id },
       data: { deletedAt: new Date() },
     });
+    this.notesCacheService.invalidateAll();
     this.logger.log(`Soft-deleted note [id: ${id}]`);
     if (this.eventEmitter) {
       this.eventEmitter.emit('note.deleted', { noteId: id });
@@ -518,6 +521,7 @@ export class NotesService implements OnModuleInit {
       data: { deletedAt: null },
       include: NOTE_INCLUDE_DEFAULT,
     });
+    this.notesCacheService.invalidateAll();
     this.logger.log(`Restored note [id: ${id}]`);
     return restored;
   }
@@ -526,58 +530,88 @@ export class NotesService implements OnModuleInit {
   // Delegated Link Methods (backward compatibility)
   // ==========================================
 
-  addLinks(noteId: string, dtos: CreateNoteLinkDto[]) {
-    this.notesCacheService.invalidateAll();
-    return this.notesLinksService.addLinks(noteId, dtos);
+  async addLinks(noteId: string, dtos: CreateNoteLinkDto[]) {
+    try {
+      return await this.notesLinksService.addLinks(noteId, dtos);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  setSourceLink(noteId: string, linkId: string) {
-    this.notesCacheService.invalidateAll();
-    return this.notesLinksService.setSourceLink(noteId, linkId);
+  async setSourceLink(noteId: string, linkId: string) {
+    try {
+      return await this.notesLinksService.setSourceLink(noteId, linkId);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  reorderLinks(noteId: string, items: LinkOrderItemDto[]) {
-    this.notesCacheService.invalidateAll();
-    return this.notesLinksService.reorderLinks(noteId, items);
+  async reorderLinks(noteId: string, items: LinkOrderItemDto[]) {
+    try {
+      return await this.notesLinksService.reorderLinks(noteId, items);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  updateLink(noteId: string, linkId: string, dto: UpdateNoteLinkDto) {
-    this.notesCacheService.invalidateAll();
-    return this.notesLinksService.updateLink(noteId, linkId, dto);
+  async updateLink(noteId: string, linkId: string, dto: UpdateNoteLinkDto) {
+    try {
+      return await this.notesLinksService.updateLink(noteId, linkId, dto);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  deleteLink(noteId: string, linkId: string) {
-    this.notesCacheService.invalidateAll();
-    return this.notesLinksService.deleteLink(noteId, linkId);
+  async deleteLink(noteId: string, linkId: string) {
+    try {
+      return await this.notesLinksService.deleteLink(noteId, linkId);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
   // ==========================================
   // Delegated Image & Media Methods (backward compatibility)
   // ==========================================
 
-  uploadImages(noteId: string, files: Express.Multer.File[]) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.uploadImages(noteId, files);
+  async uploadImages(noteId: string, files: Express.Multer.File[]) {
+    try {
+      return await this.notesMediaService.uploadImages(noteId, files);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  setMainImage(noteId: string, imageId: string) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.setMainImage(noteId, imageId);
+  async setMainImage(noteId: string, imageId: string) {
+    try {
+      return await this.notesMediaService.setMainImage(noteId, imageId);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  reorderImages(noteId: string, items: ImageOrderItemDto[]) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.reorderImages(noteId, items);
+  async reorderImages(noteId: string, items: ImageOrderItemDto[]) {
+    try {
+      return await this.notesMediaService.reorderImages(noteId, items);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  updateImage(noteId: string, imageId: string, dto: UpdateNoteImageDto) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.updateImage(noteId, imageId, dto);
+  async updateImage(noteId: string, imageId: string, dto: UpdateNoteImageDto) {
+    try {
+      return await this.notesMediaService.updateImage(noteId, imageId, dto);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
-  deleteImage(noteId: string, imageId: string) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.deleteImage(noteId, imageId);
+  async deleteImage(noteId: string, imageId: string) {
+    try {
+      return await this.notesMediaService.deleteImage(noteId, imageId);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
   uploadStandaloneMedia(file: Express.Multer.File) {
@@ -588,9 +622,12 @@ export class NotesService implements OnModuleInit {
     return this.notesMediaService.searchWebImages(query, options);
   }
 
-  attachImagesFromUrls(noteId: string, items: ExternalImageItemDto[]) {
-    this.notesCacheService.invalidateAll();
-    return this.notesMediaService.attachImagesFromUrls(noteId, items);
+  async attachImagesFromUrls(noteId: string, items: ExternalImageItemDto[]) {
+    try {
+      return await this.notesMediaService.attachImagesFromUrls(noteId, items);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 
   downloadExternalMedia(url: string, title?: string) {
@@ -601,8 +638,11 @@ export class NotesService implements OnModuleInit {
   // Delegated Quick Share Methods (backward compatibility)
   // ==========================================
 
-  quickShare(dto: QuickShareNoteDto) {
-    this.notesCacheService.invalidateAll();
-    return this.notesShareService.quickShare(dto);
+  async quickShare(dto: QuickShareNoteDto) {
+    try {
+      return await this.notesShareService.quickShare(dto);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
   }
 }
