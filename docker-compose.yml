@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemon_secret}
       POSTGRES_DB: ${POSTGRES_DB:-lemon_calendarium}
     ports:
-      - "${POSTGRES_PORT:-5435}:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     deploy:
@@ -36,8 +36,13 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public&connection_limit=10&pool_timeout=20
       PORT: 3001
       NODE_ENV: production
+      DEVICE_ID: ${DEVICE_ID:-alovingpc}
       SPARKS_INCOMING_DIR: /app/sparks
       GDRIVE_SYNC_FOLDER: /app/gdrive
+      HTTP_PROXY: ${DOCKER_HTTP_PROXY:-http://host.docker.internal:20808}
+      HTTPS_PROXY: ${DOCKER_HTTPS_PROXY:-http://host.docker.internal:20808}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3001:3001"
     depends_on:
@@ -53,7 +58,7 @@ services:
       timeout: 5s
       retries: 3
     volumes:
-      - backend_uploads:/app/apps/backend/uploads
+      - ./apps/backend/uploads:/app/apps/backend/uploads
       - "${SPARKS_HOST_DIR:-C:/Users/Ilege/Мой диск/spark}:/app/sparks"
       - "${GDRIVE_SYNC_FOLDER:-C:/remote}:/app/gdrive"
 
