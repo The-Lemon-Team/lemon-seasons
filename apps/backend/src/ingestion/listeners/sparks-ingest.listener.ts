@@ -9,6 +9,7 @@ import { RelatedNotesResolverService } from '../services/related-notes-resolver.
 import { FileDetectedEvent, NotePublishedEvent } from '../../events';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DriveBusRelayService } from '../../bus/services/drive-bus-relay.service';
+import { toCanonicalSparkPath } from '../utils/spark-path.util';
 
 @Injectable()
 export class SparksIngestListener {
@@ -34,6 +35,8 @@ export class SparksIngestListener {
       return;
     }
 
+    const canonicalPath = toCanonicalSparkPath(filePath);
+
     // 1. DRV-03: Jitter on secondary PC to give primary PC priority
     const jitterMs = parseInt(process.env.INGESTION_JITTER_MS || '0', 10);
     if (jitterMs > 0) {
@@ -47,7 +50,7 @@ export class SparksIngestListener {
       this.logger.log(`⏩ [DRV-03:SKIP] Файл "${fileName}" уже обработан другой машиной в шине. Пропускаем.`);
       await this.prisma.ingestionFile
         .update({
-          where: { filePath },
+          where: { filePath: canonicalPath },
           data: {
             status: 'COMPLETED',
             errorMessage: null,
@@ -62,9 +65,9 @@ export class SparksIngestListener {
     try {
       // 3. Mark file as PROCESSING in IngestionFile
       const ingestionRecord = await this.prisma.ingestionFile.upsert({
-        where: { filePath },
+        where: { filePath: canonicalPath },
         create: {
-          filePath,
+          filePath: canonicalPath,
           fileName,
           fileHash,
           fileSize: size,
@@ -124,9 +127,19 @@ export class SparksIngestListener {
         targetNoteId = resultingNote.id;
         this.logger.log(`🔄 Заметка "${resultingNote.title}" обновлена по событию шины`);
       } else {
-        // Idempotency check: check if note already exists by externalId
+        // Idempotency check: check if note already exists by externalId (canonical, exact, or cross-OS relative fileName + folderPath)
         const existingByExt = await this.prisma.note.findFirst({
-          where: { externalId: filePath, deletedAt: null },
+          where: {
+            OR: [
+              { externalId: canonicalPath },
+              { externalId: filePath },
+              {
+                folderPath,
+                externalId: { endsWith: fileName, mode: 'insensitive' },
+              },
+            ],
+            deletedAt: null,
+          },
         });
 
         if (existingByExt) {
@@ -156,7 +169,7 @@ export class SparksIngestListener {
         this.logger.warn(`⚠️ Не удалось разрезолвить связи для заметки ${targetNoteId}: ${relErr?.message}`);
       }
 
-      // 6. Mark IngestionFile as COMPLETED
+      // 6. Mark IngestionFile as COMPLETED (NotesService.create/update already emitted 'note.published')
       await this.prisma.ingestionFile.update({
         where: { id: ingestionRecord.id },
         data: {
@@ -165,28 +178,11 @@ export class SparksIngestListener {
           errorMessage: null,
         },
       });
-
-      // 7. Emit note.published event onto the Event Bus
-      this.eventEmitter.emit(
-        'note.published',
-        new NotePublishedEvent(
-          targetNoteId,
-          resultingNote.title,
-          folderPath,
-          resultingNote.status || 'PUBLISHED',
-          resultingNote.publishAt,
-          resultingNote.feedId,
-          isNew,
-          resultingNote,
-        ),
-      );
-
-      this.logger.log(`📢 [note.published] Опубликовано событие в шину для Note ID: ${targetNoteId}`);
     } catch (err: any) {
       this.logger.error(`❌ Ошибка обработки файла в SparksIngestListener: ${err.message}`, err.stack);
       await this.prisma.ingestionFile
         .update({
-          where: { filePath },
+          where: { filePath: canonicalPath },
           data: {
             status: 'FAILED',
             errorMessage: err.message || String(err),

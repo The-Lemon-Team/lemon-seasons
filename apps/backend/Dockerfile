@@ -39,4 +39,4 @@ COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 WORKDIR /app/apps/backend
 
 EXPOSE 3001
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "dist/main.js"]

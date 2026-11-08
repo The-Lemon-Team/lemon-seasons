@@ -7,6 +7,7 @@ import * as chokidar from 'chokidar';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FileDetectedEvent } from '../../events';
+import { toCanonicalSparkPath, WatcherInstanceLock } from '../utils/spark-path.util';
 
 export interface WatcherStatus {
   isWatching: boolean;
@@ -21,6 +22,8 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
   private readonly logger = new Logger(DriveWatcherService.name);
   private watcher: chokidar.FSWatcher | null = null;
   private readonly watchedDir: string;
+  private readonly instanceLock = new WatcherInstanceLock();
+  private isStandby = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -34,10 +37,20 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
 
   async onModuleInit() {
     this.ensureDirectoryExists(this.watchedDir);
+    const acquired = this.instanceLock.tryAcquire((holder) => {
+      this.logger.warn(
+        `⚠️ [SingleInstanceGuard] Активный слушатель уже запущен в другом инстансе (${holder.hostname}:${holder.port}, PID ${holder.pid}, ${holder.nodeEnv}). Переход в режим ожидания без дублирования файловых вотчеров.`,
+      );
+    });
+    if (!acquired) {
+      this.isStandby = true;
+      return;
+    }
     this.startWatching();
   }
 
   async onApplicationBootstrap() {
+    if (this.isStandby) return;
     // Run an initial graceful sequential scan once all event listeners are ready
     this.scanDirectory().catch((err) => {
       this.logger.warn(`Ошибка при стартовом сканировании Sparks: ${err?.message}`);
@@ -45,6 +58,7 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
   }
 
   async onModuleDestroy() {
+    this.instanceLock.release();
     await this.stopWatching();
   }
 
@@ -126,14 +140,33 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
 
     try {
       const stats = await fs.promises.stat(filePath);
+      const canonicalPath = toCanonicalSparkPath(filePath, this.watchedDir);
+
+      // 1. Fast pre-check by mtime & size before reading file content over Google Drive FS
+      let existingRecord = await this.prisma.ingestionFile.findUnique({
+        where: { filePath: canonicalPath },
+      });
+      if (!existingRecord && canonicalPath !== filePath) {
+        existingRecord = await this.prisma.ingestionFile.findUnique({
+          where: { filePath },
+        });
+      }
+
+      if (
+        existingRecord &&
+        existingRecord.status === 'COMPLETED' &&
+        existingRecord.noteId &&
+        existingRecord.fileSize === stats.size &&
+        existingRecord.mtime &&
+        Math.abs(new Date(existingRecord.mtime).getTime() - stats.mtime.getTime()) < 1000
+      ) {
+        return;
+      }
+
       const content = await fs.promises.readFile(filePath, 'utf-8');
       const fileHash = crypto.createHash('sha256').update(content).digest('hex');
 
-      // 1. Idempotency: check if file was already completed and unchanged BEFORE setting to PENDING
-      const existingRecord = await this.prisma.ingestionFile.findUnique({
-        where: { filePath },
-      });
-
+      // 2. Idempotency: check if file was already completed and unchanged by SHA-256 hash BEFORE setting to PENDING
       if (
         existingRecord &&
         existingRecord.status === 'COMPLETED' &&
@@ -144,11 +177,11 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
         return;
       }
 
-      // 2. Initial IngestionFile tracking (PENDING) for new or changed files
+      // 2. Initial IngestionFile tracking (PENDING) for new or changed files using canonicalPath
       await this.prisma.ingestionFile.upsert({
-        where: { filePath },
+        where: { filePath: canonicalPath },
         create: {
-          filePath,
+          filePath: canonicalPath,
           fileName,
           fileHash,
           fileSize: stats.size,
@@ -217,8 +250,46 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
   public async scanDirectory(): Promise<{ scanned: number }> {
     this.ensureDirectoryExists(this.watchedDir);
     const mdFiles = await this.findMarkdownFilesRecursive(this.watchedDir);
+    if (mdFiles.length === 0) return { scanned: 0 };
+
+    // Preload completed IngestionFile records in a single query to avoid N+1 DB lookups on 1900+ files
+    const completedMap = new Map<string, { fileSize: number; mtime: Date }>();
+    try {
+      if (typeof (this.prisma.ingestionFile as any)?.findMany === 'function') {
+        const records = await this.prisma.ingestionFile.findMany({
+          where: { status: 'COMPLETED', noteId: { not: null } },
+          select: { filePath: true, fileSize: true, mtime: true },
+        });
+        for (const r of records) {
+          const entry = {
+            fileSize: r.fileSize,
+            mtime: new Date(r.mtime),
+          };
+          completedMap.set(toCanonicalSparkPath(r.filePath, this.watchedDir), entry);
+          completedMap.set(path.normalize(r.filePath), entry);
+        }
+      }
+    } catch {
+      // Fallback to individual checks if findMany fails
+    }
 
     for (const fullPath of mdFiles) {
+      const normalizedPath = path.normalize(fullPath);
+      const canonicalPath = toCanonicalSparkPath(normalizedPath, this.watchedDir);
+      const cached = completedMap.get(canonicalPath) || completedMap.get(normalizedPath);
+      if (cached) {
+        try {
+          const stats = await fs.promises.stat(normalizedPath);
+          if (
+            cached.fileSize === stats.size &&
+            Math.abs(cached.mtime.getTime() - stats.mtime.getTime()) < 1000
+          ) {
+            continue;
+          }
+        } catch {
+          // Proceed to handleFileEvent if stat fails
+        }
+      }
       await this.handleFileEvent('ADD', fullPath);
     }
 

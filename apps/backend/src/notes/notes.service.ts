@@ -82,23 +82,7 @@ export class NotesService implements OnModuleInit {
   async create(createNoteDto: CreateNoteDto) {
     this.notesCacheService.invalidateAll();
 
-    // Verify feed exists if provided
-    if (createNoteDto.feedId) {
-      const feed = await this.prisma.feed.findUnique({
-        where: { id: createNoteDto.feedId },
-      });
-      if (!feed || feed.deletedAt) {
-        throw new NotFoundException(`Feed with ID '${createNoteDto.feedId}' not found`);
-      }
-    }
-
-    const hashtagIds = await this.hashtagsService.resolveHashtags(
-      createNoteDto.hashtags,
-      createNoteDto.description,
-      createNoteDto.title,
-    );
-
-    // Resolve folders
+    // Resolve folders input
     let rawFolders: (string | any)[] = createNoteDto.folders
       ? [...createNoteDto.folders]
       : (createNoteDto.folder ? [createNoteDto.folder] : []);
@@ -107,7 +91,26 @@ export class NotesService implements OnModuleInit {
     }
 
     let targetContainerId = (createNoteDto as any).containerId || undefined;
-    const folderAssignments = await this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId);
+
+    // Parallelize feed validation, hashtag resolution, and folder assignment resolution
+    const [, hashtagIds, folderAssignments] = await Promise.all([
+      (async () => {
+        if (createNoteDto.feedId) {
+          const feed = await this.prisma.feed.findUnique({
+            where: { id: createNoteDto.feedId },
+          });
+          if (!feed || feed.deletedAt) {
+            throw new NotFoundException(`Feed with ID '${createNoteDto.feedId}' not found`);
+          }
+        }
+      })(),
+      this.hashtagsService.resolveHashtags(
+        createNoteDto.hashtags,
+        createNoteDto.description,
+        createNoteDto.title,
+      ),
+      this.foldersService.resolveFolderAssignments(rawFolders, targetContainerId),
+    ]);
 
     let initialFolderPath =
       createNoteDto.folderPath ||

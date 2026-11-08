@@ -240,7 +240,25 @@ export class NotesQueryBuilder {
       }
     } else if (query.streamSource && query.streamSource !== 'all') {
       if (query.streamSource === 'private_feeds') {
-        andConditions.push({ privacy: 'private' });
+        if (query.privacy === 'all') {
+          andConditions.push({
+            OR: [
+              { privacy: 'private' },
+              { feed: { privacy: 'private', deletedAt: null } },
+              { publicFeed: { privacy: 'private', deletedAt: null } },
+            ],
+          });
+        } else if (query.privacy === 'public') {
+          andConditions.push({
+            privacy: 'public',
+            OR: [
+              { feed: { privacy: 'private', deletedAt: null } },
+              { publicFeed: { privacy: 'private', deletedAt: null } },
+            ],
+          });
+        } else {
+          andConditions.push({ privacy: 'private' });
+        }
       } else {
         let matchedDynamic = false;
         if (this.streamsService) {
@@ -248,7 +266,21 @@ export class NotesQueryBuilder {
           if (dynamicCriteria) {
             matchedDynamic = true;
             if (dynamicCriteria.privacy === 'private') {
-              andConditions.push({ privacy: 'private' });
+              if (query.privacy === 'all') {
+                // In 'all' privacy contour, allow both private and public notes that belong to this stream
+              } else if (query.privacy === 'public') {
+                andConditions.push({ privacy: 'public' });
+              } else if (dynamicCriteria.feedIds && dynamicCriteria.feedIds.length > 0) {
+                andConditions.push({
+                  OR: [
+                    { feedId: { in: dynamicCriteria.feedIds } },
+                    { publicFeedId: { in: dynamicCriteria.feedIds } },
+                    { privacy: 'private' },
+                  ],
+                });
+              } else {
+                andConditions.push({ privacy: 'private' });
+              }
             }
             const orClauses: Prisma.NoteWhereInput[] = [];
             if (dynamicCriteria.feedIds && dynamicCriteria.feedIds.length > 0) {
@@ -281,8 +313,32 @@ export class NotesQueryBuilder {
             if (orClauses.length > 0) {
               andConditions.push({ OR: orClauses });
             } else {
-              // Newly created custom stream with no feeds, tags, or folders attached yet should return empty notes list
-              andConditions.push({ id: '__empty_stream_empty_notes__' });
+              // Newly created custom stream with no explicit feeds, tags, or folders attached:
+              // Match notes explicitly authored for or tagged with this stream's slug or title
+              const normSlug = dynamicCriteria.slug.toLowerCase().trim();
+              const normSlugHyphen = normSlug.replace(/_/g, '-');
+              const normTitle = dynamicCriteria.title.toLowerCase().trim();
+              const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normTitle].filter(Boolean)));
+              const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen].filter(Boolean)));
+
+              andConditions.push({
+                OR: [
+                  { feed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
+                  { publicFeed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
+                  { folderPath: { contains: normSlug, mode: 'insensitive' as const } },
+                  ...(normSlugHyphen !== normSlug
+                    ? [{ folderPath: { contains: normSlugHyphen, mode: 'insensitive' as const } }]
+                    : []),
+                  {
+                    hashtags: {
+                      some: {
+                        name: { in: candidateTags, mode: 'insensitive' as const },
+                        deletedAt: null,
+                      },
+                    },
+                  },
+                ],
+              });
             }
           }
         }

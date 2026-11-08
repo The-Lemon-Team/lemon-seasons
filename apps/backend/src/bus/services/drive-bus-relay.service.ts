@@ -194,15 +194,30 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
     const payload: NoteEventPayload = envelope.payload;
     if (!payload || !payload.id) return;
 
+    const extFileName = payload.externalId ? path.basename(payload.externalId) : null;
     const existing = await this.prisma.note.findFirst({
       where: {
         OR: [
           { id: payload.id },
           ...(payload.externalId ? [{ externalId: payload.externalId }] : []),
+          ...(extFileName && payload.folderPath
+            ? [
+                {
+                  folderPath: payload.folderPath,
+                  externalId: { endsWith: extFileName, mode: 'insensitive' as const },
+                },
+              ]
+            : []),
         ],
         deletedAt: null,
       },
     });
+
+    // Skip expensive DB update + cache invalidation if the note already has the exact same fileHash
+    const existingHash = (existing?.metadata as any)?.fileHash;
+    if (existing && payload.fileHash && existingHash && existingHash === payload.fileHash) {
+      return;
+    }
 
     const noteDto: CreateNoteDto = {
       title: payload.title || 'Untitled Note',
@@ -249,7 +264,7 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
     if (!fs.existsSync(this.eventsDir)) return { processed: 0, skipped: 0 };
 
     const files = await fs.promises.readdir(this.eventsDir);
-    const jsonFiles = files
+    const sortedJsonFiles = files
       .filter((f) => f.toLowerCase().endsWith('.json') && !f.startsWith('.'))
       .sort(); // Лексикографическая сортировка по дате в имени
 
@@ -259,20 +274,29 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       ? this.lastProcessedTimestamp.replace(/[:.]/g, '-')
       : null;
 
-    for (const fileName of jsonFiles) {
-      // Пропускаем собственные события
+    // Оставляем только самое свежее событие для каждого noteId, чтобы не проигрывать историю перезаписей одной заметки
+    const latestFileByNoteKey = new Map<string, string>();
+    for (const fileName of sortedJsonFiles) {
       if (fileName.includes(`_${this.deviceId}_`)) {
         skipped++;
         continue;
       }
-
-      // Быстрая фильтрация по префиксу времени в имени файла без чтения с диска
-      const fileTimePrefix = fileName.split('_')[0];
+      const parts = fileName.split('_');
+      const fileTimePrefix = parts[0];
       if (safeWatermarkPrefix && fileTimePrefix && fileTimePrefix <= safeWatermarkPrefix) {
         skipped++;
         continue;
       }
+      const noteKey = parts[2] || fileName;
+      if (latestFileByNoteKey.has(noteKey)) {
+        skipped++;
+      }
+      latestFileByNoteKey.set(noteKey, fileName);
+    }
 
+    const candidateFiles = Array.from(latestFileByNoteKey.values());
+
+    for (const fileName of candidateFiles) {
       const filePath = path.join(this.eventsDir, fileName);
       try {
         const raw = await fs.promises.readFile(filePath, 'utf-8');
@@ -299,6 +323,11 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
           this.lastProcessedTimestamp = envelope.timestamp;
         }
         processed++;
+
+        // Периодически сохраняем watermark каждые 25 событий, чтобы прогресс не терялся при рестарте
+        if (processed % 25 === 0) {
+          this.persistWatermark();
+        }
       } catch (err: any) {
         this.logger.warn(`Ошибка обработки файла catch-up "${fileName}": ${err.message}`);
         skipped++;

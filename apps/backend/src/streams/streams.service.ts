@@ -112,6 +112,69 @@ export class StreamsService implements OnModuleInit {
   }
 
   /**
+   * Synchronizes StreamTab records for a stream to match the given feedIds list.
+   * Preserves customTitle, customIcon, badge, and isHidden on existing tabs while updating order,
+   * creating missing tabs, and removing tabs whose feeds are no longer in feedIds.
+   */
+  private async syncStreamTabsForFeedIds(streamId: string, feedIds: string[]): Promise<void> {
+    if (!feedIds || feedIds.length === 0) {
+      await this.prisma.streamTab.deleteMany({
+        where: { streamId },
+      });
+      return;
+    }
+
+    const feeds = await this.prisma.feed.findMany({
+      where: {
+        OR: [{ id: { in: feedIds } }, { slug: { in: feedIds } }],
+        deletedAt: null,
+      },
+      select: { id: true, slug: true },
+    });
+
+    const feedMap = new Map<string, { id: string; slug: string }>();
+    for (const f of feeds) {
+      feedMap.set(f.id, f);
+      feedMap.set(f.slug, f);
+    }
+
+    const resolvedFeedIds: string[] = [];
+    for (let i = 0; i < feedIds.length; i++) {
+      const f = feedMap.get(feedIds[i]);
+      if (f && !resolvedFeedIds.includes(f.id)) {
+        resolvedFeedIds.push(f.id);
+        await this.prisma.streamTab.upsert({
+          where: {
+            streamId_feedId: {
+              streamId,
+              feedId: f.id,
+            },
+          },
+          create: {
+            streamId,
+            feedId: f.id,
+            type: 'feed',
+            targetSlug: f.slug,
+            order: resolvedFeedIds.length - 1,
+          },
+          update: {
+            targetSlug: f.slug,
+            order: resolvedFeedIds.length - 1,
+            isHidden: false,
+          },
+        });
+      }
+    }
+
+    await this.prisma.streamTab.deleteMany({
+      where: {
+        streamId,
+        feedId: { notIn: resolvedFeedIds },
+      },
+    });
+  }
+
+  /**
    * Seeds default streams if the Stream table is empty.
    * Matches feed slugs with existing feeds to resolve their UUIDs.
    */
@@ -179,41 +242,42 @@ export class StreamsService implements OnModuleInit {
       where.privacy = 'public';
     }
 
-    const streams = await this.prisma.stream.findMany({
-      where,
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-      include: {
-        tabs: {
-          orderBy: { order: 'asc' },
-          include: {
-            feed: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                icon: true,
-                color: true,
-                privacy: true,
-                _count: { select: { notes: true } },
+    const [streams, allFeeds] = await Promise.all([
+      this.prisma.stream.findMany({
+        where,
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          tabs: {
+            orderBy: { order: 'asc' },
+            include: {
+              feed: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  icon: true,
+                  color: true,
+                  privacy: true,
+                  _count: { select: { notes: { where: { deletedAt: null } } } },
+                },
               },
             },
           },
         },
-      },
-    });
-
-    const allFeeds = await this.prisma.feed.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        icon: true,
-        color: true,
-        privacy: true,
-        _count: { select: { notes: true } },
-      },
-    });
+      }),
+      this.prisma.feed.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          icon: true,
+          color: true,
+          privacy: true,
+          _count: { select: { notes: { where: { deletedAt: null } } } },
+        },
+      }),
+    ]);
 
     const feedMap = new Map<string, any>();
     for (const f of allFeeds) {
@@ -331,9 +395,13 @@ export class StreamsService implements OnModuleInit {
       },
     });
 
+    if (dto.feedIds && dto.feedIds.length > 0) {
+      await this.syncStreamTabsForFeedIds(stream.id, dto.feedIds);
+    }
+
     this.invalidateCache();
     this.eventEmitter.emit('stream.created', stream);
-    return stream;
+    return this.findOne(stream.id, true);
   }
 
   async update(id: string, dto: UpdateStreamDto) {
@@ -371,9 +439,13 @@ export class StreamsService implements OnModuleInit {
       },
     });
 
+    if (dto.feedIds !== undefined) {
+      await this.syncStreamTabsForFeedIds(id, dto.feedIds);
+    }
+
     this.invalidateCache();
     this.eventEmitter.emit('stream.updated', updated);
-    return updated;
+    return this.findOne(id, true);
   }
 
   async reorder(items: Array<{ id: string; order: number }>) {

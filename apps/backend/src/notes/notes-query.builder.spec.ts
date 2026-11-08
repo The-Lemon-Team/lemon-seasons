@@ -114,6 +114,40 @@ describe('NotesQueryBuilder', () => {
       expect(has(and, { feed: { slug: { in: ['marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe'] }, deletedAt: null } })).toBe(true);
     });
 
+    it('matches notes tagged or fed for a clean custom stream (e.g. jm_daily) when no explicit feeds/tags/folders are attached yet', async () => {
+      const streamsService = {
+        resolveCriteriaForStream: vi.fn(async () => ({
+          streamId: 'st-jm',
+          slug: 'jm_daily',
+          title: 'Jm Daily',
+          privacy: 'public' as const,
+          feedIds: [],
+          feedSlugs: [],
+          tags: [],
+          folderPaths: [],
+        })),
+      };
+      const prisma = {
+        feed: {
+          findUnique: vi.fn(async () => null),
+          findFirst: vi.fn(async () => null),
+        },
+      };
+      const builder = new NotesQueryBuilder(prisma as any, streamsService as any);
+      const where = await builder.buildWhereClause({ streamSource: 'jm_daily' } as any, true);
+      const and = where.AND as any[];
+      const streamCond = and.find((c) => Array.isArray(c.OR) && c.OR.some((o: any) => o.hashtags?.some));
+      expect(streamCond).toBeDefined();
+      expect(streamCond.OR).toContainEqual({
+        hashtags: {
+          some: {
+            name: { in: ['jm_daily', 'jm-daily', 'jm daily'], mode: 'insensitive' },
+            deletedAt: null,
+          },
+        },
+      });
+    });
+
     it('feedId takes precedence over feedSlug', async () => {
       const { prisma } = await build({ feedId: 'f1', feedSlug: 's' }, true);
       expect(prisma.feed.findFirst).not.toHaveBeenCalled();

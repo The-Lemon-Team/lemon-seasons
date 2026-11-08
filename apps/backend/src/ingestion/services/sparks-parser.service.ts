@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import { LentaFrontmatterUtil, NoteType, NoteStatus, RelatedNoteItem } from '@lenta/shared';
 import { CreateNoteDto } from '../../notes/dto/create-note.dto';
+import { toCanonicalSparkPath } from '../utils/spark-path.util';
 
 export interface ParsedSparkResult {
   noteDto: CreateNoteDto;
@@ -155,6 +156,8 @@ export class SparksParserService {
 
     const finalSourceLink = sourceLink || extractedSourceLink;
 
+    const canonicalPath = toCanonicalSparkPath(filePath);
+
     // 11. Build CreateNoteDto
     const noteDto: CreateNoteDto = {
       title,
@@ -166,7 +169,7 @@ export class SparksParserService {
       startDate: startDate.toISOString(),
       endDate: endDate ? endDate.toISOString() : undefined,
       sourceType: 'GOOGLE_DRIVE',
-      externalId: filePath,
+      externalId: canonicalPath,
       sourceLink: finalSourceLink,
       rawContent: fileContent,
       summary,
@@ -179,7 +182,7 @@ export class SparksParserService {
       metadata: {
         generator: 'gemini-spark',
         fileName,
-        filePath,
+        filePath: canonicalPath,
         subtype: (fm.subtype as string) || undefined,
         timeSlot,
         feedSlug: fm.feed || undefined,

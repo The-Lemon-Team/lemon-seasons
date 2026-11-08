@@ -19,8 +19,64 @@ export interface NormalizedPoolItem {
 @Injectable()
 export class RelatedNotesResolverService {
   private readonly logger = new Logger(RelatedNotesResolverService.name);
+  private cachedNormalizedPool: NormalizedPoolItem[] | null = null;
+  private cachedPoolExpiresAt = 0;
+  private static readonly POOL_CACHE_TTL_MS = 60_000;
 
   constructor(private readonly prisma: PrismaService) {}
+
+  public invalidatePoolCache(): void {
+    this.cachedNormalizedPool = null;
+    this.cachedPoolExpiresAt = 0;
+  }
+
+  private toNormalizedPoolItem(other: {
+    id: string;
+    title: string;
+    type: NoteType | string;
+    startDate: Date | string;
+    icon: string | null;
+    author: string | null;
+    metadata: any;
+    externalId: string | null;
+  }): NormalizedPoolItem {
+    const normTitle = this.normalize(other.title);
+    const otherMeta = (other.metadata as any) || {};
+    const otherFile = otherMeta.fileName || '';
+    const normFile = this.normalize(otherFile);
+    const titleWords = new Set(normTitle.split(' ').filter((w) => w.length > 3));
+    return {
+      ...other,
+      normTitle,
+      normFile,
+      titleWords,
+    };
+  }
+
+  private async getNormalizedPool(): Promise<NormalizedPoolItem[]> {
+    const now = Date.now();
+    if (this.cachedNormalizedPool && now < this.cachedPoolExpiresAt) {
+      return this.cachedNormalizedPool;
+    }
+
+    const rawPool = await this.prisma.note.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        startDate: true,
+        icon: true,
+        author: true,
+        metadata: true,
+        externalId: true,
+      },
+    });
+
+    this.cachedNormalizedPool = rawPool.map((item) => this.toNormalizedPoolItem(item));
+    this.cachedPoolExpiresAt = now + RelatedNotesResolverService.POOL_CACHE_TTL_MS;
+    return this.cachedNormalizedPool;
+  }
 
   /**
    * Normalizes a title or filename string for robust fuzzy matching:
@@ -92,42 +148,15 @@ export class RelatedNotesResolverService {
 
     if (items.length === 0) return { resolvedCount: 0, totalCount: 0 };
 
-    // Fetch notes pool if not provided
-    const pool =
-      allNotesPool ||
-      (await this.prisma.note.findMany({
-        where: { deletedAt: null },
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          startDate: true,
-          icon: true,
-          author: true,
-          metadata: true,
-          externalId: true,
-        },
-      }));
-
     let resolvedCount = 0;
     let resolvedParentId: string | undefined = undefined;
 
-    // Pre-normalize pool once to eliminate tens of millions of repetitive regex executions
-    const normalizedPool: NormalizedPoolItem[] = (pool as any)._isNormalized
-      ? (pool as NormalizedPoolItem[])
-      : pool.map((other) => {
-          const normTitle = this.normalize(other.title);
-          const otherMeta = (other.metadata as any) || {};
-          const otherFile = otherMeta.fileName || '';
-          const normFile = this.normalize(otherFile);
-          const titleWords = new Set(normTitle.split(' ').filter((w) => w.length > 3));
-          return {
-            ...other,
-            normTitle,
-            normFile,
-            titleWords,
-          };
-        });
+    // Pre-normalize pool once (and reuse 60s TTL cached pool when allNotesPool is omitted)
+    const normalizedPool: NormalizedPoolItem[] = allNotesPool
+      ? (allNotesPool as any)._isNormalized
+        ? (allNotesPool as NormalizedPoolItem[])
+        : allNotesPool.map((other) => this.toNormalizedPoolItem(other))
+      : await this.getNormalizedPool();
 
     const updatedItems: RelatedNoteItem[] = items.map((item) => {
       const link = item.raw || item.cleanTitle;
