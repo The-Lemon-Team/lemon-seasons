@@ -1,5 +1,6 @@
 import { NoteType } from '../constants';
 import { NotePrivacy } from './index';
+import { NoteOrigin, NoteProvenance, BusDriverKind } from './topology';
 
 export type CommandType =
   | 'CREATE_NOTE'
@@ -136,14 +137,21 @@ export interface BusTasksFilter {
 // ── LemonBus Cloud Relay & P2P Event Types ─────────────────────────────────────
 
 export type BusActionType = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE';
-export type BusEntityType = 'NOTE' | 'FOLDER' | 'FEED';
+export type BusEntityType = 'NOTE' | 'FOLDER' | 'FEED' | 'STREAM' | 'SPARK_FILE';
 
 export interface BusEventEnvelope<T = any> {
   eventId: string;
+  seq?: number;
   timestamp: string;
   deviceId: string;
   entityType: BusEntityType;
   action: BusActionType;
+  origin?: NoteOrigin;
+  transportVia?: BusDriverKind;
+  streamSlug?: string | null;
+  feedSlug?: string | null;
+  contentHash?: string | null;
+  privacy?: 'public' | 'private';
   payload: T;
 }
 
@@ -151,22 +159,32 @@ export interface NoteEventPayload {
   id: string;
   title: string;
   description?: string | null;
+  rawContent?: string | null;
   folderPath?: string | null;
   status?: string;
+  privacy?: 'public' | 'private';
   publishAt?: string | null;
   feedId?: string | null;
   feedSlug?: string | null;
+  publicFeedId?: string | null;
+  streamSlug?: string | null;
   type?: string;
   startDate?: string;
   endDate?: string | null;
   sourceLink?: string | null;
   sourceType?: string | null;
+  origin?: NoteOrigin;
+  provenance?: NoteProvenance;
+  author?: string | null;
+  parentNoteId?: string | null;
+  resonanceScore?: number | null;
   externalId?: string | null;
   summary?: string | null;
   icon?: string | null;
   tags?: any[];
   hashtags?: string[];
   fileHash?: string | null;
+  metadata?: Record<string, any> | null;
   isRemoteSync?: boolean;
 }
 
@@ -175,11 +193,15 @@ export interface DriveBusNodeStats {
   eventsCount: number;
   lastEventTimestamp: string | null;
   watermarkTimestamp: string | null;
+  lastSeq?: number | null;
+  driver?: BusDriverKind;
   isCurrentDevice: boolean;
 }
 
 export interface DriveBusRelayStatus {
   isWatching: boolean;
+  driver?: BusDriverKind;
+  supabaseConnected?: boolean;
   busDir: string;
   eventsDir: string;
   currentDeviceId: string;
@@ -187,6 +209,7 @@ export interface DriveBusRelayStatus {
   nodes: DriveBusNodeStats[];
   watermarks: Record<string, string>;
   lastEventTimestamp: string | null;
+  lastSeq?: number | null;
 }
 
 export interface DriveBusEventsFilter {

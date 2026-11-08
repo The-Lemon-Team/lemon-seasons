@@ -81,6 +81,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@lenta/lemon-bus':
+        specifier: workspace:*
+        version: link:../../packages/lemon-bus
       '@lenta/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -373,6 +376,25 @@ importers:
         specifier: ^22.13.1
         version: 22.20.1
 
+  packages/lemon-bus:
+    dependencies:
+      chokidar:
+        specifier: ^5.0.0
+        version: 5.0.0
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.1
+      tsup:
+        specifier: ^8.3.6
+        version: 8.5.1(@swc/core@1.16.21)(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/obsidian-plugin:
     dependencies:
       '@lenta/shared':
@@ -412,6 +434,28 @@ importers:
       vitest:
         specifier: ^5.0.1
         version: 5.0.1(@types/node@20.19.43)(@vitest/coverage-v8@5.0.1)(jsdom@30.1.3(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@20.19.43)(typescript@5.9.3))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.50.0))
+
+  packages/seasons-neurons:
+    dependencies:
+      '@lenta/lemon-bus':
+        specifier: workspace:*
+        version: link:../lemon-bus
+      '@lenta/shared':
+        specifier: workspace:*
+        version: link:../shared
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.1
+      tsup:
+        specifier: ^8.3.6
+        version: 8.5.1(@swc/core@1.16.21)(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
   packages/shared:
     dependencies:
@@ -6159,7 +6203,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
       '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/remapping@2.3.5':
@@ -6186,7 +6230,7 @@ snapshots:
   '@jridgewell/trace-mapping@0.3.9':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   '@ljharb/through@2.3.14':
     dependencies:
@@ -8009,6 +8053,10 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.5
 
+  fdir@6.5.0(picomatch@4.0.7):
+    optionalDependencies:
+      picomatch: 4.0.7
+
   fflate@0.8.3: {}
 
   figures@3.2.0:
@@ -8523,11 +8571,11 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@0.30.8:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@1.4.1:
     dependencies:
@@ -10216,8 +10264,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinyrainbow@3.2.0: {}
 

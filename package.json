@@ -24,6 +24,7 @@
     "prod:down": "node scripts/env-manager.mjs prod:down",
     "prod:logs": "docker compose logs -f --tail=100",
     "prod:status": "node scripts/env-manager.mjs status",
+    "bus:dev": "node --experimental-sqlite packages/lemon-bus/dist/server/index.js",
     "backend:dev": "pnpm --filter lemon-lenta-backend run start:dev",
     "backend:build": "pnpm --filter lemon-lenta-backend run build",
     "backend:prisma:generate": "pnpm --filter lemon-lenta-backend run prisma:generate",

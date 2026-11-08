@@ -1,0 +1,32 @@
+{
+  "name": "@lenta/seasons-neurons",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reactive Neurons & Axons SDK for Lemon Seasons, Lemon Actions, Lemon Party, and Coding Agents",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "@lenta/lemon-bus": "workspace:*",
+    "@lenta/shared": "workspace:*",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3"
+  }
+}
