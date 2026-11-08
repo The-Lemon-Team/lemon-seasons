@@ -34,6 +34,11 @@ export class CreateNoteDto {
   @IsOptional()
   feedId?: string | null;
 
+  @ApiPropertyOptional({ description: 'Feed Slug this note belongs to (auto-resolved to feedId if feedId is not set)' })
+  @IsString()
+  @IsOptional()
+  feedSlug?: string | null;
+
   @ApiPropertyOptional({ description: 'Target Public/Staging Feed ID when publishing from Admin to Staging Hub' })
   @IsString()
   @IsOptional()
@@ -107,6 +112,11 @@ export class CreateNoteDto {
   @IsString()
   @IsOptional()
   sourceType?: string;
+
+  @ApiPropertyOptional({ description: 'Note provenance origin (DIRECT_UI, DIRECT_API, NEURON_PARTY, CODING_AGENT, SUPABASE_SPARK, GDRIVE_SPARK)' })
+  @IsString()
+  @IsOptional()
+  origin?: string;
 
   @ApiPropertyOptional({ description: 'External identifier in the source platform', example: '1A2b3C_gdrive_id' })
   @IsString()

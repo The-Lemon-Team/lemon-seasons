@@ -113,38 +113,36 @@ export class NotesQueryBuilder {
     @Optional() private readonly streamsService?: StreamsService,
   ) {}
 
-  private buildFeedCondition(targetFeed: { id: string; folderPaths: string[]; hashtags: string[] }): Prisma.NoteWhereInput {
+  private buildFeedCondition(targetFeed: { id: string; slug?: string; folderPaths: string[]; hashtags: string[] }): Prisma.NoteWhereInput {
     const hasFolders = targetFeed.folderPaths && targetFeed.folderPaths.length > 0;
     const hasHashtags = targetFeed.hashtags && targetFeed.hashtags.length > 0;
 
-    if (hasFolders || hasHashtags) {
-      const orClauses: Prisma.NoteWhereInput[] = [
-        { feedId: targetFeed.id },
-        { publicFeedId: targetFeed.id },
-      ];
-      if (hasFolders) {
-        orClauses.push(
-          ...targetFeed.folderPaths.map((fp) => ({
-            folderPath: { startsWith: fp, mode: 'insensitive' as const },
-          })),
-        );
-      }
-      if (hasHashtags) {
-        const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
-        orClauses.push({
-          hashtags: {
-            some: {
-              name: { in: cleanTags },
-              deletedAt: null,
-            },
-          },
-        });
-      }
-      return { OR: orClauses };
+    const orClauses: Prisma.NoteWhereInput[] = [
+      { feedId: targetFeed.id },
+      { publicFeedId: targetFeed.id },
+    ];
+    if (targetFeed.slug) {
+      orClauses.push({ feed: { slug: { startsWith: targetFeed.slug }, deletedAt: null } });
     }
-    return {
-      OR: [{ feedId: targetFeed.id }, { publicFeedId: targetFeed.id }],
-    };
+    if (hasFolders) {
+      orClauses.push(
+        ...targetFeed.folderPaths.map((fp) => ({
+          folderPath: { startsWith: fp, mode: 'insensitive' as const },
+        })),
+      );
+    }
+    if (hasHashtags) {
+      const cleanTags = targetFeed.hashtags.map((h) => h.replace(/^#/, '').toLowerCase());
+      orClauses.push({
+        hashtags: {
+          some: {
+            name: { in: cleanTags },
+            deletedAt: null,
+          },
+        },
+      });
+    }
+    return { OR: orClauses };
   }
 
   /**
@@ -224,10 +222,19 @@ export class NotesQueryBuilder {
         andConditions.push({ feedId });
       }
     } else if (feedSlug) {
-      const targetFeed = await this.prisma.feed.findFirst({
+      let targetFeed = await this.prisma.feed.findFirst({
         where: { slug: feedSlug, deletedAt: null },
-        select: { id: true, folderPaths: true, hashtags: true },
+        select: { id: true, slug: true, folderPaths: true, hashtags: true },
       });
+      if (!targetFeed) {
+        const aliasSlugs = LEGACY_FEED_SLUG_ALIASES[feedSlug];
+        if (aliasSlugs && aliasSlugs.length > 0) {
+          targetFeed = await this.prisma.feed.findFirst({
+            where: { slug: { in: aliasSlugs }, deletedAt: null },
+            select: { id: true, slug: true, folderPaths: true, hashtags: true },
+          });
+        }
+      }
       if (targetFeed) {
         andConditions.push(this.buildFeedCondition(targetFeed));
       } else {
@@ -393,6 +400,21 @@ export class NotesQueryBuilder {
         OR: [
           { author: { equals: authorFilter, mode: 'insensitive' } },
           { author: { contains: authorFilter, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // Parent Note ID (reply thread / child synthesis)
+    if (query.parentNoteId) {
+      andConditions.push({ parentNoteId: query.parentNoteId });
+    }
+
+    // Provenance Origin
+    if (query.origin) {
+      andConditions.push({
+        OR: [
+          { sourceType: query.origin },
+          { metadata: { path: ['origin'], equals: query.origin } },
         ],
       });
     }

@@ -21,6 +21,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { MacrosModule } from './macros/macros.module';
 import { EventsModule } from './events/events.module';
 import { StreamsModule } from './streams/streams.module';
+import { TopologyModule } from './topology/topology.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { StreamsModule } from './streams/streams.module';
     MacrosModule,
     EventsModule,
     StreamsModule,
+    TopologyModule,
   ],
 })
 export class AppModule implements NestModule {

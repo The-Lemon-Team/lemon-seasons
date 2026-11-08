@@ -1,14 +1,20 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { Subscription } from 'rxjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import * as crypto from 'crypto';
-import * as chokidar from 'chokidar';
+import {
+  BusCursor,
+  createLemonBusTransport,
+  ILemonBusTransport,
+  LemonBusEnvelope,
+  LemonBusNotePayload,
+  NoteOrigin,
+} from '@lenta/lemon-bus';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotesService } from '../../notes/notes.service';
 import { NotePublishedEvent } from '../../events';
-import { BusEventEnvelope, NoteEventPayload } from '../interfaces/bus-event.interface';
 import { CreateNoteDto } from '../../notes/dto/create-note.dto';
 
 @Injectable()
@@ -18,12 +24,10 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   private readonly eventsDir: string;
   private readonly mediaDir: string;
   private readonly deviceId: string;
-  private readonly watermarkFile: string;
-  private watcher: chokidar.FSWatcher | null = null;
-  private lastProcessedTimestamp: string | null = null;
-  private knownBusHashes = new Set<string>();
-  private knownBusFileNames = new Set<string>();
-  private busIndexInitialized = false;
+  private readonly transport: ILemonBusTransport;
+  private busSub: Subscription | null = null;
+  private cursor: BusCursor = {};
+  private watching = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -36,27 +40,55 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
     this.busDir =
       process.env.LEMON_BUS_DIR ||
-      (process.env.GDRIVE_SYNC_FOLDER ? path.join(process.env.GDRIVE_SYNC_FOLDER, 'LemonBus') : null) ||
+      (process.env.GDRIVE_SYNC_FOLDER
+        ? path.join(process.env.GDRIVE_SYNC_FOLDER, 'LemonBus')
+        : null) ||
       path.join(os.homedir(), '.lemon', 'bus');
 
     this.eventsDir = path.join(this.busDir, 'events');
     this.mediaDir = path.join(this.busDir, 'media');
-    this.watermarkFile = path.join(this.busDir, `.watermark_${this.deviceId}.json`);
+
+    this.transport = createLemonBusTransport({
+      deviceId: this.deviceId,
+      busDir: this.busDir,
+    });
   }
 
   async onModuleInit() {
     this.ensureDirectories();
-    this.loadWatermark();
-    this.runCatchUpSync().catch((err) => this.logger.warn(`Catch-up warning: ${err?.message}`));
-    this.startWatchingEvents();
+    try {
+      await this.transport.start();
+      this.watching = true;
+      this.busSub = this.transport
+        .subscribe({ entityTypes: ['NOTE'], excludeDeviceId: this.deviceId })
+        .subscribe((envelope) => {
+          this.applyEventToLocalDatabase(envelope).catch((err) =>
+            this.logger.warn(`Failed to apply bus event ${envelope.eventId}: ${err?.message}`),
+          );
+        });
+      this.runCatchUpSync().catch((err) =>
+        this.logger.warn(`Catch-up warning: ${err?.message}`),
+      );
+    } catch (err: any) {
+      this.logger.warn(`LemonBus transport init warning: ${err?.message}`);
+    }
   }
 
   async onModuleDestroy() {
-    await this.stopWatchingEvents();
+    this.watching = false;
+    if (this.busSub) {
+      this.busSub.unsubscribe();
+      this.busSub = null;
+    }
+    await this.transport.stop();
   }
 
   public getDeviceId(): string {
     return this.deviceId;
+  }
+
+  public getDriverKind(): string {
+    return this.transport.driver;
   }
 
   public getBusDirectory(): string {
@@ -68,131 +100,152 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   }
 
   public isWatching(): boolean {
-    return Boolean(this.watcher);
+    return this.watching;
   }
 
-  // ── 1. OUTBOUND: Публикация локального события в облачную шину ───────────────
+  public async getTransportStatus() {
+    return this.transport.getStatus();
+  }
+
+  public async queryEvents(query: any) {
+    return this.transport.queryEvents(query);
+  }
+
+  public async purgeExpiredBuffer(retentionDays = 30) {
+    if (this.transport.purgeExpiredRecords) {
+      return this.transport.purgeExpiredRecords(retentionDays);
+    }
+    return { purgedEvents: 0, purgedSparkDocs: 0 };
+  }
+
+  // ── 1. OUTBOUND: Публикация локального события в шину @lenta/lemon-bus ──────
 
   @OnEvent('note.published', { async: true })
   public async handleLocalNotePublished(event: NotePublishedEvent): Promise<void> {
-    // Предотвращение эхо-петли: не публиковать обратно в шину то, что пришло из шины
     if (event.payload?.metadata?.isRemoteSync || event.payload?.isRemoteSync) {
       return;
     }
 
     try {
-      const now = new Date();
-      const timestampIso = now.toISOString();
-      const safeTime = timestampIso.replace(/[:.]/g, '-');
-      const safeNoteId = event.noteId.replace(/[^a-z0-9_-]/gi, '').slice(0, 12);
-      const fileName = `${safeTime}_${this.deviceId}_${safeNoteId}.json`;
-      const targetFilePath = path.join(this.eventsDir, fileName);
+      const p = event.payload || {};
+      const origin: NoteOrigin =
+        p.metadata?.origin ||
+        (p.sourceType === 'GOOGLE_DRIVE'
+          ? 'GDRIVE_SPARK'
+          : p.sourceType === 'NEURON_PARTY'
+            ? 'NEURON_PARTY'
+            : p.sourceType === 'CODING_AGENT'
+              ? 'CODING_AGENT'
+              : 'DIRECT_UI');
 
-      const payload: NoteEventPayload = {
+      const hashtags: string[] = Array.isArray(p.hashtags)
+        ? p.hashtags
+            .map((h: any) => (typeof h === 'string' ? h : h?.name))
+            .filter(Boolean)
+        : [];
+
+      const payload: LemonBusNotePayload = {
         id: event.noteId,
+        externalId: p.externalId || null,
+        parentNoteId: p.parentNoteId || null,
         title: event.title,
-        folderPath: event.folderPath,
-        status: (event.status || event.payload?.status || 'PUBLISHED') as any,
+        description: p.description || p.rawContent || null,
+        summary: p.summary || null,
+        type: p.type || 'SINGLE',
+        status: (event.status || p.status || 'PUBLISHED') as any,
+        privacy: p.privacy === 'public' ? 'public' : 'private',
         publishAt: event.publishAt ? new Date(event.publishAt).toISOString() : null,
-        feedId: event.feedId,
-        fileHash: event.payload?.metadata?.fileHash || event.payload?.fileHash || null,
-        externalId: event.payload?.externalId || null,
-        summary: event.payload?.summary || null,
-        type: event.payload?.type || 'SINGLE',
-        startDate: event.payload?.startDate || timestampIso,
-        endDate: event.payload?.endDate || null,
-        sourceLink: event.payload?.sourceLink || null,
-        sourceType: event.payload?.sourceType || 'GOOGLE_DRIVE',
-        description: event.payload?.description || event.payload?.rawContent || null,
-        icon: event.payload?.icon || null,
-        tags: event.payload?.hashtags || [],
+        startDate: p.startDate ? new Date(p.startDate).toISOString() : new Date().toISOString(),
+        endDate: p.endDate ? new Date(p.endDate).toISOString() : null,
+        folderPath: event.folderPath || p.folderPath || null,
+        feedId: event.feedId || p.feedId || null,
+        feedSlug: p.feed?.slug || null,
+        author: p.author || null,
+        icon: p.icon || null,
+        sourceLink: p.sourceLink || null,
+        sourceType: p.sourceType || origin,
+        origin,
+        hashtags,
+        fileHash: p.metadata?.fileHash || p.fileHash || null,
+        provenance: {
+          origin,
+          fileHash: p.metadata?.fileHash || null,
+          canonicalPath: p.folderPath || null,
+          transportVia: this.transport.driver,
+          deviceId: this.deviceId,
+          actorId: p.author || null,
+        },
+        metadata: p.metadata || {},
       };
 
-      const envelope: BusEventEnvelope<NoteEventPayload> = {
-        eventId: crypto.randomUUID(),
-        timestamp: timestampIso,
-        deviceId: this.deviceId,
+      await this.transport.publish({
         entityType: 'NOTE',
         action: 'UPSERT',
+        streamSlug: p.metadata?.streamSlug || null,
+        feedSlug: p.feed?.slug || null,
+        privacy: payload.privacy,
+        origin,
         payload,
-      };
+      });
 
-      await fs.promises.writeFile(targetFilePath, JSON.stringify(envelope, null, 2), 'utf-8');
-      if (payload.fileHash) this.knownBusHashes.add(payload.fileHash);
-      if (payload.externalId) this.knownBusFileNames.add(path.basename(payload.externalId).toLowerCase());
-      this.logger.log(`☁️ [DriveBus:OUT] Событие опубликовано в шину: "${fileName}" (ID: ${event.noteId})`);
+      this.logger.log(
+        `☁️ [LemonBus:${this.transport.driver}:OUT] Note "${event.title}" published (origin=${origin}, id=${event.noteId})`,
+      );
     } catch (err: any) {
-      this.logger.error(`❌ Ошибка записи события в Google Drive шину: ${err.message}`, err.stack);
+      this.logger.error(`❌ Ошибка публикации в LemonBus: ${err.message}`, err.stack);
     }
   }
 
-  // ── 2. INBOUND: Прием событий из шины и накат в локальную базу ─────────────
-
-  private startWatchingEvents(): void {
-    if (this.watcher) return;
-
-    this.logger.log(`👁️ [DriveBus] Слушатель входящих событий шины запущен в: ${this.eventsDir}`);
-
-    this.watcher = chokidar.watch(this.eventsDir, {
-      ignored: /(^|[\/\\])\../, // игнорировать скрытые файлы
-      persistent: true,
-      ignoreInitial: true, // initial catch-up делается через runCatchUpSync
-      awaitWriteFinish: {
-        stabilityThreshold: 500,
-        pollInterval: 100,
-      },
-    });
-
-    this.watcher
-      .on('add', (filePath) => this.handleIncomingEventFile(filePath))
-      .on('change', (filePath) => this.handleIncomingEventFile(filePath))
-      .on('error', (err: any) => this.logger.error(`Ошибка наблюдателя шины: ${err?.message || err}`));
-  }
-
-  private async stopWatchingEvents(): Promise<void> {
-    if (this.watcher) {
-      await this.watcher.close();
-      this.watcher = null;
-      this.logger.log('🛑 [DriveBus] Слушатель шины остановлен.');
+  @OnEvent('note.deleted', { async: true })
+  public async handleLocalNoteDeleted(data: { noteId: string; previousState?: any }): Promise<void> {
+    if (data.previousState?.metadata?.isRemoteSync) return;
+    try {
+      await this.transport.publish({
+        entityType: 'NOTE',
+        action: 'DELETE',
+        feedSlug: data.previousState?.feed?.slug || null,
+        privacy: data.previousState?.privacy === 'public' ? 'public' : 'private',
+        origin: 'DIRECT_API',
+        payload: {
+          id: data.noteId,
+          title: data.previousState?.title || 'Deleted Note',
+          type: 'SINGLE',
+          status: 'ARCHIVED',
+          privacy: data.previousState?.privacy === 'public' ? 'public' : 'private',
+          startDate: new Date().toISOString(),
+          origin: 'DIRECT_API',
+          hashtags: [],
+          provenance: {
+            origin: 'DIRECT_API',
+            transportVia: this.transport.driver,
+            deviceId: this.deviceId,
+          },
+        } satisfies LemonBusNotePayload,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to publish DELETE to LemonBus: ${err?.message}`);
     }
   }
 
-  private async handleIncomingEventFile(filePath: string): Promise<void> {
-    const fileName = path.basename(filePath);
-    if (!fileName.toLowerCase().endsWith('.json') || fileName.startsWith('.')) return;
+  // ── 2. INBOUND: Накат событий из @lenta/lemon-bus в локальную БД ───────────
 
-    // Игнорируем собственные события
-    if (fileName.includes(`_${this.deviceId}_`)) {
+  public async applyEventToLocalDatabase(
+    envelope: LemonBusEnvelope<LemonBusNotePayload>,
+  ): Promise<void> {
+    if (envelope.entityType !== 'NOTE' || !envelope.payload?.id) return;
+    if (envelope.deviceId === this.deviceId) return;
+
+    const payload = envelope.payload;
+
+    if (envelope.action === 'DELETE') {
+      const existingToDelete = await this.prisma.note.findFirst({
+        where: { id: payload.id, deletedAt: null },
+      });
+      if (existingToDelete) {
+        await this.notesService.softDelete(existingToDelete.id);
+      }
       return;
     }
-
-    try {
-      const raw = await fs.promises.readFile(filePath, 'utf-8');
-      const envelope: BusEventEnvelope = JSON.parse(raw);
-
-      if (!envelope || !envelope.entityType || !envelope.payload) return;
-
-      if (envelope.payload?.fileHash) this.knownBusHashes.add(envelope.payload.fileHash);
-      if (envelope.payload?.externalId) {
-        this.knownBusFileNames.add(path.basename(envelope.payload.externalId).toLowerCase());
-      }
-
-      if (envelope.deviceId === this.deviceId) return;
-
-      this.logger.log(`📥 [DriveBus:IN] Получено удаленное событие от "${envelope.deviceId}" [${envelope.action} ${envelope.entityType}]`);
-      await this.applyEventToLocalDatabase(envelope);
-
-      this.updateWatermark(envelope.timestamp);
-    } catch (err: any) {
-      this.logger.warn(`⚠️ Не удалось разобрать файл события "${fileName}": ${err.message}`);
-    }
-  }
-
-  private async applyEventToLocalDatabase(envelope: BusEventEnvelope): Promise<void> {
-    if (envelope.entityType !== 'NOTE') return;
-
-    const payload: NoteEventPayload = envelope.payload;
-    if (!payload || !payload.id) return;
 
     const extFileName = payload.externalId ? path.basename(payload.externalId) : null;
     const existing = await this.prisma.note.findFirst({
@@ -213,32 +266,71 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
-    // Skip expensive DB update + cache invalidation if the note already has the exact same fileHash
     const existingHash = (existing?.metadata as any)?.fileHash;
     if (existing && payload.fileHash && existingHash && existingHash === payload.fileHash) {
       return;
     }
 
+    // Preserve true origin instead of overwriting everything with GOOGLE_DRIVE!
+    const preservedOrigin: NoteOrigin =
+      payload.provenance?.origin ||
+      payload.origin ||
+      envelope.origin ||
+      (payload.sourceType === 'GOOGLE_DRIVE' ? 'GDRIVE_SPARK' : 'DIRECT_API');
+
+    const preservedSourceType =
+      payload.sourceType ||
+      (preservedOrigin === 'GDRIVE_SPARK' || preservedOrigin === 'SUPABASE_SPARK'
+        ? 'GOOGLE_DRIVE'
+        : preservedOrigin);
+
+    const rawTags = Array.isArray(payload.hashtags)
+      ? payload.hashtags
+          .map((t: any) => (typeof t === 'string' ? t : t?.name))
+          .filter(Boolean)
+      : Array.isArray((payload as any).tags)
+        ? (payload as any).tags
+            .map((t: any) => (typeof t === 'string' ? t : t?.name))
+            .filter(Boolean)
+        : [];
+
+    let contentDescription = payload.description || payload.rawContent;
+    if (!contentDescription && payload.externalId && this.transport.fetchNoteContent) {
+      contentDescription = await this.transport
+        .fetchNoteContent({ canonicalPath: payload.externalId, externalId: payload.externalId })
+        .catch(() => null);
+    }
+
     const noteDto: CreateNoteDto = {
       title: payload.title || 'Untitled Note',
-      description: payload.description || undefined,
+      description: contentDescription || undefined,
       type: (payload.type as any) || 'SINGLE',
       status: (payload.status as any) || 'PUBLISHED',
+      privacy: payload.privacy === 'public' ? 'public' : 'private',
       publishAt: payload.publishAt || undefined,
       folderPath: payload.folderPath || undefined,
       startDate: payload.startDate || envelope.timestamp,
       endDate: payload.endDate || undefined,
       sourceLink: payload.sourceLink || undefined,
-      sourceType: payload.sourceType || 'GOOGLE_DRIVE',
+      sourceType: preservedSourceType,
+      origin: preservedOrigin,
       externalId: payload.externalId || undefined,
       summary: payload.summary || undefined,
+      author: payload.author || undefined,
+      parentNoteId: payload.parentNoteId || undefined,
       icon: payload.icon || undefined,
-      hashtags: payload.tags || [],
+      hashtags: rawTags,
       folders: payload.folderPath ? [payload.folderPath] : undefined,
+      feedId: payload.feedId || undefined,
+      feedSlug: payload.feedSlug || envelope.feedSlug || undefined,
       metadata: {
+        ...(payload.metadata || {}),
+        origin: preservedOrigin,
+        provenance: payload.provenance,
         isRemoteSync: true,
         syncedFromDevice: envelope.deviceId,
         syncedEventId: envelope.eventId,
+        syncedViaDriver: this.transport.driver,
         syncedAt: new Date().toISOString(),
         fileHash: payload.fileHash,
       },
@@ -246,186 +338,66 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
     if (existing) {
       await this.notesService.update(existing.id, noteDto);
-      this.logger.log(`🔄 [DriveBus] Локальная Note "${noteDto.title}" обновлена по событию шины`);
+      this.logger.log(
+        `🔄 [LemonBus:IN] Note "${noteDto.title}" updated (origin=${preservedOrigin})`,
+      );
     } else {
-      await this.notesService.create({
-        ...noteDto,
-        feedId: payload.feedId || undefined,
-      });
-      this.logger.log(`✨ [DriveBus] Локальная Note "${noteDto.title}" создана по событию шины`);
+      await this.notesService.create(noteDto);
+      this.logger.log(
+        `✨ [LemonBus:IN] Note "${noteDto.title}" created (origin=${preservedOrigin})`,
+      );
     }
   }
 
-  // ── 3. CATCH-UP SYNC: Догоняющая синхронизация при старте ПК ───────────────
+  // ── 3. CATCH-UP SYNC & CLOUD SPARK DOCUMENT PUBLISH ────────────────────────
 
   public async runCatchUpSync(): Promise<{ processed: number; skipped: number }> {
-    this.logger.log(`🔄 [DriveBus] Проверка очереди событий шины (Watermark: ${this.lastProcessedTimestamp || 'none'})...`);
-
-    if (!fs.existsSync(this.eventsDir)) return { processed: 0, skipped: 0 };
-
-    const files = await fs.promises.readdir(this.eventsDir);
-    const sortedJsonFiles = files
-      .filter((f) => f.toLowerCase().endsWith('.json') && !f.startsWith('.'))
-      .sort(); // Лексикографическая сортировка по дате в имени
-
+    const pulled = await this.transport.pullSince(this.cursor, 200);
     let processed = 0;
     let skipped = 0;
-    const safeWatermarkPrefix = this.lastProcessedTimestamp
-      ? this.lastProcessedTimestamp.replace(/[:.]/g, '-')
-      : null;
 
-    // Оставляем только самое свежее событие для каждого noteId, чтобы не проигрывать историю перезаписей одной заметки
-    const latestFileByNoteKey = new Map<string, string>();
-    for (const fileName of sortedJsonFiles) {
-      if (fileName.includes(`_${this.deviceId}_`)) {
+    for (const envelope of pulled.items) {
+      if (envelope.deviceId === this.deviceId) {
         skipped++;
         continue;
       }
-      const parts = fileName.split('_');
-      const fileTimePrefix = parts[0];
-      if (safeWatermarkPrefix && fileTimePrefix && fileTimePrefix <= safeWatermarkPrefix) {
-        skipped++;
-        continue;
-      }
-      const noteKey = parts[2] || fileName;
-      if (latestFileByNoteKey.has(noteKey)) {
-        skipped++;
-      }
-      latestFileByNoteKey.set(noteKey, fileName);
+      await this.applyEventToLocalDatabase(envelope);
+      processed++;
     }
 
-    const candidateFiles = Array.from(latestFileByNoteKey.values());
-
-    for (const fileName of candidateFiles) {
-      const filePath = path.join(this.eventsDir, fileName);
-      try {
-        const raw = await fs.promises.readFile(filePath, 'utf-8');
-        const envelope: BusEventEnvelope = JSON.parse(raw);
-
-        if (envelope?.payload?.fileHash) this.knownBusHashes.add(envelope.payload.fileHash);
-        if (envelope?.payload?.externalId) {
-          this.knownBusFileNames.add(path.basename(envelope.payload.externalId).toLowerCase());
-        }
-
-        if (!envelope || envelope.deviceId === this.deviceId) {
-          skipped++;
-          continue;
-        }
-
-        // Если событие старше нашего водяного знака — пропускаем
-        if (this.lastProcessedTimestamp && envelope.timestamp <= this.lastProcessedTimestamp) {
-          skipped++;
-          continue;
-        }
-
-        await this.applyEventToLocalDatabase(envelope);
-        if (!this.lastProcessedTimestamp || envelope.timestamp > this.lastProcessedTimestamp) {
-          this.lastProcessedTimestamp = envelope.timestamp;
-        }
-        processed++;
-
-        // Периодически сохраняем watermark каждые 25 событий, чтобы прогресс не терялся при рестарте
-        if (processed % 25 === 0) {
-          this.persistWatermark();
-        }
-      } catch (err: any) {
-        this.logger.warn(`Ошибка обработки файла catch-up "${fileName}": ${err.message}`);
-        skipped++;
-      }
+    this.cursor = pulled.nextCursor;
+    if (processed > 0) {
+      await this.transport.acknowledgeCursor(this.cursor);
     }
 
-    if (processed > 0 && this.lastProcessedTimestamp) {
-      this.persistWatermark();
-    }
-
-    this.logger.log(`✅ [DriveBus] Catch-up завершен. Обработано новых: ${processed}, пропущено: ${skipped}`);
     return { processed, skipped };
   }
 
-  // ── 4. DRV-03: Проверка шины перед парсингом (Check-Before-Ingest) ──────────
-
   /**
-   * Проверяет, опубликовано ли уже событие для данного файла в шине другими машинами.
-   * Использует in-memory индекс хэшей и имен файлов, чтобы избежать чтения 200 файлов на каждую заметку.
+   * Publishes a Markdown Spark file directly into the active LemonBus transport
+   * (e.g. Supabase `lemon_spark_documents` or Hybrid) and ingests it locally.
    */
-  public async isFileAlreadyInBus(filePath: string, fileHash?: string): Promise<boolean> {
-    if (!fs.existsSync(this.eventsDir)) return false;
+  public async publishSparkDocument(input: {
+    relativePath: string;
+    rawMarkdown: string;
+    origin?: 'SUPABASE_SPARK' | 'GDRIVE_SPARK';
+  }) {
+    const envelope = await this.transport.publishSparkDocument({
+      virtualPath: input.relativePath,
+      contentMarkdown: input.rawMarkdown,
+      origin: input.origin || 'SUPABASE_SPARK',
+    });
 
-    const targetFileName = path.basename(filePath).toLowerCase();
-
-    if (fileHash && this.knownBusHashes.has(fileHash)) {
-      return true;
-    }
-    if (this.knownBusFileNames.has(targetFileName) && !fileHash) {
-      return true;
-    }
-
-    if (!this.busIndexInitialized) {
-      this.busIndexInitialized = true;
-      try {
-        const files = await fs.promises.readdir(this.eventsDir);
-        const recent = files
-          .filter((f) => f.toLowerCase().endsWith('.json') && !f.startsWith('.'))
-          .sort()
-          .slice(-200);
-
-        for (const f of recent) {
-          const full = path.join(this.eventsDir, f);
-          const text = await fs.promises.readFile(full, 'utf-8');
-          try {
-            const parsed: BusEventEnvelope = JSON.parse(text);
-            if (parsed?.payload?.fileHash) {
-              this.knownBusHashes.add(parsed.payload.fileHash);
-            }
-            if (parsed?.payload?.externalId) {
-              this.knownBusFileNames.add(path.basename(parsed.payload.externalId).toLowerCase());
-            }
-          } catch {
-            // fallback if malformed
-          }
-        }
-      } catch {
-        return false;
-      }
-    }
-
-    if (fileHash && this.knownBusHashes.has(fileHash)) {
-      return true;
-    }
-    return false;
+    await this.applyEventToLocalDatabase({
+      ...envelope,
+      deviceId: `${this.deviceId}:spark`,
+    });
+    return envelope;
   }
 
-  // ── Водяной знак (Watermark) ────────────────────────────────────────────────
-
-  private loadWatermark(): void {
-    try {
-      if (fs.existsSync(this.watermarkFile)) {
-        const data = JSON.parse(fs.readFileSync(this.watermarkFile, 'utf-8'));
-        this.lastProcessedTimestamp = data.lastProcessedTimestamp || null;
-      }
-    } catch {
-      this.lastProcessedTimestamp = null;
-    }
-  }
-
-  private updateWatermark(timestamp: string): void {
-    if (!this.lastProcessedTimestamp || timestamp > this.lastProcessedTimestamp) {
-      this.lastProcessedTimestamp = timestamp;
-      this.persistWatermark();
-    }
-  }
-
-  private persistWatermark(): void {
-    if (!this.lastProcessedTimestamp) return;
-    fs.promises
-      .writeFile(
-        this.watermarkFile,
-        JSON.stringify({ deviceId: this.deviceId, lastProcessedTimestamp: this.lastProcessedTimestamp }, null, 2),
-        'utf-8',
-      )
-      .catch((err: any) => {
-        this.logger.warn(`Не удалось сохранить watermark: ${err.message}`);
-      });
+  public async isFileAlreadyInBus(_filePath: string, fileHash?: string): Promise<boolean> {
+    if (!fileHash) return false;
+    return this.transport.hasContentHash(fileHash);
   }
 
   private ensureDirectories(): void {

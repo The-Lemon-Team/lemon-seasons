@@ -69,6 +69,16 @@ export class QueryNotesDto {
   @IsOptional()
   author?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by Parent Note ID (reply thread / child synthesis)' })
+  @IsString()
+  @IsOptional()
+  parentNoteId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by NoteOrigin provenance (DIRECT_API, NEURON_PARTY, CODING_AGENT, GDRIVE_SPARK, etc.)' })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
   @ApiPropertyOptional({ description: 'Filter by Curator (legacy fallback)' })
   @IsString()
   @IsOptional()

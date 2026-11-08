@@ -7,6 +7,7 @@ const ROOT_DIR = process.cwd();
 const LOCK_FILE = path.join(ROOT_DIR, 'apps', 'backend', 'uploads', '.active-watcher.lock');
 
 const DEV_PORTS = [
+  { port: 3030, name: 'Local Lemon Bus (dev)' },
   { port: 3002, name: 'Backend API (dev)' },
   { port: 5180, name: 'Feed App (dev)' },
   { port: 5176, name: 'Admin CMS (dev)' },

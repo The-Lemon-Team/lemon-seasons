@@ -21,10 +21,14 @@ export class AuthContextMiddleware implements NestMiddleware {
       process.env.VITE_ADMIN_TOKEN ||
       'lenta_adm_master_permanent_7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c';
 
-    const authHeader = req.headers['authorization'];
-    const apiKey = req.headers['x-api-key'];
-    const userKey = req.headers['x-user-key'];
-    const adminHeader = req.headers['x-admin-token'];
+    const authHeader = req.headers?.['authorization'];
+    const apiKey = req.headers?.['x-api-key'];
+    const userKey = req.headers?.['x-user-key'];
+    const adminHeader = req.headers?.['x-admin-token'];
+    const queryToken =
+      typeof req.query?.token === 'string' && req.query.token.trim()
+        ? req.query.token.trim()
+        : undefined;
 
     const bearerToken =
       typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
@@ -33,11 +37,16 @@ export class AuthContextMiddleware implements NestMiddleware {
         ? authHeader.trim()
         : undefined;
 
-    const token = bearerToken || apiKey || userKey || adminHeader;
+    const token = bearerToken || apiKey || userKey || adminHeader || queryToken;
 
     if (token) {
       // 1. Permanent Master Admin Token check
-      if (adminToken && (token === adminToken || token === 'lenta_adm_master_permanent_7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c' || token.startsWith('lenta_adm_master_'))) {
+      if (
+        adminToken &&
+        (token === adminToken ||
+          token === 'lenta_adm_master_permanent_7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c' ||
+          token.startsWith('lenta_adm_master_'))
+      ) {
         req.user = {
           id: 'usr-admin-master',
           role: 'admin',

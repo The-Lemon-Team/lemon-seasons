@@ -13,6 +13,7 @@ import {
   UploadedFile,
   BadRequestException,
   Headers,
+  UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -33,6 +34,7 @@ import { IngestNoteDto } from './dto/ingest-note.dto';
 import { NotesIngestService } from './notes-ingest.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { RequestUser } from '../auth/auth.types';
+import { AuthenticatedWriteGuard } from '../auth/admin-write.guard';
 
 @ApiTags('Notes')
 @Controller(['notes', 'api/v1/notes'])
@@ -66,6 +68,7 @@ export class NotesController {
   }
 
   @Post('batch')
+  @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Batch create multiple calendar notes at once' })
   @ApiResponse({ status: 201, description: 'Notes created successfully' })
   createBatch(@Body() batchDto: BatchCreateNotesDto) {
@@ -73,6 +76,7 @@ export class NotesController {
   }
 
   @Post()
+  @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Create a new note' })
   @ApiResponse({ status: 201, description: 'Note created successfully' })
   create(@Body() createNoteDto: CreateNoteDto) {
@@ -130,18 +134,21 @@ export class NotesController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Update a note' })
   update(@Param('id') id: string, @Body() updateNoteDto: UpdateNoteDto) {
     return this.notesService.update(id, updateNoteDto);
   }
 
   @Delete(':id')
+  @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Soft delete a note' })
   remove(@Param('id') id: string) {
     return this.notesService.softDelete(id);
   }
 
   @Post(':id/restore')
+  @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Restore a soft-deleted note' })
   restore(@Param('id') id: string) {
     return this.notesService.restore(id);

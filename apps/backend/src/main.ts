@@ -61,8 +61,8 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Project Lenta Backend running on: http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Project Lenta Backend running on: http://0.0.0.0:${port}`);
   console.log(`📑 Swagger Documentation available at: http://localhost:${port}/api/docs`);
 }
 bootstrap();

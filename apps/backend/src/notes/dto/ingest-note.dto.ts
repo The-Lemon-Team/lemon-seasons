@@ -7,7 +7,7 @@ import {
   IsArray,
   IsDateString,
 } from 'class-validator';
-import { NoteType } from './create-note.dto';
+import { NoteStatus, NoteType } from './create-note.dto';
 
 export class IngestNoteDto {
   @ApiPropertyOptional({
@@ -27,13 +27,60 @@ export class IngestNoteDto {
   content: string;
 
   @ApiPropertyOptional({
-    description: 'Тип источника (DEFI_CHAT, WEB_CLIP, API, GOOGLE_DRIVE, MANUAL)',
-    example: 'DEFI_CHAT',
+    description: 'Тип источника (DEFI_CHAT, WEB_CLIP, API, GOOGLE_DRIVE, MANUAL, NEURON_PARTY, CODING_AGENT)',
+    example: 'NEURON_PARTY',
     default: 'API',
   })
   @IsString()
   @IsOptional()
   sourceType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Происхождение заметки (DIRECT_API, NEURON_PARTY, CODING_AGENT, SUPABASE_SPARK, GDRIVE_SPARK)',
+    example: 'NEURON_PARTY',
+  })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({
+    description: 'Приватность заметки (public | private)',
+    default: 'private',
+  })
+  @IsString()
+  @IsOptional()
+  privacy?: 'public' | 'private';
+
+  @ApiPropertyOptional({
+    enum: NoteStatus,
+    description: 'Статус публикации (DRAFT, SCHEDULED, PUBLISHED, ARCHIVED)',
+    default: NoteStatus.PUBLISHED,
+  })
+  @IsEnum(NoteStatus)
+  @IsOptional()
+  status?: NoteStatus;
+
+  @ApiPropertyOptional({
+    description: 'Автор или персонаж заметки (например, actorId из Lemon Party или coding-agent)',
+    example: 'earl-lemongrab',
+  })
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID родительской заметки (для реплаев в тредах или дочерних синтезов)',
+  })
+  @IsString()
+  @IsOptional()
+  parentNoteId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Слаг целевого стрима (для привязки фида при авто-создании)',
+  })
+  @IsString()
+  @IsOptional()
+  streamSlug?: string;
 
   @ApiPropertyOptional({
     description: 'Ссылка на исходный тред, статью или страницу',

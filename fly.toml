@@ -1,0 +1,36 @@
+# Fly.io Configuration for Lemon Bus (@lenta/lemon-bus)
+app = "lemon-seasons-bus"
+primary_region = "fra"
+
+[build]
+  dockerfile = "packages/lemon-bus/Dockerfile"
+
+[env]
+  PORT = "8080"
+  HOST = "0.0.0.0"
+  NODE_ENV = "production"
+  LEMON_BUS_DB_PATH = "/data/lemon-bus.db"
+  LEMON_BUS_RETENTION_DAYS = "30"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 500
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[mounts]
+  source = "lemon_bus_data"
+  destination = "/data"
+  initial_size = "1gb"

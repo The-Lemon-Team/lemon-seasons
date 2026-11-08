@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventsSseService } from './events-sse.service';
 import { NotePublishedEvent } from './note-published.event';
-import { firstValueFrom, take } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
-describe('EventsSseService', () => {
+describe('EventsSseService & SubscriptionRegistry', () => {
   let service: EventsSseService;
   const mockPrisma = {
     feed: {
@@ -32,7 +32,7 @@ describe('EventsSseService', () => {
       new Date('2026-11-03'),
       'feed-123',
       true,
-      { privacy: 'public' }
+      { privacy: 'public' },
     );
 
     const streamPromise = firstValueFrom(service.getEventStream(false));
@@ -61,7 +61,7 @@ describe('EventsSseService', () => {
       new Date(),
       null,
       true,
-      { privacy: 'private' }
+      { privacy: 'private' },
     );
 
     await service.handleNotePublished(privateEvent);
@@ -80,5 +80,51 @@ describe('EventsSseService', () => {
     expect(adminRecent).toHaveLength(1);
     expect(adminRecent[0].type).toBe('NOTE_DELETED');
     expect(adminRecent[0].noteId).toBe('del-1');
+  });
+
+  it('routes Before -> After boundary transitions (NOTE_LEFT & NOTE_ENTERED) to template subscribers', async () => {
+    const receivedDiary: any[] = [];
+    const receivedArchive: any[] = [];
+
+    const subDiary = service
+      .getEventStream(true, undefined, { feeds: 'party-chrono-diary' })
+      .subscribe((msg) => {
+        if (msg.type === 'note') receivedDiary.push(JSON.parse(msg.data as string));
+      });
+
+    const subArchive = service
+      .getEventStream(true, undefined, { feeds: 'party-archive' })
+      .subscribe((msg) => {
+        if (msg.type === 'note') receivedArchive.push(JSON.parse(msg.data as string));
+      });
+
+    expect(service.getSubscriberStats().activeSubscribers).toBe(2);
+
+    // Move note-99 from 'party-chrono-diary' to 'party-archive'
+    await service.handleNotePublished(
+      new NotePublishedEvent(
+        'note-99',
+        'Moved Note',
+        null,
+        'PUBLISHED',
+        null,
+        'f-archive',
+        false,
+        { id: 'note-99', privacy: 'public', feed: { slug: 'party-archive' } },
+        { id: 'note-99', title: 'Moved Note', privacy: 'public', status: 'PUBLISHED', feed: { slug: 'party-chrono-diary' } },
+      ),
+    );
+
+    expect(receivedDiary).toHaveLength(1);
+    expect(receivedDiary[0].type).toBe('NOTE_LEFT');
+    expect(receivedDiary[0].previousFeedSlug).toBe('party-chrono-diary');
+
+    expect(receivedArchive).toHaveLength(1);
+    expect(receivedArchive[0].type).toBe('NOTE_ENTERED');
+    expect(receivedArchive[0].feedSlug).toBe('party-archive');
+
+    subDiary.unsubscribe();
+    subArchive.unsubscribe();
+    expect(service.getSubscriberStats().activeSubscribers).toBe(0);
   });
 });

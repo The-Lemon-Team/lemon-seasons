@@ -6,7 +6,9 @@ import {
   ForbiddenException,
   Logger,
   OnModuleInit,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { FoldersService } from '../folders/folders.service';
 import { CreateFeedDto } from './dto/create-feed.dto';
@@ -29,6 +31,7 @@ export class FeedsService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private foldersService: FoldersService,
+    @Optional() private eventEmitter?: EventEmitter2,
   ) {}
 
   async onModuleInit() {
@@ -47,10 +50,6 @@ export class FeedsService implements OnModuleInit {
     }
   }
 
-  /**
-   * Ensures all folder paths specified for a feed exist in the database.
-   * If any folder path does not exist, it is created with the feed's privacy level.
-   */
   private async ensureFoldersExist(folderPaths: string[], feedPrivacy: string) {
     if (!folderPaths || folderPaths.length === 0) return;
     for (const rawPath of folderPaths) {
@@ -80,11 +79,6 @@ export class FeedsService implements OnModuleInit {
     }
   }
 
-  /**
-   * Enforces privacy rule:
-   * Private and public folders may be used in private feeds.
-   * Private folders CANNOT be used in public feeds.
-   */
   private async validatePublicFeedFolderPaths(folderPaths: string[]) {
     if (!folderPaths || folderPaths.length === 0) return;
     const normalized = folderPaths.map((p) => p.trim()).filter(Boolean);
@@ -99,15 +93,16 @@ export class FeedsService implements OnModuleInit {
     if (privateFolders.length > 0) {
       const details = privateFolders.map((f) => `${f.path} (${f.privacy})`).join(', ');
       throw new BadRequestException(
-        `Публичный feed не может содержать приватные папки: ${details}. В публичных лентах разрешены только публичные папки.`
+        `Публичный feed не может содержать приватные папки: ${details}. В публичных лентах разрешены только публичные папки.`,
       );
     }
   }
 
   async create(createFeedDto: CreateFeedDto) {
-    const slug = createFeedDto.slug?.trim() ? slugify(createFeedDto.slug) : slugify(createFeedDto.title);
-    
-    // Check if active slug exists
+    const slug = createFeedDto.slug?.trim()
+      ? slugify(createFeedDto.slug)
+      : slugify(createFeedDto.title);
+
     const existing = await this.prisma.feed.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -115,17 +110,16 @@ export class FeedsService implements OnModuleInit {
       throw new ConflictException(`Feed with slug '${slug}' already exists`);
     }
 
-    const privacy = createFeedDto.privacy || 'public';
+    const privacy = createFeedDto.privacy === 'private' ? 'private' : 'public';
     if (privacy === 'public' && createFeedDto.folderPaths && createFeedDto.folderPaths.length > 0) {
       await this.validatePublicFeedFolderPaths(createFeedDto.folderPaths);
     }
 
-    // Ensure all projected folder paths exist in the database
     if (createFeedDto.folderPaths && createFeedDto.folderPaths.length > 0) {
       await this.ensureFoldersExist(createFeedDto.folderPaths, privacy);
     }
 
-    return this.prisma.feed.create({
+    const created = await this.prisma.feed.create({
       data: {
         title: createFeedDto.title,
         description: createFeedDto.description,
@@ -146,6 +140,9 @@ export class FeedsService implements OnModuleInit {
         },
       },
     });
+
+    this.eventEmitter?.emit('feed.created', created);
+    return created;
   }
 
   async findAll(includeDeleted = false, search?: string, isAdmin = false) {
@@ -169,7 +166,10 @@ export class FeedsService implements OnModuleInit {
         _count: {
           select: {
             notes: {
-              where: { deletedAt: null },
+              where: {
+                deletedAt: null,
+                ...(isAdmin ? {} : { privacy: 'public', status: 'PUBLISHED' }),
+              },
             },
           },
         },
@@ -178,36 +178,46 @@ export class FeedsService implements OnModuleInit {
     });
   }
 
-  async findOne(id: string, isAdmin = false) {
-    const feed = await this.prisma.feed.findUnique({
-      where: { id },
+  async findOne(idOrSlug: string, isAdmin = false, includeNotes = true) {
+    const notesFilter = isAdmin
+      ? { deletedAt: null }
+      : { deletedAt: null, privacy: 'public', status: 'PUBLISHED' as const };
+
+    const feed = await this.prisma.feed.findFirst({
+      where: {
+        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+      },
       include: {
-        notes: {
-          where: { deletedAt: null },
-          orderBy: { startDate: 'desc' },
-          take: 100,
-          include: {
-            hashtags: true,
-            folders: {
-              include: { folder: true },
-              orderBy: { order: 'asc' },
-            },
-            images: { orderBy: { order: 'asc' } },
-            links: { orderBy: { order: 'asc' } },
-          },
-        },
+        ...(includeNotes
+          ? {
+              notes: {
+                where: notesFilter,
+                orderBy: { startDate: 'desc' as const },
+                take: 100,
+                include: {
+                  hashtags: true,
+                  folders: {
+                    include: { folder: true },
+                    orderBy: { order: 'asc' as const },
+                  },
+                  images: { orderBy: { order: 'asc' as const } },
+                  links: { orderBy: { order: 'asc' as const } },
+                },
+              },
+            }
+          : {}),
         _count: {
           select: {
             notes: {
-              where: { deletedAt: null },
+              where: notesFilter,
             },
           },
         },
       },
     });
 
-    if (!feed) {
-      throw new NotFoundException(`Feed with ID '${id}' not found`);
+    if (!feed || feed.deletedAt) {
+      throw new NotFoundException(`Feed '${idOrSlug}' not found`);
     }
 
     if (!isAdmin && feed.privacy !== 'public') {
@@ -218,7 +228,9 @@ export class FeedsService implements OnModuleInit {
   }
 
   async update(id: string, updateFeedDto: UpdateFeedDto) {
-    const existing = await this.prisma.feed.findUnique({ where: { id } });
+    const existing = await this.prisma.feed.findFirst({
+      where: { OR: [{ id }, { slug: id }], deletedAt: null },
+    });
     if (!existing) {
       throw new NotFoundException(`Feed with ID '${id}' not found`);
     }
@@ -227,15 +239,17 @@ export class FeedsService implements OnModuleInit {
     if (slug) {
       slug = slugify(slug);
       const conflict = await this.prisma.feed.findFirst({
-        where: { slug, id: { not: id }, deletedAt: null },
+        where: { slug, id: { not: existing.id }, deletedAt: null },
       });
       if (conflict) {
         throw new ConflictException(`Feed with slug '${slug}' already exists`);
       }
     }
 
-    const targetPrivacy = updateFeedDto.privacy !== undefined ? updateFeedDto.privacy : existing.privacy;
-    const targetFolders = updateFeedDto.folderPaths !== undefined ? updateFeedDto.folderPaths : existing.folderPaths;
+    const targetPrivacy =
+      updateFeedDto.privacy !== undefined ? updateFeedDto.privacy : existing.privacy;
+    const targetFolders =
+      updateFeedDto.folderPaths !== undefined ? updateFeedDto.folderPaths : existing.folderPaths;
 
     if (targetPrivacy === 'public' && targetFolders.length > 0) {
       await this.validatePublicFeedFolderPaths(targetFolders);
@@ -245,8 +259,8 @@ export class FeedsService implements OnModuleInit {
       await this.ensureFoldersExist(targetFolders, targetPrivacy);
     }
 
-    return this.prisma.feed.update({
-      where: { id },
+    const updated = await this.prisma.feed.update({
+      where: { id: existing.id },
       data: {
         ...(updateFeedDto.title ? { title: updateFeedDto.title } : {}),
         ...(updateFeedDto.description !== undefined ? { description: updateFeedDto.description } : {}),
@@ -267,14 +281,19 @@ export class FeedsService implements OnModuleInit {
         },
       },
     });
+
+    this.eventEmitter?.emit('feed.updated', updated);
+    return updated;
   }
 
   async softDelete(id: string) {
-    await this.findOne(id, true);
-    return this.prisma.feed.update({
-      where: { id },
+    const existing = await this.findOne(id, true, false);
+    const deleted = await this.prisma.feed.update({
+      where: { id: existing.id },
       data: { deletedAt: new Date() },
     });
+    this.eventEmitter?.emit('feed.deleted', { feedId: existing.id, slug: existing.slug });
+    return deleted;
   }
 
   async restore(id: string) {
@@ -282,9 +301,11 @@ export class FeedsService implements OnModuleInit {
     if (!feed) {
       throw new NotFoundException(`Feed with ID '${id}' not found`);
     }
-    return this.prisma.feed.update({
+    const restored = await this.prisma.feed.update({
       where: { id },
       data: { deletedAt: null },
     });
+    this.eventEmitter?.emit('feed.updated', restored);
+    return restored;
   }
 }

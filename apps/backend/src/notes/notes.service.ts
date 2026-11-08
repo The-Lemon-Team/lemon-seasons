@@ -91,16 +91,24 @@ export class NotesService implements OnModuleInit {
     }
 
     let targetContainerId = (createNoteDto as any).containerId || undefined;
+    let resolvedFeedId = createNoteDto.feedId || undefined;
 
     // Parallelize feed validation, hashtag resolution, and folder assignment resolution
     const [, hashtagIds, folderAssignments] = await Promise.all([
       (async () => {
-        if (createNoteDto.feedId) {
+        if (resolvedFeedId) {
           const feed = await this.prisma.feed.findUnique({
-            where: { id: createNoteDto.feedId },
+            where: { id: resolvedFeedId },
           });
           if (!feed || feed.deletedAt) {
-            throw new NotFoundException(`Feed with ID '${createNoteDto.feedId}' not found`);
+            throw new NotFoundException(`Feed with ID '${resolvedFeedId}' not found`);
+          }
+        } else if (createNoteDto.feedSlug && this.prisma.feed?.findFirst) {
+          const bySlug = await this.prisma.feed.findFirst({
+            where: { slug: createNoteDto.feedSlug, deletedAt: null },
+          });
+          if (bySlug) {
+            resolvedFeedId = bySlug.id;
           }
         }
       })(),
@@ -181,7 +189,9 @@ export class NotesService implements OnModuleInit {
         externalId: createNoteDto.externalId,
         rawContent: createNoteDto.rawContent,
         summary: createNoteDto.summary,
-        metadata: createNoteDto.metadata || undefined,
+        metadata: createNoteDto.origin
+          ? { ...(createNoteDto.metadata || {}), origin: createNoteDto.origin }
+          : createNoteDto.metadata || undefined,
         processingStatus: createNoteDto.processingStatus || 'COMPLETED',
         icon: createNoteDto.icon,
         author: createNoteDto.author || createNoteDto.curator,
@@ -189,7 +199,7 @@ export class NotesService implements OnModuleInit {
         ...(createNoteDto.parentNoteId
           ? { parentNote: { connect: { id: createNoteDto.parentNoteId } } }
           : {}),
-        ...(createNoteDto.feedId ? { feed: { connect: { id: createNoteDto.feedId } } } : {}),
+        ...(resolvedFeedId ? { feed: { connect: { id: resolvedFeedId } } } : {}),
         ...(createNoteDto.publicFeedId ? { publicFeed: { connect: { id: createNoteDto.publicFeedId } } } : {}),
         ...(targetContainerId ? { container: { connect: { id: targetContainerId } } } : {}),
         hashtags: hashtagIds.length > 0 ? { connect: hashtagIds.map((id) => ({ id })) } : undefined,
@@ -342,12 +352,20 @@ export class NotesService implements OnModuleInit {
     this.notesCacheService.invalidateAll();
     const current = await this.findOne(id, true);
 
-    if (updateNoteDto.feedId) {
+    let resolvedUpdateFeedId = updateNoteDto.feedId;
+    if (resolvedUpdateFeedId) {
       const feed = await this.prisma.feed.findUnique({
-        where: { id: updateNoteDto.feedId },
+        where: { id: resolvedUpdateFeedId },
       });
       if (!feed || feed.deletedAt) {
-        throw new NotFoundException(`Feed with ID '${updateNoteDto.feedId}' not found`);
+        throw new NotFoundException(`Feed with ID '${resolvedUpdateFeedId}' not found`);
+      }
+    } else if (updateNoteDto.feedSlug && this.prisma.feed?.findFirst) {
+      const bySlug = await this.prisma.feed.findFirst({
+        where: { slug: updateNoteDto.feedSlug, deletedAt: null },
+      });
+      if (bySlug) {
+        resolvedUpdateFeedId = bySlug.id;
       }
     }
 
@@ -458,9 +476,9 @@ export class NotesService implements OnModuleInit {
             ? { parentNote: { connect: { id: updateNoteDto.parentNoteId } } }
             : { parentNote: { disconnect: true } }
           : {}),
-        ...(updateNoteDto.feedId !== undefined
-          ? updateNoteDto.feedId
-            ? { feed: { connect: { id: updateNoteDto.feedId } } }
+        ...(resolvedUpdateFeedId !== undefined
+          ? resolvedUpdateFeedId
+            ? { feed: { connect: { id: resolvedUpdateFeedId } } }
             : { feed: { disconnect: true } }
           : {}),
         ...(updateNoteDto.publicFeedId !== undefined
@@ -492,6 +510,7 @@ export class NotesService implements OnModuleInit {
           updatedNote.feedId,
           false,
           updatedNote,
+          current,
         ),
       );
     }
@@ -500,7 +519,7 @@ export class NotesService implements OnModuleInit {
 
   async softDelete(id: string) {
     this.notesCacheService.invalidateAll();
-    await this.findOne(id, true);
+    const existing = await this.findOne(id, true);
     const deleted = await this.prisma.note.update({
       where: { id },
       data: { deletedAt: new Date() },
@@ -508,7 +527,7 @@ export class NotesService implements OnModuleInit {
     this.notesCacheService.invalidateAll();
     this.logger.log(`Soft-deleted note [id: ${id}]`);
     if (this.eventEmitter) {
-      this.eventEmitter.emit('note.deleted', { noteId: id });
+      this.eventEmitter.emit('note.deleted', { noteId: id, previousState: existing });
     }
     return deleted;
   }

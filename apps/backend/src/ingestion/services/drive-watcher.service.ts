@@ -11,6 +11,8 @@ import { toCanonicalSparkPath, WatcherInstanceLock } from '../utils/spark-path.u
 
 export interface WatcherStatus {
   isWatching: boolean;
+  isStandby?: boolean;
+  cloudMode?: boolean;
   watchedDir: string;
   filesProcessed: number;
   filesPending: number;
@@ -36,6 +38,18 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
   }
 
   async onModuleInit() {
+    const isCloudMode =
+      process.env.ENABLE_LOCAL_FS_WATCHER === 'false' ||
+      (process.env.LEMON_BUS_DRIVER === 'supabase' && process.env.ENABLE_LOCAL_FS_WATCHER !== 'true');
+
+    if (isCloudMode) {
+      this.isStandby = true;
+      this.logger.log(
+        `⚡ [DriveWatcherService] Локальный вотчер файлов отключен (LEMON_BUS_DRIVER=${process.env.LEMON_BUS_DRIVER || 'none'}, ENABLE_LOCAL_FS_WATCHER=false). Backend работает в режиме облачной шины событий без десктопного наблюдения папок.`,
+      );
+      return;
+    }
+
     this.ensureDirectoryExists(this.watchedDir);
     const acquired = this.instanceLock.tryAcquire((holder) => {
       this.logger.warn(
@@ -75,6 +89,8 @@ export class DriveWatcherService implements OnModuleInit, OnModuleDestroy, OnApp
 
     return {
       isWatching: Boolean(this.watcher),
+      isStandby: this.isStandby,
+      cloudMode: process.env.LEMON_BUS_DRIVER === 'supabase' || process.env.ENABLE_LOCAL_FS_WATCHER === 'false',
       watchedDir: this.watchedDir,
       filesProcessed: completed,
       filesPending: pending,
