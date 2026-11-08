@@ -37,7 +37,28 @@ import {
 } from '../types';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const DOCKER_PROD_PORTS = new Set(['5173', '5174', '5175', '8080', '80', '443', '']);
+
+function resolveApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const { hostname, port } = window.location;
+    if (
+      (hostname !== 'localhost' && hostname !== '127.0.0.1') ||
+      DOCKER_PROD_PORTS.has(port)
+    ) {
+      return '';
+    }
+  }
+  if (import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== '') {
+    if (import.meta.env.PROD && import.meta.env.VITE_API_URL.includes(':3002')) {
+      return '';
+    }
+    return import.meta.env.VITE_API_URL;
+  }
+  return import.meta.env.PROD ? '' : 'http://localhost:3002';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'lenta_adm_master_permanent_7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c';
 
 export const apiClient = axios.create({

@@ -207,30 +207,34 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
 
       const batchRes = await calendarApi.createNotesBatch(payload);
 
-      // Attach any selected web posters to the created notes
+      // Attach any selected web posters to the created notes in parallel
       if (batchRes && Array.isArray(batchRes.notes)) {
+        const posterPromises: Promise<unknown>[] = [];
         for (let i = 0; i < selectedCards.length; i++) {
           const card = selectedCards[i];
           const created = batchRes.notes[i];
           if (created && card.pendingPosters && card.pendingPosters.length > 0) {
-            try {
-              const items = card.pendingPosters.map((p, idx) => ({
-                url: p.imageUrl,
-                caption: p.title,
-                isMain: idx === 0,
-              }));
-              await calendarApi.attachImagesFromUrls(created.id, items);
-            } catch (err) {
-              console.error('Failed to attach posters for card', card.title, err);
-            }
+            const items = card.pendingPosters.map((p, idx) => ({
+              url: p.imageUrl,
+              caption: p.title,
+              isMain: idx === 0,
+            }));
+            posterPromises.push(
+              calendarApi.attachImagesFromUrls(created.id, items).catch((err) => {
+                console.error('Failed to attach posters for card', card.title, err);
+              }),
+            );
           }
+        }
+        if (posterPromises.length > 0) {
+          await Promise.allSettled(posterPromises);
         }
       }
 
-      // Invalidate queries so timeline, month view, and calendar refresh
-      await queryClient.invalidateQueries({ queryKey: ['notes'] });
-      await queryClient.invalidateQueries({ queryKey: ['folders'] });
-      await queryClient.invalidateQueries({ queryKey: ['hashtags'] });
+      // Trigger background cache invalidation without blocking modal close
+      void queryClient.invalidateQueries({ queryKey: ['notes'] });
+      void queryClient.invalidateQueries({ queryKey: ['folders'] });
+      void queryClient.invalidateQueries({ queryKey: ['hashtags'] });
 
       onClose();
     } catch (err: any) {
@@ -253,6 +257,21 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#161818] border border-[#2b2e2e] rounded-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        {isSaving && (
+          <div className="absolute inset-0 z-30 bg-[#121414]/65 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-150 select-none">
+            <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#181a1a] border border-[#c9cd58]/40 shadow-2xl">
+              <Loader2 className="w-5 h-5 text-[#c9cd58] animate-spin shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-sans font-bold text-xs text-[#e5e971]">
+                  Сохранение карточек ({selectedCount})...
+                </span>
+                <span className="font-mono text-[10px] text-[#93927e]">
+                  Подождите подтверждения от сервера
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-gradient-to-r from-purple-950/20 via-pink-950/10 to-transparent">
           <div className="flex items-center gap-3">

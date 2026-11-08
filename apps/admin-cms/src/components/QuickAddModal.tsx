@@ -12,7 +12,7 @@ import { AppSelect } from './common/AppSelect';
 import { NotePrivacySelector } from './notes/NotePrivacySelector';
 import { NoteTemplateSelector } from './notes/NoteTemplateSelector';
 import { NotePosterPicker } from './notes/NotePosterPicker';
-import { Radio } from 'lucide-react';
+import { Radio, Loader2 } from 'lucide-react';
 import { useAdminI18n } from '../i18n';
 import { LemonLogo } from './LemonLogo';
 import {
@@ -45,6 +45,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [pendingPosters, setPendingPosters] = useState<PendingPosterItem[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Интеграция пресетов / макросов быстрого добавления
   const {
@@ -114,6 +115,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       const created = await createNoteMutation.mutateAsync({
         feedId: feedId ? feedId : undefined,
@@ -127,7 +131,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
         folders: folders.length > 0 ? folders : undefined,
       });
 
-      // Attach any selected web posters or local files
+      // Attach any selected web posters or local files in parallel
       if (pendingPosters.length > 0) {
         const webItems = pendingPosters
           .filter((p) => !p.file && p.url.startsWith('http'))
@@ -137,25 +141,18 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
             isMain: p.isMain,
           }));
 
-        if (webItems.length > 0) {
-          try {
-            await notesApi.attachImagesFromUrls(created.id, webItems);
-          } catch (uploadErr) {
-            console.error('Failed to attach web posters', uploadErr);
-          }
-        }
-
         const localFiles = pendingPosters
           .filter((p) => Boolean(p.file))
           .map((p) => p.file as File);
 
-        if (localFiles.length > 0) {
-          try {
-            await notesApi.uploadImages(created.id, localFiles);
-          } catch (uploadErr) {
-            console.error('Failed to upload local files', uploadErr);
-          }
-        }
+        await Promise.allSettled([
+          webItems.length > 0
+            ? notesApi.attachImagesFromUrls(created.id, webItems)
+            : Promise.resolve(),
+          localFiles.length > 0
+            ? notesApi.uploadImages(created.id, localFiles)
+            : Promise.resolve(),
+        ]);
       }
 
       message.success(t.quickAddNoteCreated);
@@ -171,10 +168,13 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       onClose();
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleModalClose = () => {
+    if (isSubmitting) return;
     if (saveModalOpen) {
       setSaveModalOpen(false);
       return;
@@ -187,10 +187,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       <Modal
         open={open}
         onCancel={handleModalClose}
+        maskClosable={!isSubmitting}
         footer={null}
         width={640}
         zIndex={1000}
-        keyboard={!saveModalOpen}
+        keyboard={!saveModalOpen && !isSubmitting}
         centered
         destroyOnClose
         styles={{
@@ -203,7 +204,22 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
           },
         }}
       >
-        <div className="flex flex-col">
+        <div className="relative flex flex-col">
+          {isSubmitting && (
+            <div className="absolute inset-0 z-30 bg-black/55 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-150 select-none">
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-surface-container border border-primary/40 shadow-2xl">
+                <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-sans font-bold text-xs text-on-surface">
+                    Сохранение записи...
+                  </span>
+                  <span className="font-mono text-[10px] text-on-surface-variant">
+                    Подождите подтверждения от сервера
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Header */}
           <div className="px-4 py-2.5 border-b border-tile-border flex items-center justify-between bg-tile-subtle">
             <div className="flex items-center gap-2">
@@ -216,6 +232,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
 
           {/* Form Body */}
           <form onSubmit={handleSubmit} className="p-4 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <fieldset disabled={isSubmitting} className="contents">
             {/* Note Templates Selector */}
             <NoteTemplateSelector
               onSelectTemplate={handleApplyTemplate}
@@ -349,19 +366,22 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
             <div className="pt-2.5 border-t border-tile-border flex justify-end gap-2">
               <button
                 type="button"
-                onClick={onClose}
-                className="h-7 px-3 rounded text-xs text-text-muted hover:text-text-main hover:bg-tile-subtle transition-colors font-medium cursor-pointer"
+                onClick={handleModalClose}
+                disabled={isSubmitting}
+                className="h-7 px-3 rounded text-xs text-text-muted hover:text-text-main hover:bg-tile-subtle transition-colors font-medium cursor-pointer disabled:opacity-50"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
-                disabled={createNoteMutation.isPending}
-                className="h-7 px-4 rounded text-xs font-semibold bg-primary text-on-primary hover:bg-primary-fixed-dim transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                disabled={isSubmitting || createNoteMutation.isPending}
+                className="inline-flex items-center gap-1.5 h-7 px-4 rounded text-xs font-semibold bg-primary text-on-primary hover:bg-primary-fixed-dim transition-all shadow-xs disabled:opacity-70 cursor-pointer"
               >
-                {createNoteMutation.isPending ? t.loading : t.save}
+                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isSubmitting ? t.loading : t.save}</span>
               </button>
             </div>
+            </fieldset>
           </form>
         </div>
       </Modal>

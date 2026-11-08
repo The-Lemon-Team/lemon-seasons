@@ -23,6 +23,7 @@ import {
   CalendarRange,
   AtSign,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
@@ -137,8 +138,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         ...(status === 'PUBLISHED' ? { publishAt: new Date().toISOString() } : {}),
       });
 
-      await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folders });
 
       onSuccess?.(updated);
       onClose();
@@ -152,15 +153,39 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
 
   if (!note) return null;
 
+  const handleSafeClose = () => {
+    if (isSubmitting) return;
+    onClose();
+  };
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleSafeClose}
+      closeOnEsc={!isSubmitting}
+      closeOnOverlayClick={!isSubmitting}
       title={t.editNote}
       maxWidth="max-w-2xl"
       containerClassName="bg-[#181a1a] border-[#323636]"
     >
-      <form onSubmit={handleSubmit} className="p-6 space-y-4 font-mono text-xs">
+      <div className="relative flex flex-col overflow-hidden">
+        {isSubmitting && (
+          <div className="absolute inset-0 z-30 bg-[#121414]/65 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-150 select-none">
+            <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#181a1a] border border-[#c9cd58]/40 shadow-2xl">
+              <Loader2 className="w-5 h-5 text-[#c9cd58] animate-spin shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-sans font-bold text-xs text-[#e5e971]">
+                  Сохранение изменений...
+                </span>
+                <span className="font-mono text-[10px] text-[#93927e]">
+                  Подождите подтверждения от сервера
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      <form onSubmit={handleSubmit} className="p-6 space-y-4 font-mono text-xs overflow-y-auto">
+        <fieldset disabled={isSubmitting} className="contents">
         {errorMessage && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-red-200 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
@@ -381,22 +406,29 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded bg-[#121414] border border-[#2d3030] text-[#c9c7b2] hover:bg-[#242828] transition-colors"
+              onClick={handleSafeClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded bg-[#121414] border border-[#2d3030] text-[#c9c7b2] hover:bg-[#242828] transition-colors disabled:opacity-50"
             >
               {t.cancel}
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-bold transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#c9cd58] text-[#121414] hover:bg-[#dce06b] font-bold transition-colors disabled:opacity-70"
             >
-              <Check className="w-4 h-4" />
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
               <span>{isSubmitting ? 'Сохранение...' : t.save}</span>
             </button>
           </div>
         </div>
+        </fieldset>
       </form>
+      </div>
     </Modal>
   );
 };

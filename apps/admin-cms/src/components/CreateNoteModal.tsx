@@ -27,6 +27,7 @@ import {
   FilePlus,
   User,
   Folder as FolderIcon,
+  Loader2,
 } from 'lucide-react';
 
 export interface CreateNoteModalProps {
@@ -148,7 +149,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         hashtags: hashtags.length > 0 ? hashtags : undefined,
       });
 
-      // Attach any selected web posters or local files
+      // Attach any selected web posters or local files in parallel
       if (pendingPosters.length > 0) {
         const webItems = pendingPosters
           .filter((p) => !p.file && p.url.startsWith('http'))
@@ -158,25 +159,18 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             isMain: p.isMain,
           }));
 
-        if (webItems.length > 0) {
-          try {
-            await notesApi.attachImagesFromUrls(created.id, webItems);
-          } catch (uploadErr) {
-            console.error('Failed to attach web posters', uploadErr);
-          }
-        }
-
         const localFiles = pendingPosters
           .filter((p) => Boolean(p.file))
           .map((p) => p.file as File);
 
-        if (localFiles.length > 0) {
-          try {
-            await notesApi.uploadImages(created.id, localFiles);
-          } catch (uploadErr) {
-            console.error('Failed to upload local files', uploadErr);
-          }
-        }
+        await Promise.allSettled([
+          webItems.length > 0
+            ? notesApi.attachImagesFromUrls(created.id, webItems)
+            : Promise.resolve(),
+          localFiles.length > 0
+            ? notesApi.uploadImages(created.id, localFiles)
+            : Promise.resolve(),
+        ]);
       }
 
       message.success(t.quickAddNoteCreated);
@@ -193,6 +187,11 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
   if (!open) return null;
 
+  const handleSafeClose = () => {
+    if (isSubmitting) return;
+    onClose();
+  };
+
   const currentFolder =
     assignedFolders.find((f) => f.isPrimary)?.path ||
     assignedFolders[0]?.path ||
@@ -201,7 +200,9 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   return (
     <Modal
       open={open}
-      onCancel={onClose}
+      onCancel={handleSafeClose}
+      maskClosable={!isSubmitting}
+      keyboard={!isSubmitting}
       footer={null}
       width={720}
       zIndex={1100}
@@ -219,7 +220,25 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         },
       }}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col max-h-[85vh]">
+      <form onSubmit={handleSubmit} className="relative flex flex-col max-h-[85vh]">
+        {isSubmitting && (
+          <div className="absolute inset-0 z-30 bg-black/55 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-150 select-none">
+            <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-surface-container border border-primary/40 shadow-2xl">
+              <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-sans font-bold text-xs text-on-surface">
+                  {pendingPosters.length > 0
+                    ? 'Сохранение записи и обложек...'
+                    : 'Сохранение записи...'}
+                </span>
+                <span className="font-mono text-[10px] text-on-surface-variant">
+                  Подождите подтверждения от сервера
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        <fieldset disabled={isSubmitting} className="contents">
         {/* Header */}
         <div className="px-5 py-3 border-b border-tile-border bg-tile-subtle flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -492,20 +511,26 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         <div className="px-5 py-2.5 border-t border-tile-border bg-tile-subtle flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={onClose}
-            className="h-7 px-3 rounded bg-tile-subtle border border-tile-border text-text-muted hover:text-text-main hover:bg-tile-muted text-xs font-mono transition-colors cursor-pointer"
+            onClick={handleSafeClose}
+            disabled={isSubmitting}
+            className="h-7 px-3 rounded bg-tile-subtle border border-tile-border text-text-muted hover:text-text-main hover:bg-tile-muted text-xs font-mono transition-colors cursor-pointer disabled:opacity-50"
           >
             {t.cancel}
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !title.trim() || !feedId}
-            className="flex items-center gap-1.5 h-7 px-4 rounded bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary-fixed-dim transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 h-7 px-4 rounded bg-primary text-on-primary font-bold text-xs font-mono hover:bg-primary-fixed-dim transition-colors disabled:opacity-70 cursor-pointer shadow-xs"
           >
-            <Plus className="w-4 h-4" />
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
             <span>{isSubmitting ? t.loading : t.save}</span>
           </button>
         </div>
+        </fieldset>
       </form>
     </Modal>
   );

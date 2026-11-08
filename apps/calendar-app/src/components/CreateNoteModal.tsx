@@ -27,6 +27,7 @@ import {
   AtSign,
   Film,
   Radio,
+  Loader2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Modal } from './Modal';
@@ -73,8 +74,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [hashtagsInput, setHashtagsInput] = useState('');
   const [author, setAuthor] = useState('');
   const [pendingPosters, setPendingPosters] = useState<PendingPosterItem[]>([]);
-  const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStepText, setSubmitStepText] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Apply template helper
@@ -125,6 +126,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
     if (!title.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
+    setSubmitStepText('Сохранение записи...');
     setErrorMessage(null);
 
     try {
@@ -148,8 +150,9 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         privacy,
       });
 
-      // Attach any selected web posters or local files
+      // Attach any selected web posters or local files in parallel
       if (pendingPosters.length > 0) {
+        setSubmitStepText('Прикрепление медиа и обложек...');
         const webItems = pendingPosters
           .filter((p) => !p.file && p.url.startsWith('http'))
           .map((p) => ({
@@ -158,61 +161,80 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             isMain: p.isMain,
           }));
 
-        if (webItems.length > 0) {
-          try {
-            await calendarApi.attachImagesFromUrls(created.id, webItems);
-          } catch (uploadErr) {
-            console.error('Failed to attach web posters', uploadErr);
-          }
-        }
-
         const localFiles = pendingPosters
           .filter((p) => Boolean(p.file))
           .map((p) => p.file as File);
 
-        if (localFiles.length > 0) {
-          try {
-            await calendarApi.uploadImages(created.id, localFiles);
-          } catch (uploadErr) {
-            console.error('Failed to upload local files', uploadErr);
-          }
-        }
+        await Promise.allSettled([
+          webItems.length > 0
+            ? calendarApi.attachImagesFromUrls(created.id, webItems)
+            : Promise.resolve(),
+          localFiles.length > 0
+            ? calendarApi.uploadImages(created.id, localFiles)
+            : Promise.resolve(),
+        ]);
       }
 
-      // Invalidate queries so that the newly created note is immediately displayed on the calendar & folder views
-      await queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.folders });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.folderTree });
+      // Trigger background cache invalidation without blocking modal close
+      void queryClient.invalidateQueries({ queryKey: queryKeys.allNotes });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folderTree });
 
-      setSavedSuccess(true);
-      setTimeout(() => {
-        setSavedSuccess(false);
-        setTitle('');
-        setDescription('');
-        setHashtagsInput('');
-        setFolderPath('');
-        setAuthor('');
-        setPrivacy('private');
-        setActiveTemplateId(null);
-        setIsCustomFolder(false);
-        onSuccess?.();
-        onClose();
-      }, 600);
+      setTitle('');
+      setDescription('');
+      setHashtagsInput('');
+      setFolderPath('');
+      setAuthor('');
+      setPrivacy('private');
+      setActiveTemplateId(null);
+      setIsCustomFolder(false);
+      setPendingPosters([]);
+      onSuccess?.();
+      onClose();
     } catch (err: any) {
       console.error('Failed to create note on backend:', err);
       setErrorMessage(err?.response?.data?.message || err?.message || 'Ошибка создания заметки');
     } finally {
       setIsSubmitting(false);
+      setSubmitStepText('');
     }
+  };
+
+  const handleSafeClose = () => {
+    if (isSubmitting) return;
+    onClose();
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleSafeClose}
+      closeOnEsc={!isSubmitting}
+      closeOnOverlayClick={!isSubmitting}
       showDefaultHeader={false}
       maxWidth="max-w-2xl"
     >
+      <div className="relative flex flex-col overflow-hidden">
+        {/* Global Submitting Overlay */}
+        {isSubmitting && (
+          <div
+            data-testid="note-saving-overlay"
+            className="absolute inset-0 z-30 bg-[#121414]/65 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-150 select-none"
+          >
+            <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#181a1a] border border-[#c9cd58]/40 shadow-2xl">
+              <Loader2 className="w-5 h-5 text-[#c9cd58] animate-spin shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-sans font-bold text-xs text-[#e5e971]">
+                  {submitStepText || 'Сохранение записи...'}
+                </span>
+                <span className="font-mono text-[10px] text-[#93927e]">
+                  Подождите подтверждения от сервера
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#242828] bg-[#121414]/80">
           <div className="flex items-center gap-2.5">
@@ -229,8 +251,10 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1 rounded-md text-[#93927e] hover:text-white hover:bg-[#242828] transition-colors"
+            type="button"
+            onClick={handleSafeClose}
+            disabled={isSubmitting}
+            className="p-1 rounded-md text-[#93927e] hover:text-white hover:bg-[#242828] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4" />
           </button>
@@ -238,17 +262,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
-          {savedSuccess ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#c9cd58]/20 border border-[#c9cd58] flex items-center justify-center text-[#c9cd58]">
-                <Check className="w-6 h-6" />
-              </div>
-              <p className="font-sans font-bold text-sm text-[#e5e971]">
-                {t.createNoteSuccess}
-              </p>
-            </div>
-          ) : (
-            <>
+          <fieldset disabled={isSubmitting} className="contents">
               {/* Note Templates Toolbar */}
               <NoteTemplateSelector
                 onSelectTemplate={handleApplyTemplate}
@@ -295,6 +309,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   <AppSelect<NoteType>
                     value={type}
                     onChange={setType}
+                    disabled={isSubmitting}
                     options={[
                       { value: 'SINGLE', label: 'Точечная заметка (SINGLE)', icon: <Pin className="w-3.5 h-3.5 text-blue-400" /> },
                       { value: 'EVENT', label: 'Событие календаря (EVENT)', icon: <Calendar className="w-3.5 h-3.5 text-[#c9cd58]" /> },
@@ -313,6 +328,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   <AppSelect
                     value={feedId}
                     onChange={setFeedId}
+                    disabled={isSubmitting}
                     placeholder="Выберите ленту..."
                     options={
                       feeds.length > 0
@@ -486,9 +502,9 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#242828]">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleSafeClose}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-md border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:bg-[#242828] hover:text-white transition-colors disabled:opacity-50"
+                  className="px-4 py-2 rounded-md border border-[#242828] text-xs font-mono text-[#c9c7b2] hover:bg-[#242828] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t.cancel}
                 </button>
@@ -496,15 +512,19 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                   type="submit"
                   data-testid="note-submit-btn"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-md bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs transition-colors flex items-center gap-2 shadow-glow-lemon disabled:opacity-50"
+                  className="px-5 py-2 rounded-md bg-[#c9cd58] hover:bg-[#dce06b] text-[#121414] font-sans font-bold text-xs transition-colors flex items-center gap-2 shadow-glow-lemon disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Plus className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
                   <span>{isSubmitting ? 'Сохранение...' : t.save}</span>
                 </button>
               </div>
-            </>
-          )}
+          </fieldset>
         </form>
+      </div>
     </Modal>
   );
 };
