@@ -37,17 +37,27 @@ export const WatcherStatusCard: React.FC<WatcherStatusCardProps> = ({
               </span>
             </div>
             <Tag
-              color={isWatching ? 'success' : 'error'}
+              color={isWatching ? 'success' : status?.cloudMode ? 'processing' : 'error'}
               className="font-mono text-[10px] uppercase tracking-wider font-semibold border-none px-1.5 py-0 m-0"
             >
-              {isWatching ? 'АКТИВЕН' : 'ОСТАНОВЛЕН'}
+              {isWatching ? 'АКТИВЕН' : status?.cloudMode ? 'ОБЛАЧНАЯ ШИНА' : 'ОСТАНОВЛЕН'}
             </Tag>
+            {status?.cloudMode && (
+              <Tag
+                color="cyan"
+                className="font-mono text-[10px] uppercase tracking-wider font-semibold border-none px-1.5 py-0 m-0"
+              >
+                GDRIVE READ-ONLY
+              </Tag>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-on-surface-variant">
-            <span className="text-outline">Папка:</span>
+            <span className="text-outline">{status?.cloudMode ? 'Режим:' : 'Папка:'}</span>
             <span className="bg-tile-subtle px-2 py-0.5 rounded border border-tile-border text-primary break-all">
-              {status?.watchedDir || 'Директория инициализируется...'}
+              {status?.cloudMode
+                ? 'Облачные события шины (файлы в Google Drive защищены от удаления)'
+                : status?.watchedDir || 'Директория инициализируется...'}
             </span>
           </div>
         </div>

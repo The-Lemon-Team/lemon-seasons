@@ -547,6 +547,8 @@ export interface ImportNoteDto {
 
 export interface WatcherStatus {
   isWatching: boolean;
+  isStandby?: boolean;
+  cloudMode?: boolean;
   watchedDir: string;
   filesProcessed: number;
   filesPending: number;
@@ -729,6 +731,10 @@ export const busRelayApi = {
   },
   publishTestEvent: async (data) => {
     const res = await apiClient.post('/bus/relay/test-event', data || {});
+    return res.data;
+  },
+  purgeExpiredBuffer: async (retentionDays = 30): Promise<{ purgedEvents: number; purgedSparkDocs: number; retentionDays: number }> => {
+    const res = await apiClient.post('/bus/relay/purge-expired', { retentionDays });
     return res.data;
   },
 };

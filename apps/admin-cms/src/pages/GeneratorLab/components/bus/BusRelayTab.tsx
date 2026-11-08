@@ -11,6 +11,7 @@ import {
   useTriggerBusCatchUp,
   usePublishTestBusEvent,
 } from '../../../../api/queries';
+import { busRelayApi } from '../../../../api/client';
 import { BusRelayStatusCard } from './BusRelayStatusCard';
 import { BusEventsTable } from './BusEventsTable';
 import { BusEventDetailModal } from './BusEventDetailModal';
@@ -22,6 +23,7 @@ export const BusRelayTab: React.FC = () => {
   const [selectedAction, setSelectedAction] = useState<BusActionType | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<BusEventEnvelope<NoteEventPayload> | null>(null);
+  const [isPurging, setIsPurging] = useState(false);
 
   // Queries
   const {
@@ -69,6 +71,22 @@ export const BusRelayTab: React.FC = () => {
     }
   };
 
+  const handlePurgeExpired = async () => {
+    try {
+      setIsPurging(true);
+      const res = await busRelayApi.purgeExpiredBuffer(30);
+      message.success(
+        `Буфер шины очищен (>30 дней): удалено ${res.purgedEvents} событий, ${res.purgedSparkDocs} документов. Заметки в Google Drive и базе данных сохранены.`,
+      );
+      refetchStatus();
+      refetchEvents();
+    } catch (err: any) {
+      message.error(`Ошибка очистки буфера шины: ${err?.message || err}`);
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
   const handleRefreshAll = () => {
     refetchStatus();
     refetchEvents();
@@ -83,9 +101,11 @@ export const BusRelayTab: React.FC = () => {
         isLoading={isStatusLoading}
         isCatchingUp={triggerCatchUp.isPending}
         isPublishingTest={publishTestEvent.isPending}
+        isPurgingExpired={isPurging}
         onRefresh={handleRefreshAll}
         onCatchUp={handleCatchUp}
         onPublishTest={handlePublishTest}
+        onPurgeExpired={handlePurgeExpired}
       />
 
       {/* 2. Events Stream Table */}

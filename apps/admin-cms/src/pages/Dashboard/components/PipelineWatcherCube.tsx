@@ -67,32 +67,32 @@ export const PipelineWatcherCube: React.FC<PipelineWatcherCubeProps> = ({
               <Cloud className="w-3 h-3 text-sky-400" />
             </span>
             <span className="font-mono text-[10px] uppercase tracking-wider font-semibold">
-              Файловый конвейер
+              {watcherStatus?.cloudMode ? 'Шина LemonBus' : 'Файловый конвейер'}
             </span>
           </div>
 
           <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">
-            ⚡ Конвейер Daemon
+            {watcherStatus?.cloudMode ? '⚡ Cloud Relay' : '⚡ Конвейер Daemon'}
           </span>
         </div>
         <div className="flex items-baseline justify-between gap-1">
           <div className="font-sans font-bold text-2xl text-on-surface flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              {watcherStatus?.isWatching && (
+              {(watcherStatus?.isWatching || watcherStatus?.cloudMode) && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               )}
               <span
                 className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                  watcherStatus?.isWatching ? 'bg-emerald-400' : 'bg-rose-400'
+                  watcherStatus?.isWatching || watcherStatus?.cloudMode ? 'bg-emerald-400' : 'bg-rose-400'
                 }`}
               />
             </span>
-            <span className={watcherStatus?.isWatching ? 'text-sky-300' : 'text-rose-400'}>
-              {watcherStatus?.isWatching ? 'Активно' : 'Остановлен'}
+            <span className={watcherStatus?.isWatching || watcherStatus?.cloudMode ? 'text-sky-300' : 'text-rose-400'}>
+              {watcherStatus?.cloudMode ? 'Облако (Активно)' : watcherStatus?.isWatching ? 'Активно' : 'Остановлен'}
             </span>
           </div>
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25">
-            <span>Live Sync</span>
+            <span>{watcherStatus?.cloudMode ? '30d Bus Buffer' : 'Live Sync'}</span>
           </span>
         </div>
         <div className="mt-0.5 flex items-center justify-between text-[10px] font-mono text-on-surface-variant/70">
@@ -206,7 +206,11 @@ export const PipelineWatcherCube: React.FC<PipelineWatcherCubeProps> = ({
 
       {/* 5. Mini Footer */}
       <div className="pt-1.5 border-t border-tile-border/50 dark:border-white/[0.04] flex items-center justify-between text-[10px] font-mono shrink-0 text-on-surface-variant/70">
-        <span className="text-on-surface-variant/60">Google Drive & Local Watcher</span>
+        <span className="text-on-surface-variant/60">
+          {watcherStatus?.cloudMode
+            ? 'Шина LemonBus • 30-дневный буфер (GDrive защищен)'
+            : 'Google Drive & Local Watcher'}
+        </span>
         <button
           onClick={() => navigate('/generators?tab=sparks')}
           className="text-secondary hover:text-primary transition-colors flex items-center gap-0.5 font-medium cursor-pointer"

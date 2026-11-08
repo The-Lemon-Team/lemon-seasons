@@ -9,6 +9,9 @@ import {
   CheckCircle2,
   Share2,
   Clock,
+  Trash2,
+  ShieldCheck,
+  Cloud,
 } from 'lucide-react';
 import { DriveBusRelayStatus } from '@lenta/shared';
 import { getDeviceTheme, formatEventTimestamp, formatRelativeTime } from './bus.utils';
@@ -18,9 +21,11 @@ interface BusRelayStatusCardProps {
   isLoading: boolean;
   isCatchingUp: boolean;
   isPublishingTest: boolean;
+  isPurgingExpired?: boolean;
   onRefresh: () => void;
   onCatchUp: () => void;
   onPublishTest: () => void;
+  onPurgeExpired?: () => void;
 }
 
 export const BusRelayStatusCard: React.FC<BusRelayStatusCardProps> = ({
@@ -28,13 +33,16 @@ export const BusRelayStatusCard: React.FC<BusRelayStatusCardProps> = ({
   isLoading,
   isCatchingUp,
   isPublishingTest,
+  isPurgingExpired,
   onRefresh,
   onCatchUp,
   onPublishTest,
+  onPurgeExpired,
 }) => {
   const isWatching = status?.isWatching ?? false;
   const currentDev = status?.currentDeviceId || 'local-node';
   const nodes = status?.nodes || [];
+  const driverName = (status?.driver || 'supabase').toUpperCase();
 
   return (
     <div className="platform-tile p-3.5 sm:p-4">
@@ -46,7 +54,7 @@ export const BusRelayStatusCard: React.FC<BusRelayStatusCardProps> = ({
               <Radio className="w-4 h-4 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-sans font-bold text-sm text-on-surface">
                   Облачная шина событий LemonBus
                 </span>
@@ -56,9 +64,21 @@ export const BusRelayStatusCard: React.FC<BusRelayStatusCardProps> = ({
                 >
                   {isWatching ? 'ШИНА АКТИВНА' : 'ОСТАНОВЛЕНА'}
                 </Tag>
+                <Tag
+                  color="cyan"
+                  className="font-mono text-[10px] uppercase font-semibold border-none px-1.5 py-0 m-0"
+                >
+                  ДРАЙВЕР: {driverName}
+                </Tag>
+                <Tag
+                  color="purple"
+                  className="font-mono text-[10px] uppercase font-semibold border-none px-1.5 py-0 m-0"
+                >
+                  30Д БУФЕР
+                </Tag>
               </div>
               <div className="flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant">
-                <span className="text-outline">Директория:</span>
+                <span className="text-outline">Ресурс:</span>
                 <span className="bg-tile-subtle px-1.5 py-0.5 rounded border border-tile-border text-primary break-all">
                   {status?.eventsDir || 'Инициализация шины...'}
                 </span>
@@ -162,6 +182,20 @@ export const BusRelayStatusCard: React.FC<BusRelayStatusCardProps> = ({
                 Тест шины
               </Button>
             </Tooltip>
+
+            {onPurgeExpired && (
+              <Tooltip title="Очистить временные события старше 30 дней в облачной шине. Заметки в Google Drive и постоянной базе данных НЕ затрагиваются.">
+                <Button
+                  type="default"
+                  icon={<Trash2 className="w-3.5 h-3.5 text-rose-400" />}
+                  loading={isPurgingExpired}
+                  onClick={onPurgeExpired}
+                  className="h-7.5 border-tile-border hover:border-rose-400 text-on-surface font-sans text-xs flex items-center gap-1.5 px-2.5 rounded-lg"
+                >
+                  Очистить буфер
+                </Button>
+              </Tooltip>
+            )}
 
             <Tooltip title="Перезапросить актуальный статус">
               <Button
