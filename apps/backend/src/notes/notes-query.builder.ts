@@ -1,110 +1,23 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { HashtagsService } from '../hashtags/hashtags.service';
-import { FoldersService } from '../folders/folders.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { StreamsService } from '../streams/streams.service';
+import {
+  STREAM_SOURCE_SLUGS,
+  LEGACY_FEED_SLUG_ALIASES,
+} from './constants/notes-stream-slugs.constant';
+import { buildDateFilterConditions } from './helpers/notes-query-date.helper';
+import {
+  buildHashtagsCondition,
+  buildFoldersCondition,
+  buildSearchCondition,
+  buildNotesOrderBy,
+} from './helpers/notes-query-clauses.helper';
+import { buildDynamicStreamConditions } from './helpers/notes-stream-criteria.helper';
 
-export const STREAM_SOURCE_SLUGS: Record<string, string[]> = {
-  entertainment: [
-    'marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe',
-    'cinema', 'movies', 'tmdb', 'films', 'series', 'my-films', 'my-movies',
-    'music', 'soundtrack', 'albums', 'музыка', 'my-music',
-    'gaming', 'games', 'игры',
-  ],
-  js_interview: [
-    'daily-questions', 'advanced-react', 'advanced-reactx',
-    'interesting-questions', 'react', 'javascript', 'interview',
-  ],
-  'js-interview': [
-    'daily-questions', 'advanced-react', 'advanced-reactx',
-    'interesting-questions', 'react', 'javascript', 'interview',
-  ],
-  'it-dev': [
-    'spark-ai', 'ai-models', 'ai',
-    'spark-habr', 'habr', 'community', 'dev-articles',
-    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
-    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
-    'spark-xakep', 'xakep', 'hacker',
-    'spark-cyber-security', 'cybersec', 'security',
-    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
-  ],
-  it_dev: [
-    'spark-ai', 'ai-models', 'ai',
-    'spark-habr', 'habr', 'community', 'dev-articles',
-    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
-    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
-    'spark-xakep', 'xakep', 'hacker',
-    'spark-cyber-security', 'cybersec', 'security',
-    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
-  ],
-  dev: [
-    'spark-ai', 'ai-models', 'ai',
-    'spark-habr', 'habr', 'community', 'dev-articles',
-    'spark-changelogsfeed', 'changelogs', 'releases', 'changelog',
-    'spark-notebooklmai', 'notebooklm-ai', 'notebooklm',
-    'spark-xakep', 'xakep', 'hacker',
-    'spark-cyber-security', 'cybersec', 'security',
-    'spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday',
-  ],
-  holidays: [
-    'russian-holidays', 'russian-official', 'russian-military',
-    'orthodox-holidays', 'christian-holidays',
-    'world-holidays', 'world-religions', 'catholic-holidays', 'islamic-holidays',
-  ],
-  seasons: [
-    'seasons', 'lemon-seasons', 'seasons-hub', 'diary', 'journal',
-  ],
-  private_feeds: [
-    'private-notes', 'work-vault', 'diary-logs', 'secure-vault',
-  ],
-  personal_notes: [
-    'private-notes', 'diary-logs', 'personal-notes',
-  ],
-  work_vault: [
-    'work-vault', 'confidential',
-  ],
-  secure_vault: [
-    'secure-vault',
-  ],
-};
-
-export const LEGACY_FEED_SLUG_ALIASES: Record<string, string[]> = {
-  'russian-holidays': ['russian-holidays', 'russian-official', 'russian-military'],
-  'christian-holidays': ['christian-holidays', 'orthodox-holidays'],
-  'orthodox-holidays': ['christian-holidays', 'orthodox-holidays'],
-  'world-holidays': ['world-holidays', 'world-religions', 'catholic-holidays', 'islamic-holidays'],
-  'wiki': ['wiki', 'wiki-history', 'wikipedia'],
-  'wiki-history': ['wiki', 'wiki-history', 'wikipedia'],
-  'marvel': ['marvel', 'mcu', 'mcu-radar', 'marvel-cinematic-universe'],
-  'cinema': ['cinema', 'movies', 'tmdb', 'films', 'series'],
-  'music': ['music', 'soundtrack', 'albums', 'музыка', 'my-music'],
-  'gaming': ['gaming', 'games', 'игры'],
-  'spark-ai': ['spark-ai', 'ai-models', 'ai'],
-  'spark-habr': ['spark-habr', 'habr', 'community', 'dev-articles'],
-  'spark-changelogsfeed': ['spark-changelogsfeed', 'changelogs', 'releases', 'changelog'],
-  'changelogs': ['spark-changelogsfeed', 'changelogs', 'releases', 'changelog'],
-  'spark-notebooklmai': ['spark-notebooklmai', 'notebooklm-ai', 'notebooklm'],
-  'notebooklm': ['spark-notebooklmai', 'notebooklm-ai', 'notebooklm'],
-  'spark-xakep': ['spark-xakep', 'xakep', 'hacker'],
-  'spark-cyber-security': ['spark-cyber-security', 'cybersec', 'security'],
-  'spark-youtube-oneday': ['spark-youtube-oneday', 'spark-youtube', 'youtube', 'oneday'],
-  'hot-daily': [
-    'spark-ai', 'spark-habr', 'spark-changelogsfeed', 'spark-notebooklmai',
-    'spark-xakep', 'spark-cyber-security', 'spark-youtube-oneday', 'spark-general',
-    'spark-ai-economy', 'spark-news-and-frontier', 'spark-world-of-warcraft',
-    'spark-политика', 'spark-рф-и-украина',
-  ],
-  'it-tech': [
-    'spark-ai', 'ai-models', 'ai', 'spark-habr', 'habr', 'spark-changelogsfeed',
-    'changelogs', 'spark-notebooklmai', 'spark-xakep', 'spark-cyber-security',
-    'spark-youtube-oneday',
-  ],
-  'seasons-hub': ['seasons', 'lemon-seasons', 'daily-logs', 'tech-strategy', 'product-milestones', 'community-stories'],
-  'entertainment-hub': ['marvel', 'mcu', 'mcu-radar', 'cinema', 'movies', 'films', 'my-films', 'music', 'my-music', 'games'],
-  'holidays-hub': ['russian-holidays', 'orthodox-holidays', 'world-holidays', 'world-religions', 'christian-holidays'],
-};
+// Re-export constants for full backward compatibility
+export { STREAM_SOURCE_SLUGS, LEGACY_FEED_SLUG_ALIASES };
 
 @Injectable()
 export class NotesQueryBuilder {
@@ -113,7 +26,12 @@ export class NotesQueryBuilder {
     @Optional() private readonly streamsService?: StreamsService,
   ) {}
 
-  private buildFeedCondition(targetFeed: { id: string; slug?: string; folderPaths: string[]; hashtags: string[] }): Prisma.NoteWhereInput {
+  private buildFeedCondition(targetFeed: {
+    id: string;
+    slug?: string;
+    folderPaths: string[];
+    hashtags: string[];
+  }): Prisma.NoteWhereInput {
     const hasFolders = targetFeed.folderPaths && targetFeed.folderPaths.length > 0;
     const hasHashtags = targetFeed.hashtags && targetFeed.hashtags.length > 0;
 
@@ -159,30 +77,11 @@ export class NotesQueryBuilder {
       containerId,
       containers,
       type,
-      tagId,
-      tagPath,
-      hashtag,
-      hashtagId,
-      folderId,
-      folder,
-      folderPrefix,
-      folderPath,
-      unfiled,
-      startDateFrom,
-      startDateTo,
-      endDateFrom,
-      endDateTo,
-      queryStart,
-      queryEnd,
-      overlapStart,
-      overlapEnd,
-      search,
       userId,
+      publics,
     } = query;
 
-    const andConditions: Prisma.NoteWhereInput[] = [
-      { deletedAt: null },
-    ];
+    const andConditions: Prisma.NoteWhereInput[] = [{ deletedAt: null }];
 
     // Privacy & Staging / Public contour gating:
     if (appMode === 'staging') {
@@ -202,12 +101,37 @@ export class NotesQueryBuilder {
       andConditions.push({ privacy });
     }
 
+    // Public feeds filtering
+    const publicClauses: Prisma.NoteWhereInput[] = [];
     if (publicFeedId) {
-      andConditions.push({ publicFeedId });
+      publicClauses.push({ publicFeedId });
     } else if (publicFeedSlug) {
-      andConditions.push({
+      publicClauses.push({
         publicFeed: { slug: publicFeedSlug, deletedAt: null },
       });
+    }
+
+    if (publics) {
+      const parsedPublics = publics
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parsedPublics.length > 0) {
+        publicClauses.push({
+          OR: [
+            { publicFeedId: { in: parsedPublics } },
+            { publicFeed: { slug: { in: parsedPublics }, deletedAt: null } },
+          ],
+        });
+      }
+    }
+
+    if (publicClauses.length > 0) {
+      if (publicClauses.length === 1) {
+        andConditions.push(publicClauses[0]);
+      } else {
+        andConditions.push({ OR: publicClauses });
+      }
     }
 
     // Feed filtering
@@ -272,94 +196,17 @@ export class NotesQueryBuilder {
           const dynamicCriteria = await this.streamsService.resolveCriteriaForStream(query.streamSource);
           if (dynamicCriteria) {
             matchedDynamic = true;
-            if (dynamicCriteria.privacy === 'private') {
-              if (query.privacy === 'all') {
-                // In 'all' privacy contour, allow both private and public notes that belong to this stream
-              } else if (query.privacy === 'public') {
-                andConditions.push({ privacy: 'public' });
-              } else if (dynamicCriteria.feedIds && dynamicCriteria.feedIds.length > 0) {
-                andConditions.push({
-                  OR: [
-                    { feedId: { in: dynamicCriteria.feedIds } },
-                    { publicFeedId: { in: dynamicCriteria.feedIds } },
-                    { privacy: 'private' },
-                  ],
-                });
-              } else {
-                andConditions.push({ privacy: 'private' });
-              }
-            }
-            const orClauses: Prisma.NoteWhereInput[] = [];
-            if (dynamicCriteria.feedIds && dynamicCriteria.feedIds.length > 0) {
-              orClauses.push({ feedId: { in: dynamicCriteria.feedIds } });
-              orClauses.push({ publicFeedId: { in: dynamicCriteria.feedIds } });
-            }
-            if (dynamicCriteria.feedSlugs && dynamicCriteria.feedSlugs.length > 0) {
-              orClauses.push({ feed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
-              orClauses.push({ publicFeed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
-              orClauses.push(
-                ...dynamicCriteria.feedSlugs.map((s) => ({
-                  folderPath: { contains: s, mode: 'insensitive' as const },
-                }))
-              );
-            }
-            if (dynamicCriteria.folderPaths && dynamicCriteria.folderPaths.length > 0) {
-              for (const fp of dynamicCriteria.folderPaths) {
-                orClauses.push({ folderPath: { contains: fp, mode: 'insensitive' as const } });
-              }
-            }
-            if (dynamicCriteria.tags && dynamicCriteria.tags.length > 0) {
-              orClauses.push({
-                hashtags: {
-                  some: {
-                    name: { in: dynamicCriteria.tags, mode: 'insensitive' as const },
-                  },
-                },
-              });
-            }
-            if (orClauses.length > 0) {
-              andConditions.push({ OR: orClauses });
-            } else {
-              // Newly created custom stream with no explicit feeds, tags, or folders attached:
-              // Match notes explicitly authored for or tagged with this stream's slug or title
-              const normSlug = dynamicCriteria.slug.toLowerCase().trim();
-              const normSlugHyphen = normSlug.replace(/_/g, '-');
-              const normTitle = dynamicCriteria.title.toLowerCase().trim();
-              const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normTitle].filter(Boolean)));
-              const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen].filter(Boolean)));
-
-              andConditions.push({
-                OR: [
-                  { feed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
-                  { publicFeed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
-                  { folderPath: { contains: normSlug, mode: 'insensitive' as const } },
-                  ...(normSlugHyphen !== normSlug
-                    ? [{ folderPath: { contains: normSlugHyphen, mode: 'insensitive' as const } }]
-                    : []),
-                  {
-                    hashtags: {
-                      some: {
-                        name: { in: candidateTags, mode: 'insensitive' as const },
-                        deletedAt: null,
-                      },
-                    },
-                  },
-                ],
-              });
-            }
+            andConditions.push(...buildDynamicStreamConditions(dynamicCriteria, query.privacy));
           }
         }
 
         if (!matchedDynamic) {
-          const allowedSlugs = STREAM_SOURCE_SLUGS[query.streamSource];
-          if (allowedSlugs && allowedSlugs.length > 0) {
+          const streamSlugs = STREAM_SOURCE_SLUGS[query.streamSource];
+          if (streamSlugs && streamSlugs.length > 0) {
             andConditions.push({
               OR: [
-                { feed: { slug: { in: allowedSlugs }, deletedAt: null } },
-                { publicFeed: { slug: { in: allowedSlugs }, deletedAt: null } },
-                ...allowedSlugs.map((s) => ({
-                  folderPath: { contains: s, mode: 'insensitive' as const },
-                })),
+                { feed: { slug: { in: streamSlugs }, deletedAt: null } },
+                { publicFeed: { slug: { in: streamSlugs }, deletedAt: null } },
               ],
             });
           }
@@ -367,26 +214,16 @@ export class NotesQueryBuilder {
       }
     }
 
-    // Container filters
-    if (containerId) {
-      andConditions.push({ containerId });
-    }
-    if (containers) {
-      const parsedContainers = containers
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean);
-      if (parsedContainers.length > 0) {
-        andConditions.push({ containerId: { in: parsedContainers } });
-      }
-    }
-
     // Type & Status
     if (type) {
-      andConditions.push({ type: type as any });
+      andConditions.push({ type });
     }
     if (query.status && !appMode) {
-      if (query.status === 'staging' || query.status === 'NOT_PUBLISHED' || query.status === '!PUBLISHED') {
+      if (
+        query.status === 'staging' ||
+        query.status === 'NOT_PUBLISHED' ||
+        query.status === '!PUBLISHED'
+      ) {
         andConditions.push({ status: { not: 'PUBLISHED' } });
       } else {
         andConditions.push({ status: query.status as any });
@@ -404,123 +241,24 @@ export class NotesQueryBuilder {
       });
     }
 
-    // Parent Note ID (reply thread / child synthesis)
-    if (query.parentNoteId) {
-      andConditions.push({ parentNoteId: query.parentNoteId });
+    // Container scope filter
+    if (containerId) {
+      andConditions.push({ containerId });
+    } else if (containers) {
+      const containerList = containers
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (containerList.length > 0) {
+        andConditions.push({ containerId: { in: containerList } });
+      }
     }
 
-    // Provenance Origin
-    if (query.origin) {
-      andConditions.push({
-        OR: [
-          { sourceType: query.origin },
-          { metadata: { path: ['origin'], equals: query.origin } },
-        ],
-      });
-    }
+    // Hashtags & tags conditions
+    andConditions.push(...buildHashtagsCondition(query));
 
-    // Tags & Hashtags
-    if (tagId) {
-      andConditions.push({ tags: { some: { id: tagId, deletedAt: null } } });
-    }
-    if (tagPath) {
-      andConditions.push({
-        tags: {
-          some: {
-            path: { startsWith: tagPath.toLowerCase().trim() },
-            deletedAt: null,
-          },
-        },
-      });
-    }
-    if (hashtag) {
-      andConditions.push({
-        hashtags: {
-          some: {
-            name: HashtagsService.normalizeName(hashtag),
-            deletedAt: null,
-          },
-        },
-      });
-    }
-    if (hashtagId) {
-      andConditions.push({
-        hashtags: {
-          some: {
-            id: hashtagId,
-            deletedAt: null,
-          },
-        },
-      });
-    }
-
-    // Folders
-    if (unfiled) {
-      andConditions.push({ folders: { none: {} } });
-    }
-    if (folderId) {
-      andConditions.push({
-        folders: {
-          some: {
-            folderId,
-            folder: { deletedAt: null },
-          },
-        },
-      });
-    }
-    if (folder) {
-      andConditions.push({
-        folders: {
-          some: {
-            folder: {
-              path: FoldersService.normalizePath(folder),
-              deletedAt: null,
-            },
-          },
-        },
-      });
-    }
-    if (folderPath) {
-      andConditions.push({
-        OR: [
-          { folderPath: { equals: folderPath, mode: 'insensitive' as const } },
-          {
-            folders: {
-              some: {
-                folder: {
-                  path: FoldersService.normalizePath(folderPath),
-                  deletedAt: null,
-                },
-              },
-            },
-          },
-        ],
-      });
-    }
-    if (folderPrefix) {
-      andConditions.push({
-        OR: [
-          {
-            folderPath: {
-              startsWith: FoldersService.normalizePath(folderPrefix),
-              mode: 'insensitive' as const,
-            },
-          },
-          {
-            folders: {
-              some: {
-                folder: {
-                  path: {
-                    startsWith: FoldersService.normalizePath(folderPrefix),
-                  },
-                  deletedAt: null,
-                },
-              },
-            },
-          },
-        ],
-      });
-    }
+    // Folders conditions
+    andConditions.push(...buildFoldersCondition(query));
 
     // Multi-tenancy & Container Privacy Filter
     if (userId !== 'usr-admin-999') {
@@ -534,82 +272,13 @@ export class NotesQueryBuilder {
     }
 
     // Text search filter
-    if (search && search.trim()) {
-      const cleanSearch = search.trim();
-      const normalizedHashtagSearch = HashtagsService.normalizeName(cleanSearch);
-
-      andConditions.push({
-        OR: [
-          { title: { contains: cleanSearch, mode: 'insensitive' } },
-          { description: { contains: cleanSearch, mode: 'insensitive' } },
-          { feed: { title: { contains: cleanSearch, mode: 'insensitive' } } },
-          { author: { contains: cleanSearch, mode: 'insensitive' } },
-          ...(normalizedHashtagSearch
-            ? [
-                {
-                  hashtags: {
-                    some: {
-                      name: {
-                        contains: normalizedHashtagSearch,
-                        mode: 'insensitive' as const,
-                      },
-                      deletedAt: null,
-                    },
-                  },
-                },
-              ]
-            : []),
-          {
-            folders: {
-              some: {
-                folder: {
-                  path: {
-                    contains: cleanSearch,
-                    mode: 'insensitive',
-                  },
-                  deletedAt: null,
-                },
-              },
-            },
-          },
-        ],
-      });
+    const searchCondition = buildSearchCondition(query.search);
+    if (searchCondition) {
+      andConditions.push(searchCondition);
     }
 
-    // Time window overlap query handling
-    const qStart = queryStart || overlapStart;
-    const qEnd = queryEnd || overlapEnd;
-
-    if (qStart && qEnd) {
-      const windowStart = new Date(qStart);
-      const windowEnd = new Date(qEnd);
-
-      andConditions.push({
-        startDate: { lte: windowEnd },
-        OR: [
-          { endDate: { gte: windowStart } },
-          { endDate: null, startDate: { gte: windowStart } },
-          { type: 'PERIOD', endDate: null },
-        ],
-      });
-    } else {
-      if (startDateFrom || startDateTo) {
-        andConditions.push({
-          startDate: {
-            ...(startDateFrom ? { gte: new Date(startDateFrom) } : {}),
-            ...(startDateTo ? { lte: new Date(startDateTo) } : {}),
-          },
-        });
-      }
-      if (endDateFrom || endDateTo) {
-        andConditions.push({
-          endDate: {
-            ...(endDateFrom ? { gte: new Date(endDateFrom) } : {}),
-            ...(endDateTo ? { lte: new Date(endDateTo) } : {}),
-          },
-        });
-      }
-    }
+    // Time window & date bounds conditions
+    andConditions.push(...buildDateFilterConditions(query));
 
     return {
       AND: andConditions,
@@ -617,22 +286,6 @@ export class NotesQueryBuilder {
   }
 
   buildOrderBy(query: QueryNotesDto): Prisma.NoteOrderByWithRelationInput[] {
-    const { sortBy, sortOrder = 'desc' } = query;
-    const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
-
-    if (sortBy === 'title') {
-      return [{ title: direction }, { startDate: 'desc' }];
-    }
-    if (sortBy === 'type') {
-      return [{ type: direction }, { startDate: 'desc' }];
-    }
-    if (sortBy === 'folder') {
-      return [{ folderPath: { sort: direction, nulls: 'last' } }, { startDate: 'desc' }];
-    }
-    if (sortBy === 'startDate') {
-      return [{ startDate: direction }, { id: 'desc' }];
-    }
-
-    return [{ startDate: 'desc' }];
+    return buildNotesOrderBy(query);
   }
 }

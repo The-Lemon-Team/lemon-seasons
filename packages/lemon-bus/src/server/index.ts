@@ -4,8 +4,21 @@ import { SseManager } from './sse.js';
 import { handleRequest, RouteContext } from './routes.js';
 import { GoogleDriveCloudWatcher } from './gdrive-watcher.js';
 import { UpstreamBusRelay } from './upstream-relay.js';
+import { ModerationDb } from './moderation.db.js';
+import { ModerationService } from './moderation.service.js';
+import { handleModerationRequest } from './moderation.routes.js';
 
-export { BusDatabase, SseManager, handleRequest, RouteContext, GoogleDriveCloudWatcher, UpstreamBusRelay };
+export {
+  BusDatabase,
+  SseManager,
+  handleRequest,
+  RouteContext,
+  GoogleDriveCloudWatcher,
+  UpstreamBusRelay,
+  ModerationDb,
+  ModerationService,
+  handleModerationRequest,
+};
 
 export interface ServerOptions {
   port?: number;
@@ -20,7 +33,13 @@ export interface ServerOptions {
 }
 
 export function startServer(options: ServerOptions = {}): http.Server {
-  const port = options.port ?? parseInt(process.env.PORT || '8080', 10);
+  const port =
+    options.port ??
+    parseInt(
+      process.env.LEMON_BUS_PORT ||
+        (process.env.PORT && process.env.PORT !== '3002' ? process.env.PORT : '3030'),
+      10
+    );
   const host = options.host ?? process.env.HOST ?? '0.0.0.0';
   const retentionDays = options.retentionDays ?? parseInt(process.env.LEMON_BUS_RETENTION_DAYS || '30', 10);
   const apiKey = options.apiKey ?? process.env.LEMON_BUS_API_KEY;
@@ -55,11 +74,19 @@ export function startServer(options: ServerOptions = {}): http.Server {
     }
   }
 
+  const moderationService = new ModerationService({
+    db,
+    sse,
+    deviceId: process.env.DEVICE_ID || 'lemon-bus-server',
+    upstreamRelay: upstreamRelay || undefined,
+  });
+
   const ctx: RouteContext = {
     db,
     sse,
     apiKey,
     upstreamRelay: upstreamRelay || undefined,
+    moderationService,
   };
 
   const gdriveServiceAccount =

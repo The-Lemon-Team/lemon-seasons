@@ -1,8 +1,15 @@
 import { Observable } from 'rxjs';
 import { BusDriverKind, NoteOrigin, NoteProvenance } from './provenance.types.js';
 
-export type LemonBusAction = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE';
-export type LemonBusEntityType = 'NOTE' | 'FEED' | 'STREAM' | 'FOLDER' | 'SPARK_FILE';
+export type LemonBusAction = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE' | 'PROPOSE' | 'REJECT';
+export type LemonBusEntityType =
+  | 'NOTE'
+  | 'FEED'
+  | 'STREAM'
+  | 'FOLDER'
+  | 'SPARK_FILE'
+  | 'WATCHER_ARTICLE'
+  | 'WATCHER_ITEM';
 
 export interface NoteContentReference {
   canonicalPath?: string;

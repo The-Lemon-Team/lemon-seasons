@@ -24,6 +24,11 @@ export class QueryNotesDto {
   @IsOptional()
   publicFeedSlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by multiple Public Feed IDs or Slugs (comma-separated)' })
+  @IsString()
+  @IsOptional()
+  publics?: string;
+
   @ApiPropertyOptional({ description: 'Filter by environment mode (dev | staging | public)' })
   @IsString()
   @IsOptional()
@@ -138,6 +143,11 @@ export class QueryNotesDto {
   @IsString()
   @IsOptional()
   hashtag?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by multiple hashtag names (comma-separated, e.g. "ai,llm")' })
+  @IsString()
+  @IsOptional()
+  hashtags?: string;
 
   @ApiPropertyOptional({ description: 'Filter by exact Hashtag UUID' })
   @IsString()

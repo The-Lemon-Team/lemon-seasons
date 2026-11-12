@@ -136,7 +136,7 @@ export interface BusTasksFilter {
 
 // ── LemonBus Cloud Relay & P2P Event Types ─────────────────────────────────────
 
-export type BusActionType = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE';
+export type BusActionType = 'UPSERT' | 'STATUS_CHANGE' | 'DELETE' | 'PROPOSE' | 'REJECT';
 export type BusEntityType = 'NOTE' | 'FOLDER' | 'FEED' | 'STREAM' | 'SPARK_FILE';
 
 export interface BusEventEnvelope<T = any> {

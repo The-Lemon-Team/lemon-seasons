@@ -51,6 +51,11 @@ model Note {
   processingStatus String?      @default("COMPLETED")
   icon           String?
   version        Int            @default(1)
+  // English language variants (optional)
+  titleEng       String?
+  descriptionEng String?
+  rawContentEng  String?
+  summaryEng     String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deletedAt      DateTime?

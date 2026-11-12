@@ -193,6 +193,24 @@ describe('NotesQueryBuilder', () => {
       expect(has(and, { hashtags: { some: { name: 'ai', deletedAt: null } } })).toBe(true);
     });
 
+    it('multiple hashtags are split and matched with { in: [...] }', async () => {
+      const { and } = await build({ hashtags: '#AI, llm, machine-learning' }, true);
+      expect(has(and, { hashtags: { some: { name: { in: ['ai', 'llm', 'machine-learning'] }, deletedAt: null } } })).toBe(true);
+    });
+
+    it('scopes hashtags to explicit publics when publics are specified', async () => {
+      const { and } = await build({ publics: 'pub-anthropic,pub-openai', hashtags: 'claude' }, true);
+      const publicCond = and.find((c) => Array.isArray(c.OR) && c.OR.some((o: any) => o.publicFeedId));
+      expect(publicCond).toBeDefined();
+      expect(has(and, { hashtags: { some: { name: 'claude', deletedAt: null } } })).toBe(true);
+    });
+
+    it('applies hashtags across all notes when no public is specified', async () => {
+      const { and } = await build({ hashtags: 'claude' }, true);
+      expect(and.some((c) => c.publicFeedId || c.publicFeed)).toBe(false);
+      expect(has(and, { hashtags: { some: { name: 'claude', deletedAt: null } } })).toBe(true);
+    });
+
     it('unfiled notes are those without any folder link', async () => {
       expect(has((await build({ unfiled: true }, true)).and, { folders: { none: {} } })).toBe(true);
     });

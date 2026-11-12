@@ -1,7 +1,7 @@
 import * as crypto from 'node:crypto';
 import { BusDatabase } from './db.js';
 import { SseManager } from './sse.js';
-import { processSparkDocument } from '../sparks/spark-document.processor.js';
+import { processSparkDocument, normalizeCanonicalSparkPath } from '../sparks/spark-document.processor.js';
 import { LemonBusEnvelope, LemonBusNotePayload } from '../types/bus-contract.types.js';
 
 export interface ServiceAccountCredentials {
@@ -113,7 +113,11 @@ export class GoogleDriveCloudWatcher {
         for (const file of files) {
           if (this.isMarkdownFile(file.name)) {
             const ok = await this.ingestDriveFile(file, token);
-            if (ok) totalIngested++;
+            if (ok) {
+              totalIngested++;
+              // Mild yield between actual downloads to prevent burst rate-limits from Google
+              await new Promise((r) => setTimeout(r, 50));
+            }
           }
         }
 
@@ -339,20 +343,41 @@ export class GoogleDriveCloudWatcher {
     return processed;
   }
 
-  private async ingestDriveFile(file: { id: string; name: string; parents?: string[] }, token: string): Promise<boolean> {
+  private async ingestDriveFile(
+    file: { id: string; name: string; parents?: string[]; modifiedTime?: string },
+    token: string,
+  ): Promise<boolean> {
     try {
       // Determine folder path from parent
       const parentId = file.parents && file.parents[0] ? file.parents[0] : this.rootFolderId;
       const folderNode = this.folderMap.get(parentId);
       const folderPath = folderNode ? folderNode.path : 'Spark';
       const virtualPath = `${folderPath}/${file.name}`;
+      const { canonicalPath } = normalizeCanonicalSparkPath(virtualPath);
 
-      // Download content
+      // Pre-check against local DB before issuing network request to download file content
+      const existingDoc = this.db.getSparkDocument(canonicalPath);
+      if (existingDoc && file.modifiedTime) {
+        const fileMtime = new Date(file.modifiedTime).getTime();
+        const docMtime = new Date(existingDoc.updatedAt).getTime();
+        if (!isNaN(fileMtime) && !isNaN(docMtime) && fileMtime <= docMtime) {
+          // File has not been modified in Google Drive since last ingestion
+          return false;
+        }
+      }
+
+      // Download content with rate limit protection
       const contentRes = await this.fetchFn(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!contentRes.ok) return false;
+      if (!contentRes.ok) {
+        if (contentRes.status === 429 || contentRes.status === 503) {
+          console.warn(`[GDriveCloudWatcher] Rate limit (HTTP ${contentRes.status}) on ${file.name}. Pausing...`);
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+        return false;
+      }
       const rawMarkdown = await contentRes.text();
 
       // Process via SparkDocumentProcessor
@@ -363,7 +388,6 @@ export class GoogleDriveCloudWatcher {
       });
 
       // Content hash deduplication against DB
-      const existingDoc = this.db.getSparkDocument(processed.canonicalPath);
       if (existingDoc && existingDoc.contentHash === processed.contentHash) {
         return false;
       }

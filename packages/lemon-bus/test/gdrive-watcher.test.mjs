@@ -20,6 +20,7 @@ test('GoogleDriveCloudWatcher scans folders, ingests markdown, and broadcasts to
     ],
   ]);
 
+  let downloadCalls = 0;
   const mockFetch = async (urlStr, opts = {}) => {
     const url = new URL(urlStr);
 
@@ -56,6 +57,7 @@ test('GoogleDriveCloudWatcher scans folders, ingests markdown, and broadcasts to
               mimeType: 'text/markdown',
               parents: ['crypto-folder-id'],
               trashed: false,
+              modifiedTime: '2026-11-08T10:00:00.000Z',
             },
           ],
         }),
@@ -84,6 +86,7 @@ test('GoogleDriveCloudWatcher scans folders, ingests markdown, and broadcasts to
                 mimeType: 'text/markdown',
                 parents: ['crypto-folder-id'],
                 trashed: false,
+                modifiedTime: '2026-11-08T10:00:00.000Z',
               },
             },
           ],
@@ -92,6 +95,7 @@ test('GoogleDriveCloudWatcher scans folders, ingests markdown, and broadcasts to
     }
 
     if (url.pathname === '/drive/v3/files/file-1') {
+      downloadCalls++;
       return {
         ok: true,
         status: 200,
@@ -119,6 +123,12 @@ test('GoogleDriveCloudWatcher scans folders, ingests markdown, and broadcasts to
   const processed = await watcher.pollChanges();
 
   assert.equal(processed, 1);
+  assert.equal(downloadCalls, 1);
+
+  // Second poll cycle with unchanged file in Google Drive MUST NOT download content again
+  const secondProcessed = await watcher.pollChanges();
+  assert.equal(secondProcessed, 0);
+  assert.equal(downloadCalls, 1, 'Redundant download was prevented by mtime pre-check');
 
   // Check that spark doc exists in Claim Check
   const doc = db.getSparkDocument('Spark/crypto/08.11.26 - Test Spark Note.md');

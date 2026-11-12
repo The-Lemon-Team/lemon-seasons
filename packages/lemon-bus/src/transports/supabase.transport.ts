@@ -15,6 +15,7 @@ import {
 } from '../types/bus-contract.types.js';
 import { processSparkDocument } from '../sparks/spark-document.processor.js';
 import { compileBusPattern, matchesCompiledBusPattern } from './pattern-matcher.util.js';
+import { SupabaseRealtimeClient } from './supabase-realtime.client.js';
 
 export interface SupabaseTransportOptions {
   supabaseUrl: string;
@@ -61,13 +62,9 @@ export class SupabaseBusTransport implements ILemonBusTransport {
 
   private readonly stream$ = new Subject<LemonBusEnvelope>();
   private readonly knownHashes = new Set<string>();
-  private ws: WebSocket | null = null;
-  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly realtimeClient: SupabaseRealtimeClient;
   private running = false;
-  private wsConnected = false;
   private lastKnownSeq = 0;
-  private phxRef = 1;
 
   constructor(options: SupabaseTransportOptions) {
     this.baseUrl = options.supabaseUrl.replace(/\/+$/, '');
@@ -78,35 +75,47 @@ export class SupabaseBusTransport implements ILemonBusTransport {
     this.watermarksTable = options.watermarksTable || 'lemon_bus_watermarks';
     this.realtimeEnabled = options.realtimeEnabled !== false;
     this.fetchFn = options.fetchImpl || globalThis.fetch;
+
+    this.realtimeClient = new SupabaseRealtimeClient({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      eventsTable: this.eventsTable,
+      onRecord: (record: SupabaseEventRow) => {
+        const envelope = this.mapRowToEnvelope(record);
+        if (envelope.seq && envelope.seq > this.lastKnownSeq) {
+          this.lastKnownSeq = envelope.seq;
+        }
+        if (envelope.contentHash) {
+          this.knownHashes.add(envelope.contentHash);
+        }
+        this.stream$.next(envelope);
+      },
+      onCatchUp: () => {
+        this.pullSince({ lastSeq: this.lastKnownSeq })
+          .then(({ items }) => {
+            for (const env of items) {
+              this.stream$.next(env);
+            }
+          })
+          .catch(() => {});
+      },
+    });
   }
 
   async start(): Promise<void> {
+    if (this.running) return;
     this.running = true;
+
     await this.loadCloudWatermark().catch(() => {});
-    if (this.realtimeEnabled && typeof globalThis.WebSocket !== 'undefined') {
-      this.connectRealtimeSocket();
+
+    if (this.realtimeEnabled) {
+      this.realtimeClient.start();
     }
   }
 
   async stop(): Promise<void> {
     this.running = false;
-    this.wsConnected = false;
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.ws) {
-      try {
-        this.ws.close();
-      } catch {
-        // ignore close errors
-      }
-      this.ws = null;
-    }
+    this.realtimeClient.stop();
   }
 
   async publish<T = any>(
@@ -162,10 +171,6 @@ export class SupabaseBusTransport implements ILemonBusTransport {
     return envelope;
   }
 
-  /**
-   * Stores the Spark .md document directly in Supabase (lemon_spark_documents)
-   * and returns the normalized Note bus envelope.
-   */
   async publishSparkDocument(
     input: PublishSparkInput,
   ): Promise<LemonBusEnvelope<LemonBusNotePayload>> {
@@ -194,9 +199,7 @@ export class SupabaseBusTransport implements ILemonBusTransport {
           updated_at: new Date().toISOString(),
         }),
       },
-    ).catch(() => {
-      // If lemon_spark_documents trigger isn't installed yet, publish directly to lemon_bus_events below
-    });
+    ).catch(() => {});
 
     return this.publish<LemonBusNotePayload>({
       entityType: 'NOTE',
@@ -341,7 +344,7 @@ export class SupabaseBusTransport implements ILemonBusTransport {
     return {
       driver: 'supabase',
       isWatching: this.running,
-      supabaseConnected: this.wsConnected,
+      supabaseConnected: this.realtimeClient.isConnected(),
       gdriveConnected: false,
       currentDeviceId: this.deviceId,
       busDir: `${this.baseUrl}/rest/v1/${this.eventsTable}`,
@@ -364,100 +367,8 @@ export class SupabaseBusTransport implements ILemonBusTransport {
     }
   }
 
-  private connectRealtimeSocket(): void {
-    if (!this.running) return;
-    const wsBase = this.baseUrl.replace(/^http/i, 'ws');
-    const wsUrl = `${wsBase}/realtime/v1/websocket?apikey=${encodeURIComponent(this.apiKey)}&vsn=1.0.0`;
-
-    try {
-      this.ws = new WebSocket(wsUrl);
-    } catch {
-      this.scheduleReconnect();
-      return;
-    }
-
-    this.ws.onopen = () => {
-      this.wsConnected = true;
-      const joinMsg = {
-        topic: `realtime:public:${this.eventsTable}`,
-        event: 'phx_join',
-        payload: {
-          config: {
-            broadcast: { self: false },
-            postgres_changes: [
-              { event: 'INSERT', schema: 'public', table: this.eventsTable },
-            ],
-          },
-        },
-        ref: String(this.phxRef++),
-      };
-      this.ws?.send(JSON.stringify(joinMsg));
-
-      // Catch up any events missed while reconnecting
-      this.pullSince({ lastSeq: this.lastKnownSeq })
-        .then(({ items }) => {
-          for (const env of items) {
-            this.stream$.next(env);
-          }
-        })
-        .catch(() => {});
-
-      if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = setInterval(() => {
-        if (this.ws && this.wsConnected) {
-          this.ws.send(
-            JSON.stringify({
-              topic: 'phoenix',
-              event: 'heartbeat',
-              payload: {},
-              ref: String(this.phxRef++),
-            }),
-          );
-        }
-      }, 25_000);
-    };
-
-    this.ws.onmessage = (msg) => {
-      try {
-        const parsed = JSON.parse(String(msg.data));
-        const record: SupabaseEventRow | undefined =
-          parsed?.payload?.data?.record || parsed?.payload?.record;
-        if (record && record.event_id) {
-          const envelope = this.mapRowToEnvelope(record);
-          if (envelope.seq && envelope.seq > this.lastKnownSeq) {
-            this.lastKnownSeq = envelope.seq;
-          }
-          if (envelope.contentHash) {
-            this.knownHashes.add(envelope.contentHash);
-          }
-          this.stream$.next(envelope);
-        }
-      } catch {
-        // ignore non-JSON frames
-      }
-    };
-
-    this.ws.onclose = () => {
-      this.wsConnected = false;
-      this.scheduleReconnect();
-    };
-
-    this.ws.onerror = () => {
-      this.wsConnected = false;
-    };
-  }
-
-  private scheduleReconnect(): void {
-    if (!this.running || this.reconnectTimer) return;
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      this.connectRealtimeSocket();
-    }, 3_000);
-  }
-
   private mapRowToEnvelope<T = any>(row: SupabaseEventRow): LemonBusEnvelope<T> {
     let payload = row.payload;
-    // Automatically normalize SPARK_FILE trigger rows into LemonBusNotePayload
     if (row.entity_type === 'SPARK_FILE' && payload?.contentMarkdown) {
       const processed = processSparkDocument({
         virtualPath: payload.canonicalPath || row.external_id || 'Spark/Untitled.md',
@@ -486,11 +397,6 @@ export class SupabaseBusTransport implements ILemonBusTransport {
     };
   }
 
-  /**
-   * Purges transient events older than `retentionDays` from the cloud buffer.
-   * Executes RPC fn_purge_expired_bus_events, falling back to REST DELETE.
-   * GUARANTEE: Operates strictly on cloud tables; never touches external files.
-   */
   async purgeExpiredRecords(
     retentionDays = 30,
   ): Promise<{ purgedEvents: number; purgedSparkDocs: number }> {
@@ -508,7 +414,6 @@ export class SupabaseBusTransport implements ILemonBusTransport {
         };
       }
     } catch {
-      // Fallback: direct REST DELETE if RPC is not deployed yet
       const cutoff = new Date(Date.now() - retentionDays * 86_400_000).toISOString();
       await this.restRequest(
         `/rest/v1/${this.eventsTable}?created_at=lt.${encodeURIComponent(cutoff)}`,

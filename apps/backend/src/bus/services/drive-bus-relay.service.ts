@@ -237,6 +237,16 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
 
     const payload = envelope.payload;
 
+    // Ignore candidate/unapproved events from moderation queue
+    if (
+      envelope.action === 'PROPOSE' ||
+      (envelope.action as string) === 'REJECT' ||
+      payload.status === 'PENDING_MODERATION' ||
+      payload.status === 'PENDING'
+    ) {
+      return;
+    }
+
     if (envelope.action === 'DELETE') {
       const existingToDelete = await this.prisma.note.findFirst({
         where: { id: payload.id, deletedAt: null },

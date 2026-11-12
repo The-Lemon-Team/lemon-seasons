@@ -1,5 +1,6 @@
 export * from './types/provenance.types.js';
 export * from './types/bus-contract.types.js';
+export * from './types/moderation.types.js';
 export * from './sparks/markdown-frontmatter.util.js';
 export * from './sparks/spark-document.processor.js';
 export * from './transports/pattern-matcher.util.js';

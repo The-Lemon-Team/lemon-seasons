@@ -3,6 +3,7 @@ import * as path from 'path';
 import { createRequire } from 'node:module';
 import type { DatabaseSync } from 'node:sqlite';
 import { LemonBusEnvelope } from '../types/bus-contract.types.js';
+import { ModerationDb } from './moderation.db.js';
 
 const nodeRequire = typeof require !== 'undefined' ? require : createRequire(path.resolve('.'));
 const { DatabaseSync: SQLiteDatabase } = nodeRequire('node:' + 'sqlite') as {
@@ -16,6 +17,7 @@ export interface BusDatabaseConfig {
 
 export class BusDatabase {
   private readonly db: DatabaseSync;
+  public readonly moderation: ModerationDb;
 
   constructor(config: BusDatabaseConfig = {}) {
     const defaultPath = fs.existsSync('/data') ? '/data/lemon-bus.db' : './lemon-bus.db';
@@ -27,6 +29,7 @@ export class BusDatabase {
 
     this.db = new SQLiteDatabase(resolvedPath);
     this.initSchema();
+    this.moderation = new ModerationDb(this.db);
   }
 
   private initSchema(): void {
@@ -313,13 +316,19 @@ export class BusDatabase {
     };
   }
 
-  getStats(): { totalEvents: number; lastSeq: number; totalSparks: number } {
+  getStats(): {
+    totalEvents: number;
+    lastSeq: number;
+    totalSparks: number;
+    moderation: ReturnType<ModerationDb['getStats']>;
+  } {
     const eventsRow = this.db.prepare(`SELECT COUNT(*) as cnt, COALESCE(MAX(seq), 0) as maxSeq FROM lemon_bus_events`).get() as any;
     const sparksRow = this.db.prepare(`SELECT COUNT(*) as cnt FROM lemon_spark_documents`).get() as any;
     return {
       totalEvents: eventsRow?.cnt || 0,
       lastSeq: eventsRow?.maxSeq || 0,
       totalSparks: sparksRow?.cnt || 0,
+      moderation: this.moderation.getStats(),
     };
   }
 

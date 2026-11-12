@@ -78,6 +78,11 @@ export class CreateNoteDto {
   @IsNotEmpty()
   title: string;
 
+  @ApiPropertyOptional({ description: 'English title (optional)', example: 'Marvel Cinematic Universe Phase 5 Overview (EN)' })
+  @IsString()
+  @IsOptional()
+  titleEng?: string;
+
   @ApiPropertyOptional({
     description: 'Raw Markdown content of the note',
     example: '### Overview\nThe upcoming phase includes several highly anticipated releases...',

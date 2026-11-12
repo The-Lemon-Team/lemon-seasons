@@ -80,6 +80,24 @@ export class SseManager {
     }
   }
 
+  broadcastCustom(eventName: string, data: any, id?: string | number): void {
+    const payloadStr = JSON.stringify(data);
+    const idPrefix = id != null ? `id: ${id}\n` : '';
+    const sseMessage = `${idPrefix}event: ${eventName}\ndata: ${payloadStr}\n\n`;
+
+    for (const [subId, sub] of this.subscribers.entries()) {
+      try {
+        sub.res.write(sseMessage);
+      } catch (err) {
+        this.remove(subId);
+      }
+    }
+  }
+
+  broadcastModeration(data: any): void {
+    this.broadcastCustom('moderation', data);
+  }
+
   count(): number {
     return this.subscribers.size;
   }
