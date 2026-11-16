@@ -132,6 +132,7 @@ export class BusDatabase {
     feedSlug?: string;
     streamSlug?: string;
     action?: string;
+    contentHash?: string;
     limit?: number;
   }): { items: LemonBusEnvelope[]; lastSeq: number; total: number } {
     const conditions: string[] = [];
@@ -152,6 +153,10 @@ export class BusDatabase {
     if (params.action) {
       conditions.push('action = ?');
       values.push(params.action);
+    }
+    if (params.contentHash) {
+      conditions.push('content_hash = ?');
+      values.push(params.contentHash);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -270,6 +275,47 @@ export class BusDatabase {
       updatedByDevice: row.updated_by_device,
       updatedAt: row.updated_at,
     };
+  }
+
+  listSparkDocuments(limit = 50): Array<{
+    id: string;
+    canonicalPath: string;
+    fileName: string;
+    folderPath: string;
+    feedSlug: string;
+    title: string;
+    contentHash: string;
+    privacy: string;
+    originProvider: string;
+    updatedByDevice: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 200);
+    const rows = this.db
+      .prepare(
+        `SELECT id, canonical_path, file_name, folder_path, feed_slug, title,
+                content_hash, privacy, origin_provider, updated_by_device, created_at, updated_at
+         FROM lemon_spark_documents
+         ORDER BY updated_at DESC
+         LIMIT ?`,
+      )
+      .all(safeLimit) as any[];
+
+    return rows.map((row) => ({
+      id: row.id,
+      canonicalPath: row.canonical_path,
+      fileName: row.file_name,
+      folderPath: row.folder_path,
+      feedSlug: row.feed_slug,
+      title: row.title,
+      contentHash: row.content_hash,
+      privacy: row.privacy,
+      originProvider: row.origin_provider,
+      updatedByDevice: row.updated_by_device,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
   }
 
   updateWatermark(deviceId: string, lastSeq: number): void {

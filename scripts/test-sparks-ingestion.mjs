@@ -8,9 +8,9 @@ const prismaPath = require.resolve('@prisma/client', { paths: [path.join(process
 const { PrismaClient } = require(prismaPath);
 const prisma = new PrismaClient();
 
-// Dynamic import of the compiled services from apps/backend/dist
-const sparksParserPath = path.join(process.cwd(), 'apps/backend/dist/src/ingestion/services/sparks-parser.service.js');
-const { SparksParserService } = require(sparksParserPath);
+// Dynamic import of @lenta/lemon-bus Spark processor
+const lemonBusPath = path.join(process.cwd(), 'packages/lemon-bus/dist/index.mjs');
+const { processSparkDocument } = await import(new URL(`file://${lemonBusPath.replace(/\\/g, '/')}`).href);
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════════');
@@ -53,18 +53,21 @@ Google DeepMind и Quantum AI представили чип нового пок�
   await fs.promises.writeFile(testFilePath, sampleSparkContent, 'utf-8');
   console.log(`   ✅ Файл успешно сохранен на диске.\n`);
 
-  console.log(`2️⃣ Инициализация парсера SparksParserService...`);
-  const parser = new SparksParserService();
-  const parsed = parser.parseSparkFile(testFilePath, sampleSparkContent, {
-    mtime: new Date(),
-    size: sampleSparkContent.length,
+  console.log(`2️⃣ Инициализация парсера @lenta/lemon-bus (processSparkDocument)...`);
+  const processed = processSparkDocument({
+    virtualPath: path.basename(testFilePath),
+    contentMarkdown: sampleSparkContent,
+    mtime: new Date().toISOString(),
+    fileSize: sampleSparkContent.length,
+    origin: 'GDRIVE_SPARK',
   });
+  const noteDto = processed.notePayload;
 
-  console.log(`   ✅ Заголовок: "${parsed.noteDto.title}"`);
-  console.log(`   ✅ Дата: ${parsed.noteDto.startDate}`);
-  console.log(`   ✅ Источник: ${parsed.noteDto.sourceType} (${parsed.noteDto.externalId})`);
-  console.log(`   ✅ Теги: ${parsed.noteDto.hashtags.join(', ')}`);
-  console.log(`   ✅ Саммари: "${parsed.noteDto.summary}"\n`);
+  console.log(`   ✅ Заголовок: "${noteDto.title}"`);
+  console.log(`   ✅ Дата: ${noteDto.startDate}`);
+  console.log(`   ✅ Источник: ${noteDto.sourceType} (${noteDto.externalId})`);
+  console.log(`   ✅ Теги: ${(noteDto.hashtags || []).join(', ')}`);
+  console.log(`   ✅ Саммари: "${noteDto.summary}"\n`);
 
   // Симулируем жизненный цикл IngestionFile (PENDING -> PROCESSING -> COMPLETED)
   console.log(`3️⃣ Проверка жизненного цикла этапов (PENDING -> PROCESSING -> COMPLETED):`);
@@ -108,19 +111,19 @@ Google DeepMind и Quantum AI представили чип нового пок�
   // Создаем / обновляем Note в PostgreSQL
   const createdNote = await prisma.note.create({
     data: {
-      title: parsed.noteDto.title,
-      description: parsed.noteDto.description,
-      type: parsed.noteDto.type,
-      startDate: new Date(parsed.noteDto.startDate),
-      sourceType: parsed.noteDto.sourceType,
-      externalId: parsed.noteDto.externalId,
-      rawContent: parsed.noteDto.rawContent,
-      summary: parsed.noteDto.summary,
+      title: noteDto.title,
+      description: noteDto.description,
+      type: noteDto.type,
+      startDate: new Date(noteDto.startDate),
+      sourceType: noteDto.sourceType,
+      externalId: noteDto.externalId,
+      rawContent: noteDto.rawContent,
+      summary: noteDto.summary,
       processingStatus: 'COMPLETED',
-      icon: parsed.noteDto.icon,
+      icon: noteDto.icon,
       feedId: feed.id,
       hashtags: {
-        connectOrCreate: parsed.noteDto.hashtags.map((h) => ({
+        connectOrCreate: (noteDto.hashtags || []).map((h) => ({
           where: { name: h },
           create: { name: h },
         })),

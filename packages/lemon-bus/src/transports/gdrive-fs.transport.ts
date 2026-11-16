@@ -345,7 +345,7 @@ export class GoogleDriveFsTransport implements ILemonBusTransport {
 
   private async handleIncomingSparkMd(filePath: string): Promise<void> {
     const base = path.basename(filePath).toLowerCase();
-    if (!base.endsWith('.md') || base.startsWith('_') || base.includes('template')) return;
+    if (!base.endsWith('.md') || base.startsWith('_') || base.includes('template') || base.includes('config')) return;
     try {
       const content = await fs.promises.readFile(filePath, 'utf-8');
       const stats = await fs.promises.stat(filePath);

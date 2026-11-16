@@ -148,6 +148,7 @@ export function handleQueryEvents(res: ServerResponse, url: URL, ctx: RouteConte
   const feedSlug = url.searchParams.get('feedSlug') || url.searchParams.get('feed_slug') || undefined;
   const streamSlug = url.searchParams.get('streamSlug') || url.searchParams.get('stream_slug') || undefined;
   const action = url.searchParams.get('action') || undefined;
+  const contentHash = url.searchParams.get('contentHash') || url.searchParams.get('content_hash') || undefined;
   const limitStr = url.searchParams.get('limit');
 
   const afterSeq = afterSeqStr ? parseInt(afterSeqStr, 10) : undefined;
@@ -158,6 +159,7 @@ export function handleQueryEvents(res: ServerResponse, url: URL, ctx: RouteConte
     feedSlug,
     streamSlug,
     action,
+    contentHash,
     limit,
   });
 

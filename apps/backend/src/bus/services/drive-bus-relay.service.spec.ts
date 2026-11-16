@@ -220,4 +220,139 @@ describe('DriveBusRelayService & Inbound-to-Database Pipeline', () => {
     expect(pubArg.feedSlug).toBe('general-feed');
     expect(pubArg.payload.title).toBe('Locally Created Note');
   });
+
+  it('auto-creates child and parent Feed, preserves links/resonanceScore, and resolves relatedNotes', async () => {
+    const mockFeedCreate = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'child-feed-id', slug: 'spark-changelogsfeed-google', folderPaths: ['Spark/changelogsFeed/google'] })
+      .mockResolvedValueOnce({ id: 'parent-feed-id', slug: 'spark-changelogsfeed', folderPaths: ['Spark/changelogsfeed', 'Spark/changelogsFeed/google'] });
+
+    mockPrisma.feed = {
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: mockFeedCreate,
+      update: vi.fn(),
+    };
+
+    const mockResolver = {
+      resolveNoteRelatedLinks: vi.fn().mockResolvedValue({ resolvedCount: 1, totalCount: 1 }),
+    };
+
+    const relayWithResolver = new DriveBusRelayService(mockPrisma, mockNotesService, mockResolver as any);
+    (relayWithResolver as any).transport = mockTransport;
+    (relayWithResolver as any).deviceId = 'local-node-test';
+
+    const envelope: LemonBusEnvelope<LemonBusNotePayload> = {
+      eventId: 'evt-spark-feed-1',
+      timestamp: '2026-11-15T10:00:00.000Z',
+      deviceId: 'lemon-bus-local-fs',
+      entityType: 'NOTE',
+      action: 'UPSERT',
+      origin: 'GDRIVE_SPARK',
+      transportVia: 'supabase',
+      privacy: 'public',
+      feedSlug: 'spark-changelogsfeed-google',
+      payload: {
+        id: 'spark-uuid-1',
+        title: 'Gemini 2.5 Release',
+        rawContent: 'Full markdown',
+        folderPath: 'Spark/changelogsFeed/google',
+        resonanceScore: 95,
+        links: [{ url: 'https://ai.google.dev', title: 'Google AI', isSource: true, order: 0 }],
+        privacy: 'public',
+        feedSlug: 'spark-changelogsfeed-google',
+        origin: 'GDRIVE_SPARK',
+        provenance: {
+          origin: 'GDRIVE_SPARK',
+          transportVia: 'supabase',
+          deviceId: 'lemon-bus-local-fs',
+        },
+        metadata: {
+          fileHash: 'abc123',
+          feedTitle: 'Google (Changelogs)',
+          parentFeedSlug: 'spark-changelogsfeed',
+          parentFeedTitle: 'Changelogs & Релизы (Spark)',
+          relatedNotes: [{ linkTarget: 'Related Note' }],
+        },
+      },
+    };
+
+    await relayWithResolver.applyEventToLocalDatabase(envelope);
+
+    expect(mockFeedCreate).toHaveBeenCalledTimes(2);
+    expect(mockFeedCreate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          slug: 'spark-changelogsfeed-google',
+          folderPaths: ['Spark/changelogsFeed/google'],
+        }),
+      }),
+    );
+    expect(mockFeedCreate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          slug: 'spark-changelogsfeed',
+          folderPaths: ['Spark/changelogsfeed', 'Spark/changelogsFeed/google'],
+        }),
+      }),
+    );
+
+    expect(mockNotesService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        feedId: 'child-feed-id',
+        resonanceScore: 95,
+        rawContent: 'Full markdown',
+        links: [{ url: 'https://ai.google.dev', title: 'Google AI', isSource: true, order: 0 }],
+        folders: ['Spark/changelogsFeed/google', 'Spark/changelogsFeed'],
+      }),
+    );
+
+    expect(mockResolver.resolveNoteRelatedLinks).toHaveBeenCalledWith('created-note-1');
+  });
+
+  it('preserves publicFeedId, status, and privacy when updating an existing published note', async () => {
+    mockPrisma.note.findFirst.mockResolvedValueOnce({
+      id: 'existing-pub-id',
+      publicFeedId: 'pub-feed-99',
+      status: 'PUBLISHED',
+      privacy: 'public',
+      metadata: { fileHash: 'old-hash' },
+    });
+
+    const envelope: LemonBusEnvelope<LemonBusNotePayload> = {
+      eventId: 'evt-spark-upd-1',
+      timestamp: '2026-11-15T11:00:00.000Z',
+      deviceId: 'lemon-bus-local-fs',
+      entityType: 'NOTE',
+      action: 'UPSERT',
+      origin: 'GDRIVE_SPARK',
+      transportVia: 'supabase',
+      privacy: 'private',
+      payload: {
+        id: 'existing-pub-id',
+        title: 'Updated Spark',
+        privacy: 'private',
+        status: 'DRAFT',
+        origin: 'GDRIVE_SPARK',
+        provenance: {
+          origin: 'GDRIVE_SPARK',
+          transportVia: 'supabase',
+          deviceId: 'lemon-bus-local-fs',
+        },
+        metadata: { fileHash: 'new-hash' },
+      },
+    };
+
+    await relayService.applyEventToLocalDatabase(envelope);
+
+    expect(mockNotesService.update).toHaveBeenCalledWith(
+      'existing-pub-id',
+      expect.objectContaining({
+        publicFeedId: 'pub-feed-99',
+        status: 'PUBLISHED',
+        privacy: 'public',
+      }),
+    );
+  });
 });

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus, Inject, forwardRef } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { IngestionService, IngestionResult } from './ingestion.service';
 import { GeminiService, GeneratedNoteEnrichment } from './services/gemini.service';
@@ -7,9 +7,8 @@ import { AiMediaLibraryService } from './services/ai-media-library.service';
 import { TmdbService, MovieReleaseItem } from './services/tmdb.service';
 import { HolidaysEngineService, HolidayItem } from './services/holidays-engine.service';
 import { PoliticalEngineService, PoliticalEventItem } from './services/political-engine.service';
-import { DriveWatcherService } from './services/drive-watcher.service';
+import { DriveBusRelayService } from '../bus/services/drive-bus-relay.service';
 import { WikiEngineService } from './services/wiki-engine.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { NoteType } from '@prisma/client';
 import {
   GenerateNoteAiDto,
@@ -40,9 +39,9 @@ export class IngestionController {
     private readonly tmdbService: TmdbService,
     private readonly holidaysEngine: HolidaysEngineService,
     private readonly politicalEngine: PoliticalEngineService,
-    private readonly driveWatcher: DriveWatcherService,
+    @Inject(forwardRef(() => DriveBusRelayService))
+    private readonly driveBusRelay: DriveBusRelayService,
     private readonly wikiEngine: WikiEngineService,
-    private readonly prisma: PrismaService,
   ) {}
 
   @Post('sync-all')
@@ -339,34 +338,19 @@ export class IngestionController {
   @Get('watcher/status')
   @ApiOperation({ summary: 'Получить статус фонового слушателя файлов Gemini Sparks' })
   async getWatcherStatus() {
-    return this.driveWatcher.getStatus();
+    return this.driveBusRelay.getWatcherStatus();
   }
 
   @Get('watcher/files')
   @ApiOperation({ summary: 'Получить список обработанных файлов и их этапы (PENDING/PROCESSING/COMPLETED/FAILED)' })
   async getIngestedFiles(@Query('status') status?: string, @Query('limit') limit = 50) {
-    return this.prisma.ingestionFile.findMany({
-      where: status ? { status } : undefined,
-      orderBy: { updatedAt: 'desc' },
-      take: Number(limit),
-      include: {
-        note: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            startDate: true,
-            processingStatus: true,
-          },
-        },
-      },
-    });
+    return this.driveBusRelay.getRecentSparkFiles(status, Number(limit) || 50);
   }
 
   @Post('watcher/scan')
   @ApiOperation({ summary: 'Принудительно просканировать входящую директорию Sparks' })
   async scanIncomingDirectory() {
-    return this.driveWatcher.scanDirectory();
+    return this.driveBusRelay.triggerSparksScan();
   }
 
   @Post('watcher/test-spark')
@@ -380,7 +364,7 @@ export class IngestionController {
       tags?: string[];
     },
   ) {
-    return this.driveWatcher.createTestSparkFile(body);
+    return this.driveBusRelay.createTestSparkDocument(body);
   }
 }
 

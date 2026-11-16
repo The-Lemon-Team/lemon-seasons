@@ -3,6 +3,8 @@ import { BusDatabase } from './db.js';
 import { SseManager } from './sse.js';
 import type { UpstreamBusRelay } from './upstream-relay.js';
 import type { ModerationService } from './moderation.service.js';
+import type { LocalSparksWatcher } from './local-sparks-watcher.js';
+import type { GoogleDriveCloudWatcher } from './gdrive-watcher.js';
 
 export interface RouteContext {
   db: BusDatabase;
@@ -10,6 +12,8 @@ export interface RouteContext {
   apiKey?: string;
   upstreamRelay?: UpstreamBusRelay;
   moderationService?: ModerationService;
+  localWatcher?: LocalSparksWatcher;
+  gdriveWatcher?: GoogleDriveCloudWatcher;
 }
 
 export function sendJson(res: ServerResponse, status: number, body: any): void {

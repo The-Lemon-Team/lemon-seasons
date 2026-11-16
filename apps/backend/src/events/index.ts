@@ -1,4 +1,3 @@
-export * from './file-detected.event';
 export * from './note-published.event';
 export * from './events.types';
 export * from './subscription-registry';

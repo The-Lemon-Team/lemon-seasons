@@ -152,6 +152,7 @@ export interface PublishSparkInput {
   };
   privacyOverride?: 'public' | 'private';
   mtime?: Date;
+  fileSize?: number;
 }
 
 export interface ILemonBusTransport {

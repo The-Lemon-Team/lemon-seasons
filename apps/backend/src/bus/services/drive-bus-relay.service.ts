@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject, Optional, forwardRef } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Subscription } from 'rxjs';
 import * as fs from 'fs';
@@ -11,11 +11,13 @@ import {
   LemonBusEnvelope,
   LemonBusNotePayload,
   NoteOrigin,
+  resolveSparkFeedTarget,
 } from '@lenta/lemon-bus';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotesService } from '../../notes/notes.service';
 import { NotePublishedEvent } from '../../events';
 import { CreateNoteDto } from '../../notes/dto/create-note.dto';
+import { RelatedNotesResolverService } from '../../ingestion/services/related-notes-resolver.service';
 
 @Injectable()
 export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
@@ -32,6 +34,9 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notesService: NotesService,
+    @Optional()
+    @Inject(forwardRef(() => RelatedNotesResolverService))
+    private readonly relatedNotesResolver?: RelatedNotesResolverService,
   ) {
     this.deviceId =
       process.env.DEVICE_ID ||
@@ -311,12 +316,26 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
         .catch(() => null);
     }
 
+    const effectiveFeedSlug = payload.feedSlug || envelope.feedSlug || undefined;
+    let resolvedFeedId = payload.feedId || undefined;
+    if (!resolvedFeedId && effectiveFeedSlug) {
+      resolvedFeedId = await this.ensureFeedForPayload(effectiveFeedSlug, payload);
+    }
+
+    const folderList = this.buildFolderAssignments(payload.folderPath);
+
     const noteDto: CreateNoteDto = {
       title: payload.title || 'Untitled Note',
       description: contentDescription || undefined,
+      rawContent: payload.rawContent || undefined,
       type: (payload.type as any) || 'SINGLE',
-      status: (payload.status as any) || 'PUBLISHED',
-      privacy: payload.privacy === 'public' ? 'public' : 'private',
+      status: ((existing?.publicFeedId ? existing.status : payload.status) as any) || 'PUBLISHED',
+      privacy: existing?.publicFeedId
+        ? (existing.privacy as 'public' | 'private')
+        : payload.privacy === 'public'
+        ? 'public'
+        : 'private',
+      publicFeedId: existing?.publicFeedId || undefined,
       publishAt: payload.publishAt || undefined,
       folderPath: payload.folderPath || undefined,
       startDate: payload.startDate || envelope.timestamp,
@@ -328,11 +347,14 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       summary: payload.summary || undefined,
       author: payload.author || undefined,
       parentNoteId: payload.parentNoteId || undefined,
+      resonanceScore: payload.resonanceScore ?? undefined,
+      links: Array.isArray(payload.links) ? payload.links : undefined,
       icon: payload.icon || undefined,
       hashtags: rawTags,
-      folders: payload.folderPath ? [payload.folderPath] : undefined,
-      feedId: payload.feedId || undefined,
-      feedSlug: payload.feedSlug || envelope.feedSlug || undefined,
+      folders: folderList,
+      feedId: resolvedFeedId,
+      feedSlug: effectiveFeedSlug,
+      processingStatus: 'COMPLETED',
       metadata: {
         ...(payload.metadata || {}),
         origin: preservedOrigin,
@@ -346,16 +368,30 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
       },
     };
 
+    let savedNote: any;
     if (existing) {
-      await this.notesService.update(existing.id, noteDto);
+      savedNote = await this.notesService.update(existing.id, noteDto);
       this.logger.log(
         `🔄 [LemonBus:IN] Note "${noteDto.title}" updated (origin=${preservedOrigin})`,
       );
     } else {
-      await this.notesService.create(noteDto);
+      savedNote = await this.notesService.create(noteDto);
       this.logger.log(
         `✨ [LemonBus:IN] Note "${noteDto.title}" created (origin=${preservedOrigin})`,
       );
+    }
+
+    if (
+      savedNote?.id &&
+      this.relatedNotesResolver &&
+      Array.isArray(payload.metadata?.relatedNotes) &&
+      payload.metadata.relatedNotes.length > 0
+    ) {
+      await this.relatedNotesResolver.resolveNoteRelatedLinks(savedNote.id).catch((relErr: any) => {
+        this.logger.warn(
+          `⚠️ [LemonBus:IN] Не удалось разрезолвить связи для заметки ${savedNote.id}: ${relErr?.message}`,
+        );
+      });
     }
   }
 
@@ -408,6 +444,304 @@ export class DriveBusRelayService implements OnModuleInit, OnModuleDestroy {
   public async isFileAlreadyInBus(_filePath: string, fileHash?: string): Promise<boolean> {
     if (!fileHash) return false;
     return this.transport.hasContentHash(fileHash);
+  }
+
+  // ── 4. WATCHER COMPATIBILITY API (DELEGATED TO LEMON-BUS) ────────────────
+
+  public async getWatcherStatus() {
+    const busUrl = process.env.LEMON_BUS_URL?.replace(/\/+$/, '');
+    if (busUrl) {
+      try {
+        const res = await fetch(`${busUrl}/sparks/status`, {
+          headers: this.buildBusHeaders(),
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          return {
+            isWatching: Boolean(data.isWatching),
+            isStandby: false,
+            cloudMode: true,
+            watchedDir: data.watchedDir || busUrl,
+            filesProcessed: Number(data.filesProcessed ?? 0),
+            filesPending: Number(data.filesPending ?? 0),
+            filesFailed: Number(data.filesFailed ?? 0),
+          };
+        }
+      } catch {
+        // Fallback to local transport/DB counters below
+      }
+    }
+
+    const [transportStatus, processedNotes] = await Promise.all([
+      this.transport.getStatus().catch(() => null),
+      typeof (this.prisma.note as any)?.count === 'function'
+        ? this.prisma.note.count({ where: { sourceType: 'GOOGLE_DRIVE', deletedAt: null } }).catch(() => 0)
+        : Promise.resolve(0),
+    ]);
+
+    return {
+      isWatching: Boolean(transportStatus?.isWatching ?? this.watching),
+      isStandby: false,
+      cloudMode: true,
+      watchedDir: transportStatus?.busDir || this.busDir,
+      filesProcessed: processedNotes || transportStatus?.totalEventsCount || 0,
+      filesPending: 0,
+      filesFailed: 0,
+    };
+  }
+
+  public async getRecentSparkFiles(status?: string, limit = 50) {
+    const busUrl = process.env.LEMON_BUS_URL?.replace(/\/+$/, '');
+    if (busUrl && (!status || status === 'COMPLETED')) {
+      try {
+        const res = await fetch(`${busUrl}/sparks/list?limit=${limit}`, {
+          headers: this.buildBusHeaders(),
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          const docs: any[] = await res.json();
+          if (Array.isArray(docs) && docs.length > 0) {
+            return docs.map((d) => ({
+              id: d.id,
+              filePath: d.canonicalPath,
+              fileName: d.fileName,
+              fileHash: d.contentHash,
+              fileSize: null,
+              mtime: d.updatedAt,
+              status: 'COMPLETED',
+              errorMessage: null,
+              noteId: d.id,
+              createdAt: d.createdAt,
+              updatedAt: d.updatedAt,
+              note: {
+                id: d.id,
+                title: d.title,
+                type: 'SINGLE',
+                startDate: d.updatedAt,
+                processingStatus: 'COMPLETED',
+              },
+            }));
+          }
+        }
+      } catch {
+        // Fallback to DB query below
+      }
+    }
+
+    if (typeof (this.prisma.ingestionFile as any)?.findMany === 'function') {
+      const legacy = await this.prisma.ingestionFile.findMany({
+        where: status ? { status } : undefined,
+        orderBy: { updatedAt: 'desc' },
+        take: Number(limit),
+        include: {
+          note: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              startDate: true,
+              processingStatus: true,
+            },
+          },
+        },
+      });
+      if (legacy.length > 0) return legacy;
+    }
+
+    if (status && status !== 'COMPLETED') return [];
+
+    const notes = await this.prisma.note.findMany({
+      where: { sourceType: 'GOOGLE_DRIVE', deletedAt: null },
+      orderBy: { updatedAt: 'desc' },
+      take: Number(limit),
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        startDate: true,
+        processingStatus: true,
+        externalId: true,
+        createdAt: true,
+        updatedAt: true,
+        metadata: true,
+      },
+    });
+
+    return notes.map((n) => ({
+      id: n.id,
+      filePath: n.externalId || `${n.title}.md`,
+      fileName: n.externalId ? path.basename(n.externalId) : `${n.title}.md`,
+      fileHash: (n.metadata as any)?.fileHash || '',
+      fileSize: (n.metadata as any)?.fileSize || null,
+      mtime: n.updatedAt,
+      status: n.processingStatus || 'COMPLETED',
+      errorMessage: null,
+      noteId: n.id,
+      createdAt: n.createdAt,
+      updatedAt: n.updatedAt,
+      note: {
+        id: n.id,
+        title: n.title,
+        type: n.type,
+        startDate: n.startDate,
+        processingStatus: n.processingStatus,
+      },
+    }));
+  }
+
+  public async triggerSparksScan(): Promise<{ scanned: number }> {
+    let remoteScanned = 0;
+    const busUrl = process.env.LEMON_BUS_URL?.replace(/\/+$/, '');
+    if (busUrl) {
+      try {
+        const res = await fetch(`${busUrl}/sparks/scan`, {
+          method: 'POST',
+          headers: this.buildBusHeaders(),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          remoteScanned = Number(data?.scanned ?? 0);
+        }
+      } catch (err: any) {
+        this.logger.warn(`Remote LemonBus /sparks/scan failed: ${err?.message}`);
+      }
+    }
+
+    const catchUp = await this.runCatchUpSync().catch(() => ({ processed: 0, skipped: 0 }));
+    return { scanned: Math.max(remoteScanned, catchUp.processed) };
+  }
+
+  public async createTestSparkDocument(options?: {
+    title?: string;
+    summary?: string;
+    content?: string;
+    tags?: string[];
+  }): Promise<{ filePath: string; fileName: string }> {
+    const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `spark-demo-${dateStr}.md`;
+    const relativePath = `Spark/${fileName}`;
+
+    const title =
+      options?.title || `Gemini Spark: Инсайт от ${new Date().toLocaleDateString('ru-RU')}`;
+    const summary =
+      options?.summary || 'Тестовый инсайт Gemini Spark для проверки конвейера LemonBus.';
+    const tags = options?.tags || ['gemini-spark', 'auto-ingest', 'test'];
+
+    const rawMarkdown = `---
+title: "${title}"
+start_date: "${new Date().toISOString()}"
+type: "SINGLE"
+tags:
+${tags.map((t) => `  - ${t}`).join('\n')}
+icon: "⚡"
+summary: "${summary}"
+---
+
+# ${title}
+
+${options?.content || 'Автоматически сгенерированный тестовый документ, отправленный напрямую через шину **LemonBus**.'}
+
+- Время генерации: \`${new Date().toISOString()}\`
+- Источник: \`${fileName}\`
+`;
+
+    await this.publishSparkDocument({
+      relativePath,
+      rawMarkdown,
+      origin: 'SUPABASE_SPARK',
+    });
+
+    return { filePath: relativePath, fileName };
+  }
+
+  private buildFolderAssignments(folderPath?: string | null): string[] | undefined {
+    if (!folderPath) return undefined;
+    const folderList = [folderPath];
+    const parts = folderPath.split('/').filter(Boolean);
+    if (parts[0]?.toLowerCase() === 'spark' && parts.length > 2) {
+      folderList.push(parts.slice(0, 2).join('/'));
+    }
+    return folderList;
+  }
+
+  private async ensureFeedForPayload(
+    feedSlug: string,
+    payload: LemonBusNotePayload,
+  ): Promise<string | undefined> {
+    if (!this.prisma.feed?.findUnique) return undefined;
+
+    const folderPath = payload.folderPath || 'Spark';
+    const feedMeta = payload.metadata || {};
+    const fallbackTarget = resolveSparkFeedTarget(folderPath);
+    const targetTitle = feedMeta.feedTitle || fallbackTarget.title || feedSlug;
+    const targetDesc = feedMeta.feedDescription || fallbackTarget.description || null;
+
+    let feed = await this.prisma.feed.findUnique({ where: { slug: feedSlug } });
+    if (!feed) {
+      try {
+        feed = await this.prisma.feed.create({
+          data: {
+            slug: feedSlug,
+            title: targetTitle,
+            description: targetDesc,
+            folderPaths: [folderPath],
+            privacy: 'public',
+          },
+        });
+        this.logger.log(`📢 [LemonBus:IN] Автоматически создана лента: "${targetTitle}" [${feedSlug}]`);
+      } catch {
+        feed = await this.prisma.feed.findUnique({ where: { slug: feedSlug } });
+      }
+    } else if (folderPath && (!feed.folderPaths || !feed.folderPaths.includes(folderPath))) {
+      feed = await this.prisma.feed
+        .update({
+          where: { id: feed.id },
+          data: {
+            folderPaths: Array.from(new Set([...(feed.folderPaths || []), folderPath])),
+          },
+        })
+        .catch(() => feed);
+    }
+
+    const parentSlug = feedMeta.parentFeedSlug || fallbackTarget.parentFeedSlug;
+    if (parentSlug) {
+      const parentFeed = await this.prisma.feed.findUnique({ where: { slug: parentSlug } });
+      const parentBasePath = parentSlug === 'spark-changelogsfeed' ? 'Spark/changelogsfeed' : 'Spark/notebooklmai';
+      if (!parentFeed) {
+        await this.prisma.feed
+          .create({
+            data: {
+              slug: parentSlug,
+              title: feedMeta.parentFeedTitle || fallbackTarget.parentFeedTitle || parentSlug,
+              description: feedMeta.parentFeedDescription || fallbackTarget.parentFeedDescription || null,
+              folderPaths: Array.from(new Set([parentBasePath, folderPath])),
+              privacy: 'public',
+            },
+          })
+          .catch(() => {});
+      } else if (folderPath && !parentFeed.folderPaths.includes(folderPath)) {
+        await this.prisma.feed
+          .update({
+            where: { id: parentFeed.id },
+            data: {
+              folderPaths: Array.from(new Set([...parentFeed.folderPaths, folderPath, parentBasePath])),
+            },
+          })
+          .catch(() => {});
+      }
+    }
+
+    return feed?.id;
+  }
+
+  private buildBusHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { 'x-device-id': this.deviceId };
+    if (process.env.LEMON_BUS_API_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.LEMON_BUS_API_KEY}`;
+    }
+    return headers;
   }
 
   private ensureDirectories(): void {

@@ -11,12 +11,9 @@ import { AiMediaLibraryService } from './services/ai-media-library.service';
 import { TmdbService } from './services/tmdb.service';
 import { HolidaysEngineService } from './services/holidays-engine.service';
 import { PoliticalEngineService } from './services/political-engine.service';
-import { SparksParserService } from './services/sparks-parser.service';
 import { RelatedNotesResolverService } from './services/related-notes-resolver.service';
-import { DriveWatcherService } from './services/drive-watcher.service';
 import { WikiEngineService } from './services/wiki-engine.service';
 import { NewsVerificationService } from './services/news-verification.service';
-import { SparksIngestListener } from './listeners/sparks-ingest.listener';
 
 @Module({
   imports: [PrismaModule, NotesModule, StorageModule, forwardRef(() => BusModule)],
@@ -29,12 +26,9 @@ import { SparksIngestListener } from './listeners/sparks-ingest.listener';
     TmdbService,
     HolidaysEngineService,
     PoliticalEngineService,
-    SparksParserService,
     NewsVerificationService,
     RelatedNotesResolverService,
-    DriveWatcherService,
     WikiEngineService,
-    SparksIngestListener,
   ],
   exports: [
     IngestionService,
@@ -44,12 +38,9 @@ import { SparksIngestListener } from './listeners/sparks-ingest.listener';
     TmdbService,
     HolidaysEngineService,
     PoliticalEngineService,
-    SparksParserService,
     NewsVerificationService,
     RelatedNotesResolverService,
-    DriveWatcherService,
     WikiEngineService,
-    SparksIngestListener,
   ],
 })
 export class IngestionModule {}

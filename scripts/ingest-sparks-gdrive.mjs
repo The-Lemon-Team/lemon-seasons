@@ -15,9 +15,8 @@ const prismaPath = require.resolve('@prisma/client', { paths: [path.join(process
 const { PrismaClient } = require(prismaPath);
 const prisma = new PrismaClient();
 
-const sparksParserPath = path.join(process.cwd(), 'apps/backend/dist/src/ingestion/services/sparks-parser.service.js');
-const { SparksParserService } = require(sparksParserPath);
-const parser = new SparksParserService();
+const lemonBusPath = path.join(process.cwd(), 'packages/lemon-bus/dist/index.mjs');
+const { processSparkDocument } = await import(new URL(`file://${lemonBusPath.replace(/\\/g, '/')}`).href);
 
 const sparksDir = process.env.SPARKS_INCOMING_DIR || 'C:/Users/Ilege/Мой диск/spark';
 
@@ -131,25 +130,28 @@ async function run() {
     const parts = rel.split(path.sep);
     const subfolder = parts.length > 1 ? parts[0] : null;
 
-    const parsed = parser.parseSparkFile(filePath, content, {
-      mtime: stats.mtime,
-      size: stats.size,
+    const processed = processSparkDocument({
+      virtualPath: rel,
+      contentMarkdown: content,
+      mtime: stats.mtime.toISOString(),
+      fileSize: stats.size,
+      origin: 'GDRIVE_SPARK',
     });
 
     const feed = await resolveFeed(subfolder, sparksDir);
     feedStats[feed.title] = (feedStats[feed.title] || 0) + 1;
+
+    const dto = processed.notePayload;
 
     // Check if Note already exists by externalId (filePath) or title
     let existingNote = await prisma.note.findFirst({
       where: {
         OR: [
           { externalId: filePath },
-          { title: parsed.noteDto.title },
+          { title: dto.title },
         ],
       },
     });
-
-    const dto = parsed.noteDto;
     const noteData = {
       title: dto.title,
       description: dto.description,
@@ -162,8 +164,8 @@ async function run() {
       rawContent: dto.rawContent,
       summary: dto.summary,
       icon: dto.icon,
-      author: dto.author || dto.curator,
-      curator: dto.author || dto.curator,
+      author: dto.author || processed.frontmatter?.curator,
+      curator: dto.author || processed.frontmatter?.curator,
       resonanceScore: dto.resonanceScore ?? null,
       metadata: dto.metadata,
       processingStatus: 'COMPLETED',
@@ -179,13 +181,13 @@ async function run() {
       });
       noteId = updated.id;
       updatedCount++;
-      console.log(`🔄 [UPDATED] "${dto.title.slice(0, 50)}..." [${parsed.timeSlot}]`);
+      console.log(`🔄 [UPDATED] "${dto.title.slice(0, 50)}..." [${processed.timeSlot}]`);
     } else {
       const created = await prisma.note.create({
         data: {
           ...noteData,
           hashtags: {
-            connectOrCreate: dto.hashtags.map((h) => ({
+            connectOrCreate: (dto.hashtags || []).map((h) => ({
               where: { name: h },
               create: { name: h },
             })),
@@ -194,7 +196,7 @@ async function run() {
       });
       noteId = created.id;
       insertedCount++;
-      console.log(`✨ [INSERTED] "${dto.title.slice(0, 50)}..." [${parsed.timeSlot}] (${dto.icon})`);
+      console.log(`✨ [INSERTED] "${dto.title.slice(0, 50)}..." [${processed.timeSlot}] (${dto.icon})`);
     }
 
     // Upsert IngestionFile

@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
 import { GDriveStorageService } from './gdrive-storage.service';
 import { MergeService } from './merge.service';
-import { DriveWatcherService } from '../ingestion/services/drive-watcher.service';
 import { DriveBusRelayService } from '../bus/services/drive-bus-relay.service';
 import {
   SyncStatusResponse,
@@ -24,9 +23,6 @@ export class SyncOrchestratorService {
     private sessionService: SessionService,
     private gdriveStorage: GDriveStorageService,
     private mergeService: MergeService,
-    @Optional()
-    @Inject(forwardRef(() => DriveWatcherService))
-    private driveWatcher?: DriveWatcherService,
     @Optional()
     @Inject(forwardRef(() => DriveBusRelayService))
     private driveBusRelay?: DriveBusRelayService,
@@ -188,17 +184,10 @@ export class SyncOrchestratorService {
       }
     }
 
-    // Also scan incoming GDrive Sparks directory and catch up bus events
-    if (this.driveWatcher) {
-      try {
-        await this.driveWatcher.scanDirectory();
-      } catch (scanErr: any) {
-        this.logger.warn(`DriveWatcher scan during pull failed: ${scanErr.message}`);
-      }
-    }
-
+    // Catch up bus events (including Sparks handled by lemon-bus)
     if (this.driveBusRelay) {
       try {
+        await this.driveBusRelay.triggerSparksScan().catch(() => null);
         await this.driveBusRelay.runCatchUpSync();
       } catch (busErr: any) {
         this.logger.warn(`DriveBusRelay catch-up during pull failed: ${busErr.message}`);

@@ -3,6 +3,7 @@ import { BusDatabase } from './db.js';
 import { SseManager } from './sse.js';
 import { handleRequest, RouteContext } from './routes.js';
 import { GoogleDriveCloudWatcher } from './gdrive-watcher.js';
+import { LocalSparksWatcher } from './local-sparks-watcher.js';
 import { UpstreamBusRelay } from './upstream-relay.js';
 import { ModerationDb } from './moderation.db.js';
 import { ModerationService } from './moderation.service.js';
@@ -14,6 +15,7 @@ export {
   handleRequest,
   RouteContext,
   GoogleDriveCloudWatcher,
+  LocalSparksWatcher,
   UpstreamBusRelay,
   ModerationDb,
   ModerationService,
@@ -30,6 +32,8 @@ export interface ServerOptions {
   gdriveServiceAccount?: string;
   gdriveRootFolderId?: string;
   gdrivePollIntervalMs?: number;
+  localSparksDir?: string;
+  watchLocalSparks?: boolean;
 }
 
 export function startServer(options: ServerOptions = {}): http.Server {
@@ -111,11 +115,40 @@ export function startServer(options: ServerOptions = {}): http.Server {
           options.gdrivePollIntervalMs ??
           parseInt(process.env.GOOGLE_DRIVE_POLL_INTERVAL_MS || '30000', 10),
       });
+      ctx.gdriveWatcher = gdriveWatcher;
       gdriveWatcher.start().catch((err) => {
         console.error('[LemonBus] GoogleDriveCloudWatcher startup error:', err?.message);
       });
     } catch (err: any) {
       console.error('[LemonBus] Failed to initialize GoogleDriveCloudWatcher:', err?.message);
+    }
+  }
+
+  let localWatcher: LocalSparksWatcher | null = null;
+  const shouldWatchLocal =
+    options.watchLocalSparks === true ||
+    (options.watchLocalSparks !== false &&
+      process.env.ENABLE_LOCAL_FS_WATCHER !== 'false' &&
+      Boolean(
+        options.localSparksDir ||
+          process.env.SPARKS_INCOMING_DIR ||
+          process.env.GDRIVE_SYNC_FOLDER,
+      ));
+
+  if (shouldWatchLocal) {
+    try {
+      localWatcher = new LocalSparksWatcher({
+        watchedDir: options.localSparksDir,
+        db,
+        sse,
+        upstreamRelay: upstreamRelay || undefined,
+      });
+      ctx.localWatcher = localWatcher;
+      localWatcher.start().catch((err) => {
+        console.error('[LemonBus] LocalSparksWatcher startup error:', err?.message);
+      });
+    } catch (err: any) {
+      console.error('[LemonBus] Failed to initialize LocalSparksWatcher:', err?.message);
     }
   }
 
@@ -156,6 +189,9 @@ export function startServer(options: ServerOptions = {}): http.Server {
     }
     if (gdriveWatcher) {
       gdriveWatcher.stop().catch(() => {});
+    }
+    if (localWatcher) {
+      localWatcher.stop().catch(() => {});
     }
     clearInterval(purgeInterval);
     sse.destroy();

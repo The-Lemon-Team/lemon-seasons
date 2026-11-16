@@ -3,7 +3,14 @@ import { URL } from 'node:url';
 import { RouteContext, sendJson, isPublicPath } from './routes.common.js';
 import { handleModerationRequest } from './moderation.routes.js';
 import { handleSseStream, handlePublishEvent, handleQueryEvents } from './event.routes.js';
-import { handleUpsertSpark, handleGetSpark } from './spark.routes.js';
+import {
+  handleUpsertSpark,
+  handleGetSpark,
+  handleSparkStatus,
+  handleListSparks,
+  handleScanSparks,
+  handleCreateTestSpark,
+} from './spark.routes.js';
 
 // Re-export common types and utilities for backward compatibility
 export { RouteContext, sendJson };
@@ -100,9 +107,29 @@ export async function handleRequest(
     return;
   }
 
-  // 5. Ingestion of spark documents
-  if (pathname === '/ingestion/sparks' && method === 'POST') {
+  // 5. Ingestion & status of spark documents
+  if ((pathname === '/ingestion/sparks' || pathname === '/sparks') && method === 'POST') {
     await handleUpsertSpark(req, res, ctx);
+    return;
+  }
+
+  if ((pathname === '/sparks/status' || pathname === '/watcher/status') && method === 'GET') {
+    handleSparkStatus(res, ctx);
+    return;
+  }
+
+  if (pathname === '/sparks/list' && method === 'GET') {
+    handleListSparks(res, parsedUrl, ctx);
+    return;
+  }
+
+  if (pathname === '/sparks/scan' && method === 'POST') {
+    await handleScanSparks(res, ctx);
+    return;
+  }
+
+  if (pathname === '/sparks/test' && method === 'POST') {
+    await handleCreateTestSpark(req, res, ctx);
     return;
   }
 
