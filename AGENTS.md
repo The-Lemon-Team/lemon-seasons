@@ -43,8 +43,8 @@
 - **Backdrop Click-to-Close**: Modal backdrop overlays must support closing on click (`onClick={onClose}` on the fixed backdrop, with `onClick={(e) => e.stopPropagation()}` on the dialog card container).
 - **Nested Modal Precedence**: When nested/child modals or drawers open on top of another modal, child modals must prevent closing the parent modal (via `e.stopPropagation()` or `disableEscClose` props).
 
-### 8. Obsidian Plugin Status (Temporary Freeze / Paused)
-- **Active development paused**: Work on the Obsidian plugin (`packages/obsidian-plugin`) is currently **frozen / paused**. Agents must not proactively edit, refactor, or run tests against `packages/obsidian-plugin` unless the user explicitly asks for changes in that package.
+### 8. Obsidian Integration Status (Deferred / Оставляем на потом)
+- **All Obsidian work deferred:** See [`.agents/rules/obsidian_deferred.md`](./.agents/rules/obsidian_deferred.md). Any work on `packages/obsidian-plugin`, `packages/obsidian-containers`, `container-sync-server` (`:3031`), or Obsidian-specific sync/container features is **temporarily skipped and left for later**. Agents must not proactively edit, refactor, start, or run tests against Obsidian packages/services unless the user explicitly asks for changes to Obsidian.
 
 ### 9. Unified Binary Privacy Architecture
 - **Strictly binary privacy (`'public' | 'private'`)**: Across all entities (Notes, Folders, Feeds, Containers), privacy is strictly binary: `'public'` vs `'private'`.

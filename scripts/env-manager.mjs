@@ -24,7 +24,7 @@ const PROD_PORTS = [
 
 const INFRA_PORTS = [
   { port: 5434, name: 'PostgreSQL 16 (shared DB)' },
-  { port: 3000, name: 'Obsidian Sync Server' },
+  { port: 3031, name: 'Obsidian Sync Server' },
 ];
 
 const APP_CONTAINERS = ['backend', 'gateway', 'feed-app', 'calendar-app', 'admin-cms'];
@@ -101,7 +101,23 @@ function stopProdAppContainers() {
   }
 }
 
+function isRemoteDatabaseConfigured() {
+  const envPath = path.join(ROOT_DIR, '.env');
+  if (!fs.existsSync(envPath)) return false;
+  const content = fs.readFileSync(envPath, 'utf-8');
+  const match = content.match(/^DATABASE_URL\s*=\s*"?([^"\r\n]+)"?/m);
+  if (!match) return false;
+  const url = match[1];
+  return !/@(localhost|127\.0\.0\.1|postgres)(:|\/|$)/i.test(url);
+}
+
 function ensureInfraContainers() {
+  if (isRemoteDatabaseConfigured()) {
+    console.log('🌐 Обнаружен удалённый DATABASE_URL в .env — локальный postgres пропущен.');
+    console.log('🔄 Запуск container-sync-server...');
+    runCmd('docker compose up -d container-sync-server');
+    return;
+  }
   console.log('🐘 Запуск инфраструктурных контейнеров (postgres, container-sync-server)...');
   runCmd(`docker compose up -d ${INFRA_CONTAINERS.join(' ')}`);
 }

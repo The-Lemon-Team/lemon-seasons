@@ -45,6 +45,8 @@ COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 
+RUN mkdir -p /app/apps/backend/uploads
+
 WORKDIR /app/apps/backend
 
 EXPOSE 8080

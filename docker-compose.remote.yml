@@ -1,0 +1,133 @@
+name: lemon-seasons
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lemon-seasons-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lemon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemon_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-lemon_calendarium}
+    ports:
+      - "${REMOTE_POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - lemon_seasons_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lemon} -d ${POSTGRES_DB:-lemon_calendarium}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: lemon-seasons-backend
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public&connection_limit=10&pool_timeout=20
+      PORT: 3001
+      NODE_ENV: production
+      DEVICE_ID: ${REMOTE_DEVICE_ID:-remote-stand}
+      INSTANCE_ID: ${INSTANCE_ID:-7fd9695f-7745-4255-9a48-b503a04747ac}
+      ENABLE_LOCAL_FS_WATCHER: "false"
+      LEMON_BUS_DRIVER: ${REMOTE_LEMON_BUS_DRIVER:-none}
+      LEMON_BUS_URL: ${REMOTE_LEMON_BUS_URL:-}
+      CORS_ORIGIN: "*"
+      HTTP_PROXY: ${REMOTE_HTTP_PROXY:-}
+      HTTPS_PROXY: ${REMOTE_HTTPS_PROXY:-}
+      NO_PROXY: "localhost,127.0.0.1,postgres"
+    command: ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - lemon_seasons_uploads:/app/apps/backend/uploads
+
+  feed-app:
+    build:
+      context: .
+      dockerfile: apps/feed-app/Dockerfile
+    container_name: lemon-seasons-feed
+    restart: unless-stopped
+    ports:
+      - "5175:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  calendar-app:
+    build:
+      context: .
+      dockerfile: apps/calendar-app/Dockerfile
+    container_name: lemon-seasons-calendar
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  admin-cms:
+    build:
+      context: .
+      dockerfile: apps/admin-cms/Dockerfile
+    container_name: lemon-seasons-admin
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: lemon-seasons-gateway
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
+      - feed-app
+      - calendar-app
+      - admin-cms
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+volumes:
+  lemon_seasons_pgdata:
+  lemon_seasons_uploads:

@@ -136,7 +136,7 @@ services:
     container_name: obsidian-sync-server
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${OBSIDIAN_SYNC_PORT:-3031}:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
