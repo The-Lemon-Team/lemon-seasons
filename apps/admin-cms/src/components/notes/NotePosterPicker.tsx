@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { message, Tooltip } from 'antd';
 import { Search, Image as ImageIcon, Upload, Star, X, Plus, Layers, Loader2 } from 'lucide-react';
 import { NoteImage, PendingPosterItem, WebImageResult } from '@lenta/shared';
-import { notesApi } from '../../api/client';
+import { API_BASE_URL, notesApi } from '../../api/client';
 import { WebPosterSearchModal } from './WebPosterSearchModal';
 
 export interface NotePosterPickerProps {
@@ -29,7 +29,7 @@ export const NotePosterPicker: React.FC<NotePosterPickerProps> = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
 
   // Total count
   const allCount = isExistingNote ? existingImages.length : pendingPosters.length;

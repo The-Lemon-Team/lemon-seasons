@@ -1,5 +1,6 @@
 import React from 'react';
 import { Popconfirm } from 'antd';
+import { API_BASE_URL } from '../../../api/client';
 import { NoteTypeBadge } from '../../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../../components/HashtagBadge';
 import { Note } from '../../../types';
@@ -38,7 +39,7 @@ export const NoteTableRow: React.FC<NoteTableRowProps> = ({
   const mainImage = hasImages
     ? note.images?.find((img) => img.isMain) || note.images?.[0]
     : null;
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
   const thumbUrl = mainImage
     ? mainImage.thumbnailUrl
       ? mainImage.thumbnailUrl.startsWith('http')

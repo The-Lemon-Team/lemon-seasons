@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, FileText, Rss, Radio, CalendarRange, Sparkles, RefreshCw } from 'lucide-react';
+import { resolvePeerAppUrl } from '@lenta/shared';
 import { AdminTranslations } from '../../i18n';
 
 export type AdminStringKey = {
@@ -16,9 +17,10 @@ export interface SidebarNavItem {
 }
 
 export const EXTERNAL_APP_URLS = {
-  defiChat: import.meta.env.VITE_DEFI_CHAT_URL || 'http://localhost:3000',
-  calendarApp: import.meta.env.VITE_CALENDAR_APP_URL || 'http://localhost:5174',
-  feedApp: import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5180',
+  defiChat: resolvePeerAppUrl(import.meta.env.VITE_DEFI_CHAT_URL, 3000, 3000, import.meta.env.PROD),
+  calendarApp: resolvePeerAppUrl(import.meta.env.VITE_CALENDAR_APP_URL, 5174, 5174, import.meta.env.PROD),
+  feedApp: resolvePeerAppUrl(import.meta.env.VITE_FEED_APP_URL, 5175, 5180, import.meta.env.PROD),
+  apiDocs: `${resolvePeerAppUrl(import.meta.env.VITE_API_URL, 3001, 3002, import.meta.env.PROD)}/api/docs`,
 };
 
 export const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [

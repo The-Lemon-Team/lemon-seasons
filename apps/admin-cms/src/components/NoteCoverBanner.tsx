@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Image as ImageIcon } from 'lucide-react';
 import { NoteImage } from '../types';
+import { API_BASE_URL } from '../api/client';
 
 export interface NoteCoverBannerProps {
   mainImage?: NoteImage | null;
@@ -13,7 +14,7 @@ export const NoteCoverBanner: React.FC<NoteCoverBannerProps> = ({
   title,
   onOpenStudio,
 }) => {
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
 
   return (
     <div className="rounded-xl border border-white/10 bg-surface-container overflow-hidden">

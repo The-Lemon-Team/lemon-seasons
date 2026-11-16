@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, message, Spin } from 'antd';
 import { extractCleanSnippet } from '@lenta/shared';
+import { EXTERNAL_APP_URLS } from './sidebar/sidebar.constants';
 import { useNote, useFeeds, useUpdateNote } from '../api/queries';
 import { AppSelect } from './common/AppSelect';
 import {
@@ -190,22 +191,22 @@ export const PublishToStagingModal: React.FC<PublishToStagingModalProps> = ({
 
               <div className="flex items-center gap-2 text-[11px] font-mono">
                 <a
-                  href="http://localhost:5180?appMode=staging"
+                  href={`${EXTERNAL_APP_URLS.feedApp}?appMode=staging`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-amber-400 hover:underline"
                 >
-                  <span>Стейджинг :5180</span>
+                  <span>Стейджинг</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
                 <span className="text-outline/40">•</span>
                 <a
-                  href="http://localhost:5176"
+                  href={EXTERNAL_APP_URLS.feedApp}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-emerald-400 hover:underline"
                 >
-                  <span>Паблик :5176</span>
+                  <span>Паблик</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>

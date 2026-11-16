@@ -12,7 +12,7 @@ import {
   Folder,
   Calendar,
 } from 'lucide-react';
-import { GDriveUpdateItem, SyncStatusResponse } from '@lenta/shared';
+import { GDriveUpdateItem, SyncStatusResponse, resolvePeerAppUrl } from '@lenta/shared';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ru';
@@ -242,7 +242,7 @@ export const GDriveUpdatesPopover: React.FC<GDriveUpdatesPopoverProps> = ({
           </button>
 
           <a
-            href="http://localhost:5173"
+            href={resolvePeerAppUrl(import.meta.env.VITE_ADMIN_CMS_URL, 5173, 5173, import.meta.env.PROD)}
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#e2e2e2] border border-[#242828] text-xs transition-colors"

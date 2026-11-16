@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarViewMode } from '@lenta/shared';
+import { CalendarViewMode, resolvePeerAppUrl } from '@lenta/shared';
 import {
   Home,
   Calendar,
@@ -200,7 +200,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({
         {isAdmin && (
           <div className="mt-2 pt-2 border-t border-[#2d3030]">
             <a
-              href="http://localhost:5173"
+              href={resolvePeerAppUrl(import.meta.env.VITE_ADMIN_CMS_URL, 5173, 5173, import.meta.env.PROD)}
               target="_blank"
               rel="noreferrer"
               className="px-3 py-2 flex items-center justify-between bg-[#ef4444]/15 border border-[#ef4444]/40 hover:bg-[#ef4444]/25 text-[#fca5a5] transition-all font-mono text-xs rounded"

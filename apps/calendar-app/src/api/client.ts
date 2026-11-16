@@ -26,30 +26,13 @@ import {
   AppRuntimeMode,
   GenerateNoteAiInput,
   GeneratedNoteEnrichment,
+  resolveClientApiBaseUrl,
 } from '@lenta/shared';
 
-const DOCKER_PROD_PORTS = new Set(['5173', '5174', '5175', '8080', '80', '443', '']);
-
-function resolveApiBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    const { hostname, port } = window.location;
-    if (
-      (hostname !== 'localhost' && hostname !== '127.0.0.1') ||
-      DOCKER_PROD_PORTS.has(port)
-    ) {
-      return '';
-    }
-  }
-  if (import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== '') {
-    if (import.meta.env.PROD && import.meta.env.VITE_API_URL.includes(':3002')) {
-      return '';
-    }
-    return import.meta.env.VITE_API_URL;
-  }
-  return import.meta.env.PROD ? '' : 'http://localhost:3002';
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+export const API_BASE_URL = resolveClientApiBaseUrl(
+  import.meta.env.VITE_API_URL,
+  import.meta.env.PROD,
+);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

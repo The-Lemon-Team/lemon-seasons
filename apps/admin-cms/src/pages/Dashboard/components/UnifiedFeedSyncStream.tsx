@@ -9,6 +9,7 @@ import {
   ChevronRight,
   RefreshCw,
 } from 'lucide-react';
+import { API_BASE_URL } from '../../../api/client';
 import { NoteTypeBadge } from '../../../components/NoteTypeBadge';
 import { HashtagBadge } from '../../../components/HashtagBadge';
 import { getSparkFolderTheme } from '../../../utils/sparkThemeUtils';
@@ -99,7 +100,7 @@ export const UnifiedFeedSyncStream: React.FC<UnifiedFeedSyncStreamProps> = ({
     });
   }, [streamItems, activeFolderFilter, searchQuery]);
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
 
   return (
     <div className="flex-1 min-w-0 w-full h-[640px] flex flex-col platform-tile p-3 space-y-2 overflow-hidden shadow-sm">

@@ -3,7 +3,7 @@ import { message, Popconfirm, Modal, Tooltip, Spin } from 'antd';
 import { Sparkles, Cpu, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NoteImage, WebImageResult } from '../types';
-import { notesApi } from '../api/client';
+import { API_BASE_URL, notesApi } from '../api/client';
 import {
   useUploadNoteImages,
   useSetMainNoteImage,
@@ -157,7 +157,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({
     }
   };
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
 
   const handleCopyMarkdown = (img: NoteImage) => {
     const fullUrl = img.url.startsWith('http') ? img.url : `${apiBase}${img.url}`;

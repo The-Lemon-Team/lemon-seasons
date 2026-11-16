@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ExternalLink, RefreshCw, Radio, Columns, Maximize2, ShieldCheck } from 'lucide-react';
-import { MicrofrontendMessage, MicrofrontendAuthSyncPayload, AppRuntimeMode } from '@lenta/shared';
+import { MicrofrontendMessage, MicrofrontendAuthSyncPayload, AppRuntimeMode, resolvePeerAppUrl } from '@lenta/shared';
 import { useAuth } from '../../context/AuthContext';
 import { useUserKeys } from '../../context/UserKeysContext';
 
@@ -65,8 +65,7 @@ export const FeedAppMicrofrontend: React.FC<FeedAppMicrofrontendProps> = ({
   const { user, token } = useAuth();
   const { keys } = useUserKeys();
 
-  // In local browser, feed-app runs on 5180 (previously 5175)
-  const feedAppBase = import.meta.env.VITE_FEED_APP_URL || 'http://localhost:5180';
+  const feedAppBase = resolvePeerAppUrl(import.meta.env.VITE_FEED_APP_URL, 5175, 5180, import.meta.env.PROD);
 
   // Last route synchronized between iframe and host to prevent redundant re-renders or infinite loops
   const lastReportedRouteRef = useRef<string>(initialRoute);

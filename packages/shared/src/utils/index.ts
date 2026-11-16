@@ -4,5 +4,6 @@ export * from './routing';
 export * from './date';
 export * from './i18n';
 export * from './container-title';
+export * from './service-urls';
 
 

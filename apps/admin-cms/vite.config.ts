@@ -15,6 +15,21 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    proxy: {
+      '/_api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/_api/, ''),
+      },
+      '/uploads': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 600,

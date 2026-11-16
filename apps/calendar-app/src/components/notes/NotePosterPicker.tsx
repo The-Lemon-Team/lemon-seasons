@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Search, Image as ImageIcon, Upload, Star, X, Plus, Layers } from 'lucide-react';
 import { NoteImage, PendingPosterItem, WebImageResult } from '@lenta/shared';
-import { calendarApi } from '../../api/client';
+import { API_BASE_URL, calendarApi } from '../../api/client';
 import { WebPosterSearchModal } from './WebPosterSearchModal';
 
 export interface NotePosterPickerProps {
@@ -29,7 +29,7 @@ export const NotePosterPicker: React.FC<NotePosterPickerProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+  const apiBase = API_BASE_URL;
   const allCount = isExistingNote ? existingImages.length : pendingPosters.length;
 
   const showFeedback = (msg: string) => {

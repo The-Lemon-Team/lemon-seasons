@@ -191,7 +191,7 @@ export const SidebarExpanded: React.FC<AppSidebarProps> = ({
 
         {/* API Docs Link */}
         <a
-          href="http://localhost:3001/api/docs"
+          href={EXTERNAL_APP_URLS.apiDocs}
           target="_blank"
           rel="noreferrer"
           className="px-2 py-0.5 h-5.5 flex items-center justify-between text-on-surface-variant hover:text-on-surface transition-colors font-mono text-[10px] rounded-lg"

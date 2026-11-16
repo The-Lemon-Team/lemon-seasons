@@ -6,6 +6,7 @@ import {
   NoteType,
   RelatedNoteItem,
   cleanNoteMarkdown,
+  resolvePeerAppUrl,
 } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -270,7 +271,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
 
                 {/* Edit in Admin CMS */}
                 <a
-                  href={`http://localhost:5173/notes/${current.id}`}
+                  href={`${resolvePeerAppUrl(import.meta.env.VITE_ADMIN_CMS_URL, 5173, 5173, import.meta.env.PROD)}/notes/${current.id}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded bg-[#121414] border border-[#242828] text-xs font-mono text-[#93927e] hover:text-[#c9c7b2] transition-colors"

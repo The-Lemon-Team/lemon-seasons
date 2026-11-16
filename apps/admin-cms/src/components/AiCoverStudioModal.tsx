@@ -8,7 +8,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { useGenerateAiBatch, useAttachCoverToNote } from '../api/queries';
-import { AiMediaAsset } from '../api/client';
+import { API_BASE_URL, AiMediaAsset } from '../api/client';
 import { CoverStudioRemixModal } from './cover-studio/CoverStudioRemixModal';
 import { CoverStudioLibraryTab } from './cover-studio/CoverStudioLibraryTab';
 import { CoverStudioItToolkit } from './cover-studio/CoverStudioItToolkit';
@@ -42,7 +42,7 @@ export const AiCoverStudioModal: React.FC<AiCoverStudioModalProps> = ({
   onCoverSelected,
   onInsertMarkdown,
 }) => {
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
 
   const [activeTab, setActiveTab] = useState<'generate' | 'library'>('generate');
   const [prompt, setPrompt] = useState(initialTitle);

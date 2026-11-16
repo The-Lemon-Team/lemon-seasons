@@ -18,6 +18,7 @@ import {
   Share2,
   X,
 } from 'lucide-react';
+import { API_BASE_URL } from '../api/client';
 import { useNote, useDeleteNote } from '../api/queries';
 import { NoteTypeBadge } from './NoteTypeBadge';
 import { HashtagBadge } from './HashtagBadge';
@@ -67,7 +68,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 
   if (!open) return null;
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const apiBase = API_BASE_URL;
   const getFullUrl = (url?: string | null) => {
     if (!url) return '';
     return url.startsWith('http') ? url : `${apiBase}${url}`;

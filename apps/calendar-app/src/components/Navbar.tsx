@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarViewMode } from '@lenta/shared';
+import { CalendarViewMode, resolvePeerAppUrl } from '@lenta/shared';
 import {
   Search,
   Globe,
@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Admin CMS Direct Launcher (Admin Role Only) */}
         {isAdmin && (
           <a
-            href="http://localhost:5173"
+            href={resolvePeerAppUrl(import.meta.env.VITE_ADMIN_CMS_URL, 5173, 5173, import.meta.env.PROD)}
             target="_blank"
             rel="noreferrer"
             className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#ef4444]/15 border border-[#ef4444]/60 text-[#fca5a5] hover:bg-[#ef4444]/25 text-xs font-mono text-semibold transition-all shadow-sm"
