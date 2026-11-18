@@ -44,6 +44,8 @@
     "feed:dev": "pnpm --filter @lenta/feed-app run dev",
     "feed:public:dev": "pnpm --filter @lenta/feed-app run dev:public",
     "feed:build": "pnpm --filter @lenta/feed-app run build",
+    "watchers:dev": "pnpm --filter @lenta/feed-watchers run dev",
+    "watchers:build": "pnpm --filter @lenta/feed-watchers run build",
     "shared:build": "pnpm --filter @lenta/shared run build",
     "plugin:build": "pnpm --filter @lemon/obsidian-lenta-plugin run build",
     "plugin:dev": "pnpm --filter @lemon/obsidian-lenta-plugin run dev",

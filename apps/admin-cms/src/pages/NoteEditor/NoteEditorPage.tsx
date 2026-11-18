@@ -10,7 +10,12 @@ import {
 } from '../../api/queries';
 import { notesApi } from '../../api/client';
 import { NoteType, CreateNoteLinkInput, FolderInputItem, NotePrivacy } from '../../types';
-import { NoteTemplateDefinition } from '@lenta/shared';
+import {
+  NoteTemplateDefinition,
+  getDefaultDateTimeLocal,
+  toDateTimeLocalInput,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { NoteTypeBadge } from '../../components/NoteTypeBadge';
 import { NoteTypeSelect } from '../../components/NoteTypeSelect';
@@ -47,9 +52,7 @@ export const NoteEditorPage: React.FC = () => {
   const [type, setType] = useState<NoteType>('SINGLE');
   const [privacy, setPrivacy] = useState<NotePrivacy>('private');
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().slice(0, 16),
-  );
+  const [startDate, setStartDate] = useState(() => getDefaultDateTimeLocal());
   const [endDate, setEndDate] = useState('');
   const [icon, setIcon] = useState('');
   const [author, setAuthor] = useState('');
@@ -86,8 +89,8 @@ export const NoteEditorPage: React.FC = () => {
       setFeedId(note.feedId);
       setType(note.type);
       setPrivacy(note.privacy || 'private');
-      setStartDate(new Date(note.startDate).toISOString().slice(0, 16));
-      setEndDate(note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '');
+      setStartDate(toDateTimeLocalInput(note.startDate));
+      setEndDate(toDateTimeLocalInput(note.endDate));
       setIcon(note.icon || '');
       setAuthor((note as any).author || note.curator || '');
       setDescription(note.description || '');
@@ -120,8 +123,8 @@ export const NoteEditorPage: React.FC = () => {
           title: title.trim(),
           type,
           privacy,
-          startDate: new Date(startDate).toISOString(),
-          endDate: endDate ? new Date(endDate).toISOString() : undefined,
+          startDate: fromDateTimeLocalInput(startDate, true)!,
+          endDate: fromDateTimeLocalInput(endDate),
           icon: icon.trim() || undefined,
           author: author.trim() || undefined,
             curator: author.trim() || undefined,
@@ -162,8 +165,8 @@ export const NoteEditorPage: React.FC = () => {
             title: title.trim(),
             type,
             privacy,
-            startDate: new Date(startDate).toISOString(),
-            endDate: endDate ? new Date(endDate).toISOString() : undefined,
+            startDate: fromDateTimeLocalInput(startDate),
+            endDate: fromDateTimeLocalInput(endDate),
             icon: icon.trim() || undefined,
             author: author.trim() || undefined,
             curator: author.trim() || undefined,

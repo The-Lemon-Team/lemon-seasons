@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Note, NoteType, NoteStatus, Folder as FolderType, extractCleanSnippet } from '@lenta/shared';
+import {
+  Note,
+  NoteType,
+  NoteStatus,
+  Folder as FolderType,
+  extractCleanSnippet,
+  toDateTimeLocalInput,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -25,7 +33,6 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
-import dayjs from 'dayjs';
 import { Modal } from './Modal';
 import { AppSelect } from './common/AppSelect';
 import { NotePosterPicker } from './notes/NotePosterPicker';
@@ -81,8 +88,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       setDescription(note.description || '');
       setType(note.type || 'SINGLE');
       setStatus(note.status || 'PUBLISHED');
-      setStartDate(note.startDate ? dayjs(note.startDate).format('YYYY-MM-DD') : '');
-      setEndDate(note.endDate ? dayjs(note.endDate).format('YYYY-MM-DD') : '');
+      setStartDate(toDateTimeLocalInput(note.startDate));
+      setEndDate(toDateTimeLocalInput(note.endDate));
       setFeedId(note.feedId || note.feed?.id || '');
 
       const primaryFld = note.folders?.find((f) => f.isPrimary)?.folder?.path || note.folderPath || '';
@@ -125,8 +132,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         description: description.trim(),
         type,
         status,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : null,
+        startDate: fromDateTimeLocalInput(startDate),
+        endDate: fromDateTimeLocalInput(endDate) ?? null,
         feedId: feedId || undefined,
         folderPath: cleanFolder || null,
         folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
@@ -263,31 +270,31 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
         </div>
 
         {/* Dates Row */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-[11px] text-[#93927e] uppercase tracking-wider block flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#c9cd58]" />
-              <span>Дата начала</span>
+              <span>Дата и время начала</span>
             </label>
             <input
-              type="date"
+              type="datetime-local"
               required
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-[#e2e2e2] outline-none"
+              className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-[#e2e2e2] outline-none [color-scheme:dark]"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[11px] text-[#93927e] uppercase tracking-wider block flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#93927e]" />
-              <span>Дата окончания (опционально)</span>
+              <span>Дата и время окончания (опционально)</span>
             </label>
             <input
-              type="date"
+              type="datetime-local"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-[#e2e2e2] outline-none"
+              className="w-full bg-[#121414] border border-[#2d3030] focus:border-[#c9cd58] rounded px-3 py-2 text-[#e2e2e2] outline-none [color-scheme:dark]"
             />
           </div>
         </div>

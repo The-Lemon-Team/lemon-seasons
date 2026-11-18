@@ -17,7 +17,15 @@ import {
   Film,
   Search,
 } from 'lucide-react';
-import { ParsedNoteCard, NoteType, CreateNoteInput, WebImageResult } from '@lenta/shared';
+import {
+  ParsedNoteCard,
+  NoteType,
+  CreateNoteInput,
+  WebImageResult,
+  getDefaultDateTimeLocal,
+  toDateTimeLocalInput,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { calendarApi } from '../api/client';
 import { WebPosterSearchModal } from './notes/WebPosterSearchModal';
 
@@ -121,6 +129,10 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       } else {
         setCards(parsedCards.map((c, i) => ({
           ...c,
+          startDate: c.startDate && c.startDate.includes('T')
+            ? toDateTimeLocalInput(c.startDate)
+            : getDefaultDateTimeLocal(c.startDate),
+          endDate: c.endDate ? toDateTimeLocalInput(c.endDate) : null,
           privacy: (c.privacy as any) || 'private',
           selected: true,
           tempId: c.tempId || `card-${i + 1}`,
@@ -168,7 +180,7 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
       title: 'Новый тренд',
       type: 'SINGLE',
       displayType: 'Trend',
-      startDate: defaultDate || new Date().toISOString(),
+      startDate: getDefaultDateTimeLocal(),
       endDate: null,
       feedSlug: 'my-notes',
       feedTitle: 'My Notes',
@@ -193,8 +205,8 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
         title: c.title.trim(),
         type: c.type as NoteType,
         privacy: (c.privacy as any) || 'private',
-        startDate: c.startDate.includes('T') ? c.startDate : new Date(`${c.startDate}T12:00:00.000Z`).toISOString(),
-        endDate: c.endDate ? (c.endDate.includes('T') ? c.endDate : new Date(`${c.endDate}T23:59:59.000Z`).toISOString()) : undefined,
+        startDate: fromDateTimeLocalInput(c.startDate, true)!,
+        endDate: c.endDate ? fromDateTimeLocalInput(c.endDate) : undefined,
         folder: c.folder || 'Notes',
         folders: c.folder ? [c.folder] : undefined,
         hashtags: c.hashtags,
@@ -472,10 +484,10 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
                           <div className="flex items-center gap-1 bg-[#121414] border border-[#2b2e2e] rounded px-2 py-0.5">
                             <Calendar className="w-3 h-3 text-[#808070]" />
                             <input
-                              type="date"
-                              value={card.startDate ? card.startDate.split('T')[0] : ''}
+                              type="datetime-local"
+                              value={toDateTimeLocalInput(card.startDate)}
                               onChange={(e) => updateCard(card.tempId, { startDate: e.target.value })}
-                              className="bg-transparent border-none text-[#c9c7b2] outline-none text-[11px]"
+                              className="bg-transparent border-none text-[#c9c7b2] outline-none text-[11px] [color-scheme:dark]"
                             />
                           </div>
 
@@ -483,10 +495,10 @@ export const AiQuickAddModal: React.FC<AiQuickAddModalProps> = ({
                             <div className="flex items-center gap-1 bg-[#121414] border border-[#2b2e2e] rounded px-2 py-0.5">
                               <span className="text-[#808070]">—</span>
                               <input
-                                type="date"
-                                value={card.endDate ? card.endDate.split('T')[0] : ''}
+                                type="datetime-local"
+                                value={toDateTimeLocalInput(card.endDate)}
                                 onChange={(e) => updateCard(card.tempId, { endDate: e.target.value })}
-                                className="bg-transparent border-none text-[#c9c7b2] outline-none text-[11px]"
+                                className="bg-transparent border-none text-[#c9c7b2] outline-none text-[11px] [color-scheme:dark]"
                               />
                             </div>
                           )}

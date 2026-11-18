@@ -7,6 +7,80 @@ export function formatDateISO(date: Date | string | number): string {
   return d.toISOString();
 }
 
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DATETIME_LOCAL_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
+/**
+ * Formats a Date or ISO timestamp into a local `YYYY-MM-DDTHH:mm` string
+ * suitable for `<input type="datetime-local" />`.
+ */
+export function toDateTimeLocalInput(date?: Date | string | number | null): string {
+  if (date === null || date === undefined || date === '') return '';
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (!trimmed) return '';
+    if (DATE_ONLY_REGEX.test(trimmed)) {
+      return `${trimmed}T00:00`;
+    }
+    if (DATETIME_LOCAL_REGEX.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/**
+ * Returns a local `YYYY-MM-DDTHH:mm` default for note creation inputs.
+ * When `defaultDate` is omitted or date-only (`YYYY-MM-DD`), pairs it with the current local time.
+ */
+export function getDefaultDateTimeLocal(
+  defaultDate?: Date | string | null,
+  now: Date = new Date()
+): string {
+  if (!defaultDate) {
+    return toDateTimeLocalInput(now);
+  }
+  if (typeof defaultDate === 'string') {
+    const trimmed = defaultDate.trim();
+    if (!trimmed) {
+      return toDateTimeLocalInput(now);
+    }
+    if (DATE_ONLY_REGEX.test(trimmed)) {
+      return `${trimmed}T${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    }
+    if (DATETIME_LOCAL_REGEX.test(trimmed)) {
+      return trimmed;
+    }
+    return toDateTimeLocalInput(trimmed) || toDateTimeLocalInput(now);
+  }
+  return toDateTimeLocalInput(defaultDate) || toDateTimeLocalInput(now);
+}
+
+/**
+ * Converts a `<input type="datetime-local" />` (or date/ISO) value to an ISO UTC string.
+ */
+export function fromDateTimeLocalInput(
+  value?: string | null,
+  fallbackToNow = false,
+  now: Date = new Date()
+): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return fallbackToNow ? now.toISOString() : undefined;
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) {
+    return fallbackToNow ? now.toISOString() : undefined;
+  }
+  return d.toISOString();
+}
+
 export function formatLocalDateKey(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const year = d.getFullYear();

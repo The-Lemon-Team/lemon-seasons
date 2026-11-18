@@ -3,6 +3,7 @@ import { Modal, Popconfirm, message, Spin } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNote, useFeeds, useUpdateNote, useDeleteNote } from '../api/queries';
 import { NoteType, NoteStatus, FolderInputItem } from '../types';
+import { toDateTimeLocalInput, fromDateTimeLocalInput } from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { AiDescriptionAssistant } from './notes/AiDescriptionAssistant';
 import { NoteTypeSelect } from './NoteTypeSelect';
@@ -75,12 +76,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
       setFeedId(note.feedId || '');
       setType(note.type || 'SINGLE');
       setStatus(note.status || 'PUBLISHED');
-      setStartDate(
-        note.startDate ? new Date(note.startDate).toISOString().slice(0, 16) : '',
-      );
-      setEndDate(
-        note.endDate ? new Date(note.endDate).toISOString().slice(0, 16) : '',
-      );
+      setStartDate(toDateTimeLocalInput(note.startDate));
+      setEndDate(toDateTimeLocalInput(note.endDate));
       setDescription(note.description || '');
       setSourceLink(note.sourceLink || '');
       setHashtags(note.hashtags?.map((h) => h.name.replace(/^#/, '')) || []);
@@ -136,8 +133,8 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
           feedId: feedId ? feedId : null,
           type,
           status,
-          startDate: new Date(startDate).toISOString(),
-          endDate: endDate ? new Date(endDate).toISOString() : undefined,
+          startDate: fromDateTimeLocalInput(startDate),
+          endDate: fromDateTimeLocalInput(endDate),
           description: description.trim() || undefined,
           sourceLink: sourceLink.trim() || undefined,
           folderPath: primaryFld || undefined,

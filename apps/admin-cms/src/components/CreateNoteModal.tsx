@@ -3,7 +3,11 @@ import { Modal, message } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
 import { notesApi } from '../api/client';
 import { NoteType, NoteStatus, FolderInputItem, Note, NotePrivacy, PendingPosterItem } from '../types';
-import { NoteTemplateDefinition } from '@lenta/shared';
+import {
+  NoteTemplateDefinition,
+  getDefaultDateTimeLocal,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
@@ -99,11 +103,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setHashtags([]);
       setPendingPosters([]);
 
-      const now = new Date();
-      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16);
-      setStartDate(localIso);
+      setStartDate(getDefaultDateTimeLocal());
 
       if (initialFolderPath) {
         setAssignedFolders([
@@ -138,8 +138,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         type,
         status,
         privacy,
-        startDate: new Date(startDate).toISOString(),
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        startDate: fromDateTimeLocalInput(startDate, true)!,
+        endDate: fromDateTimeLocalInput(endDate),
         description: description.trim() || undefined,
         sourceLink: sourceLink.trim() || undefined,
         author: author.trim() || undefined,

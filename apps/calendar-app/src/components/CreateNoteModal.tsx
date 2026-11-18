@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppMode } from '../context/AppModeContext';
-import { NoteType, NotePrivacy, NoteTemplateDefinition } from '@lenta/shared';
+import {
+  NoteType,
+  NotePrivacy,
+  NoteTemplateDefinition,
+  getDefaultDateTimeLocal,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { useI18n } from '../i18n';
 import { useFeeds, queryKeys } from '../api/queries';
 import { calendarApi } from '../api/client';
@@ -29,7 +35,6 @@ import {
   Radio,
   Loader2,
 } from 'lucide-react';
-import dayjs from 'dayjs';
 import { Modal } from './Modal';
 import { AppSelect } from './common/AppSelect';
 
@@ -66,7 +71,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const [type, setType] = useState<NoteType>('SINGLE');
   const [privacy, setPrivacy] = useState<NotePrivacy>('private');
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [startDate, setStartDate] = useState(() => getDefaultDateTimeLocal());
   const [endDate, setEndDate] = useState('');
   const [feedId, setFeedId] = useState('');
   const [folderPath, setFolderPath] = useState(initialFolderPath || '');
@@ -102,7 +107,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
     setPrivacy(tpl.defaultPrivacy || 'private');
   };
 
-  // Set initial folder path when opened or prop changes
+  // Set initial folder path & current local timestamp when opened or prop changes
   React.useEffect(() => {
     if (isOpen) {
       setFolderPath(initialFolderPath || '');
@@ -111,6 +116,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setPrivacy('private');
       setActiveTemplateId(null);
       setPendingPosters([]);
+      setStartDate(getDefaultDateTimeLocal());
+      setEndDate('');
     }
   }, [initialFolderPath, isOpen]);
 
@@ -140,8 +147,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         title: title.trim(),
         description: description.trim(),
         type,
-        startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        startDate: fromDateTimeLocalInput(startDate, true)!,
+        endDate: fromDateTimeLocalInput(endDate),
         feedId: feedId || undefined,
         folderPath: cleanFolder || undefined,
         folders: cleanFolder ? [{ path: cleanFolder, isPrimary: true, order: 0 }] : undefined,
@@ -189,6 +196,8 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setActiveTemplateId(null);
       setIsCustomFolder(false);
       setPendingPosters([]);
+      setStartDate(getDefaultDateTimeLocal());
+      setEndDate('');
       onSuccess?.();
       onClose();
     } catch (err: any) {
@@ -423,7 +432,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 </div>
               </div>
 
-              {/* Grid 3: Start & End Date */}
+              {/* Grid 3: Start & End Date & Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
@@ -431,24 +440,24 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                     {t.noteDate} <span className="text-[#c9cd58]">*</span>
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none [color-scheme:dark]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#93927e]" />
-                    Дата окончания (опционально)
+                    Дата и время окончания (опционально)
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none"
+                    className="w-full bg-[#121414] border border-[#242828] focus:border-[#c9cd58] rounded-md text-xs font-mono px-3 py-2 text-[#e2e2e2] outline-none [color-scheme:dark]"
                   />
                 </div>
               </div>

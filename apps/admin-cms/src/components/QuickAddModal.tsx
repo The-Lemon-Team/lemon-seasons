@@ -3,7 +3,11 @@ import { message, Modal } from 'antd';
 import { useFeeds, useCreateNote } from '../api/queries';
 import { notesApi } from '../api/client';
 import { NoteType, FolderInputItem, NotePrivacy, PendingPosterItem } from '../types';
-import { NoteTemplateDefinition } from '@lenta/shared';
+import {
+  NoteTemplateDefinition,
+  getDefaultDateTimeLocal,
+  fromDateTimeLocalInput,
+} from '@lenta/shared';
 import { MarkdownEditor } from './MarkdownEditor';
 import { NoteTypeSelect } from './NoteTypeSelect';
 import { HashtagInput } from './HashtagInput';
@@ -37,9 +41,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
   const [type, setType] = useState<NoteType>('SINGLE');
   const [privacy, setPrivacy] = useState<NotePrivacy>('private');
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().split('T')[0],
-  );
+  const [startDate, setStartDate] = useState(() => getDefaultDateTimeLocal());
   const [endDate, setEndDate] = useState('');
   const [folders, setFolders] = useState<FolderInputItem[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -98,7 +100,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
       setType('SINGLE');
       setPrivacy('private');
       setActiveTemplateId(null);
-      setStartDate(new Date().toISOString().split('T')[0]);
+      setStartDate(getDefaultDateTimeLocal());
       setEndDate('');
       setFolders([]);
       setHashtags([]);
@@ -124,8 +126,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
         title: title.trim(),
         type,
         privacy,
-        startDate: new Date(startDate).toISOString(),
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        startDate: fromDateTimeLocalInput(startDate, true)!,
+        endDate: fromDateTimeLocalInput(endDate),
         description: description.trim() || undefined,
         hashtags,
         folders: folders.length > 0 ? folders : undefined,
@@ -303,25 +305,24 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
               onChange={setPrivacy}
             />
 
-            {/* Date Range */}
+            {/* Date & Time Range */}
             <div className="space-y-1">
               <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
                 {t.datesCol}
               </label>
-              <div className="flex items-center gap-2 max-w-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="flex-1 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                  className="w-full min-w-0 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
                 />
-                <span className="text-text-muted">-</span>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   placeholder={t.endDateLabel}
-                  className="flex-1 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                  className="w-full min-w-0 bg-control border border-tile-border rounded px-2 py-1 text-text-main font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
             </div>
