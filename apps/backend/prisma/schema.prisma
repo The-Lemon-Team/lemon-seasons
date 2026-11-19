@@ -15,16 +15,20 @@ model Feed {
   icon        String?
   color       String?
   privacy     String    @default("public")
+  ownerUserId String?
   folderPaths String[]  @default([])
   hashtags    String[]  @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  ownerUser   User?       @relation("FeedOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   notes       Note[]
-  publicNotes Note[]    @relation("NotePublicFeed")
+  publicNotes Note[]      @relation("NotePublicFeed")
   streamTabs  StreamTab[]
+  shares      FeedShare[]
 
   @@index([privacy])
+  @@index([ownerUserId])
 }
 
 model Note {
@@ -32,6 +36,7 @@ model Note {
   feedId         String?
   publicFeedId   String?
   privacy        String         @default("private")
+  ownerUserId    String?
   containerId    String?
   status         NoteStatus     @default(PUBLISHED)
   publishAt      DateTime?
@@ -66,6 +71,7 @@ model Note {
   parentNoteId   String?
   resonanceScore Int?
   container      Container?     @relation(fields: [containerId], references: [id], onDelete: Cascade)
+  ownerUser      User?          @relation("NoteOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   feed           Feed?          @relation(fields: [feedId], references: [id])
   publicFeed     Feed?          @relation("NotePublicFeed", fields: [publicFeedId], references: [id])
   parentNote     Note?          @relation("NoteSynthesis", fields: [parentNoteId], references: [id])
@@ -78,12 +84,14 @@ model Note {
   tags           TaxonomyNode[] @relation("NoteToTaxonomyNode")
   ingestionFiles IngestionFile[]
   workspacePins  WorkspacePin[]
+  shares         NoteShare[]
 
   @@index([startDate, endDate])
   @@index([deletedAt, startDate(sort: Desc)])
   @@index([containerId, deletedAt, startDate(sort: Desc)])
   @@index([updatedAt])
   @@index([feedId])
+  @@index([ownerUserId, privacy])
   @@index([containerId])
   @@index([feedId, deletedAt])
   @@index([deletedAt])
@@ -240,15 +248,57 @@ model NoteVersion {
 }
 
 model User {
-  id         String      @id @default(uuid())
-  email      String      @unique
-  name       String
-  password   String?
-  role       String      @default("user")
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  containers Container[]
-  keys       UserKey[]
+  id                 String      @id @default(uuid())
+  email              String      @unique
+  name               String
+  password           String?
+  role               String      @default("user")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  containers         Container[]
+  keys               UserKey[]
+  ownedNotes         Note[]      @relation("NoteOwner")
+  ownedFeeds         Feed[]      @relation("FeedOwner")
+  ownedStreams       Stream[]    @relation("StreamOwner")
+  receivedNoteShares NoteShare[] @relation("NoteShareGrantee")
+  grantedNoteShares  NoteShare[] @relation("NoteShareGrantor")
+  receivedFeedShares FeedShare[] @relation("FeedShareGrantee")
+}
+
+model NoteShare {
+  id              String    @id @default(uuid())
+  noteId          String
+  granteeUserId   String
+  grantedByUserId String
+  scopeType       String    @default("USER") // USER | TIMELINE_GROUP
+  scopeRef        String?   // e.g. timeline boardId when shared to a Timeline group
+  canReadMedia    Boolean   @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  note          Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  granteeUser   User @relation("NoteShareGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
+  grantedByUser User @relation("NoteShareGrantor", fields: [grantedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, granteeUserId, scopeType, scopeRef])
+  @@index([granteeUserId])
+  @@index([noteId])
+  @@index([scopeRef])
+}
+
+model FeedShare {
+  id              String   @id @default(uuid())
+  feedId          String
+  granteeUserId   String
+  grantedByUserId String
+  permission      String   @default("READ") // READ | WRITE
+  createdAt       DateTime @default(now())
+
+  feed        Feed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  granteeUser User @relation("FeedShareGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
+
+  @@unique([feedId, granteeUserId])
+  @@index([granteeUserId])
 }
 
 model UserKey {
@@ -480,12 +530,14 @@ model Stream {
   color            String?     @default("#2481cc")
   badge            String?
   privacy          String      @default("public")
+  ownerUserId      String?
   order            Int         @default(0)
   isBuiltin        Boolean     @default(false)
   feedIds          String[]    @default([])
   childStreamIds   String[]    @default([])
   tags             String[]    @default([])
   folderPaths      String[]    @default([])
+  ownerUser        User?       @relation("StreamOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   tabs             StreamTab[] @relation("StreamOwnedTabs")
   referencedByTabs StreamTab[] @relation("StreamTabTarget")
   createdAt        DateTime    @default(now())
@@ -493,6 +545,7 @@ model Stream {
   deletedAt        DateTime?
 
   @@index([privacy])
+  @@index([ownerUserId])
   @@index([order])
   @@index([slug])
   @@index([deletedAt])

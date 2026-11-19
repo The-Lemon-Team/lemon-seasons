@@ -21,7 +21,10 @@ export class AuthenticatedWriteGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user: RequestUser | undefined = req?.user;
 
-    if (user && (user.isAdmin || user.role === 'admin' || user.role === 'user')) {
+    if (
+      user &&
+      (user.isAdmin || user.role === 'admin' || user.role === 'user' || user.role === 'agent')
+    ) {
       return true;
     }
 

@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { StreamsService } from '../streams/streams.service';
@@ -65,8 +66,14 @@ export class NotesQueryBuilder {
 
   /**
    * Constructs the strongly-typed Prisma.NoteWhereInput condition from the HTTP query parameters.
+   * Supports multi-account isolation: authenticated non-admin users & AI agents see public notes,
+   * their own private notes (`ownerUserId`), and notes/feeds explicitly shared via `NoteShare`/`FeedShare`.
    */
-  async buildWhereClause(query: QueryNotesDto, isAdmin = false): Promise<Prisma.NoteWhereInput> {
+  async buildWhereClause(
+    query: QueryNotesDto,
+    isAdmin = false,
+    viewer?: RequestUser | null,
+  ): Promise<Prisma.NoteWhereInput> {
     const {
       feedId,
       feedSlug,
@@ -78,27 +85,114 @@ export class NotesQueryBuilder {
       containers,
       type,
       userId,
+      ownerUserId,
       publics,
     } = query;
 
     const andConditions: Prisma.NoteWhereInput[] = [{ deletedAt: null }];
+    const viewerId = viewer?.id;
+    const isAuthenticatedNonAdmin = Boolean(
+      !isAdmin && viewerId && viewer?.role && viewer.role !== 'guest',
+    );
+    const now = new Date();
 
-    // Privacy & Staging / Public contour gating:
+    const accountReadableClause = (uid: string): Prisma.NoteWhereInput => ({
+      OR: [
+        { privacy: 'public', status: 'PUBLISHED' },
+        { privacy: 'private', ownerUserId: uid },
+        {
+          shares: {
+            some: {
+              granteeUserId: uid,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            },
+          },
+        },
+        {
+          feed: {
+            shares: {
+              some: {
+                granteeUserId: uid,
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    const ownOrSharedPrivateClause = (uid: string): Prisma.NoteWhereInput => ({
+      OR: [
+        { privacy: 'private', ownerUserId: uid },
+        {
+          shares: {
+            some: {
+              granteeUserId: uid,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            },
+          },
+        },
+        {
+          feed: {
+            shares: {
+              some: {
+                granteeUserId: uid,
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    // Privacy & Staging / Public / Multi-Account contour gating:
     if (appMode === 'staging') {
       andConditions.push({ privacy: 'public' });
       andConditions.push({ status: { not: 'PUBLISHED' } });
     } else if (appMode === 'public') {
       andConditions.push({ privacy: 'public' });
       andConditions.push({ status: 'PUBLISHED' });
-    } else if (appMode === 'dev') {
+    } else if (appMode === 'dev' && isAdmin) {
       if (privacy && privacy !== 'all') {
         andConditions.push({ privacy });
+      }
+    } else if (isAuthenticatedNonAdmin && viewerId) {
+      if (privacy === 'public') {
+        andConditions.push({ privacy: 'public' });
+        andConditions.push({ status: 'PUBLISHED' });
+      } else if (privacy === 'private') {
+        andConditions.push(ownOrSharedPrivateClause(viewerId));
+      } else {
+        andConditions.push(accountReadableClause(viewerId));
       }
     } else if (!isAdmin) {
       andConditions.push({ privacy: 'public' });
       andConditions.push({ status: 'PUBLISHED' });
     } else if (privacy && privacy !== 'all') {
       andConditions.push({ privacy });
+    }
+
+    if (ownerUserId) {
+      if (isAdmin || ownerUserId === viewerId) {
+        andConditions.push({ ownerUserId });
+      } else {
+        andConditions.push({
+          ownerUserId,
+          OR: [
+            { privacy: 'public', status: 'PUBLISHED' },
+            ...(viewerId
+              ? [
+                  {
+                    shares: {
+                      some: {
+                        granteeUserId: viewerId,
+                        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+                      },
+                    },
+                  },
+                ]
+              : []),
+          ],
+        });
+      }
     }
 
     // Public feeds filtering

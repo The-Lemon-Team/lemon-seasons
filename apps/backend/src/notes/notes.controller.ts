@@ -14,7 +14,9 @@ import {
   BadRequestException,
   Headers,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { NotesService } from './notes.service';
@@ -27,6 +29,7 @@ import {
   ReorderNoteImagesDto,
   AttachImagesFromUrlsDto,
   FetchExternalMediaDto,
+  AttachMediaAssetsDto,
 } from './dto/image.dto';
 import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
@@ -51,13 +54,14 @@ export class NotesController {
     @Body() ingestDto: IngestNoteDto,
     @Headers('x-api-key') apiKeyHeader?: string,
     @Headers('x-user-key') userKeyHeader?: string,
+    @Headers('x-account-id') accountIdHeader?: string,
     @Headers('authorization') authHeader?: string,
   ) {
     const token =
       apiKeyHeader ||
       userKeyHeader ||
       (authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined);
-    return this.notesIngestService.ingest(ingestDto, token);
+    return this.notesIngestService.ingest(ingestDto, token, accountIdHeader);
   }
 
   @Post('ai/parse')
@@ -79,8 +83,8 @@ export class NotesController {
   @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Create a new note' })
   @ApiResponse({ status: 201, description: 'Note created successfully' })
-  create(@Body() createNoteDto: CreateNoteDto) {
-    return this.notesService.create(createNoteDto);
+  create(@Body() createNoteDto: CreateNoteDto, @CurrentUser() user?: RequestUser) {
+    return this.notesService.create(createNoteDto, user);
   }
 
   @Post('quick-share')
@@ -106,7 +110,7 @@ export class NotesController {
     if (!query.appMode && appModeHeader) {
       query.appMode = appModeHeader;
     }
-    return this.notesService.findAll(query, user?.isAdmin ?? false);
+    return this.notesService.findAll(query, user?.isAdmin ?? false, user);
   }
 
   @Get('media/search-images')
@@ -130,7 +134,67 @@ export class NotesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific note by ID' })
   findOne(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
-    return this.notesService.findOne(id, user?.isAdmin ?? false);
+    return this.notesService.findOne(id, user?.isAdmin ?? false, user);
+  }
+
+  @Get(':id/shares')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'List explicit shares (users / timeline groups) for a private note' })
+  listShares(@Param('id') id: string, @CurrentUser() user?: RequestUser) {
+    return this.notesService.listNoteShares(id, user);
+  }
+
+  @Post(':id/shares')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Grant explicit read access to a private note and its media for users or a timeline group' })
+  shareNote(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      granteeUserIds: string[];
+      scopeType?: 'USER' | 'TIMELINE_GROUP';
+      scopeRef?: string;
+      canReadMedia?: boolean;
+      expiresAt?: string;
+    },
+    @CurrentUser() user?: RequestUser,
+  ) {
+    return this.notesService.shareNoteWithGrantees(id, dto, user);
+  }
+
+  @Delete(':id/shares')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Revoke explicit note share by granteeUserId or timeline scopeRef' })
+  revokeShare(
+    @Param('id') id: string,
+    @Query('granteeUserId') granteeUserId?: string,
+    @Query('scopeRef') scopeRef?: string,
+    @CurrentUser() user?: RequestUser,
+  ) {
+    return this.notesService.revokeNoteShare(id, { granteeUserId, scopeRef }, user);
+  }
+
+  @Get(':id/images/:imageId/file')
+  @ApiOperation({ summary: 'Serve note image binary with ownership, NoteShare, or HMAC signature verification' })
+  async serveNoteImageFile(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+    @Query('variant') variant: string | undefined,
+    @Query('uid') uid: string | undefined,
+    @Query('exp') exp: string | undefined,
+    @Query('sig') sig: string | undefined,
+    @CurrentUser() user: RequestUser | undefined,
+    @Res() res: Response,
+  ) {
+    const resolved = await this.notesService.resolveAuthorizedNoteImageFile(
+      id,
+      imageId,
+      { variant, uid, exp, sig },
+      user,
+    );
+    res.setHeader('Content-Type', resolved.mimeType);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    return res.sendFile(resolved.filePath);
   }
 
   @Patch(':id')
@@ -193,6 +257,18 @@ export class NotesController {
       throw new BadRequestException('At least one image item must be provided');
     }
     return this.notesService.attachImagesFromUrls(id, dto.items);
+  }
+
+  @Post(':id/media-assets')
+  @ApiOperation({ summary: 'Attach pre-hosted Media Hub assets or media descriptors to a note' })
+  attachMediaAssets(
+    @Param('id') id: string,
+    @Body() dto: AttachMediaAssetsDto,
+  ) {
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('At least one media asset item must be provided');
+    }
+    return this.notesService.attachMediaAssets(id, dto.items);
   }
 
   @Patch(':id/images/:imageId/main')

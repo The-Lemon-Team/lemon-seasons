@@ -1,7 +1,11 @@
 import { Prisma } from '@prisma/client';
 
 export const NOTE_INCLUDE_DEFAULT = {
-  feed: true,
+  feed: {
+    include: {
+      shares: true,
+    },
+  },
   publicFeed: true,
   tags: { where: { deletedAt: null } },
   hashtags: { where: { deletedAt: null } },
@@ -11,6 +15,7 @@ export const NOTE_INCLUDE_DEFAULT = {
   },
   images: { orderBy: { order: 'asc' as const } },
   links: { orderBy: { order: 'asc' as const } },
+  shares: true,
 };
 
 export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
@@ -18,6 +23,7 @@ export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   feedId: true,
   publicFeedId: true,
   privacy: true,
+  ownerUserId: true,
   containerId: true,
   filePath: true,
   title: true,
@@ -52,4 +58,5 @@ export const NOTE_SELECT_FIELDS: Prisma.NoteSelect = {
   },
   images: { orderBy: { order: 'asc' } },
   links: { orderBy: { order: 'asc' } },
+  shares: true,
 };

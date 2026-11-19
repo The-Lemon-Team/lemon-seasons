@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -6,8 +7,10 @@ import {
   IsString,
   IsArray,
   IsDateString,
+  ValidateNested,
 } from 'class-validator';
 import { NoteStatus, NoteType } from './create-note.dto';
+import { NoteMediaAttachmentDto } from './image.dto';
 
 export class IngestNoteDto {
   @ApiPropertyOptional({
@@ -200,6 +203,46 @@ export class IngestNoteDto {
   })
   @IsOptional()
   metadata?: any;
+
+  @ApiPropertyOptional({
+    description: 'URL основного изображения / обложки заметки',
+  })
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Подпись к основному изображению заметки',
+  })
+  @IsString()
+  @IsOptional()
+  imageCaption?: string;
+
+  @ApiPropertyOptional({
+    description: 'Список медиа-вложений (из Lemon Media Hub или внешних URL)',
+    type: [NoteMediaAttachmentDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NoteMediaAttachmentDto)
+  @IsOptional()
+  images?: NoteMediaAttachmentDto[];
+
+  @ApiPropertyOptional({
+    description: 'Список ID ассетов в Lemon Media Hub для привязки к заметке',
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mediaAssetIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'ID владельца заметки (User / Agent account ID); по умолчанию определяется по UserKey',
+  })
+  @IsString()
+  @IsOptional()
+  ownerUserId?: string;
 
   @ApiPropertyOptional({
     description: 'API-ключ для авторизации (также может быть передан в заголовках x-api-key или Authorization)',

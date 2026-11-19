@@ -9,6 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 import { FoldersService } from '../folders/folders.service';
 import { CreateFeedDto } from './dto/create-feed.dto';
@@ -98,7 +99,7 @@ export class FeedsService implements OnModuleInit {
     }
   }
 
-  async create(createFeedDto: CreateFeedDto) {
+  async create(createFeedDto: CreateFeedDto, viewer?: RequestUser) {
     const slug = createFeedDto.slug?.trim()
       ? slugify(createFeedDto.slug)
       : slugify(createFeedDto.title);
@@ -119,6 +120,9 @@ export class FeedsService implements OnModuleInit {
       await this.ensureFoldersExist(createFeedDto.folderPaths, privacy);
     }
 
+    const ownerUserId =
+      viewer?.id && viewer.role !== 'guest' && !viewer.isAdmin ? viewer.id : undefined;
+
     const created = await this.prisma.feed.create({
       data: {
         title: createFeedDto.title,
@@ -127,6 +131,7 @@ export class FeedsService implements OnModuleInit {
         icon: createFeedDto.icon,
         color: createFeedDto.color,
         privacy,
+        ...(ownerUserId ? { ownerUserId } : {}),
         folderPaths: createFeedDto.folderPaths || [],
         hashtags: createFeedDto.hashtags || [],
       },
@@ -145,8 +150,35 @@ export class FeedsService implements OnModuleInit {
     return created;
   }
 
-  async findAll(includeDeleted = false, search?: string, isAdmin = false) {
-    const privacyFilter = isAdmin ? {} : { privacy: 'public' };
+  async findAll(includeDeleted = false, search?: string, isAdmin = false, viewer?: RequestUser) {
+    const viewerId = viewer?.id;
+    const isAuthenticatedUser = Boolean(!isAdmin && viewerId && viewer?.role !== 'guest');
+
+    const privacyFilter = isAdmin
+      ? {}
+      : isAuthenticatedUser && viewerId
+        ? {
+            OR: [
+              { privacy: 'public' },
+              { ownerUserId: viewerId },
+              { shares: { some: { granteeUserId: viewerId } } },
+            ],
+          }
+        : { privacy: 'public' };
+
+    const noteCountFilter = isAdmin
+      ? { deletedAt: null }
+      : isAuthenticatedUser && viewerId
+        ? {
+            deletedAt: null,
+            OR: [
+              { privacy: 'public', status: 'PUBLISHED' as const },
+              { privacy: 'private', ownerUserId: viewerId },
+              { shares: { some: { granteeUserId: viewerId } } },
+              { feed: { shares: { some: { granteeUserId: viewerId } } } },
+            ],
+          }
+        : { deletedAt: null, privacy: 'public', status: 'PUBLISHED' as const };
 
     return this.prisma.feed.findMany({
       where: {
@@ -166,10 +198,7 @@ export class FeedsService implements OnModuleInit {
         _count: {
           select: {
             notes: {
-              where: {
-                deletedAt: null,
-                ...(isAdmin ? {} : { privacy: 'public', status: 'PUBLISHED' }),
-              },
+              where: noteCountFilter,
             },
           },
         },
@@ -178,16 +207,30 @@ export class FeedsService implements OnModuleInit {
     });
   }
 
-  async findOne(idOrSlug: string, isAdmin = false, includeNotes = true) {
+  async findOne(idOrSlug: string, isAdmin = false, includeNotes = true, viewer?: RequestUser) {
+    const viewerId = viewer?.id;
+    const isAuthenticatedUser = Boolean(!isAdmin && viewerId && viewer?.role !== 'guest');
+
     const notesFilter = isAdmin
       ? { deletedAt: null }
-      : { deletedAt: null, privacy: 'public', status: 'PUBLISHED' as const };
+      : isAuthenticatedUser && viewerId
+        ? {
+            deletedAt: null,
+            OR: [
+              { privacy: 'public', status: 'PUBLISHED' as const },
+              { privacy: 'private', ownerUserId: viewerId },
+              { shares: { some: { granteeUserId: viewerId } } },
+              { feed: { shares: { some: { granteeUserId: viewerId } } } },
+            ],
+          }
+        : { deletedAt: null, privacy: 'public', status: 'PUBLISHED' as const };
 
     const feed = await this.prisma.feed.findFirst({
       where: {
         OR: [{ id: idOrSlug }, { slug: idOrSlug }],
       },
       include: {
+        shares: true,
         ...(includeNotes
           ? {
               notes: {
@@ -221,10 +264,62 @@ export class FeedsService implements OnModuleInit {
     }
 
     if (!isAdmin && feed.privacy !== 'public') {
-      throw new ForbiddenException('Доступ к приватной ленте запрещен. Требуются права администратора.');
+      const hasShare =
+        isAuthenticatedUser &&
+        viewerId &&
+        ((feed as any).ownerUserId === viewerId ||
+          ((feed as any).shares || []).some((s: any) => s.granteeUserId === viewerId));
+      if (!hasShare) {
+        throw new ForbiddenException('Доступ к приватной ленте запрещен. Требуется доступ владельца или FeedShare.');
+      }
     }
 
     return feed;
+  }
+
+  async shareFeed(
+    idOrSlug: string,
+    granteeUserId: string,
+    permission: 'READ' | 'WRITE' = 'READ',
+    caller?: RequestUser,
+  ) {
+    if (!caller || caller.role === 'guest') {
+      throw new ForbiddenException('Требуется авторизация для управления доступом к ленте.');
+    }
+    const feed = await this.prisma.feed.findFirst({
+      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], deletedAt: null },
+    });
+    if (!feed) throw new NotFoundException(`Feed '${idOrSlug}' not found`);
+    if (!caller.isAdmin && (feed as any).ownerUserId !== caller.id) {
+      throw new ForbiddenException('Только владелец ленты может расшарить её другому аккаунту.');
+    }
+    return (this.prisma as any).feedShare.upsert({
+      where: { feedId_granteeUserId: { feedId: feed.id, granteeUserId } },
+      update: { permission },
+      create: {
+        feedId: feed.id,
+        granteeUserId,
+        grantedByUserId: caller.id,
+        permission,
+      },
+    });
+  }
+
+  async revokeFeedShare(idOrSlug: string, granteeUserId: string, caller?: RequestUser) {
+    if (!caller || caller.role === 'guest') {
+      throw new ForbiddenException('Требуется авторизация.');
+    }
+    const feed = await this.prisma.feed.findFirst({
+      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], deletedAt: null },
+    });
+    if (!feed) throw new NotFoundException(`Feed '${idOrSlug}' not found`);
+    if (!caller.isAdmin && (feed as any).ownerUserId !== caller.id) {
+      throw new ForbiddenException('Только владелец ленты может отозвать доступ.');
+    }
+    const deleted = await (this.prisma as any).feedShare.deleteMany({
+      where: { feedId: feed.id, granteeUserId },
+    });
+    return { revoked: deleted.count };
   }
 
   async update(id: string, updateFeedDto: UpdateFeedDto) {

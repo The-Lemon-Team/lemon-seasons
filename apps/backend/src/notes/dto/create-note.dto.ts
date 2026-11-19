@@ -49,6 +49,11 @@ export class CreateNoteDto {
   @IsOptional()
   privacy?: 'private' | 'public';
 
+  @ApiPropertyOptional({ description: 'Owning User / Agent Account ID for private note isolation' })
+  @IsString()
+  @IsOptional()
+  ownerUserId?: string;
+
   @ApiPropertyOptional({ description: 'Container ID this note belongs to' })
   @IsString()
   @IsOptional()

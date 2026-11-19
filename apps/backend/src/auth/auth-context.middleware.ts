@@ -102,7 +102,17 @@ export class AuthContextMiddleware implements NestMiddleware {
         // Fallback silently to guest on DB lookup error
       }
 
-      // 4. Regular demo user token (e.g. lenta_tok_user_...)
+      // 4. Regular demo user or agent token (e.g. lenta_tok_user_... / lenta_tok_agent_...)
+      if (token.startsWith('lenta_tok_agent_')) {
+        req.user = {
+          id: 'usr-agent-001',
+          role: 'agent',
+          isAdmin: false,
+          name: '🤖 AI-Агент (Neurons)',
+        } satisfies RequestUser;
+        return next();
+      }
+
       if (token.startsWith('lenta_tok_user_')) {
         req.user = {
           id: 'usr-member-001',

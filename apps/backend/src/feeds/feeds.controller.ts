@@ -34,12 +34,12 @@ export class FeedsController {
   @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Create a new feed' })
   @ApiResponse({ status: 201, description: 'Feed created successfully' })
-  create(@Body() createFeedDto: CreateFeedDto) {
-    return this.feedsService.create(createFeedDto);
+  create(@Body() createFeedDto: CreateFeedDto, @CurrentUser() user?: RequestUser) {
+    return this.feedsService.create(createFeedDto, user);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all feeds (filtered by privacy for public users)' })
+  @ApiOperation({ summary: 'Get all feeds (filtered by privacy & owner/share access)' })
   @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
   findAll(
@@ -48,7 +48,7 @@ export class FeedsController {
     @CurrentUser() user?: RequestUser,
   ) {
     const isDeleted = includeDeleted === 'true';
-    return this.feedsService.findAll(isDeleted, search, user?.isAdmin ?? false);
+    return this.feedsService.findAll(isDeleted, search, user?.isAdmin ?? false, user);
   }
 
   @Get(':idOrSlug/notes')
@@ -59,13 +59,14 @@ export class FeedsController {
     @CurrentUser() user?: RequestUser,
   ) {
     const isAdmin = user?.isAdmin ?? false;
-    const feed = await this.feedsService.findOne(idOrSlug, isAdmin, false);
+    const feed = await this.feedsService.findOne(idOrSlug, isAdmin, false, user);
     return this.notesService.findAll(
       {
         ...query,
         feedId: feed.id,
       },
       isAdmin,
+      user,
     );
   }
 
@@ -81,7 +82,30 @@ export class FeedsController {
       idOrSlug,
       user?.isAdmin ?? false,
       includeNotes !== 'false',
+      user,
     );
+  }
+
+  @Post(':idOrSlug/shares')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Share a private feed with another user or agent account' })
+  shareFeed(
+    @Param('idOrSlug') idOrSlug: string,
+    @Body() dto: { granteeUserId: string; permission?: 'READ' | 'WRITE' },
+    @CurrentUser() user?: RequestUser,
+  ) {
+    return this.feedsService.shareFeed(idOrSlug, dto.granteeUserId, dto.permission || 'READ', user);
+  }
+
+  @Delete(':idOrSlug/shares/:granteeUserId')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Revoke a feed share for a user or agent account' })
+  revokeFeedShare(
+    @Param('idOrSlug') idOrSlug: string,
+    @Param('granteeUserId') granteeUserId: string,
+    @CurrentUser() user?: RequestUser,
+  ) {
+    return this.feedsService.revokeFeedShare(idOrSlug, granteeUserId, user);
   }
 
   @Patch(':id')

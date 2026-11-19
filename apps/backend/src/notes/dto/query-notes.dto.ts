@@ -59,6 +59,11 @@ export class QueryNotesDto {
   @IsOptional()
   userId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by owning User / Agent account ID' })
+  @IsString()
+  @IsOptional()
+  ownerUserId?: string;
+
   @ApiPropertyOptional({ enum: NoteType, description: 'Filter by NoteType' })
   @IsEnum(NoteType)
   @IsOptional()
