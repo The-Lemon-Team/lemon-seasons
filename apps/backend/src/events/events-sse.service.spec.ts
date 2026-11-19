@@ -127,4 +127,43 @@ describe('EventsSseService & SubscriptionRegistry', () => {
     subArchive.unsubscribe();
     expect(service.getSubscriberStats().activeSubscribers).toBe(0);
   });
+
+  it('propagates note events upward through nested child -> parent streams', async () => {
+    (mockPrisma as any).stream = {
+      findMany: vi.fn().mockResolvedValueOnce([
+        { id: 's-leaf', slug: 'leaf_ai', title: 'Leaf AI', privacy: 'public', feedIds: ['f-ai'], childStreamIds: [] },
+        { id: 's-parent', slug: 'parent_radar', title: 'Parent Radar', privacy: 'public', feedIds: [], childStreamIds: ['s-leaf'] },
+      ]),
+    };
+    mockPrisma.feed.findUnique.mockResolvedValueOnce({
+      slug: 'spark-ai',
+      title: 'Spark AI',
+      icon: '🤖',
+      color: '#0ea5e9',
+    });
+
+    const receivedParent: any[] = [];
+    const subParent = service
+      .getEventStream(false, undefined, { streams: 'parent_radar' })
+      .subscribe((msg) => {
+        if (msg.type === 'note') receivedParent.push(JSON.parse(msg.data as string));
+      });
+
+    await service.handleNotePublished(
+      new NotePublishedEvent(
+        'note-nested',
+        'Nested Stream Note',
+        null,
+        'PUBLISHED',
+        new Date('2026-11-19'),
+        'f-ai',
+        true,
+        { id: 'note-nested', privacy: 'public' },
+      ),
+    );
+
+    expect(receivedParent).toHaveLength(1);
+    expect(receivedParent[0].streamSlugs).toEqual(expect.arrayContaining(['leaf_ai', 'parent_radar']));
+    subParent.unsubscribe();
+  });
 });

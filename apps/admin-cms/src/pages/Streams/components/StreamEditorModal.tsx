@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Stream, CreateStreamPayload, UpdateStreamPayload, Feed, StreamPrivacy } from '@lenta/shared';
-import { X, Save, Sparkles, Hash, Folder, Lock, Globe, Search, Check } from 'lucide-react';
+import { X, Save, Sparkles, Hash, Folder, Lock, Globe, Search, Check, GitBranch } from 'lucide-react';
 
 export interface StreamEditorModalProps {
   stream?: Stream | null;
@@ -8,6 +8,36 @@ export interface StreamEditorModalProps {
   onClose: () => void;
   onSave: (payload: CreateStreamPayload | UpdateStreamPayload) => Promise<void>;
   allFeeds: Feed[];
+  allStreams?: Stream[];
+}
+
+function wouldCreateAdminStreamCycle(
+  parentId: string | undefined,
+  candidateChildId: string,
+  allStreams: Stream[],
+): boolean {
+  if (!parentId) return false;
+  if (parentId === candidateChildId) return true;
+
+  const byId = new Map(allStreams.map((s) => [s.id, s]));
+  const visited = new Set<string>();
+  const queue = [candidateChildId];
+
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    if (visited.has(cur)) continue;
+    visited.add(cur);
+
+    const node = byId.get(cur);
+    if (!node) continue;
+
+    for (const cid of node.childStreamIds || []) {
+      if (cid === parentId) return true;
+      if (!visited.has(cid)) queue.push(cid);
+    }
+  }
+
+  return false;
 }
 
 const PRESET_EMOJIS = ['🌐', '💻', '🍋', '🍿', '🎉', '✈️', '🔮', '🔒', '📈', '🔬', '🎮', '⚡', '🧠', '🎧', '🚀', '🤖'];
@@ -38,6 +68,7 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
   onClose,
   onSave,
   allFeeds = [],
+  allStreams = [],
 }) => {
   const isEditing = Boolean(stream);
 
@@ -50,6 +81,7 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
   const [privacy, setPrivacy] = useState<StreamPrivacy>('public');
   const [order, setOrder] = useState<number>(0);
   const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
+  const [selectedChildStreamIds, setSelectedChildStreamIds] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [folderPathsInput, setFolderPathsInput] = useState('');
@@ -71,6 +103,9 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
         setPrivacy(stream.privacy || 'public');
         setOrder(stream.order ?? 0);
         setSelectedFeedIds(stream.feedIds || []);
+        setSelectedChildStreamIds(
+          stream.childStreamIds || stream.childStreams?.map((cs) => cs.id) || []
+        );
         setTags(stream.tags || []);
         setFolderPathsInput((stream.folderPaths || []).join(', '));
       } else {
@@ -83,6 +118,7 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
         setPrivacy('public');
         setOrder(10);
         setSelectedFeedIds([]);
+        setSelectedChildStreamIds([]);
         setTags([]);
         setFolderPathsInput('');
       }
@@ -121,6 +157,24 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
       prev.includes(feedId) ? prev.filter((id) => id !== feedId) : [...prev, feedId]
     );
   };
+
+  const handleToggleChildStream = (childStreamId: string) => {
+    setSelectedChildStreamIds((prev) =>
+      prev.includes(childStreamId)
+        ? prev.filter((id) => id !== childStreamId)
+        : [...prev, childStreamId]
+    );
+  };
+
+  const candidateChildStreams = useMemo(() => {
+    return allStreams.filter((s) => {
+      if (s.isBuiltin) return false;
+      if (stream?.id && s.id === stream.id) return false;
+      if (privacy === 'public' && s.privacy === 'private') return false;
+      if (wouldCreateAdminStreamCycle(stream?.id, s.id, allStreams)) return false;
+      return true;
+    });
+  }, [allStreams, stream?.id, privacy]);
 
   const handleAddTag = () => {
     const clean = tagInput.trim().replace(/^#/, '');
@@ -168,6 +222,14 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
       .map((p) => p.trim())
       .filter(Boolean);
 
+    const validChildIds =
+      privacy === 'public'
+        ? selectedChildStreamIds.filter((cid) => {
+            const matched = allStreams.find((s) => s.id === cid);
+            return !matched || matched.privacy !== 'private';
+          })
+        : selectedChildStreamIds;
+
     const payload: CreateStreamPayload = {
       title: title.trim(),
       slug: slug.trim(),
@@ -178,6 +240,7 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
       privacy,
       order: Number(order) || 0,
       feedIds: selectedFeedIds,
+      childStreamIds: validChildIds,
       tags,
       folderPaths,
     };
@@ -443,6 +506,55 @@ export const StreamEditorModal: React.FC<StreamEditorModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Nested Child Streams Selector */}
+          {candidateChildStreams.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-tile-border">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                  <GitBranch className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Вложенные стримы (Nested Streams)</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-400">
+                    {selectedChildStreamIds.length} выбрано
+                  </span>
+                </label>
+                {selectedChildStreamIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChildStreamIds([])}
+                    className="text-[10px] text-error hover:underline cursor-pointer"
+                  >
+                    Сбросить
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-28 overflow-y-auto custom-scrollbar p-1.5 bg-control/50 rounded-lg border border-control-border grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {candidateChildStreams.map((cs) => {
+                  const isSelected = selectedChildStreamIds.includes(cs.id);
+                  return (
+                    <button
+                      key={cs.id}
+                      type="button"
+                      onClick={() => handleToggleChildStream(cs.id)}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded text-left text-xs transition-all cursor-pointer border ${
+                        isSelected
+                          ? 'bg-indigo-500/15 border-indigo-500/40 text-on-surface font-medium'
+                          : 'bg-tile border-tile-border/50 text-text-muted hover:text-on-surface hover:bg-tile-subtle'
+                      }`}
+                    >
+                      <span className="text-sm shrink-0">{cs.icon || '📁'}</span>
+                      <span className="truncate flex-1 text-[11px]">{cs.title}</span>
+                      {cs.privacy === 'private' && (
+                        <Lock className="w-2.5 h-2.5 text-purple-400 shrink-0" />
+                      )}
+                      {isSelected && <Check className="w-3 h-3 text-indigo-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Tags & Folders */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-tile-border">

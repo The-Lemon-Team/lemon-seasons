@@ -29,7 +29,7 @@ export interface TopologyTabNode {
   id: string;
   slug: string;
   label: string;
-  type: 'feed' | 'hashtag' | 'folder' | 'subtopic';
+  type: 'feed' | 'stream' | 'hashtag' | 'folder' | 'subtopic';
   privacy: 'public' | 'private';
   icon?: string | null;
   color?: string | null;

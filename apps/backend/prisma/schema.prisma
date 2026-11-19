@@ -472,23 +472,25 @@ model QuickAddMacro {
 }
 
 model Stream {
-  id          String    @id @default(uuid())
-  slug        String    @unique
-  title       String
-  description String?
-  icon        String?   @default("📁")
-  color       String?   @default("#2481cc")
-  badge       String?
-  privacy     String    @default("public")
-  order       Int       @default(0)
-  isBuiltin   Boolean   @default(false)
-  feedIds     String[]  @default([])
-  tags        String[]  @default([])
-  folderPaths String[]  @default([])
-  tabs        StreamTab[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id               String      @id @default(uuid())
+  slug             String      @unique
+  title            String
+  description      String?
+  icon             String?     @default("📁")
+  color            String?     @default("#2481cc")
+  badge            String?
+  privacy          String      @default("public")
+  order            Int         @default(0)
+  isBuiltin        Boolean     @default(false)
+  feedIds          String[]    @default([])
+  childStreamIds   String[]    @default([])
+  tags             String[]    @default([])
+  folderPaths      String[]    @default([])
+  tabs             StreamTab[] @relation("StreamOwnedTabs")
+  referencedByTabs StreamTab[] @relation("StreamTabTarget")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
 
   @@index([privacy])
   @@index([order])
@@ -497,26 +499,31 @@ model Stream {
 }
 
 model StreamTab {
-  id          String    @id @default(uuid())
-  streamId    String
-  stream      Stream    @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  streamId       String
+  stream         Stream    @relation("StreamOwnedTabs", fields: [streamId], references: [id], onDelete: Cascade)
 
-  feedId      String?
-  feed        Feed?     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  feedId         String?
+  feed           Feed?     @relation(fields: [feedId], references: [id], onDelete: Cascade)
 
-  type        String    @default("feed")
-  targetSlug  String?
+  targetStreamId String?
+  targetStream   Stream?   @relation("StreamTabTarget", fields: [targetStreamId], references: [id], onDelete: Cascade)
 
-  customTitle String?
-  customIcon  String?
-  badge       String?
-  order       Int       @default(0)
-  isHidden    Boolean   @default(false)
+  type           String    @default("feed")
+  targetSlug     String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  customTitle    String?
+  customIcon     String?
+  badge          String?
+  order          Int       @default(0)
+  isHidden       Boolean   @default(false)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([streamId, feedId])
+  @@unique([streamId, targetStreamId])
   @@index([streamId, order])
   @@index([feedId])
+  @@index([targetStreamId])
 }

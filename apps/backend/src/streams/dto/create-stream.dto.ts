@@ -53,6 +53,12 @@ export class CreateStreamDto {
   @IsOptional()
   feedIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Array of nested child Stream IDs or slugs bound to this stream', example: ['stream-it-dev', 'stream-js'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  childStreamIds?: string[];
+
   @ApiPropertyOptional({ description: 'Saved hashtags for automatic content inclusion', example: ['marvel', 'cinema'] })
   @IsArray()
   @IsString({ each: true })

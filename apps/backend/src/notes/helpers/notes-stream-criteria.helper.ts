@@ -8,10 +8,43 @@ export interface DynamicStreamCriteria {
   feedSlugs?: string[];
   folderPaths?: string[];
   tags?: string[];
+  fallbackStreams?: Array<{ slug: string; title: string }>;
 }
 
 /**
- * Builds Prisma where input conditions for a resolved dynamic stream.
+ * Builds implicit matching clauses (by slug/title/folder/hashtag) for a stream
+ * that has no explicit feeds, tags, or folders attached.
+ */
+function buildImplicitStreamClauses(slug: string, title: string): Prisma.NoteWhereInput[] {
+  const normSlug = slug.toLowerCase().trim();
+  const normSlugHyphen = normSlug.replace(/_/g, '-');
+  const normTitle = title.toLowerCase().trim();
+  const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normTitle].filter(Boolean)));
+  const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen].filter(Boolean)));
+
+  const clauses: Prisma.NoteWhereInput[] = [
+    { feed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
+    { publicFeed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
+    { folderPath: { contains: normSlug, mode: 'insensitive' as const } },
+    {
+      hashtags: {
+        some: {
+          name: { in: candidateTags, mode: 'insensitive' as const },
+          deletedAt: null,
+        },
+      },
+    },
+  ];
+
+  if (normSlugHyphen !== normSlug) {
+    clauses.push({ folderPath: { contains: normSlugHyphen, mode: 'insensitive' as const } });
+  }
+
+  return clauses;
+}
+
+/**
+ * Builds Prisma where input conditions for a resolved dynamic stream (including nested child streams).
  */
 export function buildDynamicStreamConditions(
   dynamicCriteria: DynamicStreamCriteria,
@@ -70,33 +103,17 @@ export function buildDynamicStreamConditions(
     });
   }
 
+  if (dynamicCriteria.fallbackStreams && dynamicCriteria.fallbackStreams.length > 0) {
+    for (const fb of dynamicCriteria.fallbackStreams) {
+      orClauses.push(...buildImplicitStreamClauses(fb.slug, fb.title));
+    }
+  }
+
   if (orClauses.length > 0) {
     conditions.push({ OR: orClauses });
   } else {
-    // Newly created custom stream with no explicit feeds, tags, or folders attached:
-    const normSlug = dynamicCriteria.slug.toLowerCase().trim();
-    const normSlugHyphen = normSlug.replace(/_/g, '-');
-    const normTitle = dynamicCriteria.title.toLowerCase().trim();
-    const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normTitle].filter(Boolean)));
-    const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen].filter(Boolean)));
-
     conditions.push({
-      OR: [
-        { feed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
-        { publicFeed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
-        { folderPath: { contains: normSlug, mode: 'insensitive' as const } },
-        ...(normSlugHyphen !== normSlug
-          ? [{ folderPath: { contains: normSlugHyphen, mode: 'insensitive' as const } }]
-          : []),
-        {
-          hashtags: {
-            some: {
-              name: { in: candidateTags, mode: 'insensitive' as const },
-              deletedAt: null,
-            },
-          },
-        },
-      ],
+      OR: buildImplicitStreamClauses(dynamicCriteria.slug, dynamicCriteria.title),
     });
   }
 

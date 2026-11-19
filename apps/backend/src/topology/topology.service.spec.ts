@@ -156,4 +156,57 @@ describe('TopologyService (Authoritative Каркас)', () => {
     expect(diff.feeds['party-gm-vault']).toBeUndefined(); // Unchanged feed is omitted from delta patch!
     expect(diff.feeds['party-chrono-diary'].totalNotes).toBe(2);
   });
+
+  it('aggregates nested child streams in topology snapshots and omits private nested tabs in public contour', async () => {
+    mockPrisma.stream.findMany.mockResolvedValue([
+      {
+        id: 's-child-pub',
+        slug: 'child-pub',
+        title: 'Child Public',
+        privacy: 'public',
+        order: 1,
+        isBuiltin: false,
+        feedIds: ['f-diary'],
+        childStreamIds: [],
+        tabs: [{ id: 'tc1', feedId: 'f-diary', targetSlug: 'party-chrono-diary', type: 'feed', isHidden: false }],
+      },
+      {
+        id: 's-child-priv',
+        slug: 'child-priv',
+        title: 'Child Private',
+        privacy: 'private',
+        order: 2,
+        isBuiltin: false,
+        feedIds: ['f-gm-secret'],
+        childStreamIds: [],
+        tabs: [{ id: 'tc2', feedId: 'f-gm-secret', targetSlug: 'party-gm-vault', type: 'feed', isHidden: false }],
+      },
+      {
+        id: 's-parent',
+        slug: 'parent-hub',
+        title: 'Parent Hub',
+        privacy: 'private',
+        order: 0,
+        isBuiltin: false,
+        feedIds: [],
+        childStreamIds: ['s-child-pub', 's-child-priv'],
+        tabs: [
+          { id: 'tp1', targetStreamId: 's-child-pub', targetSlug: 'child-pub', type: 'stream', isHidden: false },
+          { id: 'tp2', targetStreamId: 's-child-priv', targetSlug: 'child-priv', type: 'stream', isHidden: false },
+        ],
+      },
+    ]);
+
+    const adminSnap = await service.getTopology({ isAdmin: true });
+    const adminParent = adminSnap.streams.find((s) => s.slug === 'parent-hub')!;
+    expect(adminParent.totalNotes).toBe(2);
+    expect(adminParent.tabs).toHaveLength(2);
+    expect(adminParent.tabs[0]).toMatchObject({ slug: 'child-pub', type: 'stream', count: 1 });
+    expect(adminParent.tabs[1]).toMatchObject({ slug: 'child-priv', type: 'stream', count: 1 });
+
+    const parentTopo = await service.getStreamTopology('parent-hub', true);
+    expect(parentTopo.feeds.map((f) => f.slug)).toEqual(
+      expect.arrayContaining(['party-chrono-diary', 'party-gm-vault']),
+    );
+  });
 });

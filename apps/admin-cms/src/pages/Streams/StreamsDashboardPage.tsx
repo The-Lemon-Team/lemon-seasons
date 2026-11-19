@@ -247,6 +247,7 @@ export const StreamsDashboardPage: React.FC<StreamsDashboardPageProps> = () => {
           {/* Streams Table */}
           <StreamsTable
             streams={filteredStreams}
+            allStreams={streams}
             allFeeds={allFeeds}
             isLoading={isLoadingStreams}
             onOpenAnalytics={(s) => setAnalyticsStream(s)}
@@ -266,6 +267,7 @@ export const StreamsDashboardPage: React.FC<StreamsDashboardPageProps> = () => {
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveStream}
         allFeeds={allFeeds}
+        allStreams={streams}
       />
 
       {/* Analytics Slide-over Drawer */}

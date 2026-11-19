@@ -23,11 +23,27 @@ export interface Feed {
 
 export type StreamPrivacy = 'public' | 'private';
 
+export interface StreamChildSummary {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  privacy: StreamPrivacy;
+  feedIds?: string[];
+  childStreamIds?: string[];
+  tags?: string[];
+  folderPaths?: string[];
+}
+
 export interface StreamTab {
   id: string;
   streamId: string;
   feedId?: string | null;
   feed?: Feed | null;
+  targetStreamId?: string | null;
+  targetStream?: StreamChildSummary | null;
   type: string;
   targetSlug?: string | null;
   customTitle?: string | null;
@@ -47,6 +63,19 @@ export interface StreamFeedItem extends Feed {
   tabOrder?: number;
 }
 
+export interface StreamChildItem extends StreamChildSummary {
+  customTitle?: string | null;
+  customIcon?: string | null;
+  badge?: string | null;
+  tabId?: string;
+  tabOrder?: number;
+  _count?: {
+    notes?: number;
+    feeds?: number;
+    childStreams?: number;
+  };
+}
+
 export interface Stream {
   id: string;
   slug: string;
@@ -59,16 +88,19 @@ export interface Stream {
   order: number;
   isBuiltin: boolean;
   feedIds: string[];
+  childStreamIds?: string[];
   tags: string[];
   folderPaths: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
   feeds?: StreamFeedItem[];
+  childStreams?: StreamChildItem[];
   tabs?: StreamTab[];
   _count?: {
     notes?: number;
     feeds?: number;
+    childStreams?: number;
   };
 }
 
@@ -83,6 +115,7 @@ export interface CreateStreamPayload {
   order?: number;
   isBuiltin?: boolean;
   feedIds?: string[];
+  childStreamIds?: string[];
   tags?: string[];
   folderPaths?: string[];
 }
@@ -98,6 +131,7 @@ export interface UpdateStreamPayload {
   order?: number;
   isBuiltin?: boolean;
   feedIds?: string[];
+  childStreamIds?: string[];
   tags?: string[];
   folderPaths?: string[];
 }

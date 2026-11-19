@@ -1,10 +1,11 @@
 import React from 'react';
 import { Stream, Feed } from '@lenta/shared';
-import { Radio, Lock, Globe, BarChart2, Edit3, Trash2, ExternalLink, Hash, Folder } from 'lucide-react';
+import { Radio, Lock, Globe, BarChart2, Edit3, Trash2, ExternalLink, Hash, Folder, GitBranch } from 'lucide-react';
 import { EXTERNAL_APP_URLS } from '../../../components/sidebar/sidebar.constants';
 
 export interface StreamTableRowProps {
   stream: Stream;
+  allStreams?: Stream[];
   allFeeds: Feed[];
   onOpenAnalytics: (stream: Stream) => void;
   onEdit: (stream: Stream) => void;
@@ -13,6 +14,7 @@ export interface StreamTableRowProps {
 
 export const StreamTableRow: React.FC<StreamTableRowProps> = ({
   stream,
+  allStreams = [],
   allFeeds,
   onOpenAnalytics,
   onEdit,
@@ -23,9 +25,19 @@ export const StreamTableRow: React.FC<StreamTableRowProps> = ({
     .map((id) => allFeeds.find((f) => f.id === id || f.slug === id))
     .filter(Boolean) as Feed[];
 
+  // Resolve nested child stream objects
+  const boundChildStreams =
+    stream.childStreams && stream.childStreams.length > 0
+      ? stream.childStreams
+      : ((stream.childStreamIds || [])
+          .map((id) => allStreams.find((s) => s.id === id || s.slug === id))
+          .filter(Boolean) as Stream[]);
+
   const isPublic = stream.privacy === 'public';
   const visibleFeeds = boundFeeds.slice(0, 3);
   const extraFeedsCount = Math.max(0, boundFeeds.length - 3);
+  const visibleChildren = boundChildStreams.slice(0, 2);
+  const extraChildrenCount = Math.max(0, boundChildStreams.length - 2);
 
   const feedAppUrl = `${EXTERNAL_APP_URLS.feedApp}/?mode=${encodeURIComponent(stream.slug)}`;
 
@@ -106,12 +118,31 @@ export const StreamTableRow: React.FC<StreamTableRowProps> = ({
         )}
       </div>
 
-      {/* Bound Feeds Chips */}
+      {/* Bound Feeds & Nested Streams Chips */}
       <div className="flex items-center gap-1 flex-wrap min-w-0">
-        {boundFeeds.length === 0 ? (
+        {boundFeeds.length === 0 && boundChildStreams.length === 0 ? (
           <span className="text-[10px] text-text-muted italic">Все ленты (Auto)</span>
         ) : (
           <>
+            {visibleChildren.map((cs) => (
+              <span
+                key={`cs-${cs.id}`}
+                className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 truncate max-w-[115px]"
+                title={`Вложенный стрим: ${cs.title} (${cs.slug})`}
+              >
+                <GitBranch className="w-2.5 h-2.5 shrink-0" />
+                {cs.icon && <span>{cs.icon}</span>}
+                <span className="truncate">{cs.title}</span>
+              </span>
+            ))}
+            {extraChildrenCount > 0 && (
+              <span
+                className="text-[10px] font-mono px-1 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300"
+                title={boundChildStreams.slice(2).map((cs) => cs.title).join(', ')}
+              >
+                +{extraChildrenCount} str
+              </span>
+            )}
             {visibleFeeds.map((f) => (
               <span
                 key={f.id}

@@ -118,6 +118,20 @@ export class StreamsController {
     return this.streamsService.detachFeed(id, feedId);
   }
 
+  @Post(':id/streams/:childId')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Attach a nested child stream to a stream' })
+  attachChildStream(@Param('id') id: string, @Param('childId') childId: string) {
+    return this.streamsService.attachChildStream(id, childId);
+  }
+
+  @Delete(':id/streams/:childId')
+  @UseGuards(AuthenticatedWriteGuard)
+  @ApiOperation({ summary: 'Detach a nested child stream from a stream' })
+  detachChildStream(@Param('id') id: string, @Param('childId') childId: string) {
+    return this.streamsService.detachChildStream(id, childId);
+  }
+
   @Delete(':id')
   @UseGuards(AuthenticatedWriteGuard)
   @ApiOperation({ summary: 'Soft delete a stream' })

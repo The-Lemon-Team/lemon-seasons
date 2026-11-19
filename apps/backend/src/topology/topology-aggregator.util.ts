@@ -9,6 +9,7 @@ import {
   TopologyStreamNode,
   TopologyTabNode,
 } from '@lenta/shared';
+import { collectReachableStreamTree } from '../streams/stream-graph.util';
 
 export interface RawTopologyNoteRow {
   id: string;
@@ -173,14 +174,65 @@ export function buildTopologySnapshot(params: {
     feedNodeBySlug.set(tf.slug, tf);
   }
 
+  const streamById = new Map<string, any>(streams.map((s) => [s.id, s]));
+  const streamBySlug = new Map<string, any>(streams.map((s) => [s.slug, s]));
+
+  // Precompute reachable tree per stream (cycle-safe & contour-aware)
+  const treeByStreamId = new Map<string, ReturnType<typeof collectReachableStreamTree>>();
+  const totalNotesByStreamId = new Map<string, number>();
+  const upcomingByStreamId = new Map<string, number>();
+
+  for (const s of streams) {
+    const tree = collectReachableStreamTree({
+      rootStream: s,
+      allStreams: streams,
+      includePrivate: contour === 'admin',
+    });
+    treeByStreamId.set(s.id, tree);
+
+    let streamTotal = 0;
+    let streamUpcoming = 0;
+    const seenFeedIds = new Set<string>();
+    for (const fid of tree.feedIds) {
+      const fNode = feedNodeById.get(fid);
+      if (!fNode) continue;
+      if (contour === 'public' && fNode.privacy !== 'public') continue;
+      if (seenFeedIds.has(fNode.id)) continue;
+      seenFeedIds.add(fNode.id);
+      streamTotal += fNode.totalNotes;
+      streamUpcoming += feedStatsById.get(fNode.id)?.upcomingCount || 0;
+    }
+    totalNotesByStreamId.set(s.id, streamTotal);
+    upcomingByStreamId.set(s.id, streamUpcoming);
+  }
+
   const topologyStreams: TopologyStreamNode[] = streams.map((s) => {
     const rawTabs = Array.isArray(s.tabs) ? s.tabs.filter((t: any) => !t.isHidden) : [];
     const tabs: TopologyTabNode[] = [];
     const countedFeedIds = new Set<string>();
-    let streamUpcoming = 0;
+    let streamUpcoming = upcomingByStreamId.get(s.id) || 0;
 
     if (rawTabs.length > 0) {
       for (const t of rawTabs) {
+        if (t.type === 'stream' || t.targetStreamId) {
+          const childStream =
+            (t.targetStreamId && streamById.get(t.targetStreamId)) ||
+            (t.targetSlug && streamBySlug.get(t.targetSlug));
+          if (!childStream) continue;
+          if (contour === 'public' && childStream.privacy !== 'public') continue;
+          tabs.push({
+            id: t.id,
+            slug: childStream.slug,
+            label: t.customTitle || childStream.title || t.targetSlug || 'Stream',
+            type: 'stream',
+            privacy: childStream.privacy === 'private' ? 'private' : 'public',
+            icon: t.customIcon || childStream.icon || null,
+            color: childStream.color || null,
+            count: totalNotesByStreamId.get(childStream.id) ?? 0,
+          });
+          continue;
+        }
+
         const fNode =
           (t.feedId && feedNodeById.get(t.feedId)) ||
           (t.targetSlug && feedNodeBySlug.get(t.targetSlug));
@@ -191,7 +243,6 @@ export function buildTopologySnapshot(params: {
         const count = fNode ? fNode.totalNotes : 0;
         if (fNode) {
           countedFeedIds.add(fNode.id);
-          streamUpcoming += feedStatsById.get(fNode.id)?.upcomingCount || 0;
         }
         tabs.push({
           id: t.id,
@@ -204,30 +255,49 @@ export function buildTopologySnapshot(params: {
           count,
         });
       }
-    } else if (Array.isArray(s.feedIds)) {
-      for (const fid of s.feedIds) {
-        const fNode = feedNodeById.get(fid);
-        if (!fNode) continue;
-        if (contour === 'public' && fNode.privacy !== 'public') continue;
-        countedFeedIds.add(fNode.id);
-        streamUpcoming += feedStatsById.get(fNode.id)?.upcomingCount || 0;
-        tabs.push({
-          id: fNode.id,
-          slug: fNode.slug,
-          label: fNode.title,
-          type: 'feed',
-          privacy: fNode.privacy,
-          icon: fNode.icon,
-          color: fNode.color,
-          count: fNode.totalNotes,
-        });
+    } else {
+      if (Array.isArray(s.feedIds)) {
+        for (const fid of s.feedIds) {
+          const fNode = feedNodeById.get(fid);
+          if (!fNode) continue;
+          if (contour === 'public' && fNode.privacy !== 'public') continue;
+          countedFeedIds.add(fNode.id);
+          tabs.push({
+            id: fNode.id,
+            slug: fNode.slug,
+            label: fNode.title,
+            type: 'feed',
+            privacy: fNode.privacy,
+            icon: fNode.icon,
+            color: fNode.color,
+            count: fNode.totalNotes,
+          });
+        }
+      }
+      if (Array.isArray(s.childStreamIds)) {
+        for (const cid of s.childStreamIds) {
+          const childStream = streamById.get(cid);
+          if (!childStream) continue;
+          if (contour === 'public' && childStream.privacy !== 'public') continue;
+          tabs.push({
+            id: childStream.id,
+            slug: childStream.slug,
+            label: childStream.title,
+            type: 'stream',
+            privacy: childStream.privacy === 'private' ? 'private' : 'public',
+            icon: childStream.icon || null,
+            color: childStream.color || null,
+            count: totalNotesByStreamId.get(childStream.id) ?? 0,
+          });
+        }
       }
     }
 
-    const totalNotes = Array.from(countedFeedIds).reduce(
+    const directTabNotes = Array.from(countedFeedIds).reduce(
       (sum, fid) => sum + (feedNodeById.get(fid)?.totalNotes || 0),
       0,
     );
+    const totalNotes = Math.max(totalNotesByStreamId.get(s.id) ?? 0, directTabNotes);
 
     return {
       id: s.id,

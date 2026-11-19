@@ -12,6 +12,7 @@ import {
   SseSubscriptionQuery,
 } from './events.types';
 import { SubscriptionRegistry } from './subscription-registry';
+import { collectAncestorStreamSlugs } from '../streams/stream-graph.util';
 
 @Injectable()
 export class EventsSseService {
@@ -359,15 +360,15 @@ export class EventsSseService {
     }
     if (feedId && this.prisma.stream?.findMany) {
       try {
-        const streams = await this.prisma.stream.findMany({
-          where: {
-            deletedAt: null,
-            feedIds: { has: feedId },
-          },
-          select: { slug: true },
+        const allStreams = await this.prisma.stream.findMany({
+          where: { deletedAt: null },
+          select: { id: true, slug: true, title: true, privacy: true, feedIds: true, childStreamIds: true },
         });
-        for (const s of streams) {
-          if (s.slug) slugs.add(s.slug);
+        const directStreamIds = allStreams
+          .filter((s) => Array.isArray(s.feedIds) && s.feedIds.includes(feedId))
+          .map((s) => s.id);
+        for (const slug of collectAncestorStreamSlugs({ directStreamIds, allStreams })) {
+          slugs.add(slug);
         }
       } catch {
         // ignore if stream relation is mocked or unavailable

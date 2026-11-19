@@ -80,9 +80,7 @@ export class TopologyService implements OnModuleDestroy {
       const filteredStreams = base.streams.filter(
         (s) => s.slug.toLowerCase() === norm || s.id === options.streamSlug,
       );
-      const streamFeedSlugs = new Set(
-        filteredStreams.flatMap((s) => s.tabs.map((t) => t.slug.toLowerCase())),
-      );
+      const streamFeedSlugs = this.collectFeedSlugsForStreams(filteredStreams, base.streams);
       const filteredFeeds =
         streamFeedSlugs.size > 0
           ? base.feeds.filter((f) => streamFeedSlugs.has(f.slug.toLowerCase()))
@@ -96,6 +94,36 @@ export class TopologyService implements OnModuleDestroy {
     }
 
     return base;
+  }
+
+  private collectFeedSlugsForStreams(
+    rootStreams: SeasonsTopologySnapshot['streams'],
+    allStreams: SeasonsTopologySnapshot['streams'],
+  ): Set<string> {
+    const streamBySlug = new Map(allStreams.map((s) => [s.slug.toLowerCase(), s]));
+    const streamFeedSlugs = new Set<string>();
+    const visitedSlugs = new Set<string>();
+    const queue = [...rootStreams];
+
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      const key = cur.slug.toLowerCase();
+      if (visitedSlugs.has(key)) continue;
+      visitedSlugs.add(key);
+
+      for (const t of cur.tabs) {
+        if (t.type === 'stream') {
+          const nested = streamBySlug.get(t.slug.toLowerCase());
+          if (nested && !visitedSlugs.has(nested.slug.toLowerCase())) {
+            queue.push(nested);
+          }
+        } else {
+          streamFeedSlugs.add(t.slug.toLowerCase());
+        }
+      }
+    }
+
+    return streamFeedSlugs;
   }
 
   async getStreamTopology(
@@ -116,8 +144,8 @@ export class TopologyService implements OnModuleDestroy {
       throw new ForbiddenException('Access to private stream topology is forbidden');
     }
 
-    const tabFeedSlugs = new Set(stream.tabs.map((t) => t.slug));
-    const feeds = snapshot.feeds.filter((f) => tabFeedSlugs.has(f.slug));
+    const tabFeedSlugs = this.collectFeedSlugsForStreams([stream], snapshot.streams);
+    const feeds = snapshot.feeds.filter((f) => tabFeedSlugs.has(f.slug.toLowerCase()));
 
     return {
       revision: snapshot.revision,

@@ -5,6 +5,7 @@ import { Radio, RefreshCw } from 'lucide-react';
 
 export interface StreamsTableProps {
   streams: Stream[];
+  allStreams?: Stream[];
   allFeeds: Feed[];
   isLoading: boolean;
   onOpenAnalytics: (stream: Stream) => void;
@@ -15,6 +16,7 @@ export interface StreamsTableProps {
 
 export const StreamsTable: React.FC<StreamsTableProps> = ({
   streams,
+  allStreams = streams,
   allFeeds,
   isLoading,
   onOpenAnalytics,
@@ -44,6 +46,7 @@ export const StreamsTable: React.FC<StreamsTableProps> = ({
               <StreamTableRow
                 key={stream.id}
                 stream={stream}
+                allStreams={allStreams}
                 allFeeds={allFeeds}
                 onOpenAnalytics={onOpenAnalytics}
                 onEdit={onEdit}
