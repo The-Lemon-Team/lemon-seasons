@@ -2,7 +2,12 @@ import { Injectable, NotFoundException, BadRequestException, Optional } from '@n
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService, ProcessedImageResult } from '../storage/storage.service';
-import { UpdateNoteImageDto, ImageOrderItemDto, ExternalImageItemDto } from './dto/image.dto';
+import {
+  UpdateNoteImageDto,
+  ImageOrderItemDto,
+  ExternalImageItemDto,
+  NoteMediaAttachmentDto,
+} from './dto/image.dto';
 import { SerperImageSearchService, SerperSearchOptions } from './services/serper-image-search.service';
 import { NotePublishedEvent } from '../events';
 
@@ -369,6 +374,133 @@ export class NotesMediaService {
       throw new BadRequestException('No image URL provided');
     }
     return this.storageService.downloadAndSaveImageFromUrl(url, title);
+  }
+
+  /**
+   * Attach Media Hub assets or pre-hosted media descriptors directly to a Note
+   * without duplicating files onto local disk.
+   */
+  async attachMediaAssets(noteId: string, items: NoteMediaAttachmentDto[]) {
+    if (!items || items.length === 0) {
+      return this.prisma.noteImage.findMany({
+        where: { noteId },
+        orderBy: { order: 'asc' },
+      });
+    }
+
+    const note = await this.prisma.note.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note) {
+      throw new NotFoundException(`Note '${noteId}' not found`);
+    }
+
+    const existingImages = await this.prisma.noteImage.findMany({
+      where: { noteId },
+      orderBy: { order: 'desc' },
+    });
+
+    const existingUrls = new Set(existingImages.map((img) => img.url));
+    const hasMain = existingImages.some((img) => img.isMain);
+    const hasAnyMainRequested = items.some((item) => item.isMain);
+
+    if (hasAnyMainRequested && hasMain) {
+      await this.prisma.noteImage.updateMany({
+        where: { noteId },
+        data: { isMain: false },
+      });
+    }
+
+    let nextOrder = existingImages.length > 0 ? existingImages[0].order + 1 : 0;
+    const createdImages = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.url || existingUrls.has(item.url)) {
+        continue;
+      }
+      existingUrls.add(item.url);
+
+      const shouldBeMain =
+        item.isMain !== undefined
+          ? item.isMain
+          : !hasMain && !hasAnyMainRequested && i === 0;
+
+      const noteImage = await this.prisma.noteImage.create({
+        data: {
+          noteId,
+          url: item.url,
+          thumbnailUrl: item.thumbnailUrl || item.url,
+          filename: item.filename || 'media-hub-asset.webp',
+          mimeType: item.mimeType || 'image/webp',
+          sizeBytes: item.sizeBytes ?? 0,
+          width: item.width ?? null,
+          height: item.height ?? null,
+          isMain: shouldBeMain,
+          caption: item.caption,
+          alt: item.alt || item.caption,
+          order: nextOrder++,
+        },
+      });
+      createdImages.push(noteImage);
+    }
+
+    if (createdImages.length > 0) {
+      const existingMeta =
+        note.metadata && typeof note.metadata === 'object'
+          ? (note.metadata as Record<string, any>)
+          : {};
+      const existingAssetIds = Array.isArray(existingMeta.mediaAssetIds)
+        ? existingMeta.mediaAssetIds
+        : [];
+      const incomingAssetIds = items
+        .map((i) => i.mediaAssetId)
+        .filter((id): id is string => Boolean(id));
+      const mergedAssetIds = Array.from(new Set([...existingAssetIds, ...incomingAssetIds]));
+
+      const updatedNote = await this.prisma.note.update({
+        where: { id: noteId },
+        data: {
+          updatedAt: new Date(),
+          ...(mergedAssetIds.length > 0
+            ? {
+                metadata: {
+                  ...existingMeta,
+                  mediaAssetIds: mergedAssetIds,
+                },
+              }
+            : {}),
+        },
+        include: {
+          images: { orderBy: { order: 'asc' } },
+          folders: { include: { folder: true } },
+          hashtags: true,
+        },
+      });
+
+      if (this.eventEmitter && updatedNote) {
+        const primaryFolder = updatedNote.folders[0]?.folder;
+        this.eventEmitter.emit(
+          'note.published',
+          new NotePublishedEvent(
+            updatedNote.id,
+            updatedNote.title,
+            primaryFolder?.path || '',
+            updatedNote.status,
+            updatedNote.publishAt,
+            updatedNote.feedId,
+            false,
+            updatedNote,
+          ),
+        );
+      }
+    }
+
+    return this.prisma.noteImage.findMany({
+      where: { noteId },
+      orderBy: { order: 'asc' },
+    });
   }
 }
 

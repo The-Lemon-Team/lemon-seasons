@@ -82,3 +82,67 @@ export class FetchExternalMediaDto {
   @IsOptional()
   title?: string;
 }
+
+export class NoteMediaAttachmentDto {
+  @ApiProperty({ description: 'Media asset URL (from Lemon Media Hub or external)' })
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+
+  @ApiPropertyOptional({ description: 'Thumbnail URL' })
+  @IsString()
+  @IsOptional()
+  thumbnailUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Original or stored filename' })
+  @IsString()
+  @IsOptional()
+  filename?: string;
+
+  @ApiPropertyOptional({ description: 'MIME type (e.g. image/webp)' })
+  @IsString()
+  @IsOptional()
+  mimeType?: string;
+
+  @ApiPropertyOptional({ description: 'Size in bytes' })
+  @IsNumber()
+  @IsOptional()
+  sizeBytes?: number;
+
+  @ApiPropertyOptional({ description: 'Image width in pixels' })
+  @IsNumber()
+  @IsOptional()
+  width?: number | null;
+
+  @ApiPropertyOptional({ description: 'Image height in pixels' })
+  @IsNumber()
+  @IsOptional()
+  height?: number | null;
+
+  @ApiPropertyOptional({ description: 'Caption text' })
+  @IsString()
+  @IsOptional()
+  caption?: string;
+
+  @ApiPropertyOptional({ description: 'Alt text' })
+  @IsString()
+  @IsOptional()
+  alt?: string;
+
+  @ApiPropertyOptional({ description: 'Set as main/cover photo' })
+  @IsBoolean()
+  @IsOptional()
+  isMain?: boolean;
+
+  @ApiPropertyOptional({ description: 'Lemon Media Hub asset ID' })
+  @IsString()
+  @IsOptional()
+  mediaAssetId?: string;
+}
+
+export class AttachMediaAssetsDto {
+  @ApiProperty({ description: 'Media assets to attach to the note', type: [NoteMediaAttachmentDto] })
+  @IsArray()
+  @Type(() => NoteMediaAttachmentDto)
+  items: NoteMediaAttachmentDto[];
+}
