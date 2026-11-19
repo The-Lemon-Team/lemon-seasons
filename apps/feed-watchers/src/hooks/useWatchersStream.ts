@@ -1,102 +1,152 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useCoreLiveStream } from '@feed-core';
+import { WatchersApiClient, WatchersNeuron, WatchersNeuronState } from '@lenta/seasons-neurons';
 import { watchersStreamApi } from '../api/watchersStreamApi';
-import {
-  StreamCounts,
-  StreamLiveEvent,
-  StreamNewsStatus,
-  WatcherFolder,
-  WatcherState,
-  WatcherStreamItem,
-} from '../types';
+import { CreateWatcherInput, StreamLiveEvent, StreamNewsStatus } from '../types';
+import { parseWatchersRoute, pushWatchersRoute } from '../utils/watchersRouter';
 
 const PAGE_SIZE = 30;
 
-export function useWatchersStream() {
-  const [folders, setFolders] = useState<WatcherFolder[]>([]);
-  const [watchers, setWatchers] = useState<WatcherState[]>([]);
-  const [items, setItems] = useState<WatcherStreamItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState<StreamCounts>({
-    newCount: 0,
-    promotedCount: 0,
-    dismissedCount: 0,
-    totalCount: 0,
-  });
+export interface UseWatchersStreamOptions {
+  embedded?: boolean;
+  externalCategory?: string;
+  onExternalCategoryChange?: (slug?: string) => void;
+}
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedWatcher, setSelectedWatcher] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<StreamNewsStatus | 'ALL'>('NEW');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+export function useWatchersStream(options: UseWatchersStreamOptions = {}) {
+  const { embedded = false, externalCategory, onExternalCategoryChange } = options;
+  const initialRoute = useMemo(() => parseWatchersRoute(), []);
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [mutatingIds, setMutatingIds] = useState<Set<string>>(() => new Set());
-  const [isTriggeringAll, setIsTriggeringAll] = useState(false);
-  const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
+  const neuronRef = useRef<WatchersNeuron | null>(null);
+  if (!neuronRef.current) {
+    neuronRef.current = new WatchersNeuron({
+      apiClient: watchersStreamApi as unknown as WatchersApiClient,
+      pageSize: PAGE_SIZE,
+      initialFilter: { status: initialRoute.status },
+    });
+  }
+  const neuron = neuronRef.current;
 
-  const [pendingLiveItems, setPendingLiveItems] = useState<WatcherStreamItem[]>([]);
+  const [neuronState, setNeuronState] = useState<WatchersNeuronState>(() => neuron.state);
+  const [internalCategory, setInternalCategory] = useState<string>(() =>
+    externalCategory !== undefined ? externalCategory : initialRoute.category
+  );
+  const [selectedWatcher, setSelectedWatcherState] = useState<string>(() => initialRoute.watcher);
+  const [statusFilter, setStatusFilterState] = useState<StreamNewsStatus | 'ALL'>(
+    () => initialRoute.status
+  );
+  const [searchQuery, setSearchQueryState] = useState<string>(() => initialRoute.search);
+  const [isManagerRouteOpen, setIsManagerRouteOpen] = useState<boolean>(() => initialRoute.manage);
 
-  const loadMetadata = useCallback(async () => {
-    try {
-      const [foldersData, watchersData] = await Promise.all([
-        watchersStreamApi.getFolders(),
-        watchersStreamApi.getWatchers(),
-      ]);
-      setFolders(foldersData);
-      setWatchers(watchersData);
-    } catch (err: any) {
+  const selectedCategory =
+    embedded && externalCategory !== undefined ? externalCategory : internalCategory;
+
+  useEffect(() => {
+    const sub = neuron.stateObservable.subscribe((next) => {
+      setNeuronState(next);
+    });
+    return () => sub.unsubscribe();
+  }, [neuron]);
+
+  useEffect(() => {
+    neuron.loadMetadata().catch((err: any) => {
       console.warn('[useWatchersStream] Metadata load warning:', err?.message || err);
-    }
-  }, []);
+    });
+  }, [neuron]);
 
-  const loadPage = useCallback(
-    async (offset = 0, append = false) => {
-      if (append) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-        setError(null);
+  // Listen to browser Back/Forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseWatchersRoute();
+      if (!embedded) {
+        setInternalCategory(parsed.category);
       }
+      setSelectedWatcherState(parsed.watcher);
+      setStatusFilterState(parsed.status);
+      setSearchQueryState(parsed.search);
+      setIsManagerRouteOpen(parsed.manage);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [embedded]);
 
-      try {
-        const res = await watchersStreamApi.getStreamItems({
-          categories: selectedCategory ? [selectedCategory] : undefined,
-          watchers: selectedWatcher ? [selectedWatcher] : undefined,
-          status: statusFilter,
-          search: searchQuery || undefined,
-          limit: PAGE_SIZE,
-          offset,
-        });
+  const syncRoute = useCallback(
+    (
+      patch: Partial<{
+        category: string;
+        watcher: string;
+        status: StreamNewsStatus | 'ALL';
+        search: string;
+        manage: boolean;
+      }>,
+      replace = false
+    ) => {
+      pushWatchersRoute(
+        {
+          category: patch.category ?? selectedCategory,
+          watcher: patch.watcher ?? selectedWatcher,
+          status: patch.status ?? statusFilter,
+          search: patch.search ?? searchQuery,
+          manage: patch.manage ?? isManagerRouteOpen,
+        },
+        { embedded, replace }
+      );
+    },
+    [selectedCategory, selectedWatcher, statusFilter, searchQuery, isManagerRouteOpen, embedded]
+  );
 
-        setItems((prev) => {
-          if (!append) return res.items;
-          const map = new Map<string, WatcherStreamItem>();
-          for (const it of prev) map.set(it.id, it);
-          for (const it of res.items) map.set(it.id, it);
-          return Array.from(map.values());
-        });
-        setTotal(res.total);
-        if (res.counts) setCounts(res.counts);
-        if (!append) setPendingLiveItems([]);
-      } catch (err: any) {
-        setError(err?.message || 'Не удалось подключиться к Lemon-Watchers (:3040)');
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+  const setSelectedCategory = useCallback(
+    (slug: string) => {
+      if (embedded && onExternalCategoryChange) {
+        onExternalCategoryChange(slug || undefined);
+      } else {
+        setInternalCategory(slug);
+        syncRoute({ category: slug, watcher: '' });
       }
     },
-    [selectedCategory, selectedWatcher, statusFilter, searchQuery]
+    [embedded, onExternalCategoryChange, syncRoute]
+  );
+
+  const setSelectedWatcher = useCallback(
+    (slug: string) => {
+      setSelectedWatcherState(slug);
+      syncRoute({ watcher: slug });
+    },
+    [syncRoute]
+  );
+
+  const setStatusFilter = useCallback(
+    (status: StreamNewsStatus | 'ALL') => {
+      setStatusFilterState(status);
+      syncRoute({ status });
+    },
+    [syncRoute]
+  );
+
+  const setSearchQuery = useCallback(
+    (q: string) => {
+      setSearchQueryState(q);
+      syncRoute({ search: q }, true);
+    },
+    [syncRoute]
+  );
+
+  const setManagerOpen = useCallback(
+    (open: boolean) => {
+      setIsManagerRouteOpen(open);
+      syncRoute({ manage: open });
+    },
+    [syncRoute]
   );
 
   useEffect(() => {
-    loadMetadata();
-  }, [loadMetadata]);
-
-  useEffect(() => {
-    loadPage(0, false);
-  }, [loadPage]);
+    neuron.loadInitial({
+      categories: selectedCategory ? [selectedCategory] : undefined,
+      watchers: selectedWatcher ? [selectedWatcher] : undefined,
+      status: statusFilter,
+      search: searchQuery || undefined,
+    });
+  }, [neuron, selectedCategory, selectedWatcher, statusFilter, searchQuery]);
 
   const sseUrl = useMemo(
     () =>
@@ -110,49 +160,9 @@ export function useWatchersStream() {
 
   const handleSseEvent = useCallback(
     (eventName: string, ev: StreamLiveEvent) => {
-      if (eventName === 'heartbeat') {
-        setLastHeartbeatAt(ev.timestamp || new Date().toISOString());
-        return;
-      }
-
-      if (eventName === 'news_item' && ev.item) {
-        const incoming = ev.item;
-        setPendingLiveItems((prev) => {
-          if (prev.some((x) => x.id === incoming.id)) return prev;
-          return [incoming, ...prev];
-        });
-        setCounts((prev) => ({
-          ...prev,
-          newCount: prev.newCount + 1,
-          totalCount: prev.totalCount + 1,
-        }));
-        return;
-      }
-
-      if (eventName === 'news_promoted' && ev.item) {
-        const promoted = ev.item;
-        setPendingLiveItems((prev) => prev.filter((x) => x.id !== promoted.id));
-        setItems((prev) => {
-          if (statusFilter === 'NEW') {
-            return prev.filter((x) => x.id !== promoted.id);
-          }
-          return prev.map((x) => (x.id === promoted.id ? promoted : x));
-        });
-        return;
-      }
-
-      if (eventName === 'news_dismissed' && ev.item) {
-        const dismissed = ev.item;
-        setPendingLiveItems((prev) => prev.filter((x) => x.id !== dismissed.id));
-        setItems((prev) => {
-          if (statusFilter === 'NEW') {
-            return prev.filter((x) => x.id !== dismissed.id);
-          }
-          return prev.map((x) => (x.id === dismissed.id ? dismissed : x));
-        });
-      }
+      neuron.handleLiveEvent(eventName, ev);
     },
-    [statusFilter]
+    [neuron]
   );
 
   const { status: sseStatus } = useCoreLiveStream<StreamLiveEvent>({
@@ -162,121 +172,33 @@ export function useWatchersStream() {
     onEvent: handleSseEvent,
   });
 
-  const applyPendingLive = useCallback(() => {
-    if (pendingLiveItems.length === 0) return;
-    setItems((prev) => {
-      const map = new Map<string, WatcherStreamItem>();
-      for (const it of pendingLiveItems) map.set(it.id, it);
-      for (const it of prev) {
-        if (!map.has(it.id)) map.set(it.id, it);
-      }
-      return Array.from(map.values());
-    });
-    setTotal((prev) => prev + pendingLiveItems.length);
-    setPendingLiveItems([]);
-  }, [pendingLiveItems]);
-
-  const dismissPendingLive = useCallback(() => {
-    setPendingLiveItems([]);
-  }, []);
-
-  const markMutating = (ids: string[], active: boolean) => {
-    setMutatingIds((prev) => {
-      const next = new Set(prev);
-      for (const id of ids) {
-        if (active) next.add(id);
-        else next.delete(id);
-      }
-      return next;
-    });
-  };
-
-  const promoteItem = useCallback(
-    async (id: string) => {
-      markMutating([id], true);
-      try {
-        const res = await watchersStreamApi.promoteItem(id);
-        setItems((prev) => {
-          if (statusFilter === 'NEW') return prev.filter((x) => x.id !== id);
-          return prev.map((x) => (x.id === id ? res.item : x));
-        });
-        setCounts((prev) => ({
-          ...prev,
-          newCount: Math.max(0, prev.newCount - 1),
-          promotedCount: prev.promotedCount + 1,
-        }));
-        return res;
-      } finally {
-        markMutating([id], false);
-      }
-    },
-    [statusFilter]
+  const mutatingIds = useMemo(
+    () => new Set(neuronState.mutatingIds),
+    [neuronState.mutatingIds]
   );
 
-  const batchPromote = useCallback(
-    async (ids: string[]) => {
-      if (ids.length === 0) return;
-      markMutating(ids, true);
-      try {
-        await watchersStreamApi.batchPromote(ids);
-        await loadPage(0, false);
-      } finally {
-        markMutating(ids, false);
-      }
-    },
-    [loadPage]
+  const togglingWatcherIds = useMemo(
+    () => new Set(neuronState.togglingWatcherIds),
+    [neuronState.togglingWatcherIds]
   );
 
-  const dismissItem = useCallback(
-    async (id: string) => {
-      markMutating([id], true);
-      try {
-        const res = await watchersStreamApi.dismissItem(id);
-        setItems((prev) => {
-          if (statusFilter === 'NEW') return prev.filter((x) => x.id !== id);
-          return prev.map((x) => (x.id === id ? res.item : x));
-        });
-        setCounts((prev) => ({
-          ...prev,
-          newCount: Math.max(0, prev.newCount - 1),
-          dismissedCount: prev.dismissedCount + 1,
-        }));
-      } finally {
-        markMutating([id], false);
-      }
-    },
-    [statusFilter]
+  const triggeringWatcherIds = useMemo(
+    () => new Set(neuronState.triggeringWatcherIds),
+    [neuronState.triggeringWatcherIds]
   );
 
-  const batchDismiss = useCallback(
-    async (ids: string[]) => {
-      if (ids.length === 0) return;
-      markMutating(ids, true);
-      try {
-        await watchersStreamApi.batchDismiss(ids);
-        await loadPage(0, false);
-      } finally {
-        markMutating(ids, false);
-      }
-    },
-    [loadPage]
+  const activeWatchersCount = useMemo(
+    () => neuronState.watchers.filter((w) => w.enabled).length,
+    [neuronState.watchers]
   );
-
-  const triggerAll = useCallback(async () => {
-    setIsTriggeringAll(true);
-    try {
-      await watchersStreamApi.triggerAllWatchers();
-    } finally {
-      setIsTriggeringAll(false);
-    }
-  }, []);
 
   return {
-    folders,
-    watchers,
-    items,
-    total,
-    counts,
+    folders: neuronState.folders,
+    watchers: neuronState.watchers,
+    activeWatchersCount,
+    items: neuronState.items,
+    total: neuronState.total,
+    counts: neuronState.counts,
     selectedCategory,
     setSelectedCategory,
     selectedWatcher,
@@ -285,23 +207,47 @@ export function useWatchersStream() {
     setStatusFilter,
     searchQuery,
     setSearchQuery,
-    isLoading,
-    isLoadingMore,
-    hasMore: items.length < total,
-    loadMore: () => loadPage(items.length, true),
-    refresh: () => loadPage(0, false),
-    error,
+    isManagerOpen: isManagerRouteOpen,
+    setManagerOpen,
+    isLoading: neuronState.isLoading,
+    isLoadingMore: neuronState.isLoadingMore,
+    hasMore: neuronState.hasMore,
+    loadMore: useCallback(() => neuron.loadMore(), [neuron]),
+    refresh: useCallback(() => neuron.refresh(), [neuron]),
+    error: neuronState.error,
     sseStatus,
-    lastHeartbeatAt,
-    pendingLiveCount: pendingLiveItems.length,
-    applyPendingLive,
-    dismissPendingLive,
+    lastHeartbeatAt: neuronState.lastHeartbeatAt,
+    pendingLiveCount: neuronState.pendingLiveItems.length,
+    applyPendingLive: useCallback(() => neuron.applyPendingLive(), [neuron]),
+    dismissPendingLive: useCallback(() => neuron.dismissPendingLive(), [neuron]),
     mutatingIds,
-    promoteItem,
-    batchPromote,
-    dismissItem,
-    batchDismiss,
-    triggerAll,
-    isTriggeringAll,
+    togglingWatcherIds,
+    triggeringWatcherIds,
+    isBulkWatchersMutating: neuronState.isBulkWatchersMutating,
+    promoteItem: useCallback((id: string) => neuron.promote(id), [neuron]),
+    batchPromote: useCallback((ids: string[]) => neuron.batchPromote(ids), [neuron]),
+    dismissItem: useCallback((id: string) => neuron.dismiss(id), [neuron]),
+    batchDismiss: useCallback((ids: string[]) => neuron.batchDismiss(ids), [neuron]),
+    triggerAll: useCallback(() => neuron.triggerAll(), [neuron]),
+    isTriggeringAll: neuronState.isTriggeringAll,
+    toggleWatcher: useCallback(
+      (idOrSlug: string, enabled: boolean) => neuron.toggleWatcher(idOrSlug, enabled),
+      [neuron]
+    ),
+    triggerWatcher: useCallback(
+      (idOrSlug: string) => neuron.triggerWatcher(idOrSlug),
+      [neuron]
+    ),
+    resumeAllWatchers: useCallback(() => neuron.resumeAllWatchers(), [neuron]),
+    pauseAllWatchers: useCallback(() => neuron.pauseAllWatchers(), [neuron]),
+    validateFeed: useCallback(
+      (url: string, protocol: 'rss' | 'atom' | 'json' = 'rss') =>
+        neuron.validateFeed(url, protocol),
+      [neuron]
+    ),
+    createWatcher: useCallback(
+      (input: CreateWatcherInput) => neuron.createWatcher(input),
+      [neuron]
+    ),
   };
 }

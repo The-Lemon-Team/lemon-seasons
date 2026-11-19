@@ -22,7 +22,9 @@ export class ModerationApiClient {
   constructor(options: ModerationApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.token = options.token;
-    this.fetchFn = options.fetchImpl || globalThis.fetch;
+    this.fetchFn =
+      options.fetchImpl ||
+      ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init));
   }
 
   setToken(token?: string): void {

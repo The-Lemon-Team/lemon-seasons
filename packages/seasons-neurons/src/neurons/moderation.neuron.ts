@@ -268,6 +268,11 @@ export class ModerationNeuron {
             : null,
         });
       }
+    } else if (event.type === 'MODERATION_ITEM_UPDATED' && event.item) {
+      const updated = event.item;
+      this.patchState({
+        items: current.items.map((i) => (i.id === updated.id ? updated : i)),
+      });
     } else if (event.type === 'MODERATION_ITEM_APPROVED' && event.noteId) {
       if (current.filter.status === 'PENDING') {
         this.patchState({

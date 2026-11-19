@@ -155,4 +155,15 @@ test('ModerationNeuron: reactive state management, approve, reject, and SSE impu
   assert.equal(neuron.state.items[0].id, 'mod-live-3');
   assert.equal(neuron.state.total, 1);
   assert.equal(neuron.state.stats?.pendingCount, 1);
+
+  // 5. Handle live SSE impulse (MODERATION_ITEM_UPDATED)
+  neuron.handleImpulse({
+    type: 'MODERATION_ITEM_UPDATED',
+    item: {
+      ...neuron.state.items[0],
+      title: 'Updated Breaking News via SSE',
+    },
+  });
+
+  assert.equal(neuron.state.items[0].title, 'Updated Breaking News via SSE');
 });

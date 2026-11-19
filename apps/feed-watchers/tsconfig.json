@@ -20,7 +20,8 @@
       "@/*": ["./src/*"],
       "@feed-core": ["../feed-app/src/core/index.ts"],
       "@feed-core/*": ["../feed-app/src/core/*"],
-      "@lenta/shared": ["../../packages/shared/src"]
+      "@lenta/shared": ["../../packages/shared/src"],
+      "@lenta/seasons-neurons": ["../../packages/seasons-neurons/dist/index.d.ts"]
     }
   },
   "include": ["src"]

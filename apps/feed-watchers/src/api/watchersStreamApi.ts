@@ -1,8 +1,11 @@
-import axios from 'axios';
+import { WatchersApiClient } from '@lenta/seasons-neurons';
 import {
+  CreateWatcherInput,
   PaginatedStreamNews,
   StreamNewsStatus,
+  ValidateWatcherFeedResult,
   WatcherFolder,
+  WatcherPingRecord,
   WatcherState,
   WatcherStreamItem,
 } from '../types';
@@ -15,111 +18,89 @@ export function resolveWatchersApiBaseUrl(): string {
   return '/watchers-api';
 }
 
-const client = axios.create({
-  timeout: 30000,
+export const watchersClient = new WatchersApiClient({
+  baseUrl: resolveWatchersApiBaseUrl(),
 });
 
 export const watchersStreamApi = {
   getSseUrl(options: { categories?: string[]; watchers?: string[]; replay?: number } = {}): string {
-    const base = resolveWatchersApiBaseUrl();
-    const params = new URLSearchParams();
-    if (options.categories && options.categories.length > 0) {
-      params.set('categories', options.categories.join(','));
-    }
-    if (options.watchers && options.watchers.length > 0) {
-      params.set('watchers', options.watchers.join(','));
-    }
-    params.set('replay', String(options.replay ?? 20));
-    return `${base}/api/v1/streams/live?${params.toString()}`;
+    return watchersClient.getSseUrl(options);
   },
 
   async getFolders(): Promise<WatcherFolder[]> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.get<{ items: WatcherFolder[] }>(`${base}/api/v1/folders`);
-    return data.items || [];
+    return watchersClient.getFolders();
   },
 
   async getWatchers(): Promise<WatcherState[]> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.get<{ items: WatcherState[] }>(`${base}/api/v1/watchers`);
-    return data.items || [];
+    return watchersClient.getWatchers();
   },
 
-  async getStreamItems(params: {
-    categories?: string[];
-    watchers?: string[];
-    status?: StreamNewsStatus | 'ALL';
-    search?: string;
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<PaginatedStreamNews> {
-    const base = resolveWatchersApiBaseUrl();
-    const query = new URLSearchParams();
-    if (params.categories && params.categories.length > 0) {
-      query.set('categories', params.categories.join(','));
-    }
-    if (params.watchers && params.watchers.length > 0) {
-      query.set('watchers', params.watchers.join(','));
-    }
-    if (params.status) query.set('status', params.status);
-    if (params.search?.trim()) query.set('search', params.search.trim());
-    query.set('limit', String(params.limit ?? 30));
-    query.set('offset', String(params.offset ?? 0));
-
-    const { data } = await client.get<PaginatedStreamNews>(
-      `${base}/api/v1/streams/items?${query.toString()}`
-    );
-    return data;
+  async getStreamItems(
+    params: {
+      categories?: string[];
+      watchers?: string[];
+      status?: StreamNewsStatus | 'ALL';
+      search?: string;
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<PaginatedStreamNews> {
+    return watchersClient.getStreamItems(params);
   },
 
   async promoteItem(id: string): Promise<{ item: WatcherStreamItem; article: any }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ item: WatcherStreamItem; article: any }>(
-      `${base}/api/v1/streams/items/${encodeURIComponent(id)}/promote`
-    );
-    return data;
+    return watchersClient.promoteItem(id);
   },
 
   async batchPromote(ids: string[]): Promise<{ count: number; articles: any[] }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ count: number; articles: any[] }>(
-      `${base}/api/v1/streams/items/batch-promote`,
-      { ids }
-    );
-    return data;
+    return watchersClient.batchPromote(ids);
   },
 
   async dismissItem(id: string): Promise<{ item: WatcherStreamItem }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ item: WatcherStreamItem }>(
-      `${base}/api/v1/streams/items/${encodeURIComponent(id)}/dismiss`
-    );
-    return data;
+    return watchersClient.dismissItem(id);
   },
 
   async batchDismiss(ids: string[]): Promise<{ count: number; items: WatcherStreamItem[] }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ count: number; items: WatcherStreamItem[] }>(
-      `${base}/api/v1/streams/items/batch-dismiss`,
-      { ids }
-    );
-    return data;
+    return watchersClient.batchDismiss(ids);
   },
 
   async triggerAllWatchers(): Promise<{ message: string }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ message: string }>(
-      `${base}/api/v1/watchers/trigger-all`
-    );
-    return data;
+    return watchersClient.triggerAllWatchers();
+  },
+
+  async pauseAllWatchers(): Promise<{ message: string }> {
+    return watchersClient.pauseAllWatchers();
+  },
+
+  async resumeAllWatchers(): Promise<{ message: string }> {
+    return watchersClient.resumeAllWatchers();
+  },
+
+  async setWatcherEnabled(
+    idOrSlug: string,
+    enabled: boolean
+  ): Promise<{ message: string; watcher: WatcherState }> {
+    return watchersClient.setWatcherEnabled(idOrSlug, enabled);
+  },
+
+  async triggerWatcher(idOrSlug: string): Promise<WatcherPingRecord> {
+    return watchersClient.triggerWatcher(idOrSlug);
+  },
+
+  async validateFeed(
+    url: string,
+    protocol: 'rss' | 'atom' | 'json' = 'rss'
+  ): Promise<ValidateWatcherFeedResult> {
+    return watchersClient.validateFeed(url, protocol);
+  },
+
+  async createWatcher(
+    input: CreateWatcherInput
+  ): Promise<{ config: any; state: WatcherState }> {
+    return watchersClient.createWatcher(input);
   },
 
   async pruneExpired(ttlHours?: number): Promise<{ pruned: number; ttlHours: number }> {
-    const base = resolveWatchersApiBaseUrl();
-    const { data } = await client.post<{ pruned: number; ttlHours: number }>(
-      `${base}/api/v1/streams/prune`,
-      ttlHours ? { ttlHours } : {}
-    );
-    return data;
+    return watchersClient.pruneExpired(ttlHours);
   },
 };

@@ -1,14 +1,61 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import os from 'node:os';
 import path from 'path';
 
-function projectariumVitePlugin(defaultPort: number): Plugin {
-  const enabled = process.env.ENABLE_PROJECTARIUM !== 'false';
-  const baseUrl = (
-    process.env.PROJECTARIUM_URL ||
-    process.env.CORE_COMBINATOR_URL ||
+function resolveProjectariumBaseUrl(env: Record<string, string>): string {
+  return (
+    env.PROJECTARIUM_URL ||
+    env.CORE_COMBINATOR_URL ||
     'http://127.0.0.1:3000/api'
   ).replace(/\/+$/, '');
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const norm = hostname.toLowerCase();
+  return norm === 'localhost' || norm === '127.0.0.1' || norm === '::1';
+}
+
+function resolveAdvertisedHost(projectariumBaseUrl: string, env: Record<string, string>): {
+  host: string;
+  networkMode: 'local' | 'lan';
+} {
+  if (env.PROJECTARIUM_APP_HOST) {
+    const h = env.PROJECTARIUM_APP_HOST.trim();
+    return { host: h, networkMode: isLocalHostname(h) ? 'local' : 'lan' };
+  }
+
+  try {
+    const targetHostname = new URL(projectariumBaseUrl).hostname;
+    if (!isLocalHostname(targetHostname)) {
+      const targetPrefix = targetHostname.split('.').slice(0, 3).join('.');
+      const nets = os.networkInterfaces();
+      let fallbackIp: string | null = null;
+      for (const addrs of Object.values(nets)) {
+        for (const addr of addrs || []) {
+          if (addr.family === 'IPv4' && !addr.internal) {
+            if (addr.address.startsWith(`${targetPrefix}.`)) {
+              return { host: addr.address, networkMode: 'lan' };
+            }
+            if (!fallbackIp) fallbackIp = addr.address;
+          }
+        }
+      }
+      if (fallbackIp) {
+        return { host: fallbackIp, networkMode: 'lan' };
+      }
+    }
+  } catch {
+    // Fall back to localhost
+  }
+
+  return { host: 'localhost', networkMode: 'local' };
+}
+
+function projectariumVitePlugin(defaultPort: number, env: Record<string, string>): Plugin {
+  const enabled = env.ENABLE_PROJECTARIUM !== 'false';
+  const baseUrl = resolveProjectariumBaseUrl(env);
+  const { host, networkMode } = resolveAdvertisedHost(baseUrl, env);
 
   let registration: { instanceId: string; leaseToken: string } | null = null;
   let heartbeatTimer: NodeJS.Timeout | null = null;
@@ -58,13 +105,13 @@ function projectariumVitePlugin(defaultPort: number): Plugin {
               projectSlug: 'lemon-watchers',
               projectName: 'Lemon Watchers',
               appName: 'feed-watchers-ui',
-              host: 'localhost',
+              host,
               role: 'Watchers Pre-Moderation News Feed UI',
               icon: 'newspaper',
               preferredPort: actualPort,
               environment: 'dev',
-              networkMode: 'local',
-              healthUrl: `http://localhost:${actualPort}/`,
+              networkMode,
+              healthUrl: `http://${host}:${actualPort}/`,
               author: 'feed-watchers',
             }),
             signal: AbortSignal.timeout(4000),
@@ -87,7 +134,7 @@ function projectariumVitePlugin(defaultPort: number): Plugin {
           };
 
           console.log(
-            `🛡️ [Projectarium] Registered feed-watchers-ui on stand "lemon-watchers" (port: ${app.port ?? actualPort}, instance: ${app.instanceId})`
+            `🛡️ [Projectarium] Registered feed-watchers-ui on stand "lemon-watchers" (host: ${host}, port: ${app.port ?? actualPort}, instance: ${app.instanceId})`
           );
 
           heartbeatTimer = setInterval(() => {
@@ -117,15 +164,11 @@ function projectariumVitePlugin(defaultPort: number): Plugin {
   };
 }
 
-async function resolveWatchersProxyTarget(): Promise<string> {
-  if (process.env.VITE_WATCHERS_PROXY_TARGET) {
-    return process.env.VITE_WATCHERS_PROXY_TARGET;
+async function resolveWatchersProxyTarget(env: Record<string, string>): Promise<string> {
+  if (env.VITE_WATCHERS_PROXY_TARGET) {
+    return env.VITE_WATCHERS_PROXY_TARGET;
   }
-  const projectariumBase = (
-    process.env.PROJECTARIUM_URL ||
-    process.env.CORE_COMBINATOR_URL ||
-    'http://127.0.0.1:3000/api'
-  ).replace(/\/+$/, '');
+  const projectariumBase = resolveProjectariumBaseUrl(env);
 
   try {
     const res = await fetch(`${projectariumBase}/projectarium/pool`, {
@@ -134,7 +177,7 @@ async function resolveWatchersProxyTarget(): Promise<string> {
     if (res.ok) {
       const pool = (await res.json()) as Array<{
         projectSlug?: string;
-        app?: { appName?: string; port?: number; status?: string };
+        app?: { appName?: string; host?: string; port?: number; status?: string };
       }>;
       const matches = pool.filter(
         (entry) =>
@@ -144,7 +187,13 @@ async function resolveWatchersProxyTarget(): Promise<string> {
       );
       const online = matches.reverse().find((m) => m.app?.status === 'ONLINE') || matches[0];
       if (online?.app?.port) {
-        return `http://127.0.0.1:${online.app.port}`;
+        const projectariumHost = new URL(projectariumBase).hostname;
+        const appHost = online.app.host || '127.0.0.1';
+        const targetHost =
+          isLocalHostname(appHost) && !isLocalHostname(projectariumHost)
+            ? projectariumHost
+            : appHost;
+        return `http://${targetHost}:${online.app.port}`;
       }
     }
   } catch {
@@ -153,18 +202,21 @@ async function resolveWatchersProxyTarget(): Promise<string> {
   return 'http://127.0.0.1:3040';
 }
 
-export default defineConfig(async () => {
-  const port = Number(process.env.VITE_PORT || process.env.PORT || 5182);
-  const watchersTarget = await resolveWatchersProxyTarget();
+export default defineConfig(async ({ mode }) => {
+  const envDir = path.resolve(__dirname, '../../');
+  const env = { ...loadEnv(mode, envDir, ''), ...(process.env as Record<string, string>) };
+  const port = Number(process.env.VITE_PORT || process.env.PORT || env.VITE_WATCHERS_PORT || 5182);
+  const watchersTarget = await resolveWatchersProxyTarget(env);
 
   return {
-    envDir: path.resolve(__dirname, '../../'),
-    plugins: [react(), projectariumVitePlugin(port)],
+    envDir,
+    plugins: [react(), projectariumVitePlugin(port, env)],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@feed-core': path.resolve(__dirname, '../feed-app/src/core'),
         '@lenta/shared': path.resolve(__dirname, '../../packages/shared/src'),
+        '@lenta/seasons-neurons': path.resolve(__dirname, '../../packages/seasons-neurons/dist'),
       },
       dedupe: ['react', 'react-dom', 'lucide-react', 'react-markdown', 'remark-gfm'],
     },
