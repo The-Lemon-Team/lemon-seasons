@@ -12,6 +12,7 @@ import { NotesShareService } from './notes-share.service';
 import { NotesCacheService } from './notes-cache.service';
 import { NotesQueryBuilder } from './notes-query.builder';
 import { SerperImageSearchService } from './services/serper-image-search.service';
+import { LinkMetadataService } from './services/link-metadata.service';
 import { KeysModule } from '../keys/keys.module';
 import { StreamsModule } from '../streams/streams.module';
 
@@ -28,6 +29,7 @@ import { StreamsModule } from '../streams/streams.module';
     NotesCacheService,
     NotesQueryBuilder,
     SerperImageSearchService,
+    LinkMetadataService,
   ],
   exports: [
     NotesService,
@@ -39,6 +41,7 @@ import { StreamsModule } from '../streams/streams.module';
     NotesCacheService,
     NotesQueryBuilder,
     SerperImageSearchService,
+    LinkMetadataService,
   ],
 })
 export class NotesModule {}

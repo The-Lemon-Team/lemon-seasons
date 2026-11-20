@@ -13,6 +13,7 @@ import { LemonLogo } from './LemonLogo';
 import { WorkstationSyncBar } from './WorkstationSyncBar';
 import { AppModeSwitcher } from './common/AppModeSwitcher';
 import { useAppMode } from '../context/AppModeContext';
+import { useTopologyNeuron } from '../context/SeasonsNeuronsContext';
 
 interface NavbarProps {
   startDate?: string;
@@ -39,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout, openAuthModal } = useAuth();
   const { isPublicEnv } = useAppMode();
+  const { revision, isSseConnected, topology } = useTopologyNeuron();
   const [localSearch, setLocalSearch] = React.useState(search);
 
   React.useEffect(() => {
@@ -96,6 +98,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right: Sync Status / Viewer Bar, Admin CMS Launcher & Profile */}
       <div className="flex items-center gap-2">
+        {revision > 0 && (
+          <div
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#181a1a] border border-[#242828] text-[10px] font-mono text-[#a6aba4]"
+            title={`TopologyNeuron rev #${revision} · ${topology?.totals?.notes ?? 0} заметок`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isSseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+              }`}
+            />
+            <span>N·rev#{revision}</span>
+          </div>
+        )}
         <WorkstationSyncBar />
 
         {/* Admin CMS Direct Launcher (Admin Role Only) */}

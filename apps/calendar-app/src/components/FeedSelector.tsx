@@ -10,6 +10,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useFeeds } from '../api/queries';
+import { useTopologyNeuron } from '../context/SeasonsNeuronsContext';
 import { getFeedTheme, FEED_PRESET_OPTIONS } from '../utils/feedThemes';
 import { resolveSparkFeeds } from '../utils/sparkFeeds';
 import { useI18n } from '../i18n';
@@ -45,6 +46,7 @@ export const FeedSelector: React.FC<FeedSelectorProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allFeeds = [] } = useFeeds();
+  const { feeds: neuronFeeds } = useTopologyNeuron();
 
   // Support single feed or array fallback
   const activeFeedSlug = propSelectedFeed ?? (selectedFeeds && selectedFeeds.length > 0 ? selectedFeeds[0] : undefined);
@@ -89,16 +91,19 @@ export const FeedSelector: React.FC<FeedSelectorProps> = ({
     return resolveSparkFeeds(allFeeds, notes);
   }, [allFeeds, notes]);
 
-  // Compute note counts per feed
+  // Compute note counts per feed (preferring live TopologyNeuron counts, falling back to loaded notes)
   const feedCounts = useMemo(() => {
     const counts: Record<string, number> = {};
+    for (const nf of neuronFeeds) {
+      counts[nf.slug] = nf.totalNotes;
+    }
     for (const note of notes) {
-      if (note.feed?.slug) {
+      if (note.feed?.slug && counts[note.feed.slug] === undefined) {
         counts[note.feed.slug] = (counts[note.feed.slug] || 0) + 1;
       }
     }
     return counts;
-  }, [notes]);
+  }, [notes, neuronFeeds]);
 
   // Filtered feeds by search query
   const filteredFeeds = useMemo(() => {

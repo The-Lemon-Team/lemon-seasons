@@ -345,8 +345,31 @@ export class NotesMediaService {
 
         downloadedImages.push(noteImage);
       } catch (err: any) {
-        // Continue downloading other images if one fails
-        continue;
+        // Fallback: if remote image download fails (e.g. blocked/timeout on server), persist external URL directly
+        try {
+          const shouldBeMain = item.isMain !== undefined
+            ? item.isMain
+            : (!hasMain && !hasAnyMainRequested && i === 0);
+
+          const noteImage = await this.prisma.noteImage.create({
+            data: {
+              noteId,
+              url: item.url,
+              thumbnailUrl: item.url,
+              filename: item.url.split('/').pop()?.split('?')[0] || 'external-poster.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 0,
+              isMain: shouldBeMain,
+              caption: item.caption,
+              alt: item.alt || item.caption,
+              order: nextOrder++,
+            },
+          });
+
+          downloadedImages.push(noteImage);
+        } catch {
+          continue;
+        }
       }
     }
 

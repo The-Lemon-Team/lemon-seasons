@@ -37,6 +37,7 @@ COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/lemon-bus/package.json ./packages/lemon-bus/package.json
 COPY --from=builder /app/packages/lemon-bus/dist ./packages/lemon-bus/dist
+COPY --from=builder /app/packages/lemon-bus/node_modules ./packages/lemon-bus/node_modules
 COPY --from=builder /app/packages/seasons-neurons/package.json ./packages/seasons-neurons/package.json
 COPY --from=builder /app/packages/seasons-neurons/dist ./packages/seasons-neurons/dist
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist

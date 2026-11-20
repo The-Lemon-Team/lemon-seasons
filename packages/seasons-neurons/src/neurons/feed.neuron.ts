@@ -5,7 +5,10 @@ import {
   SeasonsApiClient,
 } from '../client/seasons-api.client.js';
 import { SeasonsSseBus } from '../client/seasons-sse.bus.js';
-import { SeasonsLiveNoteImpulse } from '../types/neuron-models.types.js';
+import {
+  NoteMediaAttachmentInput,
+  SeasonsLiveNoteImpulse,
+} from '../types/neuron-models.types.js';
 
 export interface FeedNeuronState<TNote = any> {
   feedSlug: string;
@@ -182,6 +185,13 @@ export class FeedNeuron<TNote extends { id: string } = any> {
       note: res.note as TNote,
       isNew: res.isNew,
     };
+  }
+
+  async attachMediaToNote(
+    noteId: string,
+    items: NoteMediaAttachmentInput[],
+  ): Promise<any> {
+    return this.apiClient.attachMediaAssets(noteId, items);
   }
 
   private handleLiveImpulse(impulse: SeasonsLiveNoteImpulse): void {

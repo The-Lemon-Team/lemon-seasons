@@ -435,10 +435,20 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
               {/* Grid 3: Start & End Date & Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-mono text-[#c9c7b2] mb-1 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#c9cd58]" />
-                    {t.noteDate} <span className="text-[#c9cd58]">*</span>
-                  </label>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label className="text-[11px] font-mono text-[#c9c7b2] flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#c9cd58]" />
+                      {t.noteDate} <span className="text-[#c9cd58]">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setStartDate(getDefaultDateTimeLocal())}
+                      className="text-[10px] font-mono text-[#c9cd58] hover:underline cursor-pointer"
+                      title="Установить текущую дату и время"
+                    >
+                      Сейчас
+                    </button>
+                  </div>
                   <input
                     type="datetime-local"
                     required

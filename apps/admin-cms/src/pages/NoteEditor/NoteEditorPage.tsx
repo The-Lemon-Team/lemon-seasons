@@ -82,6 +82,14 @@ export const NoteEditorPage: React.FC = () => {
     setPrivacy((tpl.defaultPrivacy as NotePrivacy) || 'private');
   };
 
+  // Reset dates to current local time when switching into new-note mode
+  useEffect(() => {
+    if (isNew) {
+      setStartDate(getDefaultDateTimeLocal());
+      setEndDate('');
+    }
+  }, [isNew]);
+
   // Populate data when editing
   useEffect(() => {
     if (note && !isNew) {
@@ -371,11 +379,22 @@ export const NoteEditorPage: React.FC = () => {
 
           {/* Start Date */}
           <div className="space-y-1">
-            <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
-              {t.startDateLabel}
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="block font-mono text-[10px] font-semibold text-on-surface-variant uppercase">
+                {t.startDateLabel}
+              </label>
+              <button
+                type="button"
+                onClick={() => setStartDate(getDefaultDateTimeLocal())}
+                className="text-[10px] font-mono text-primary hover:underline cursor-pointer"
+                title="Установить текущую дату и время"
+              >
+                Сейчас
+              </button>
+            </div>
             <input
               type="datetime-local"
+              required
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full h-7 bg-control border border-control-border rounded-lg px-2.5 text-on-surface font-mono text-xs focus:border-primary outline-none [color-scheme:light] dark:[color-scheme:dark]"

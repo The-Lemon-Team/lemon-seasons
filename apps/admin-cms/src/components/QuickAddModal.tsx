@@ -307,9 +307,19 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, onClose, ini
 
             {/* Date & Time Range */}
             <div className="space-y-1">
-              <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-                {t.datesCol}
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="block font-mono text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  {t.datesCol}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setStartDate(getDefaultDateTimeLocal())}
+                  className="text-[10px] font-mono text-primary hover:underline cursor-pointer"
+                  title="Установить текущую дату и время"
+                >
+                  Сейчас
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
                   type="datetime-local"

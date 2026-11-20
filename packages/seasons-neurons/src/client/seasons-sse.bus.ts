@@ -48,6 +48,10 @@ export class SeasonsSseBus {
     }
   }
 
+  setToken(token?: string): void {
+    this.token = token;
+  }
+
   connect(overrideTemplate?: SseSubscriptionTemplate): void {
     if (overrideTemplate) {
       this.template = { ...this.template, ...overrideTemplate };

@@ -412,16 +412,26 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           {/* Dates Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-mono text-on-surface-variant mb-1 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
-                <span>{t.startDateLabel}</span>
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label className="text-xs font-mono text-on-surface-variant flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-primary" />
+                  <span>{t.startDateLabel}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setStartDate(getDefaultDateTimeLocal())}
+                  className="text-[10px] font-mono text-primary hover:underline cursor-pointer"
+                  title="Установить текущую дату и время"
+                >
+                  Сейчас
+                </button>
+              </div>
               <input
                 type="datetime-local"
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-xs font-mono text-on-surface outline-none [color-scheme:dark]"
+                className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-xs font-mono text-on-surface outline-none [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
 
@@ -434,7 +444,7 @@ export const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
                 type="datetime-local"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-xs font-mono text-on-surface outline-none [color-scheme:dark]"
+                className="w-full bg-surface-container border border-outline-variant focus:border-primary rounded-lg px-3 py-2 text-xs font-mono text-on-surface outline-none [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
           </div>

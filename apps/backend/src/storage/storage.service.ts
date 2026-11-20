@@ -1,5 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs/promises';
+import * as http from 'http';
+import * as https from 'https';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import * as sharpPkg from 'sharp';
@@ -95,40 +97,97 @@ export class StorageService implements OnModuleInit {
     imageUrl: string,
     fallbackName?: string,
   ): Promise<ProcessedImageResult> {
+    const buffer = await this.fetchImageBuffer(imageUrl);
+
+    let filename = fallbackName;
+    if (!filename) {
+      try {
+        const parsedPath = new URL(imageUrl).pathname;
+        filename = path.basename(parsedPath) || 'downloaded-poster.webp';
+      } catch {
+        filename = 'downloaded-poster.webp';
+      }
+    }
+
+    return this.processAndSaveBuffer(buffer, filename);
+  }
+
+  private async fetchImageBuffer(imageUrl: string): Promise<Buffer> {
+    const headers = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+    };
+
+    const rawProxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    const proxyUrl = rawProxy?.replace(/^["']|["']$/g, '').trim();
+
+    if (proxyUrl) {
+      try {
+        return await this.fetchBufferWithProxy(imageUrl, proxyUrl, headers, 12000, 3);
+      } catch (err: any) {
+        this.logger.debug(`Proxied image fetch failed for ${imageUrl}, trying direct: ${err?.message}`);
+      }
+    }
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
-      const res = await fetch(imageUrl, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        },
-      });
-
+      const res = await fetch(imageUrl, { signal: controller.signal, headers });
       if (!res.ok) {
         throw new Error(`Failed to fetch image: HTTP ${res.status} ${res.statusText}`);
       }
-
-      const arrayBuffer = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      let filename = fallbackName;
-      if (!filename) {
-        try {
-          const parsedPath = new URL(imageUrl).pathname;
-          filename = path.basename(parsedPath) || 'downloaded-poster.webp';
-        } catch {
-          filename = 'downloaded-poster.webp';
-        }
-      }
-
-      return this.processAndSaveBuffer(buffer, filename);
+      return Buffer.from(await res.arrayBuffer());
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  private fetchBufferWithProxy(
+    urlStr: string,
+    proxyUrl: string,
+    headers: Record<string, string>,
+    timeoutMs: number,
+    redirectsLeft: number,
+  ): Promise<Buffer> {
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    const agent = new HttpsProxyAgent(proxyUrl);
+
+    return new Promise((resolve, reject) => {
+      const parsed = new URL(urlStr);
+      const lib = parsed.protocol === 'http:' ? http : https;
+      const req = lib.request(
+        parsed,
+        {
+          method: 'GET',
+          headers,
+          agent: parsed.protocol === 'https:' ? agent : undefined,
+          timeout: timeoutMs,
+        },
+        (res) => {
+          const status = res.statusCode || 0;
+          if (status >= 300 && status < 400 && res.headers.location && redirectsLeft > 0) {
+            res.resume();
+            const nextUrl = new URL(res.headers.location, parsed).toString();
+            this.fetchBufferWithProxy(nextUrl, proxyUrl, headers, timeoutMs, redirectsLeft - 1)
+              .then(resolve)
+              .catch(reject);
+            return;
+          }
+          if (status < 200 || status >= 300) {
+            res.resume();
+            reject(new Error(`Failed to fetch image via proxy: HTTP ${status}`));
+            return;
+          }
+          const chunks: Buffer[] = [];
+          res.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+          res.on('end', () => resolve(Buffer.concat(chunks)));
+        },
+      );
+      req.on('timeout', () => req.destroy(new Error(`Image download timed out after ${timeoutMs}ms`)));
+      req.on('error', reject);
+      req.end();
+    });
   }
 
   /**

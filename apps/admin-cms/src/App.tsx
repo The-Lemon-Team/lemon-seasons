@@ -8,6 +8,7 @@ import { ThemeProvider, useAppTheme } from './theme/ThemeContext';
 import { AppLayout } from './components/AppLayout';
 import { AdminI18nProvider, useAdminI18n } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { SeasonsNeuronsProvider } from './context/SeasonsNeuronsContext';
 
 const DashboardPage = React.lazy(() => import('./pages/Dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const FeedsPage = React.lazy(() => import('./pages/Feeds/FeedsPage').then(m => ({ default: m.FeedsPage })));
@@ -70,11 +71,13 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AdminI18nProvider>
-          <AppContent />
-        </AdminI18nProvider>
-      </ThemeProvider>
+      <SeasonsNeuronsProvider>
+        <ThemeProvider>
+          <AdminI18nProvider>
+            <AppContent />
+          </AdminI18nProvider>
+        </ThemeProvider>
+      </SeasonsNeuronsProvider>
     </QueryClientProvider>
   );
 };

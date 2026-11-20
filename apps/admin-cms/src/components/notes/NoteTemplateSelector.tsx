@@ -8,6 +8,7 @@ import {
   Radio,
   Sparkles,
   LayoutTemplate,
+  Youtube,
 } from 'lucide-react';
 import { NOTE_TEMPLATES_LIST, NoteTemplateDefinition } from '@lenta/shared';
 
@@ -31,6 +32,8 @@ function getTemplateIcon(iconName: string) {
       return <Rocket className="w-3.5 h-3.5" />;
     case 'radio':
       return <Radio className="w-3.5 h-3.5" />;
+    case 'youtube':
+      return <Youtube className="w-3.5 h-3.5 text-rose-500" />;
     default:
       return <Sparkles className="w-3.5 h-3.5" />;
   }

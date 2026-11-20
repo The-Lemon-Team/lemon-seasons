@@ -142,6 +142,7 @@ export const NOTE_TEMPLATE_EVENT = 'event';
 export const NOTE_TEMPLATE_DONE = 'done';
 export const NOTE_TEMPLATE_RELEASE = 'release';
 export const NOTE_TEMPLATE_PODCAST = 'podcast';
+export const NOTE_TEMPLATE_YOUTUBE = 'youtube';
 
 export interface NoteTemplateDefinition {
   id: string;
@@ -295,6 +296,19 @@ export const DEFAULT_NOTE_TEMPLATES: Record<string, NoteTemplateDefinition> = {
     icon: 'radio',
     description: 'Шоу-ноуты подкаста или структурированный дайджест',
     defaultMarkdown: '## 🎙️ О выпуске\n- Главные темы:\n- Таймкоды:\n- Ключевые ссылки:',
+    defaultPrivacy: 'private',
+  },
+  [NOTE_TEMPLATE_YOUTUBE]: {
+    id: NOTE_TEMPLATE_YOUTUBE,
+    name: 'YouTube Видео',
+    aliases: ['youtube', 'yt', 'видео', 'ютуб', 'ролик', '/youtube', '/yt'],
+    defaultType: NoteType.SINGLE,
+    defaultDisplayType: 'YouTube',
+    defaultFolder: 'Videos',
+    defaultHashtags: ['youtube', 'video'],
+    icon: 'youtube',
+    description: 'Быстрое сохранение YouTube-видео с заголовком, превью и кратким описанием',
+    defaultMarkdown: '',
     defaultPrivacy: 'private',
   },
 };

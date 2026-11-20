@@ -62,13 +62,21 @@ export class TopologyNeuron {
     }
   }
 
-  async refreshSnapshot(): Promise<SeasonsTopologySnapshot> {
+  disconnect(): void {
+    this.destroy();
+  }
+
+  async refreshSnapshot(overrideParams?: {
+    streamSlug?: string;
+    privacy?: 'public' | 'private' | 'all';
+    days?: number;
+  }): Promise<SeasonsTopologySnapshot> {
     this.isRefreshing = true;
     try {
       const snapshot = await this.apiClient.getTopology({
-        streamSlug: this.streamSlug,
-        privacy: this.privacy,
-        days: this.days,
+        streamSlug: overrideParams?.streamSlug ?? this.streamSlug,
+        privacy: overrideParams?.privacy ?? this.privacy,
+        days: overrideParams?.days ?? this.days,
       });
       this.state$.next(snapshot);
       return snapshot;

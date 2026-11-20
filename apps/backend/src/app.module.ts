@@ -22,6 +22,7 @@ import { MacrosModule } from './macros/macros.module';
 import { EventsModule } from './events/events.module';
 import { StreamsModule } from './streams/streams.module';
 import { TopologyModule } from './topology/topology.module';
+import { NeuronsModule } from './neurons/neurons.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { TopologyModule } from './topology/topology.module';
     EventsModule,
     StreamsModule,
     TopologyModule,
+    NeuronsModule,
   ],
 })
 export class AppModule implements NestModule {

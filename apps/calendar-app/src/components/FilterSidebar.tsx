@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
 import { useFeeds, useHashtags } from '../api/queries';
+import { useTopologyNeuron } from '../context/SeasonsNeuronsContext';
 import {
   X,
   Filter,
@@ -54,8 +55,26 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onSetPrivacy,
 }) => {
   const { t, lang, getTypeLabel } = useI18n();
-  const { data: feeds = [] } = useFeeds();
+  const { data: restFeeds = [] } = useFeeds();
   const { data: hashtags = [] } = useHashtags();
+  const { feeds: neuronFeeds } = useTopologyNeuron();
+
+  const feeds = React.useMemo(() => {
+    if (restFeeds.length > 0) {
+      const countMap = new Map(neuronFeeds.map((nf) => [nf.slug, nf.totalNotes]));
+      return restFeeds.map((f) => ({
+        ...f,
+        _neuronCount: countMap.get(f.slug),
+      }));
+    }
+    return neuronFeeds.map((nf) => ({
+      id: nf.id,
+      slug: nf.slug,
+      title: nf.title,
+      privacy: nf.privacy,
+      _neuronCount: nf.totalNotes,
+    }));
+  }, [restFeeds, neuronFeeds]);
 
   const handleSelectFeed = (slug?: string) => {
     if (!slug) {
@@ -490,6 +509,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {(feed as any)._neuronCount !== undefined && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#121414] text-neutral-400 border border-[#242828]">
+                        {(feed as any)._neuronCount}
+                      </span>
+                    )}
                     <div
                       className={`w-4 h-4 rounded-full flex items-center justify-center border transition-all ${
                         isSelected

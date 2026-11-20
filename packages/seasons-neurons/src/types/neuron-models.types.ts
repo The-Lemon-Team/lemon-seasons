@@ -8,6 +8,38 @@ export type PartyVisibilityIsland = 'PUBLIC' | 'PRIVATE' | 'GM_ONLY';
 
 export type CloudDayNoteType = 'thought' | 'proposal' | 'action';
 
+export interface NoteTodoItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  scope?: 'PROJECT' | 'APP';
+  targetAppName?: string;
+  author?: string;
+  createdAt?: string;
+  completedAt?: string | null;
+}
+
+export interface NoteTodoStats {
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+export interface NoteMediaAttachmentInput {
+  url: string;
+  thumbnailUrl?: string;
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  width?: number | null;
+  height?: number | null;
+  caption?: string;
+  alt?: string;
+  isMain?: boolean;
+  mediaAssetId?: string;
+}
+
 export interface CloudDayNoteModel {
   id: string;
   dateKey: string; // YYYY-MM-DD

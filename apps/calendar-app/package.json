@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@lenta/seasons-neurons": "workspace:*",
     "@lenta/shared": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-virtual": "^3.13.2",
@@ -21,6 +22,7 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.3",
     "remark-gfm": "^4.0.0",
+    "rxjs": "^7.8.1",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
