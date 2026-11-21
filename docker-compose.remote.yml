@@ -27,6 +27,11 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+      extra_hosts:
+        - "registry.npmjs.org:104.16.3.34"
+        - "binaries.prisma.sh:104.20.43.103"
+        - "binaries-failover.prisma.sh:104.20.43.103"
+        - "r2.prisma.sh:104.20.43.103"
     container_name: lemon-seasons-backend
     restart: unless-stopped
     env_file:

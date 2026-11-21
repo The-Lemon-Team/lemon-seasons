@@ -719,14 +719,6 @@ export class NotesService implements OnModuleInit {
     return this.notesMediaService.downloadExternalMedia(url, title);
   }
 
-  async attachMediaAssets(noteId: string, items: NoteMediaAttachmentDto[]) {
-    try {
-      return await this.notesMediaService.attachMediaAssets(noteId, items);
-    } finally {
-      this.notesCacheService.invalidateAll();
-    }
-  }
-
   // ==========================================
   // Delegated Quick Share Methods (backward compatibility)
   // ==========================================
