@@ -45,6 +45,13 @@ const PRIVATE_OR_LOCAL_HOST_RE =
 
 const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
 
+const GENERIC_YT_TITLE_RE = /^[\s\-–—]*youtube[\s\-–—]*$/i;
+const GENERIC_YT_DESC_PATTERNS = [
+  /^Смотрите любимые видео,\s*слушайте любимые песни/i,
+  /^Enjoy the videos and music you love,\s*upload original content/i,
+  /^Share your videos with friends,\s*family,\s*and the world/i,
+];
+
 @Injectable()
 export class LinkMetadataService {
   private readonly logger = new Logger(LinkMetadataService.name);
@@ -142,22 +149,32 @@ export class LinkMetadataService {
   private async parseYouTubeVideo(videoId: string): Promise<ParsedLinkMetadata> {
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-    const [oEmbedRes, noEmbedRes, watchRes, maxResOk] = await Promise.allSettled([
+    const [oEmbedRes, noEmbedRes, watchRes, nextRes, maxResOk] = await Promise.allSettled([
       this.fetchOEmbedJson(`https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`, true),
       this.fetchOEmbedJson(`https://noembed.com/embed?url=${encodeURIComponent(canonicalUrl)}`, false),
       this.fetchYouTubeWatchPage(videoId),
+      this.fetchYouTubeNextData(videoId),
       this.checkImageExists(getYouTubeThumbnailUrl(videoId, 'maxresdefault')),
     ]);
 
     const oEmbed: OEmbedResult = oEmbedRes.status === 'fulfilled' ? oEmbedRes.value : {};
     const noEmbed: OEmbedResult = noEmbedRes.status === 'fulfilled' ? noEmbedRes.value : {};
     const watch: WatchPageResult = watchRes.status === 'fulfilled' ? watchRes.value : {};
+    const nextData: WatchPageResult = nextRes.status === 'fulfilled' ? nextRes.value : {};
     const hasMaxRes = maxResOk.status === 'fulfilled' && maxResOk.value;
 
-    const rawTitle = watch.title || oEmbed.title || noEmbed.title || `YouTube Video (${videoId})`;
+    const rawTitle =
+      this.pickValidTitle(watch.title) ||
+      this.pickValidTitle(nextData.title) ||
+      this.pickValidTitle(oEmbed.title) ||
+      this.pickValidTitle(noEmbed.title) ||
+      `YouTube Video (${videoId})`;
     const title = this.decodeHtmlEntities(rawTitle).replace(/\s+-\s+YouTube$/i, '').trim();
 
-    const fullDescription = watch.description ? this.cleanDescription(watch.description, 2000) : undefined;
+    const rawDescription =
+      this.pickValidDescription(watch.description) ||
+      this.pickValidDescription(nextData.description);
+    const fullDescription = rawDescription ? this.cleanDescription(rawDescription, 2000) : undefined;
     const shortDescription = fullDescription
       ? this.buildShortDescription(fullDescription, 280)
       : undefined;
@@ -166,7 +183,7 @@ export class LinkMetadataService {
       ? getYouTubeThumbnailUrl(videoId, 'maxresdefault')
       : oEmbed.thumbnailUrl || noEmbed.thumbnailUrl || watch.thumbnailUrl || getYouTubeThumbnailUrl(videoId, 'hqdefault');
 
-    const author = watch.author || oEmbed.authorName || noEmbed.authorName || undefined;
+    const author = watch.author || nextData.author || oEmbed.authorName || noEmbed.authorName || undefined;
     const channelUrl = oEmbed.authorUrl || noEmbed.authorUrl;
 
     return {
@@ -185,6 +202,23 @@ export class LinkMetadataService {
       publishedAt: watch.publishedAt,
       suggestedHashtags: ['youtube', 'video'],
     };
+  }
+
+  private pickValidTitle(raw?: string): string | undefined {
+    const cleaned = raw ? this.decodeHtmlEntities(raw).trim() : '';
+    if (!cleaned || GENERIC_YT_TITLE_RE.test(cleaned)) {
+      return undefined;
+    }
+    return cleaned;
+  }
+
+  private pickValidDescription(raw?: string): string | undefined {
+    const cleaned = raw ? this.decodeHtmlEntities(raw).trim() : '';
+    if (!cleaned) return undefined;
+    if (GENERIC_YT_DESC_PATTERNS.some((re) => re.test(cleaned))) {
+      return undefined;
+    }
+    return cleaned;
   }
 
   private async fetchOEmbedJson(endpoint: string, useProxy: boolean): Promise<OEmbedResult> {
@@ -248,11 +282,12 @@ export class LinkMetadataService {
 
       return {
         title:
-          (typeof videoDetails?.title === 'string' && videoDetails.title) ||
-          og.title,
+          this.pickValidTitle(typeof videoDetails?.title === 'string' ? videoDetails.title : undefined) ||
+          this.pickValidTitle(og.title),
         description:
-          (typeof videoDetails?.shortDescription === 'string' && videoDetails.shortDescription) ||
-          og.description,
+          this.pickValidDescription(
+            typeof videoDetails?.shortDescription === 'string' ? videoDetails.shortDescription : undefined,
+          ) || this.pickValidDescription(og.description),
         author:
           (typeof videoDetails?.author === 'string' && videoDetails.author) ||
           undefined,
@@ -262,6 +297,82 @@ export class LinkMetadataService {
       };
     } catch (err: any) {
       this.logger.debug(`Watch page parse failed for ${videoId}: ${err?.message || err}`);
+      return {};
+    }
+  }
+
+  private async fetchYouTubeNextData(videoId: string): Promise<WatchPageResult> {
+    try {
+      const payload = JSON.stringify({
+        videoId,
+        context: {
+          client: {
+            clientName: 'WEB',
+            clientVersion: '2.20241101.00.00',
+            hl: 'ru',
+            gl: 'RU',
+          },
+        },
+      });
+
+      const res = await this.httpRequest('https://www.youtube.com/youtubei/v1/next?prettyPrint=false', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': DESKTOP_USER_AGENT,
+        },
+        body: payload,
+        timeoutMs: 5500,
+        useProxy: true,
+      });
+
+      if (!res.ok) return {};
+      const json = JSON.parse(res.body.toString('utf-8')) as Record<string, any>;
+      const contents: any[] =
+        json?.contents?.twoColumnWatchNextResults?.results?.results?.contents || [];
+
+      let title: string | undefined;
+      let author: string | undefined;
+      let description: string | undefined;
+
+      for (const item of contents) {
+        if (item?.videoPrimaryInfoRenderer?.title?.runs) {
+          const joined = item.videoPrimaryInfoRenderer.title.runs
+            .map((r: any) => (typeof r?.text === 'string' ? r.text : ''))
+            .join('')
+            .trim();
+          title = this.pickValidTitle(joined) || title;
+        }
+        if (item?.videoSecondaryInfoRenderer) {
+          const sec = item.videoSecondaryInfoRenderer;
+          const ownerText = sec?.owner?.videoOwnerRenderer?.title?.runs?.[0]?.text;
+          if (typeof ownerText === 'string' && ownerText.trim()) {
+            author = ownerText.trim();
+          }
+          const attrDesc = sec?.attributedDescription?.content;
+          if (typeof attrDesc === 'string') {
+            description = this.pickValidDescription(attrDesc) || description;
+          }
+        }
+      }
+
+      if (!description && Array.isArray(json?.engagementPanels)) {
+        for (const panel of json.engagementPanels) {
+          const sdItems =
+            panel?.engagementPanelSectionListRenderer?.content?.structuredDescriptionContentRenderer?.items;
+          if (!Array.isArray(sdItems)) continue;
+          for (const sd of sdItems) {
+            const desc = sd?.expandableVideoDescriptionBodyRenderer?.attributedDescriptionBodyText?.content;
+            if (typeof desc === 'string') {
+              description = this.pickValidDescription(desc) || description;
+            }
+          }
+        }
+      }
+
+      return { title, author, description };
+    } catch (err: any) {
+      this.logger.debug(`YouTube next API parse failed for ${videoId}: ${err?.message || err}`);
       return {};
     }
   }
@@ -321,8 +432,9 @@ export class LinkMetadataService {
   private async httpRequest(
     urlStr: string,
     opts: {
-      method?: 'GET' | 'HEAD';
+      method?: 'GET' | 'HEAD' | 'POST';
       headers?: Record<string, string>;
+      body?: string;
       timeoutMs?: number;
       useProxy?: boolean;
     },
@@ -331,12 +443,13 @@ export class LinkMetadataService {
     const timeoutMs = opts.timeoutMs || 5000;
 
     if (opts.useProxy && this.proxyAgent) {
-      return this.requestWithNodeAgent(urlStr, method, opts.headers || {}, timeoutMs, 3);
+      return this.requestWithNodeAgent(urlStr, method, opts.headers || {}, opts.body, timeoutMs, 3);
     }
 
     const res = await fetch(urlStr, {
       method,
       headers: opts.headers,
+      body: method === 'POST' ? opts.body : undefined,
       signal: AbortSignal.timeout(timeoutMs),
     });
 
@@ -352,19 +465,24 @@ export class LinkMetadataService {
 
   private requestWithNodeAgent(
     urlStr: string,
-    method: 'GET' | 'HEAD',
+    method: 'GET' | 'HEAD' | 'POST',
     headers: Record<string, string>,
+    requestBody: string | undefined,
     timeoutMs: number,
     redirectsLeft: number,
   ): Promise<HttpResponseResult> {
     return new Promise((resolve, reject) => {
       const parsed = new URL(urlStr);
       const lib = parsed.protocol === 'http:' ? http : https;
+      const finalHeaders = { ...headers };
+      if (requestBody !== undefined && finalHeaders['Content-Length'] === undefined) {
+        finalHeaders['Content-Length'] = String(Buffer.byteLength(requestBody));
+      }
       const req = lib.request(
         parsed,
         {
           method,
-          headers,
+          headers: finalHeaders,
           agent: parsed.protocol === 'https:' ? this.proxyAgent : undefined,
           timeout: timeoutMs,
         },
@@ -374,7 +492,7 @@ export class LinkMetadataService {
           if (status >= 300 && status < 400 && location && redirectsLeft > 0) {
             res.resume();
             const nextUrl = new URL(location, parsed).toString();
-            this.requestWithNodeAgent(nextUrl, method, headers, timeoutMs, redirectsLeft - 1)
+            this.requestWithNodeAgent(nextUrl, method, headers, requestBody, timeoutMs, redirectsLeft - 1)
               .then(resolve)
               .catch(reject);
             return;
@@ -396,6 +514,9 @@ export class LinkMetadataService {
         req.destroy(new Error(`Request timed out after ${timeoutMs}ms`));
       });
       req.on('error', reject);
+      if (requestBody !== undefined) {
+        req.write(requestBody);
+      }
       req.end();
     });
   }

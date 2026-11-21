@@ -117,4 +117,70 @@ describe('LinkMetadataService', () => {
       thumbnailUrl: 'https://i.ytimg.com/vi/AbCdEf12345/hqdefault.jpg',
     });
   });
+
+  it('ignores generic YouTube homepage title/description on bot-gated watch pages and uses oEmbed + youtubei/v1/next', async () => {
+    const gatedHtml = `<html><head>
+      <title> - YouTube</title>
+      <meta name="description" content="Смотрите любимые видео, слушайте любимые песни, загружайте собственные ролики и делитесь ими с друзьями, близкими и целым миром.">
+    </head></html>`;
+
+    const nextPayload = {
+      contents: {
+        twoColumnWatchNextResults: {
+          results: {
+            results: {
+              contents: [
+                {
+                  videoPrimaryInfoRenderer: {
+                    title: { runs: [{ text: 'ЧТО БУДЕТ ЕСЛИ ИИ СЫГРАЕТ В МАРИО?🤯 ' }, { text: '#shorts' }] },
+                  },
+                },
+                {
+                  videoSecondaryInfoRenderer: {
+                    owner: { videoOwnerRenderer: { title: { runs: [{ text: 'Not Your Life' }] } } },
+                    attributedDescription: {
+                      content: 'Что будет, если научить ИИ играть в Super Mario? Программист Code Bullet запустил тысячу Марио.',
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+      const url = String(input);
+      if (url.includes('youtube.com/oembed')) {
+        return new Response(
+          JSON.stringify({
+            title: 'ЧТО БУДЕТ ЕСЛИ ИИ СЫГРАЕТ В МАРИО?🤯 #shorts',
+            author_name: 'Not Your Life',
+            thumbnail_url: 'https://i.ytimg.com/vi/CjQuZplBMzw/hqdefault.jpg',
+          }),
+          { status: 200 },
+        );
+      }
+      if (url.includes('youtube.com/watch?v=CjQuZplBMzw')) {
+        return new Response(gatedHtml, { status: 200 });
+      }
+      if (url.includes('youtubei/v1/next')) {
+        return new Response(JSON.stringify(nextPayload), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const result = await service.parseLink('https://www.youtube.com/watch?v=CjQuZplBMzw');
+
+    expect(result).toMatchObject({
+      kind: 'youtube',
+      videoId: 'CjQuZplBMzw',
+      title: 'ЧТО БУДЕТ ЕСЛИ ИИ СЫГРАЕТ В МАРИО?🤯 #shorts',
+      author: 'Not Your Life',
+      shortDescription: 'Что будет, если научить ИИ играть в Super Mario? Программист Code Bullet запустил тысячу Марио.',
+      thumbnailUrl: 'https://i.ytimg.com/vi/CjQuZplBMzw/hqdefault.jpg',
+      previewUrl: '/notes/media/youtube-thumb/CjQuZplBMzw',
+    });
+  });
 });

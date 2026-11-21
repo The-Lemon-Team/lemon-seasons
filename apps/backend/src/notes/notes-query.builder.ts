@@ -1,6 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { RequestUser } from '../auth/auth.types';
+import { getCandidateSlugVariants } from '@lenta/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryNotesDto } from './dto/query-notes.dto';
 import { StreamsService } from '../streams/streams.service';
@@ -42,6 +43,11 @@ export class NotesQueryBuilder {
     ];
     if (targetFeed.slug) {
       orClauses.push({ feed: { slug: { startsWith: targetFeed.slug }, deletedAt: null } });
+      const candidateSlugs = getCandidateSlugVariants(targetFeed.slug).filter((s) => s !== targetFeed.slug);
+      for (const variant of candidateSlugs) {
+        orClauses.push({ feed: { slug: { startsWith: variant, mode: 'insensitive' as const }, deletedAt: null } });
+        orClauses.push({ publicFeed: { slug: { startsWith: variant, mode: 'insensitive' as const }, deletedAt: null } });
+      }
     }
     if (hasFolders) {
       orClauses.push(
@@ -245,13 +251,13 @@ export class NotesQueryBuilder {
         select: { id: true, slug: true, folderPaths: true, hashtags: true },
       });
       if (!targetFeed) {
+        const candidateSlugs = getCandidateSlugVariants(feedSlug);
         const aliasSlugs = LEGACY_FEED_SLUG_ALIASES[feedSlug];
-        if (aliasSlugs && aliasSlugs.length > 0) {
-          targetFeed = await this.prisma.feed.findFirst({
-            where: { slug: { in: aliasSlugs }, deletedAt: null },
-            select: { id: true, slug: true, folderPaths: true, hashtags: true },
-          });
-        }
+        const allFallbackSlugs = Array.from(new Set([...(aliasSlugs || []), ...candidateSlugs]));
+        targetFeed = await this.prisma.feed.findFirst({
+          where: { slug: { in: allFallbackSlugs }, deletedAt: null },
+          select: { id: true, slug: true, folderPaths: true, hashtags: true },
+        });
       }
       if (targetFeed) {
         andConditions.push(this.buildFeedCondition(targetFeed));

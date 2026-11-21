@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { getCandidateSlugVariants } from '@lenta/shared';
 
 export interface DynamicStreamCriteria {
   slug: string;
@@ -18,9 +19,10 @@ export interface DynamicStreamCriteria {
 function buildImplicitStreamClauses(slug: string, title: string): Prisma.NoteWhereInput[] {
   const normSlug = slug.toLowerCase().trim();
   const normSlugHyphen = normSlug.replace(/_/g, '-');
+  const normSlugUnderscore = normSlug.replace(/-/g, '_');
   const normTitle = title.toLowerCase().trim();
-  const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normTitle].filter(Boolean)));
-  const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen].filter(Boolean)));
+  const candidateTags = Array.from(new Set([normSlug, normSlugHyphen, normSlugUnderscore, normTitle].filter(Boolean)));
+  const candidateSlugs = Array.from(new Set([normSlug, normSlugHyphen, normSlugUnderscore].filter(Boolean)));
 
   const clauses: Prisma.NoteWhereInput[] = [
     { feed: { slug: { in: candidateSlugs, mode: 'insensitive' as const }, deletedAt: null } },
@@ -38,6 +40,9 @@ function buildImplicitStreamClauses(slug: string, title: string): Prisma.NoteWhe
 
   if (normSlugHyphen !== normSlug) {
     clauses.push({ folderPath: { contains: normSlugHyphen, mode: 'insensitive' as const } });
+  }
+  if (normSlugUnderscore !== normSlug) {
+    clauses.push({ folderPath: { contains: normSlugUnderscore, mode: 'insensitive' as const } });
   }
 
   return clauses;
@@ -78,10 +83,13 @@ export function buildDynamicStreamConditions(
   }
 
   if (dynamicCriteria.feedSlugs && dynamicCriteria.feedSlugs.length > 0) {
-    orClauses.push({ feed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
-    orClauses.push({ publicFeed: { slug: { in: dynamicCriteria.feedSlugs }, deletedAt: null } });
+    const candidateSlugs = Array.from(
+      new Set(dynamicCriteria.feedSlugs.flatMap((s) => getCandidateSlugVariants(s)))
+    );
+    orClauses.push({ feed: { slug: { in: candidateSlugs }, deletedAt: null } });
+    orClauses.push({ publicFeed: { slug: { in: candidateSlugs }, deletedAt: null } });
     orClauses.push(
-      ...dynamicCriteria.feedSlugs.map((s) => ({
+      ...candidateSlugs.map((s) => ({
         folderPath: { contains: s, mode: 'insensitive' as const },
       }))
     );

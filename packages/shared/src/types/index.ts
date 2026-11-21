@@ -1523,3 +1523,20 @@ export interface GeneratedNoteEnrichment {
   keyQuote?: string;
 }
 
+export interface ParsedLinkMetadata {
+  kind: 'youtube' | 'webpage';
+  url: string;
+  canonicalUrl: string;
+  videoId?: string;
+  title: string;
+  shortDescription?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  previewUrl?: string;
+  author?: string;
+  channelUrl?: string;
+  durationSeconds?: number;
+  publishedAt?: string;
+  suggestedHashtags?: string[];
+}
+

@@ -14,9 +14,11 @@ import {
   BadRequestException,
   Headers,
   UseGuards,
+  HttpCode,
+  HttpStatus,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { NotesService } from './notes.service';
@@ -33,8 +35,10 @@ import {
 } from './dto/image.dto';
 import { AddNoteLinksDto, UpdateNoteLinkDto, ReorderNoteLinksDto } from './dto/link.dto';
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
+import { ParseLinkDto } from './dto/parse-link.dto';
 import { IngestNoteDto } from './dto/ingest-note.dto';
 import { NotesIngestService } from './notes-ingest.service';
+import { LinkMetadataService } from './services/link-metadata.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { RequestUser } from '../auth/auth.types';
 import { AuthenticatedWriteGuard } from '../auth/admin-write.guard';
@@ -45,6 +49,7 @@ export class NotesController {
   constructor(
     private readonly notesService: NotesService,
     private readonly notesIngestService: NotesIngestService,
+    private readonly linkMetadataService: LinkMetadataService,
   ) {}
 
   @Post('ingest')
@@ -69,6 +74,15 @@ export class NotesController {
   @ApiResponse({ status: 200, description: 'Cards parsed successfully' })
   parseAiNotes(@Body() parseNotesDto: ParseNotesDto) {
     return this.notesService.parseAiNotes(parseNotesDto);
+  }
+
+  @Post('parse-link')
+  @UseGuards(AuthenticatedWriteGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Parse metadata (title, short description, thumbnail preview) from YouTube or webpage URL' })
+  @ApiResponse({ status: 200, description: 'Link metadata extracted successfully' })
+  parseLinkMetadata(@Body() dto: ParseLinkDto) {
+    return this.linkMetadataService.parseLink(dto.url);
   }
 
   @Post('batch')
@@ -129,6 +143,15 @@ export class NotesController {
       hl,
       num: num ? Number(num) : 20,
     });
+  }
+
+  @Get('media/youtube-thumb/:videoId')
+  @ApiOperation({ summary: 'Proxy YouTube video thumbnail preview via backend' })
+  async getYouTubeThumbnail(@Param('videoId') videoId: string, @Res() res: Response) {
+    const { buffer, contentType } = await this.linkMetadataService.getYouTubeThumbnail(videoId);
+    res.setHeader('Content-Type', contentType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(buffer);
   }
 
   @Get(':id')

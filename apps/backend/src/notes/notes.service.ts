@@ -32,6 +32,7 @@ import { CreateNoteLinkDto, UpdateNoteLinkDto, LinkOrderItemDto } from './dto/li
 import { ParseNotesDto, BatchCreateNotesDto } from './dto/parse-notes.dto';
 import { AiQuickAddService } from './ai-quick-add.service';
 import { Prisma } from '@prisma/client';
+import { getCandidateSlugVariants } from '@lenta/shared';
 import { NotesLinksService } from './notes-links.service';
 import { NotesMediaService } from './notes-media.service';
 import { NotesShareService } from './notes-share.service';
@@ -146,8 +147,9 @@ export class NotesService implements OnModuleInit {
             throw new NotFoundException(`Feed with ID '${resolvedFeedId}' not found`);
           }
         } else if (createNoteDto.feedSlug && this.prisma.feed?.findFirst) {
+          const candidateSlugs = getCandidateSlugVariants(createNoteDto.feedSlug);
           const bySlug = await this.prisma.feed.findFirst({
-            where: { slug: createNoteDto.feedSlug, deletedAt: null },
+            where: { slug: { in: candidateSlugs }, deletedAt: null },
           });
           if (bySlug) {
             resolvedFeedId = bySlug.id;
@@ -413,8 +415,9 @@ export class NotesService implements OnModuleInit {
         throw new NotFoundException(`Feed with ID '${resolvedUpdateFeedId}' not found`);
       }
     } else if (updateNoteDto.feedSlug && this.prisma.feed?.findFirst) {
+      const candidateSlugs = getCandidateSlugVariants(updateNoteDto.feedSlug);
       const bySlug = await this.prisma.feed.findFirst({
-        where: { slug: updateNoteDto.feedSlug, deletedAt: null },
+        where: { slug: { in: candidateSlugs }, deletedAt: null },
       });
       if (bySlug) {
         resolvedUpdateFeedId = bySlug.id;
@@ -699,6 +702,14 @@ export class NotesService implements OnModuleInit {
   async attachImagesFromUrls(noteId: string, items: ExternalImageItemDto[]) {
     try {
       return await this.notesMediaService.attachImagesFromUrls(noteId, items);
+    } finally {
+      this.notesCacheService.invalidateAll();
+    }
+  }
+
+  async attachMediaAssets(noteId: string, items: NoteMediaAttachmentDto[]) {
+    try {
+      return await this.notesMediaService.attachMediaAssets(noteId, items);
     } finally {
       this.notesCacheService.invalidateAll();
     }

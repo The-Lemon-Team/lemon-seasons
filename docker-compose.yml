@@ -36,6 +36,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lemon}:${POSTGRES_PASSWORD:-lemon_secret}@postgres:5432/${POSTGRES_DB:-lemon_calendarium}?schema=public&connection_limit=10&pool_timeout=20
       PORT: 3001
       NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=768"
       DEVICE_ID: ${DEVICE_ID:-alovingpc}
       SPARKS_INCOMING_DIR: /app/sparks
       GDRIVE_SYNC_FOLDER: /app/gdrive
@@ -51,9 +52,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1024M
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3
