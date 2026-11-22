@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Note, NoteType, NoteTypeColors, NOTE_TYPES } from '@lenta/shared';
 import dayjs from 'dayjs';
+import { filterVisibleHashtags } from '../../utils/hashtags';
 import {
   Clock,
   CheckCircle2,
@@ -278,9 +279,9 @@ export const DayFeedStream: React.FC<DayFeedStreamProps> = ({
                     )}
                   </div>
 
-                  {note.hashtags && note.hashtags.length > 0 && (
+                  {filterVisibleHashtags(note.hashtags).length > 0 && (
                     <div className="flex items-center gap-1 text-[#e5e971]">
-                      #{note.hashtags[0].name.replace(/^#/, '')}
+                      #{filterVisibleHashtags(note.hashtags)[0].name.replace(/^#/, '')}
                     </div>
                   )}
                 </div>

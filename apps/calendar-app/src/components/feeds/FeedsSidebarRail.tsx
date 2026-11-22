@@ -10,6 +10,7 @@ import {
   Radio,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import { filterVisibleHashtags } from '../../utils/hashtags';
 import { FeedSourceMode, UnifiedFeedTab } from '../../adapters/feeds/types';
 
 export interface FeedsSidebarRailProps {
@@ -274,7 +275,7 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
       </div>
 
       {/* 4. Trending Tags */}
-      {availableTags.length > 0 && (
+      {filterVisibleHashtags(availableTags).length > 0 && (
         <div className="p-3.5 rounded-2xl bg-white/95 dark:bg-[#18222d]/95 border border-slate-200/80 dark:border-white/[0.08] shadow-2xs space-y-2">
           <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[10px] uppercase font-bold tracking-wider">
             <TrendingUp className="w-3 h-3 text-[#2481cc]" />
@@ -282,7 +283,7 @@ export const FeedsSidebarRail: React.FC<FeedsSidebarRailProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {availableTags.slice(0, 8).map((t) => (
+            {filterVisibleHashtags(availableTags).slice(0, 8).map((t) => (
               <button
                 key={t}
                 type="button"

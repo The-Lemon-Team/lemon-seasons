@@ -183,4 +183,13 @@ describe('LinkMetadataService', () => {
       previewUrl: '/notes/media/youtube-thumb/CjQuZplBMzw',
     });
   });
+
+  it('returns empty title instead of placeholder ID when all metadata sources fail', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 404 }));
+
+    const result = await service.parseLink('https://www.youtube.com/shorts/gyQXCtMrlF8');
+
+    expect(result.videoId).toBe('gyQXCtMrlF8');
+    expect(result.title).toBe('');
+  });
 });

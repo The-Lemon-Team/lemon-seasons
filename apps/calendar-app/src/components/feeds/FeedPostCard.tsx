@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Note, truncateMarkdown, cleanNoteMarkdown, extractCleanSnippet } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { filterVisibleHashtags } from '../../utils/hashtags';
 import {
   ExternalLink,
   ChevronDown,
@@ -229,9 +230,9 @@ export const FeedPostCard: React.FC<FeedPostCardProps> = ({
 
         {/* Hashtags & Detail prompt */}
         <div className="flex items-center gap-2">
-          {hashtags && hashtags.length > 0 && (
+          {filterVisibleHashtags(hashtags).length > 0 && (
             <div className="flex items-center gap-1 overflow-hidden">
-              {hashtags.slice(0, 2).map((h) => (
+              {filterVisibleHashtags(hashtags).slice(0, 2).map((h) => (
                 <span
                   key={h}
                   className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300 border border-slate-200/50 dark:border-white/5"

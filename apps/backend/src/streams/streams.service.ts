@@ -381,7 +381,10 @@ export class StreamsService implements OnModuleInit {
       }),
     ]);
 
-    const stream = allStreams.find((s) => s.id === idOrSlug || s.slug === idOrSlug);
+    const normalized = idOrSlug.toLowerCase().replace(/[\s-]+/g, '_');
+    const stream = allStreams.find(
+      (s) => s.id === idOrSlug || s.slug === idOrSlug || s.slug === normalized,
+    );
     if (!stream) {
       throw new NotFoundException(`Stream '${idOrSlug}' not found`);
     }
@@ -538,30 +541,40 @@ export class StreamsService implements OnModuleInit {
   }
 
   async attachFeed(streamId: string, feedId: string) {
-    const stream = await this.prisma.stream.findUnique({ where: { id: streamId } });
-    if (!stream || stream.deletedAt) throw new NotFoundException('Stream not found');
+    const stream = await this.prisma.stream.findFirst({
+      where: {
+        OR: [{ id: streamId }, { slug: streamId }],
+        deletedAt: null,
+      },
+    });
+    if (!stream) throw new NotFoundException('Stream not found');
 
-    const feed = await this.prisma.feed.findUnique({ where: { id: feedId } });
-    if (!feed || feed.deletedAt) throw new NotFoundException('Feed not found');
+    const feed = await this.prisma.feed.findFirst({
+      where: {
+        OR: [{ id: feedId }, { slug: feedId }],
+        deletedAt: null,
+      },
+    });
+    if (!feed) throw new NotFoundException('Feed not found');
 
-    const currentTabsCount = await this.prisma.streamTab.count({ where: { streamId } });
+    const currentTabsCount = await this.prisma.streamTab.count({ where: { streamId: stream.id } });
 
     await this.prisma.streamTab.upsert({
-      where: { streamId_feedId: { streamId, feedId } },
+      where: { streamId_feedId: { streamId: stream.id, feedId: feed.id } },
       create: {
-        streamId,
-        feedId,
+        streamId: stream.id,
+        feedId: feed.id,
         type: 'feed',
         targetSlug: feed.slug,
         order: currentTabsCount,
       },
-      update: { isHidden: false },
+      update: { isHidden: false, targetSlug: feed.slug },
     });
 
-    if (!stream.feedIds.includes(feedId)) {
+    if (!stream.feedIds.includes(feed.id)) {
       const updated = await this.prisma.stream.update({
-        where: { id: streamId },
-        data: { feedIds: [...stream.feedIds, feedId] },
+        where: { id: stream.id },
+        data: { feedIds: [...stream.feedIds, feed.id] },
       });
       this.invalidateCache();
       this.eventEmitter.emit('stream.updated', updated);
@@ -571,14 +584,27 @@ export class StreamsService implements OnModuleInit {
   }
 
   async detachFeed(streamId: string, feedId: string) {
-    const stream = await this.prisma.stream.findUnique({ where: { id: streamId } });
-    if (!stream || stream.deletedAt) throw new NotFoundException('Stream not found');
+    const stream = await this.prisma.stream.findFirst({
+      where: {
+        OR: [{ id: streamId }, { slug: streamId }],
+        deletedAt: null,
+      },
+    });
+    if (!stream) throw new NotFoundException('Stream not found');
 
-    await this.prisma.streamTab.deleteMany({ where: { streamId, feedId } });
+    const feed = await this.prisma.feed.findFirst({
+      where: {
+        OR: [{ id: feedId }, { slug: feedId }],
+        deletedAt: null,
+      },
+    });
+    if (!feed) throw new NotFoundException('Feed not found');
+
+    await this.prisma.streamTab.deleteMany({ where: { streamId: stream.id, feedId: feed.id } });
 
     const updated = await this.prisma.stream.update({
-      where: { id: streamId },
-      data: { feedIds: stream.feedIds.filter((id) => id !== feedId) },
+      where: { id: stream.id },
+      data: { feedIds: stream.feedIds.filter((id) => id !== feed.id) },
     });
     this.invalidateCache();
     this.eventEmitter.emit('stream.updated', updated);

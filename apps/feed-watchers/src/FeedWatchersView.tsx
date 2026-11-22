@@ -81,6 +81,7 @@ export const FeedWatchersView: React.FC<FeedWatchersViewProps> = ({
     pauseAllWatchers,
     validateFeed,
     createWatcher,
+    updateWatcher,
   } = useWatchersStream({
     embedded,
     externalCategory,
@@ -428,6 +429,7 @@ export const FeedWatchersView: React.FC<FeedWatchersViewProps> = ({
         onPauseAll={pauseAllWatchers}
         onValidateFeed={validateFeed}
         onCreateWatcher={createWatcher}
+        onUpdateWatcher={updateWatcher}
       />
 
       <CoreFeedDetailModal

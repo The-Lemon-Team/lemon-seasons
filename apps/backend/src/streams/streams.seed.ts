@@ -157,4 +157,17 @@ export const DEFAULT_STREAMS_SEED: DefaultStreamSeedConfig[] = [
     tags: [],
     folderPaths: [],
   },
+  {
+    slug: 'lemon-universe',
+    title: 'TimeLines & Universe',
+    icon: '🌌',
+    color: '#8b5cf6',
+    description: 'Сводный поток всех досок и каналов TimeLines из Lemon Universe',
+    privacy: 'public',
+    order: 7,
+    isBuiltin: true,
+    feedSlugs: ['universe-personal-feed', 'universe-board-global-day'],
+    tags: ['lemon-universe', 'timelines', 'universe'],
+    folderPaths: ['universe/'],
+  },
 ];

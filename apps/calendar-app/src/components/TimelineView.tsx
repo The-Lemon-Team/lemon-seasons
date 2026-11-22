@@ -10,6 +10,7 @@ import {
 } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { filterVisibleHashtags } from '../utils/hashtags';
 import dayjs from 'dayjs';
 import {
   Clock,
@@ -426,7 +427,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     <div className="mt-3 pt-2 border-t border-[#242828] flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {/* Hashtags */}
-                        {note.hashtags?.map((h) => (
+                        {filterVisibleHashtags(note.hashtags).map((h) => (
                           <span
                             key={h.id}
                             className="px-1.5 py-0.5 rounded bg-[#c9cd58]/10 text-[#e5e971] text-[11px] font-mono"

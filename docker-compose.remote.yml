@@ -47,9 +47,11 @@ services:
       LEMON_BUS_DRIVER: ${REMOTE_LEMON_BUS_DRIVER:-none}
       LEMON_BUS_URL: ${REMOTE_LEMON_BUS_URL:-}
       CORS_ORIGIN: "*"
-      HTTP_PROXY: ${REMOTE_HTTP_PROXY:-}
-      HTTPS_PROXY: ${REMOTE_HTTPS_PROXY:-}
+      HTTP_PROXY: ${REMOTE_HTTP_PROXY:-http://host.docker.internal:20808}
+      HTTPS_PROXY: ${REMOTE_HTTPS_PROXY:-http://host.docker.internal:20808}
       NO_PROXY: "localhost,127.0.0.1,postgres"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
     ports:
       - "3001:3001"

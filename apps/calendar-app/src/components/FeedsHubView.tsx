@@ -53,6 +53,7 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
   const initialRoute = useMemo(() => {
     if (!activeFeed) return 'all';
     const clean = activeFeed.trim().replace(/^\/?feeds\/?/i, '').replace(/^\/+/, '');
+    if (clean === 'all/general' || clean === 'all/all' || clean === 'general') return 'all';
     if (clean.includes('/')) return clean;
     if (
       clean === 'dev' ||
@@ -83,9 +84,12 @@ export const FeedsHubView: React.FC<FeedsHubViewProps> = ({
         route = payload.pathname.replace(/^\/+/, '');
       } else if (payload.streamSource) {
         route = payload.streamSource;
-        if (payload.selectedFeedSlug) {
+        if (payload.selectedFeedSlug && payload.selectedFeedSlug !== 'general' && payload.selectedFeedSlug !== 'all') {
           route += `/${payload.selectedFeedSlug}`;
         }
+      }
+      if (route === 'all/general' || route === 'all/all' || route === 'general') {
+        route = 'all';
       }
       if (payload.noteId) {
         route += `${route.includes('?') ? '&' : '?'}note=${encodeURIComponent(payload.noteId)}`;

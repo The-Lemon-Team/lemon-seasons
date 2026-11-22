@@ -9,6 +9,7 @@ import {
   resolvePeerAppUrl,
 } from '@lenta/shared';
 import ReactMarkdown from 'react-markdown';
+import { filterVisibleHashtags } from '../utils/hashtags';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
 import {
@@ -432,9 +433,9 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, onClose 
           </div>
 
           {/* Hashtags */}
-          {current.hashtags && current.hashtags.length > 0 && (
+          {filterVisibleHashtags(current.hashtags).length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-[#242828]">
-              {current.hashtags.map((h) => (
+              {filterVisibleHashtags(current.hashtags).map((h) => (
                 <span
                   key={h.id}
                   className="px-2.5 py-1 rounded bg-[#c9cd58]/10 text-[#e5e971] text-xs font-mono font-medium"

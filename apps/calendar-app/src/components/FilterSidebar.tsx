@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CalendarFilterState, NoteType, NOTE_TYPES, NoteTypeColors } from '@lenta/shared';
 import { useFeeds, useHashtags } from '../api/queries';
 import { useTopologyNeuron } from '../context/SeasonsNeuronsContext';
+import { filterVisibleHashtags } from '../utils/hashtags';
 import {
   X,
   Filter,
@@ -531,14 +532,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </div>
 
         {/* 4. Hashtags Cloud */}
-        {hashtags.length > 0 && (
+        {filterVisibleHashtags(hashtags).length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3">
               <Hash className="w-3.5 h-3.5 text-[#c9cd58]" />
               <span>{t.hashtags}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {hashtags.slice(0, 25).map((ht) => {
+              {filterVisibleHashtags(hashtags).slice(0, 25).map((ht) => {
                 const isSelected = filterState.hashtags.includes(ht.name.replace(/^#/, ''));
                 return (
                   <button

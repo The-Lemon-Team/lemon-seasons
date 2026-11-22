@@ -249,5 +249,9 @@ export function useWatchersStream(options: UseWatchersStreamOptions = {}) {
       (input: CreateWatcherInput) => neuron.createWatcher(input),
       [neuron]
     ),
+    updateWatcher: useCallback(
+      (idOrSlug: string, patch: Record<string, any>) => neuron.updateWatcher(idOrSlug, patch),
+      [neuron]
+    ),
   };
 }

@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Loader2,
   Pause,
+  Pencil,
   Play,
   Plus,
   Radio,
@@ -19,6 +20,113 @@ import {
   WatcherPingRecord,
   WatcherState,
 } from '../types';
+
+export function getChannelBrandDomain(url?: string, title?: string): string {
+  const t = (title || '').toLowerCase();
+  const u = (url || '').toLowerCase();
+
+  // Known brand mappings for feeds hosted elsewhere (e.g. GitHub RSS, Feedburner, etc.)
+  if (t.includes('anthropic') || u.includes('anthropic')) return 'anthropic.com';
+  if (t.includes('deepmind') || u.includes('deepmind')) return 'deepmind.google';
+  if (t.includes('openai') || u.includes('openai')) return 'openai.com';
+  if (t.includes('hugging face') || t.includes('huggingface') || u.includes('huggingface')) return 'huggingface.co';
+  if (t.includes('localllama') || u.includes('reddit.com')) return 'reddit.com';
+  if (t.includes('krebs') || u.includes('krebsonsecurity')) return 'krebsonsecurity.com';
+  if (t.includes('sophos') || u.includes('sophos')) return 'sophos.com';
+  if (t.includes('cisa') || u.includes('cisa.gov')) return 'cisa.gov';
+  if (t.includes('threatpost') || u.includes('threatpost')) return 'threatpost.com';
+  if (t.includes('securitylab') || u.includes('securitylab')) return 'securitylab.ru';
+  if (t.includes('хабр') || t.includes('habr') || u.includes('habr.com')) return 'habr.com';
+  if (t.includes('tproger') || u.includes('tproger')) return 'tproger.ru';
+  if (t.includes('opennet') || u.includes('opennet')) return 'opennet.ru';
+  if (t.includes('selectel') || u.includes('selectel')) return 'selectel.ru';
+  if (t.includes('proglib') || u.includes('proglib')) return 'proglib.io';
+  if (t.includes('servernews') || u.includes('servernews')) return 'servernews.ru';
+  if (t.includes('cnews') || u.includes('cnews')) return 'cnews.ru';
+  if (t.includes('компьютерра') || t.includes('computerra') || u.includes('computerra')) return 'computerra.ru';
+  if (t.includes('тасс') || t.includes('tass') || u.includes('tass.')) return 'tass.ru';
+  if (t.includes('риа') || t.includes('ria') || u.includes('ria.ru')) return 'ria.ru';
+  if (t.includes('рбк') || t.includes('rbc') || u.includes('rbc.ru')) return 'rbc.ru';
+  if (t.includes('3dnews') || u.includes('3dnews')) return '3dnews.ru';
+  if (t.includes('verge') || u.includes('theverge')) return 'theverge.com';
+  if (t.includes('arstechnica') || u.includes('arstechnica')) return 'arstechnica.com';
+
+  if (!url) return '';
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
+
+export function getFaviconUrl(url?: string, title?: string): string {
+  const domain = getChannelBrandDomain(url, title);
+  if (!domain) return '';
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
+export function isEmojiString(str?: string): boolean {
+  if (!str) return false;
+  const trimmed = str.trim();
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('data:')
+  ) {
+    return false;
+  }
+  return trimmed.length <= 4;
+}
+
+export const ChannelIcon: React.FC<{
+  icon?: string;
+  url?: string;
+  title: string;
+  folderIcon?: string;
+  size?: 'sm' | 'md';
+}> = ({ icon, url, title, folderIcon = '📡', size = 'md' }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const sizeClasses = size === 'sm' ? 'w-6 h-6 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl';
+  const imgSizeClasses = size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5 sm:w-6 sm:h-6';
+  const textSize = size === 'sm' ? 'text-xs' : 'text-base sm:text-lg';
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [icon, url, title]);
+
+  const hasImageUrl = icon && !isEmojiString(icon);
+  const brandFaviconUrl = getFaviconUrl(url, title);
+  const imageSrc = !imgFailed ? (hasImageUrl ? icon : brandFaviconUrl) : '';
+
+  if (imageSrc) {
+    return (
+      <div className={`${sizeClasses} bg-white dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-xs`}>
+        <img
+          src={imageSrc}
+          alt={title}
+          className={`${imgSizeClasses} object-contain`}
+          onError={() => setImgFailed(true)}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  if (icon && isEmojiString(icon)) {
+    return (
+      <div className={`${sizeClasses} bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center shrink-0 shadow-xs select-none`}>
+        <span className={`${textSize} leading-none`}>{icon}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center shrink-0 shadow-xs select-none`}>
+      <span className={`${textSize} leading-none`}>{folderIcon}</span>
+    </div>
+  );
+};
 
 export interface WatchersManagerModalProps {
   isOpen: boolean;
@@ -38,6 +146,7 @@ export interface WatchersManagerModalProps {
     protocol: 'rss' | 'atom' | 'json'
   ) => Promise<ValidateWatcherFeedResult>;
   onCreateWatcher: (input: CreateWatcherInput) => Promise<any>;
+  onUpdateWatcher?: (idOrSlug: string, patch: Partial<WatcherState>) => Promise<any>;
 }
 
 export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
@@ -55,6 +164,7 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
   onPauseAll,
   onValidateFeed,
   onCreateWatcher,
+  onUpdateWatcher,
 }) => {
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -62,9 +172,21 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
   const [newUrl, setNewUrl] = useState('');
   const [newCategory, setNewCategory] = useState('ai');
   const [newProtocol, setNewProtocol] = useState<'rss' | 'atom' | 'json'>('rss');
+  const [newIcon, setNewIcon] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [validationState, setValidationState] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Edit channel / record state
+  const [editingWatcherId, setEditingWatcherId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editCategory, setEditCategory] = useState('ai');
+  const [editProtocol, setEditProtocol] = useState<'rss' | 'atom' | 'json'>('rss');
+  const [editIcon, setEditIcon] = useState('');
+  const [editPollIntervalMinutes, setEditPollIntervalMinutes] = useState(15);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editValidationState, setEditValidationState] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -72,6 +194,8 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
       setNewCategory(initialCategory || folders[0]?.slug || 'ai');
       setActionNotice(null);
       setValidationState(null);
+      setEditingWatcherId(null);
+      setEditValidationState(null);
     }
   }, [isOpen, initialCategory, folders]);
 
@@ -147,10 +271,12 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
         category: newCategory,
         feedSlug: `spark-${newCategory}`,
         protocol: newProtocol,
+        icon: newIcon.trim() || undefined,
         enabled: true,
       });
       setNewTitle('');
       setNewUrl('');
+      setNewIcon('');
       setShowAddForm(false);
       setValidationState(null);
       setActionNotice('Источник добавлен и включён.');
@@ -158,6 +284,64 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
       setValidationState(`Ошибка создания: ${err?.message || 'неизвестная ошибка'}`);
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleStartEdit = (w: WatcherState) => {
+    setEditingWatcherId(w.id);
+    setEditTitle(w.title);
+    setEditUrl(w.url || '');
+    setEditCategory(w.category);
+    setEditProtocol((w.protocol as 'rss' | 'atom' | 'json') || 'rss');
+    setEditIcon(w.icon || '');
+    setEditPollIntervalMinutes(Math.round((w.pollIntervalSeconds || 900) / 60));
+    setEditValidationState(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingWatcherId(null);
+    setEditValidationState(null);
+  };
+
+  const handleValidateEdit = async () => {
+    if (!editUrl.trim()) return;
+    setEditValidationState('Проверка ленты...');
+    try {
+      const res = await onValidateFeed(editUrl.trim(), editProtocol);
+      setEditValidationState(
+        res.valid
+          ? `OK (HTTP ${res.statusCode ?? 200}, записей: ${res.itemsCount ?? 0})`
+          : `Ошибка: ${res.error || 'недоступна'}`
+      );
+    } catch (err: any) {
+      setEditValidationState(`Ошибка: ${err?.message || 'не удалось проверить'}`);
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWatcherId || !editTitle.trim() || !editUrl.trim() || isSavingEdit) return;
+    if (!onUpdateWatcher) {
+      setEditValidationState('Обновление не поддерживается');
+      return;
+    }
+    setIsSavingEdit(true);
+    try {
+      await onUpdateWatcher(editingWatcherId, {
+        title: editTitle.trim(),
+        url: editUrl.trim(),
+        category: editCategory,
+        feedSlug: `spark-${editCategory}`,
+        protocol: editProtocol,
+        pollIntervalSeconds: editPollIntervalMinutes * 60,
+        icon: editIcon.trim() || undefined,
+      });
+      setEditingWatcherId(null);
+      setActionNotice(`Запись «${editTitle.trim()}» успешно обновлена.`);
+    } catch (err: any) {
+      setEditValidationState(`Ошибка сохранения: ${err?.message || 'не удалось сохранить'}`);
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -280,14 +464,14 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
             onSubmit={handleCreate}
             className="mx-5 mt-3 p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#121922] space-y-2.5 text-xs"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               <input
                 type="text"
                 required
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="Название источника"
-                className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                className="sm:col-span-2 px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
               />
               <select
                 value={newCategory}
@@ -310,15 +494,27 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
                 <option value="json">JSON Feed</option>
               </select>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
                 type="url"
                 required
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 placeholder="https://example.com/rss.xml"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                className="sm:col-span-2 px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10 font-mono text-xs"
               />
+              <div className="flex items-center gap-2">
+                <ChannelIcon icon={newIcon} url={newUrl} title={newTitle} folderIcon={folderMap.get(newCategory)?.icon} size="sm" />
+                <input
+                  type="text"
+                  value={newIcon}
+                  onChange={(e) => setNewIcon(e.target.value)}
+                  placeholder="Иконка (URL или эмодзи)"
+                  className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleValidate}
@@ -349,54 +545,205 @@ export const WatchersManagerModal: React.FC<WatchersManagerModalProps> = ({
               triggeringWatcherIds.has(w.id) || triggeringWatcherIds.has(w.slug);
             const folder = folderMap.get(w.category);
 
+            if (editingWatcherId === w.id) {
+              return (
+                <form
+                  key={w.id}
+                  onSubmit={handleSaveEdit}
+                  className="p-3.5 rounded-xl border border-[#2481cc]/50 bg-slate-50 dark:bg-[#121922] space-y-3 text-xs shadow-md"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
+                    <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                      <Pencil className="w-3.5 h-3.5 text-[#2481cc]" />
+                      <span>Редактирование записи</span>
+                    </div>
+                    <ChannelIcon icon={editIcon} url={editUrl} title={editTitle} folderIcon={folderMap.get(editCategory)?.icon} size="sm" />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Название источника *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="Название источника"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Папка (категория) *</label>
+                      <select
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                      >
+                        {folders.map((f) => (
+                          <option key={f.id} value={f.slug}>
+                            {f.icon} {f.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Протокол</label>
+                      <select
+                        value={editProtocol}
+                        onChange={(e) => setEditProtocol(e.target.value as 'rss' | 'atom' | 'json')}
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                      >
+                        <option value="rss">RSS</option>
+                        <option value="atom">Atom</option>
+                        <option value="json">JSON Feed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">URL ленты *</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          required
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          placeholder="https://example.com/rss.xml"
+                          className="flex-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10 font-mono text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleValidateEdit}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 hover:bg-slate-100 dark:hover:bg-white/10 font-medium cursor-pointer whitespace-nowrap"
+                        >
+                          Проверить
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Иконка (эмодзи или URL)</label>
+                      <input
+                        type="text"
+                        value={editIcon}
+                        onChange={(e) => setEditIcon(e.target.value)}
+                        placeholder="🧠 или URL"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Интервал опроса (минуты)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={1440}
+                        value={editPollIntervalMinutes}
+                        onChange={(e) => setEditPollIntervalMinutes(Number(e.target.value) || 15)}
+                        className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#17212b] border border-slate-200 dark:border-white/10"
+                      />
+                    </div>
+                  </div>
+
+                  {editValidationState && (
+                    <div className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
+                      {editValidationState}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end items-center gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 hover:bg-slate-100 dark:hover:bg-white/10 font-medium cursor-pointer"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingEdit}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#2481cc] hover:bg-[#1e6cb0] text-white font-semibold cursor-pointer disabled:opacity-50"
+                    >
+                      {isSavingEdit && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>Сохранить изменения</span>
+                    </button>
+                  </div>
+                </form>
+              );
+            }
+
             return (
               <div
                 key={w.id}
                 className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
-                <div className="min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-slate-900 dark:text-white">
-                      {w.title}
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300">
-                      {folder ? `${folder.icon} ${folder.title}` : w.category}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
-                        w.enabled
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-slate-500/15 text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {w.enabled ? (
-                        <CheckCircle2 className="w-2.5 h-2.5" />
-                      ) : (
-                        <Pause className="w-2.5 h-2.5" />
-                      )}
-                      <span>{w.enabled ? w.status : 'PAUSED'}</span>
-                    </span>
-                  </div>
+                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                  <ChannelIcon
+                    icon={w.icon}
+                    url={w.url}
+                    title={w.title}
+                    folderIcon={folder?.icon}
+                  />
 
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-3 flex-wrap font-mono">
-                    <span>Собрано: {w.totalItemsIngested}</span>
-                    <span>
-                      Пинг:{' '}
-                      {w.lastPingAt
-                        ? new Date(w.lastPingAt).toLocaleString('ru-RU')
-                        : 'ещё не было'}
-                    </span>
-                  </div>
-
-                  {w.lastError && (
-                    <div className="inline-flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                      <AlertTriangle className="w-3 h-3 shrink-0" />
-                      <span className="truncate max-w-md">{w.lastError}</span>
+                  <div className="min-w-0 space-y-1 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900 dark:text-white truncate">
+                        {w.title}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                        {folder ? `${folder.icon} ${folder.title}` : w.category}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                          w.enabled
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-slate-500/15 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {w.enabled ? (
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                        ) : (
+                          <Pause className="w-2.5 h-2.5" />
+                        )}
+                        <span>{w.enabled ? w.status : 'PAUSED'}</span>
+                      </span>
                     </div>
-                  )}
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-3 flex-wrap font-mono">
+                      <span>Собрано: {w.totalItemsIngested}</span>
+                      <span>
+                        Пинг:{' '}
+                        {w.lastPingAt
+                          ? new Date(w.lastPingAt).toLocaleString('ru-RU')
+                          : 'ещё не было'}
+                      </span>
+                    </div>
+
+                    {w.lastError && (
+                      <div className="inline-flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        <span className="truncate max-w-md">{w.lastError}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => handleStartEdit(w)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 font-medium cursor-pointer transition-colors"
+                    title="Редактировать параметры источника"
+                  >
+                    <Pencil className="w-3 h-3 text-[#2481cc]" />
+                    <span className="hidden sm:inline">Редактировать</span>
+                  </button>
+
                   <button
                     type="button"
                     disabled={isTriggering}

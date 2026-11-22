@@ -1,5 +1,6 @@
 import type {
   CreateWatcherInput,
+  UpdateWatcherInput,
   PaginatedWatcherStreamNews,
   ValidateWatcherFeedResult,
   WatcherFolder,
@@ -14,6 +15,7 @@ import type {
 export type StreamNewsStatus = WatcherStreamStatus;
 export type {
   CreateWatcherInput,
+  UpdateWatcherInput,
   ValidateWatcherFeedResult,
   WatcherPingRecord,
   WatcherStreamItem,

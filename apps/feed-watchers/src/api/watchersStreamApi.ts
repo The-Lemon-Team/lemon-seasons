@@ -100,6 +100,13 @@ export const watchersStreamApi = {
     return watchersClient.createWatcher(input);
   },
 
+  async updateWatcher(
+    idOrSlug: string,
+    patch: Record<string, any>
+  ): Promise<{ message: string; watcher: WatcherState }> {
+    return watchersClient.updateWatcher(idOrSlug, patch);
+  },
+
   async pruneExpired(ttlHours?: number): Promise<{ pruned: number; ttlHours: number }> {
     return watchersClient.pruneExpired(ttlHours);
   },

@@ -337,6 +337,15 @@ export class WatchersNeuron {
     return res;
   }
 
+  async updateWatcher(
+    idOrSlug: string,
+    patch: Record<string, any>
+  ): Promise<{ message: string; watcher: WatcherState }> {
+    const res = await this.apiClient.updateWatcher(idOrSlug, patch);
+    await this.loadMetadata().catch(() => {});
+    return res;
+  }
+
   async triggerAll(): Promise<{ message: string }> {
     this.patchState({ isTriggeringAll: true });
     try {

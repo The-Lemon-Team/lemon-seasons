@@ -151,7 +151,7 @@ export class LinkMetadataService {
 
     const [oEmbedRes, noEmbedRes, watchRes, nextRes, maxResOk] = await Promise.allSettled([
       this.fetchOEmbedJson(`https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`, true),
-      this.fetchOEmbedJson(`https://noembed.com/embed?url=${encodeURIComponent(canonicalUrl)}`, false),
+      this.fetchOEmbedJson(`https://noembed.com/embed?url=${encodeURIComponent(canonicalUrl)}`, true),
       this.fetchYouTubeWatchPage(videoId),
       this.fetchYouTubeNextData(videoId),
       this.checkImageExists(getYouTubeThumbnailUrl(videoId, 'maxresdefault')),
@@ -168,8 +168,8 @@ export class LinkMetadataService {
       this.pickValidTitle(nextData.title) ||
       this.pickValidTitle(oEmbed.title) ||
       this.pickValidTitle(noEmbed.title) ||
-      `YouTube Video (${videoId})`;
-    const title = this.decodeHtmlEntities(rawTitle).replace(/\s+-\s+YouTube$/i, '').trim();
+      '';
+    const title = rawTitle ? this.decodeHtmlEntities(rawTitle).replace(/\s+-\s+YouTube$/i, '').trim() : '';
 
     const rawDescription =
       this.pickValidDescription(watch.description) ||
@@ -443,7 +443,11 @@ export class LinkMetadataService {
     const timeoutMs = opts.timeoutMs || 5000;
 
     if (opts.useProxy && this.proxyAgent) {
-      return this.requestWithNodeAgent(urlStr, method, opts.headers || {}, opts.body, timeoutMs, 3);
+      try {
+        return await this.requestWithNodeAgent(urlStr, method, opts.headers || {}, opts.body, timeoutMs, 3);
+      } catch (err: any) {
+        this.logger.debug(`Proxied request failed for ${urlStr}, trying direct: ${err?.message}`);
+      }
     }
 
     const res = await fetch(urlStr, {

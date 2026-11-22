@@ -69,6 +69,7 @@ export interface WatcherState {
   url?: string;
   protocol?: string;
   pollIntervalSeconds?: number;
+  icon?: string;
 }
 
 export interface CreateWatcherInput {
@@ -81,6 +82,20 @@ export interface CreateWatcherInput {
   description?: string;
   defaultTags?: string[];
   enabled?: boolean;
+  icon?: string;
+}
+
+export interface UpdateWatcherInput {
+  title?: string;
+  url?: string;
+  category?: string;
+  feedSlug?: string;
+  protocol?: 'rss' | 'atom' | 'json' | string;
+  pollIntervalSeconds?: number;
+  description?: string;
+  defaultTags?: string[];
+  enabled?: boolean;
+  icon?: string;
 }
 
 export interface ValidateWatcherFeedResult {
