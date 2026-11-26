@@ -217,9 +217,21 @@ export class NotesService implements OnModuleInit {
       createNoteDto.links?.find((l) => l.isSource)?.url ||
       createNoteDto.links?.[0]?.url;
 
-    const resolvedOwnerUserId =
-      createNoteDto.ownerUserId ||
+    let resolvedOwnerUserId =
+      createNoteDto.ownerUserId?.trim() ||
       (viewer?.id && viewer.role !== 'guest' && !viewer.isAdmin ? viewer.id : undefined);
+
+    // Ensure ownerUser exists before attempting Prisma relation connection
+    if (resolvedOwnerUserId) {
+      const ownerExists = await this.prisma.user.findUnique({
+        where: { id: resolvedOwnerUserId },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        this.logger.warn(`Ignoring unknown ownerUserId "${resolvedOwnerUserId}" during note creation`);
+        resolvedOwnerUserId = undefined;
+      }
+    }
 
     const note = await this.prisma.note.create({
       data: {

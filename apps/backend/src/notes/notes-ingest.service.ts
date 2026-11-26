@@ -79,11 +79,22 @@ export class NotesIngestService {
   async ingest(dto: IngestNoteDto, authHeader?: string, accountIdHeader?: string): Promise<IngestResult> {
     // 1. Authorization check & account owner resolution
     const authCtx = await this.validateAuthorization(dto.apiKey, authHeader);
-    const resolvedOwnerUserId =
+    let resolvedOwnerUserId =
       authCtx.userId ||
       (authCtx.isAdmin ? accountIdHeader?.trim() || dto.ownerUserId?.trim() : undefined) ||
       dto.ownerUserId?.trim() ||
       undefined;
+
+    if (resolvedOwnerUserId) {
+      const ownerExists = await this.prisma.user.findUnique({
+        where: { id: resolvedOwnerUserId },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        this.logger.warn(`Ignoring unknown ownerUserId "${resolvedOwnerUserId}" during note ingest`);
+        resolvedOwnerUserId = undefined;
+      }
+    }
 
     // 2. Resolve Title
     const title = this.extractTitle(dto.title, dto.content);
